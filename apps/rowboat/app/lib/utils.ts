@@ -1,16 +1,5 @@
 import { Workflow } from "@/app/lib/types";
-import { projectsCollection } from "./mongodb";
-import crypto from 'crypto';
 import { z } from "zod";
-
-export async function generateWebhookJwtSecret(projectId: string): Promise<string> {
-    const secret = crypto.randomBytes(32).toString('hex');
-    await projectsCollection.updateOne(
-        { _id: projectId },
-        { $set: { webhookJwtSecret: secret, webhookJwtSecretUpdatedAt: new Date().toISOString() } }
-    );
-    return secret;
-}
 
 export const baseWorkflow: z.infer<typeof Workflow> = {
     projectId: "",
