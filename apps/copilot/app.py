@@ -77,4 +77,5 @@ def chat():
         }), 500
 
 if __name__ == '__main__':
-    app.run(host=os.getenv('HOST', '0.0.0.0'), port=int(os.getenv('PORT', 3001)), debug=True)
+    print("Starting Flask server...")
+    app.run(port=5000, debug=True)

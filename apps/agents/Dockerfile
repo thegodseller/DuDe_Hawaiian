@@ -24,4 +24,4 @@ ENV FLASK_APP=src.app.main
 ENV PYTHONUNBUFFERED=1
 
 # Command to run Flask development server
-CMD ["flask", "run", "--host=0.0.0.0", "--port=3002"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=3001"]

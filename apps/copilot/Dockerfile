@@ -14,8 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose port if your app needs it (adjust as needed)
-ENV HOSTNAME="0.0.0.0"
-ENV PORT=3001
+ENV FLASK_APP=app
+ENV PYTHONUNBUFFERED=1
 
-# Command to run the application
-CMD ["python", "app.py"]
+# Command to run Flask development server
+CMD ["flask", "run", "--host=0.0.0.0", "--port=3002"]
