@@ -32,9 +32,7 @@ SOFTWARE.
 ```
 
 # High-level changes
-These are the high-level changes made to OpenAI Swarm to build in RowBoat's custom implementation.
-
-Please note that this not an exhaustive list:
+These are the high-level changes made to OpenAI Swarm to build in RowBoat's custom implementation:
 - Added localized agent-level history
 - Added parent-child agent relationships with parents' history containing children's history
 - Added usage tracking of tokens per llm
@@ -42,3 +40,5 @@ Please note that this not an exhaustive list:
 - Added converstaion turn limits
 - Removed streaming support as RowBoat Agents does not support streaming currently
 - Modified the `Agent` and `Response` classes to be more comprehensive
+
+The above is not an exhaustive list.
