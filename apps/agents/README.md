@@ -1,8 +1,3 @@
-# RowBoat Labs  
-🌐 Visit [RowBoat Labs](https://www.rowboatlabs.com) to learn more!  
-
----
-
 # 🤖 Agents
 
 ## 📝 Overview  
@@ -41,45 +36,45 @@
 
 ---
 
-# 🛠️ Using the Framework
+## 🛠️ Using the Framework
 
-## ⚙️ Set Up Conda Environment  
+### ⚙️ Set Up Conda Environment  
 - `conda create -n myenv python=3.12`  
 - `conda activate myenv`  
 - Note: Python >= 3.10 required  
 
 ---
 
-## 📦 Install Dependencies
+### 📦 Install Dependencies
 
-### If using poetry
+#### If using poetry
 - `pip install poetry`
 - `poetry install`
 
-### If using pip
+#### If using pip
 `pip install -r requirements.txt`
 
-## 🔑 Set up .env file
+### 🔑 Set up .env file
 Copy `.env.example` to `.env` and add your API keys
 
-## 🧪 Run interactive test
+### 🧪 Run interactive test
 `python -m tests.interactive --config default_config.json --sample_request default_example.json --load_messages`
 - `--config`: Config json filename, under `configs` folder
 - `--sample_request`: Path to the sample request file, under `tests/sample_requests` folder
 - `--load_messages`: If set, it will additionally load the initial set of messages from the sample request file. Else, user input will be required starting from the first message.
 
-## 🌐 Set up server
+### 🌐 Set up server
 
 - For local testing: `flask --app src.app.main run --port=4040`
 - To set up the server on remote: `gunicorn -b 0.0.0.0:4040 src.app.main:app`
 
-## 🖥️ Run test client
+### 🖥️ Run test client
 `python -m tests.app_client --sample_request default_example.json`
 - `--sample_request`: Path to the sample request file, under `tests/sample_requests` folder
 
-# 📖 More details
+## 📖 More details
 
-## 🔍 Specifics
+### 🔍 Specifics
 - **Format**: Uses OpenAI's messages format when passing messages. 
 - **LLMs**: Currently, only OpenAI LLMs (e.g. gpt-4o, gpt-4o-mini) are supported. Easy to expand to other LLMs like Claude, Gemini or self-hosted models.
 - **Responses**: Here are some examples of responses that the framework can return:
@@ -88,7 +83,7 @@ Copy `.env.example` to `.env` and add your API keys
   - A list of one user-facing message and one or more tool calls
 - ⚠️ **Errors**: Errors are thrown as a tool call `raise_error` with the error message as the argument. Real-time error handling will be managed by the upstream service. 
 
-## 🗂️ Important directories and files
+### 🗂️ Important directories and files
 - `src/`: Contains all source code for the agents app
   - `src/app/`: Contains Flask app which exposes the framework as a service
   - `src/graph/`: Contains logic to run every turn of the conversation
@@ -98,13 +93,16 @@ Copy `.env.example` to `.env` and add your API keys
 - `configs/`: Contains graph configurations (changed infrequently)
 - `tests/sample_requests/`: Contains sample request files for the agents app
 
-## 🔄 High-level flow
+### 🔄 High-level flow
 - `app/main.py` receives the request JSON from an upstream service, parses it and sends it to `src/graph/core.py`
 - `src/graph/core.py` creates the agent graph object from scratch and uses `src/swarm/core.py` to run the turn
 - `src/swarm/core.py` runs the turn by performing actual LLM calls and internal tool invocations to transitiion between agents
 - `src/graph/core.py` returns the response messages and the new state to `app/main.py`, which relays it back to the upstream service
 - The upstream services appends any new user messages to the history of messages and sends the messages back along with the new state to `app/main.py` as part of the next request. The process repeats until the upstream service completes its conversation with the user.
 
-## 🚫 Limitations
+### 🚫 Limitations
 - Does not support streaming currently.
 - Cannot respond with multiple user-facing messages in the same turn.
+
+# RowBoat Labs  
+🌐 Visit [RowBoat Labs](https://www.rowboatlabs.com) to learn more!  
