@@ -4,6 +4,7 @@ from pydantic import BaseModel, ValidationError
 from typing import List
 from copilot import UserMessage, AssistantMessage, get_response
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
+import os
 
 openai_client = OpenAI()
 
@@ -76,4 +77,4 @@ def chat():
         }), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host=os.getenv('HOST', '0.0.0.0'), port=int(os.getenv('PORT', 3001)), debug=True)
