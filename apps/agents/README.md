@@ -46,7 +46,7 @@
 ## ⚙️ Set Up Conda Environment  
 - `conda create -n myenv python=3.12`  
 - `conda activate myenv`  
-  - ⚠️ Note: Python >= 3.10 required  
+- Note: Python >= 3.10 required  
 
 ---
 
@@ -68,7 +68,7 @@ Copy `.env.example` to `.env` and add your API keys
 - `--sample_request`: Path to the sample request file, under `tests/sample_requests` folder
 - `--load_messages`: If set, it will additionally load the initial set of messages from the sample request file. Else, user input will be required starting from the first message.
 
-## 🌐 Set up app server
+## 🌐 Set up server
 
 - For local testing: `flask --app src.app.main run --port=4040`
 - To set up the server on remote: `gunicorn -b 0.0.0.0:4040 src.app.main:app`
