@@ -4,8 +4,8 @@ import { agentWorkflowsCollection, db, projectsCollection } from "@/app/lib/mong
 import { z } from "zod";
 import { ObjectId, WithId } from "mongodb";
 import { authCheck } from "../../../utils";
-import { AgenticAPIChatRequest, convertToAgenticAPIChatMessages, convertToCoreMessages, convertWorkflowToAgenticAPI } from "@/app/lib/types";
-import { executeClientTool, getAssistantResponse } from "@/app/actions";
+import { AgenticAPIChatRequest, convertToAgenticAPIChatMessages, convertWorkflowToAgenticAPI } from "@/app/lib/types";
+import { callClientToolWebhook, getAgenticApiResponse } from "@/app/lib/utils";
 
 const chatsCollection = db.collection<z.infer<typeof apiV1.Chat>>("chats");
 const chatMessagesCollection = db.collection<z.infer<typeof apiV1.ChatMessage>>("chatMessages");
@@ -91,7 +91,7 @@ export async function POST(
                 startAgent,
             };
             console.log("turn: sending agentic request", JSON.stringify(request, null, 2));
-            const response = await getAssistantResponse(session.projectId, request);
+            const response = await getAgenticApiResponse(request);
             state = response.state;
             if (response.messages.length === 0) {
                 throw new Error("No messages returned from assistant");
@@ -111,7 +111,7 @@ export async function POST(
                 const toolCallResults = await Promise.all(lastMessage.tool_calls.map(async toolCall => {
                     console.log('executing tool call', toolCall);
                     try {
-                        return await executeClientTool(toolCall, session.projectId);
+                        return await callClientToolWebhook(toolCall, session.projectId);
                     } catch (error) {
                         console.error(`Error executing tool call ${toolCall.id}:`, error);
                         return { error: "Tool execution failed" };

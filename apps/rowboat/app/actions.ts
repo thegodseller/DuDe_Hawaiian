@@ -15,7 +15,7 @@ import crypto from 'crypto';
 import { SignJWT } from "jose";
 import { Claims, getSession } from "@auth0/nextjs-auth0";
 import { revalidatePath } from "next/cache";
-import { baseWorkflow } from "./lib/utils";
+import { baseWorkflow, callClientToolWebhook, getAgenticApiResponse } from "./lib/utils";
 
 const crawler = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY || '' });
 
@@ -466,25 +466,8 @@ export async function getAssistantResponse(
 }> {
     await projectAuthCheck(projectId);
 
-    // call agentic api
-    const response = await fetch(process.env.AGENTIC_API_URL + '/chat', {
-        method: 'POST',
-        body: JSON.stringify(request),
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
-    if (!response.ok) {
-        console.error('Failed to call agentic api', response);
-        throw new Error(`Failed to call agentic api: ${response.statusText}`);
-    }
-    const responseJson = await response.json();
-    const result: z.infer<typeof AgenticAPIChatResponse> = responseJson;
-    return {
-        messages: convertFromAgenticAPIChatMessages(result.messages),
-        state: result.state,
-        rawAPIResponse: result,
-    };
+    const response = await getAgenticApiResponse(request);
+    return response;
 }
 
 export async function getCopilotResponse(
@@ -916,61 +899,6 @@ export async function executeClientTool(
 ): Promise<unknown> {
     await projectAuthCheck(projectId);
 
-    const project = await projectsCollection.findOne({
-        "_id": projectId,
-    });
-    if (!project) {
-        throw new Error('Project not found');
-    }
-
-    if (!project.webhookUrl) {
-        throw new Error('Webhook URL not found');
-    }
-
-    // prepare request body
-    const content = JSON.stringify({
-        toolCall,
-    } as z.infer<typeof ClientToolCallRequestBody>);
-    const requestId = crypto.randomUUID();
-    const bodyHash = crypto
-        .createHash('sha256')
-        .update(content, 'utf8')
-        .digest('hex');
-
-    // sign request
-    const jwt = await new SignJWT({
-        requestId,
-        projectId,
-        bodyHash,
-    } as z.infer<typeof ClientToolCallJwt>)
-        .setProtectedHeader({
-            alg: 'HS256',
-            typ: 'JWT',
-        })
-        .setIssuer('rowboat')
-        .setAudience(project.webhookUrl)
-        .setSubject(`tool-call-${toolCall.id}`)
-        .setJti(requestId)
-        .setIssuedAt()
-        .setExpirationTime("5 minutes")
-        .sign(new TextEncoder().encode(project.secret));
-
-    // make request
-    const request: z.infer<typeof ClientToolCallRequest> = {
-        requestId,
-        content,
-    };
-    const response = await fetch(project.webhookUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-signature-jwt': jwt,
-        },
-        body: JSON.stringify(request),
-    });
-    if (!response.ok) {
-        throw new Error(`Failed to call webhook: ${response.status}: ${response.statusText}`);
-    }
-    const responseBody = await response.json();
-    return responseBody;
+    const result = await callClientToolWebhook(toolCall, projectId);
+    return result;
 }
