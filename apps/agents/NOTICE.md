@@ -1,8 +1,7 @@
 # Attribution to OpenAI Swarm
 
 - The Rowboat Agents framework has been built upon [OpenAI Swarm](https://github.com/openai/swarm), with modifications and improvements.
-- OpenAI Swarm is available under the [MIT license](https://github.com/openai/swarm/blob/main/LICENSE) as of the time of this writing, and is hence available to be used by other projects.
-- The original OpenAI Swarm is an experimental sample framework at the time of this writing. It is currently not intended to be used in production, and therefore has no official support.
+- The original OpenAI Swarm is available under the [MIT license](https://github.com/openai/swarm/blob/main/LICENSE) as of the time of this writing. It is an experimental sample framework at the time of this writing.
 
 ### OpenAI Swarm License
 Below is the license text from OpenAI Swarm, as required by the MIT license:
