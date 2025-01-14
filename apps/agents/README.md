@@ -1,5 +1,5 @@
 # RowBoat Labs
-Please visit https://www.rowboatlabs.com/developers to learn more about RowBoat Labs
+Please visit https://www.rowboatlabs.com to learn more about RowBoat Labs
 
 # Agents
 
