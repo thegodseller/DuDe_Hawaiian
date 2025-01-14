@@ -5,10 +5,11 @@ Please visit https://www.rowboatlabs.com to learn more about RowBoat Labs
 
 ## Overview
 - RowBoat Agents is a multi-agent framework which powers agentic workflows. The best way to configure these workflows is via the RowBoat Studio (UI), the source code for which is at [rowboatlabs/rowboat](https://github.com/rowboatlabs/rowboat/tree/dev/apps/rowboat)
-- The Rowboat Agents framework has been built upon [OpenAI Swarm](https://github.com/openai/swarm), with modifications and improvements. Please see NOTICE.md in this directory, for attribution notes and more details. OpenAI Swarms is available under the MIT license as of the time of this writing.
-- Multi-agent systems like OpenAI Swarm are typically implemented as graph-based systems, where each agent is a node in the graph. At every turn of conversation, the graph is traversed based on the a) `state` which is updated at every turn and b) the current set of `messages`. 
-- RowBoat Agents is a stateless implementation of such a graph-based system (specifically, a DAG or directed acyclic graph). At every turn of conversation, the incoming request JSON is parsed to extract `messages`, `state` and the `workflow`. The `workflow` is a representation of the DAG containing agents, with each agent having a set of tools and connected children agents. See `tests/sample_requests/default_example.json` for an example of a complete request JSON from an upstream service.
-- At each turn of conversation (i.e., a request from upstream), the agent graph object is created from scratch. The graph is then run, which produces the next set of `messages` and `state`. The `messages` will be shown to the user by the upstream service. Additionally, if the `messages` contain tool calls, then the upstream service must invoke the necessary tools and send the results back to the framework as the next turn.
+- The Rowboat Agents framework has been built upon [OpenAI Swarm](https://github.com/openai/swarm), with modifications and improvements. Please see NOTICE.md in this directory, for attribution notes and more details. OpenAI Swarm is available under the MIT license as of the time of this writing.
+- Multi-agent systems are typically implemented as graphs, where each agent is a node in the graph. At every turn of conversation, the graph is traversed based on the a) `state` which is updated after each turn and b) the current set of `messages`. 
+- RowBoat Agents is a stateless implementation of such a graph-based system (specifically, a DAG or directed acyclic graph). The incoming request JSON (corresponding to a turn of conversation) is parsed to extract `messages`, `state` and the `workflow`. 
+  - The `workflow` is a representation of the DAG containing agents, with each agent having a set of tools and connected children agents. See `tests/sample_requests/default_example.json` for an example of a complete request JSON from an upstream service.
+- At each turn of conversation, the agent graph object is created from scratch. The graph is then run, which produces the next set of `messages` and `state`. The `messages` will be shown to the user by the upstream service. Additionally, if the `messages` contain tool calls, then the upstream service must invoke the necessary tools and send the results back to the framework as the next turn.
 
 ## Specifics
 - **Format**: Uses OpenAI's messages format when passing messages. 
@@ -17,11 +18,11 @@ Please visit https://www.rowboatlabs.com to learn more about RowBoat Labs
   - A list of one user-facing message
   - A list of one or more tool calls
   - A list of one user-facing message and one or more tool calls
-- **Errors**: Errors are thrown as a tool call `raise_error` with the error message as the argument. Error handling will have to be managed by the upstream service. 
+- **Errors**: Errors are thrown as a tool call `raise_error` with the error message as the argument. Real-time error handling will be managed by the upstream service. 
 
 ## Limitations
 - Does not support streaming currently.
-- Does not support multiple user-facing messages in the same turn.
+- Cannot respond with multiple user-facing messages in the same turn.
 
 # Important directories and files
 - `src/`: Contains all source code for the agents app
@@ -30,7 +31,7 @@ Please visit https://www.rowboatlabs.com to learn more about RowBoat Labs
     - `src/graph/core.py`: Core graph implementation which parses the workflow config, creates agents from it and runs the turn of conversation (through the `run_turn` function)
   - `src/swarm/`: RowBoat's custom implementation of OpenAI Swarm, which is used by `src/graph/core.py`
 - `tests/`: Contains sample requests, an interactive client and a test client which mocks an upstream service
-- `configs/`: Contains configurations to run every turn
+- `configs/`: Contains graph configurations (changed infrequently)
 - `tests/sample_requests/`: Contains sample request files for the agents app
 
 # High-level flow
@@ -74,3 +75,4 @@ Copy `.env.copy` to `.env` and add your API keys
 
 ## Run test client
 `python -m tests.app_client --sample_request default_example.json`
+- `--sample_request`: Path to the sample request file, under `tests/sample_requests` folder
