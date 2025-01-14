@@ -6,6 +6,8 @@ Please visit https://www.rowboatlabs.com to learn more about RowBoat Labs
 ## Overview
 - RowBoat Agents is a multi-agent framework which powers agentic workflows. The best way to configure these workflows is via the RowBoat Studio (UI), instructions to set up which are in the [main README](https://github.com/rowboatlabs/rowboat/tree/dev). 
 - The Rowboat Agents framework has been built upon [OpenAI Swarm](https://github.com/openai/swarm), with modifications and improvements. Please see the `NOTICE.md` file in this directory, for attribution notes and more details. OpenAI Swarm is available under the MIT license as of the time of this writing.
+
+## Framework design 
 - Multi-agent systems are typically implemented as graphs, where each agent is a node in the graph. At every turn of conversation, the graph is traversed based on the a) `state` which contains currently active agent and agent-level histories and b) the current set of `messages`. 
 - RowBoat Agents is a stateless implementation of such a graph-based system (specifically, a DAG or directed acyclic graph). The incoming request JSON (corresponding to a turn of conversation) is parsed to extract `messages`, `state` and the `workflow`. 
   - The `workflow` is a representation of the DAG containing agents, with each agent having a set of tools and connected children agents. See `tests/sample_requests/default_example.json` for an example of a complete request JSON from an upstream service.
