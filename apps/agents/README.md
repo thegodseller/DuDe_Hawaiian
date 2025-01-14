@@ -8,12 +8,14 @@
 
 ## 🕸️ Graph-based Framework  
 - Multi-agent systems are represented as graphs, where each agent is a node in the graph.  
-- RowBoat Agents uses a stateless Directed Acyclic Graph (DAG).  
+- RowBoat Agents accepts Directed Acyclic Graph (DAG) workflows, which define agents, tools, and their connections.
+- Configure workflows using the RowBoat Studio (UI) with the help of an AI copilot. Setup instructions can be found in the [main README](https://github.com/rowboatlabs/rowboat/tree/dev).  
+- The framework is stateless, meaning that it requires the upstream service to pass in the current `state` and `messages` in every turn.
 - At each conversation turn:  
-  - The graph is traversed based on `messages`, `state`, and `workflow` (which defines agents, tools, and their connections).  
-- Configure Workflows using the RowBoat Studio (UI) with the help of an AI copilot. Setup instructions can be found in the [main README](https://github.com/rowboatlabs/rowboat/tree/dev).  
-- Each turn starts with a fresh graph, generating the next `messages` and `state`, which the upstream service displays to the user.  
-  - If `messages` contain tool calls, the upstream service invokes the necessary tools and sends the result back to continue the interaction.
+  - The agents are initialized using the current `state`.
+  - The graph is traversed based on `messages`, `state`, and `workflow`
+  - Response `messages` and a new `state` are generated.  
+  - If `messages` contain tool calls, the upstream service must invoke the necessary tools and send the tool results back to continue the interaction.
 
 ---
 
