@@ -1,8 +1,8 @@
 # 🤖 Agents
 
 ## 📝 Overview  
-- ⚙️ RowBoat Agents is a multi-agent framework that powers conversations using agentic workflows.  
-- 🚀 Built on top of [OpenAI Swarm](https://github.com/openai/swarm) with custom enhancements and improvements. Check the `NOTICE.md` for attribution and licensing details (MIT license).  
+- RowBoat Agents is a multi-agent framework that powers conversations using agentic workflows.  
+- Built on top of [OpenAI Swarm](https://github.com/openai/swarm) with custom enhancements and improvements. Check the `NOTICE.md` for attribution and licensing details (MIT license).  
 
 ---
 
