@@ -11,36 +11,6 @@ Please visit https://www.rowboatlabs.com to learn more about RowBoat Labs
   - The `workflow` is a representation of the DAG containing agents, with each agent having a set of tools and connected children agents. See `tests/sample_requests/default_example.json` for an example of a complete request JSON from an upstream service.
 - At each turn of conversation, the agent graph object is created from scratch. The graph is then run, which produces the next set of `messages` and `state`. The `messages` will be shown to the user by the upstream service. Additionally, if the `messages` contain tool calls, then the upstream service must invoke the necessary tools and send the results back to the framework as the next turn.
 
-## Specifics
-- **Format**: Uses OpenAI's messages format when passing messages. 
-- **LLMs**: Currently, only OpenAI LLMs (e.g. gpt-4o, gpt-4o-mini) are supported. Easy to expand to other LLMs like Claude, Gemini or self-hosted models.
-- **Responses**: Here are some examples of responses that the framework can return:
-  - A list of one user-facing message
-  - A list of one or more tool calls
-  - A list of one user-facing message and one or more tool calls
-- **Errors**: Errors are thrown as a tool call `raise_error` with the error message as the argument. Real-time error handling will be managed by the upstream service. 
-
-## Limitations
-- Does not support streaming currently.
-- Cannot respond with multiple user-facing messages in the same turn.
-
-# Important directories and files
-- `src/`: Contains all source code for the agents app
-  - `src/app/`: Contains Flask app which exposes the framework as a service
-  - `src/graph/`: Contains logic to run every turn of the conversation
-    - `src/graph/core.py`: Core graph implementation which parses the workflow config, creates agents from it and runs the turn of conversation (through the `run_turn` function)
-  - `src/swarm/`: RowBoat's custom implementation of OpenAI Swarm, which is used by `src/graph/core.py`
-- `tests/`: Contains sample requests, an interactive client and a test client which mocks an upstream service
-- `configs/`: Contains graph configurations (changed infrequently)
-- `tests/sample_requests/`: Contains sample request files for the agents app
-
-# High-level flow
-- `app/main.py` receives the request JSON from an upstream service, parses it and sends it to `src/graph/core.py`
-- `src/graph/core.py` creates the agent graph object from scratch and uses `src/swarm/core.py` to run the turn
-- `src/swarm/core.py` runs the turn by performing actual LLM calls and internal tool invocations to transitiion between agents
-- `src/graph/core.py` returns the response messages and the new state to `app/main.py`, which relays it back to the upstream service
-- The upstream services appends any new user messages to the history of messages and sends the messages back along with the new state to `app/main.py` as part of the next request. The process repeats until the upstream service completes its conversation with the user.
-
 # Using the framework
 
 ## Set up conda env
@@ -76,3 +46,35 @@ Copy `.env.example` to `.env` and add your API keys
 ## Run test client
 `python -m tests.app_client --sample_request default_example.json`
 - `--sample_request`: Path to the sample request file, under `tests/sample_requests` folder
+
+# More details
+
+## Specifics
+- **Format**: Uses OpenAI's messages format when passing messages. 
+- **LLMs**: Currently, only OpenAI LLMs (e.g. gpt-4o, gpt-4o-mini) are supported. Easy to expand to other LLMs like Claude, Gemini or self-hosted models.
+- **Responses**: Here are some examples of responses that the framework can return:
+  - A list of one user-facing message
+  - A list of one or more tool calls
+  - A list of one user-facing message and one or more tool calls
+- **Errors**: Errors are thrown as a tool call `raise_error` with the error message as the argument. Real-time error handling will be managed by the upstream service. 
+
+## Limitations
+- Does not support streaming currently.
+- Cannot respond with multiple user-facing messages in the same turn.
+
+## Important directories and files
+- `src/`: Contains all source code for the agents app
+  - `src/app/`: Contains Flask app which exposes the framework as a service
+  - `src/graph/`: Contains logic to run every turn of the conversation
+    - `src/graph/core.py`: Core graph implementation which parses the workflow config, creates agents from it and runs the turn of conversation (through the `run_turn` function)
+  - `src/swarm/`: RowBoat's custom implementation of OpenAI Swarm, which is used by `src/graph/core.py`
+- `tests/`: Contains sample requests, an interactive client and a test client which mocks an upstream service
+- `configs/`: Contains graph configurations (changed infrequently)
+- `tests/sample_requests/`: Contains sample request files for the agents app
+
+## High-level flow
+- `app/main.py` receives the request JSON from an upstream service, parses it and sends it to `src/graph/core.py`
+- `src/graph/core.py` creates the agent graph object from scratch and uses `src/swarm/core.py` to run the turn
+- `src/swarm/core.py` runs the turn by performing actual LLM calls and internal tool invocations to transitiion between agents
+- `src/graph/core.py` returns the response messages and the new state to `app/main.py`, which relays it back to the upstream service
+- The upstream services appends any new user messages to the history of messages and sends the messages back along with the new state to `app/main.py` as part of the next request. The process repeats until the upstream service completes its conversation with the user.
