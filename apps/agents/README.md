@@ -12,12 +12,12 @@
 ---
 
 ## 🕸️ Graph-based Framework  
-- 🔄 Multi-agent systems are represented as graphs, where each agent is a node in the graph.  
-- 📊 RowBoat Agents uses a stateless Directed Acyclic Graph (DAG).  
-- 🗨️ At each conversation turn:  
+- Multi-agent systems are represented as graphs, where each agent is a node in the graph.  
+- RowBoat Agents uses a stateless Directed Acyclic Graph (DAG).  
+- At each conversation turn:  
   - The graph is traversed based on `messages`, `state`, and `workflow` (which defines agents, tools, and their connections).  
-- 🛠️ Configure Workflows using the RowBoat Studio (UI) with the help of an AI copilot. Setup instructions can be found in the [main README](https://github.com/rowboatlabs/rowboat/tree/dev).  
-- 💡 Each turn starts with a fresh graph, generating the next `messages` and `state`, which the upstream service displays to the user.  
+- Configure Workflows using the RowBoat Studio (UI) with the help of an AI copilot. Setup instructions can be found in the [main README](https://github.com/rowboatlabs/rowboat/tree/dev).  
+- Each turn starts with a fresh graph, generating the next `messages` and `state`, which the upstream service displays to the user.  
   - If `messages` contain tool calls, the upstream service invokes the necessary tools and sends the result back to continue the interaction.
 
 ---
@@ -25,17 +25,17 @@
 ## 🗂️ Key Request and Response Fields
 
 ### 📤 Request  
-- 📝 `messages`: List of user messages  
-- 🔄 `state`: Active agent state and histories  
-- 🛠️ `workflow`: Graph of agents, tools, and connections  
+- `messages`: List of user messages  
+- `state`: Active agent state and histories  
+- `workflow`: Graph of agents, tools, and connections  
 
 **Example JSON**: `tests/sample_requests/default_example.json`  
 
 ---
 
 ### 📥 Response  
-- 📝 `messages`: List of response messages (may contain tool calls)  
-- 🔄 `state`: Updated state to pass in the next request (since the framework is stateless)  
+- `messages`: List of response messages (may contain tool calls)  
+- `state`: Updated state to pass in the next request (since the framework is stateless)  
 
 **Example JSON**: `tests/sample_responses/default_example.json`  
 
@@ -80,9 +80,9 @@ Copy `.env.example` to `.env` and add your API keys
 # 📖 More details
 
 ## 🔍 Specifics
-- ⚙️ **Format**: Uses OpenAI's messages format when passing messages. 
-- 🤖 **LLMs**: Currently, only OpenAI LLMs (e.g. gpt-4o, gpt-4o-mini) are supported. Easy to expand to other LLMs like Claude, Gemini or self-hosted models.
-- 📤 **Responses**: Here are some examples of responses that the framework can return:
+- **Format**: Uses OpenAI's messages format when passing messages. 
+- **LLMs**: Currently, only OpenAI LLMs (e.g. gpt-4o, gpt-4o-mini) are supported. Easy to expand to other LLMs like Claude, Gemini or self-hosted models.
+- **Responses**: Here are some examples of responses that the framework can return:
   - A list of one user-facing message
   - A list of one or more tool calls
   - A list of one user-facing message and one or more tool calls
