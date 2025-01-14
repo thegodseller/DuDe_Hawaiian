@@ -29,7 +29,7 @@
 - 🔄 `state`: Active agent state and histories  
 - 🛠️ `workflow`: Graph of agents, tools, and connections  
 
-Example JSON: `tests/sample_requests/default_example.json`  
+**Example JSON**: `tests/sample_requests/default_example.json`  
 
 ---
 
@@ -37,7 +37,7 @@ Example JSON: `tests/sample_requests/default_example.json`
 - 📝 `messages`: List of response messages (may contain tool calls)  
 - 🔄 `state`: Updated state to pass in the next request (since the framework is stateless)  
 
-Example JSON: `tests/sample_responses/default_example.json`  
+**Example JSON**: `tests/sample_responses/default_example.json`  
 
 ---
 
