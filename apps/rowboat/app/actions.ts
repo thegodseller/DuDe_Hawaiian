@@ -17,7 +17,7 @@ import { Claims, getSession } from "@auth0/nextjs-auth0";
 import { revalidatePath } from "next/cache";
 import { baseWorkflow } from "./lib/utils";
 
-const crawler = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
+const crawler = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY || '' });
 
 export async function authCheck(): Promise<Claims> {
     const { user } = await getSession() || {};

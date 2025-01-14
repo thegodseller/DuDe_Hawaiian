@@ -2,7 +2,7 @@ import { MongoClient } from "mongodb";
 import { PlaygroundChat, DataSource, EmbeddingDoc, Project, Webpage, ChatClientId, Workflow, Scenario, ProjectMember } from "./types";
 import { z } from 'zod';
 
-const client = new MongoClient(process.env["MONGODB_CONNECTION_STRING"] || "");
+const client = new MongoClient(process.env["MONGODB_CONNECTION_STRING"] || "mongodb://localhost:27017");
 
 export const db = client.db("rowboat");
 export const dataSourcesCollection = db.collection<z.infer<typeof DataSource>>("sources");
