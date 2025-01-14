@@ -623,3 +623,128 @@ export function convertToCopilotWorkflow(workflow: z.infer<typeof Workflow>): z.
         ...rest,
     };
 }
+
+export const ApiMessage = z.union([
+    apiV1.SystemMessage,
+    apiV1.UserMessage,
+    apiV1.AssistantMessage,
+    apiV1.AssistantMessageWithToolCalls,
+    apiV1.ToolMessage,
+]);
+
+export const ApiRequest = z.object({
+    messages: z.array(ApiMessage),
+    state: z.unknown(),
+});
+
+export const ApiResponse = z.object({
+    messages: z.array(ApiMessage),
+    state: z.unknown(),
+});
+
+export function convertFromApiToAgenticApiMessages(messages: z.infer<typeof ApiMessage>[]): z.infer<typeof AgenticAPIChatMessage>[] {
+    return messages.map(m => {
+        switch (m.role) {
+            case 'system':
+                return {
+                    role: 'system',
+                    content: m.content,
+                    tool_calls: null,
+                    tool_call_id: null,
+                    tool_name: null,
+                    sender: null,
+                };
+            case 'user':
+                return {
+                    role: 'user',
+                    content: m.content,
+                    tool_calls: null,
+                    tool_call_id: null,
+                    tool_name: null,
+                    sender: null,
+                };
+
+            case 'assistant':
+                if ('tool_calls' in m) {
+                    return {
+                        role: 'assistant',
+                        content: m.content ?? null,
+                        tool_calls: m.tool_calls,
+                        tool_call_id: null,
+                        tool_name: null,
+                        sender: m.agenticSender ?? null,
+                        response_type: m.agenticResponseType ?? 'external',
+                    };
+                } else {
+                    return {
+                        role: 'assistant',
+                        content: m.content ?? null,
+                        sender: m.agenticSender ?? null,
+                        response_type: m.agenticResponseType ?? 'external',
+                        tool_call_id: null,
+                        tool_calls: null,
+                        tool_name: null,
+                    };
+                }
+            case 'tool':
+                return {
+                    role: 'tool',
+                    content: m.content ?? null,
+                    tool_calls: null,
+                    tool_call_id: m.tool_call_id ?? null,
+                    tool_name: m.tool_name ?? null,
+                    sender: null,
+                };
+            default:
+                return {
+                    role: "user",
+                    content: "foo",
+                    tool_calls: null,
+                    tool_call_id: null,
+                    tool_name: null,
+                    sender: null,
+                }
+        }
+    });
+}
+
+export function convertFromAgenticApiToApiMessages(messages: z.infer<typeof AgenticAPIChatMessage>[]): z.infer<typeof ApiMessage>[] {
+    const converted: z.infer<typeof ApiMessage>[] = [];
+
+    for (const m of messages) {
+        switch (m.role) {
+            case 'user':
+                converted.push({
+                    role: 'user',
+                    content: m.content ?? '',
+                });
+                break;
+            case 'assistant':
+                if (m.tool_calls) {
+                    converted.push({
+                        role: 'assistant',
+                        tool_calls: m.tool_calls,
+                        agenticSender: m.sender ?? undefined,
+                        agenticResponseType: m.response_type ?? 'internal',
+                    });
+                } else {
+                    converted.push({
+                        role: 'assistant',
+                        content: m.content ?? '',
+                        agenticSender: m.sender ?? undefined,
+                        agenticResponseType: m.response_type ?? 'internal',
+                    });
+                }
+                break;
+            case 'tool':
+                converted.push({
+                    role: 'tool',
+                    content: m.content ?? '',
+                    tool_call_id: m.tool_call_id ?? '',
+                    tool_name: m.tool_name ?? '',
+                });
+                break;
+        }
+    }
+    return converted;
+}

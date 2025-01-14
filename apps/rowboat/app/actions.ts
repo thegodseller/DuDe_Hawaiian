@@ -467,7 +467,11 @@ export async function getAssistantResponse(
     await projectAuthCheck(projectId);
 
     const response = await getAgenticApiResponse(request);
-    return response;
+    return {
+        messages: convertFromAgenticAPIChatMessages(response.messages),
+        state: response.state,
+        rawAPIResponse: response.rawAPIResponse,
+    };
 }
 
 export async function getCopilotResponse(

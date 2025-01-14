@@ -4,7 +4,7 @@ import { agentWorkflowsCollection, db, projectsCollection } from "@/app/lib/mong
 import { z } from "zod";
 import { ObjectId, WithId } from "mongodb";
 import { authCheck } from "../../../utils";
-import { AgenticAPIChatRequest, convertToAgenticAPIChatMessages, convertWorkflowToAgenticAPI } from "@/app/lib/types";
+import { AgenticAPIChatRequest, convertFromAgenticAPIChatMessages, convertToAgenticAPIChatMessages, convertWorkflowToAgenticAPI } from "@/app/lib/types";
 import { callClientToolWebhook, getAgenticApiResponse } from "@/app/lib/utils";
 
 const chatsCollection = db.collection<z.infer<typeof apiV1.Chat>>("chats");
@@ -96,7 +96,8 @@ export async function POST(
             if (response.messages.length === 0) {
                 throw new Error("No messages returned from assistant");
             }
-            unsavedMessages.push(...response.messages.map(m => ({
+            const convertedMessages = convertFromAgenticAPIChatMessages(response.messages);
+            unsavedMessages.push(...convertedMessages.map(m => ({
                 ...m,
                 version: 'v1' as const,
                 chatId,
@@ -104,7 +105,7 @@ export async function POST(
             })));
 
             // if the last messages is tool call, execute them
-            const lastMessage = response.messages[response.messages.length - 1];
+            const lastMessage = convertedMessages[convertedMessages.length - 1];
             if (lastMessage.role === 'assistant' && 'tool_calls' in lastMessage) {
                 // execute tool calls
                 console.log("Executing tool calls", lastMessage.tool_calls);

@@ -1,4 +1,4 @@
-import { AgenticAPIChatRequest, AgenticAPIChatResponse, ClientToolCallJwt, ClientToolCallRequest, ClientToolCallRequestBody, convertFromAgenticAPIChatMessages, Workflow } from "@/app/lib/types";
+import { AgenticAPIChatMessage, AgenticAPIChatRequest, AgenticAPIChatResponse, ClientToolCallJwt, ClientToolCallRequest, ClientToolCallRequestBody, convertFromAgenticAPIChatMessages, Workflow } from "@/app/lib/types";
 import { z } from "zod";
 import { projectsCollection } from "./mongodb";
 import { apiV1 } from "rowboat-shared";
@@ -172,7 +172,7 @@ export async function callClientToolWebhook(
 export async function getAgenticApiResponse(
     request: z.infer<typeof AgenticAPIChatRequest>,
 ): Promise<{
-    messages: z.infer<typeof apiV1.ChatMessage>[],
+    messages: z.infer<typeof AgenticAPIChatMessage>[],
     state: unknown,
     rawAPIResponse: unknown,
 }> {
@@ -191,7 +191,7 @@ export async function getAgenticApiResponse(
     const responseJson = await response.json();
     const result: z.infer<typeof AgenticAPIChatResponse> = responseJson;
     return {
-        messages: convertFromAgenticAPIChatMessages(result.messages),
+        messages: result.messages,
         state: result.state,
         rawAPIResponse: result,
     };
