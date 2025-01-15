@@ -16,6 +16,8 @@
 
 # Ignore VSCode files
 .vscode/*
+**/.vscode/*
+**/**/.vscode/*
 
 # Environment files
 .env
@@ -31,3 +33,8 @@
 *.log
 **/*.log
 **/**/*.log
+
+# Ignore tmp.json files
+**/*tmp.json
+**/**/*tmp.json
+**/**/**/*tmp.json

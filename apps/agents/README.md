@@ -40,6 +40,8 @@
 
 ## 🛠️ Using the Framework
 
+Ensure you are in this directory (`cd apps/agents` from the root directory of this repo) before running any of the below commands.
+
 ### ⚙️ Set Up Conda Environment  
 - `conda create -n myenv python=3.12`  
 - `conda activate myenv`  
@@ -67,8 +69,9 @@ Copy `.env.example` to `.env` and add your API keys
 
 ### 🌐 Set up server
 
+- First, add this directory to your PYTHONPATH, using: `export PYTHONPATH=$PYTHONPATH:$(pwd)`
 - For local testing: `flask --app src.app.main run --port=4040`
-- To set up the server on remote: `gunicorn -b 0.0.0.0:4040 src.app.main:app`
+- To set up the server on a remote machine: `gunicorn -b 0.0.0.0:4040 src.app.main:app`
 
 ### 🖥️ Run test client
 `python -m tests.app_client --sample_request default_example.json`

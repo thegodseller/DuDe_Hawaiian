@@ -1,4 +1,4 @@
-from src.graph.instructions import TRANSFER_CHILDREN_INSTRUCTIONS, TRANSFER_PARENT_AWARE_INSTRUCTIONS, RAG_INSTRUCTIONS, ERROR_ESCALATION_AGENT_INSTRUCTIONS, TRANSFER_GIVE_UP_CONTROL_INSTRUCTIONS
+from src.graph.instructions import TRANSFER_CHILDREN_INSTRUCTIONS, TRANSFER_PARENT_AWARE_INSTRUCTIONS, RAG_INSTRUCTIONS, ERROR_ESCALATION_AGENT_INSTRUCTIONS, TRANSFER_GIVE_UP_CONTROL_INSTRUCTIONS, SYSTEM_MESSAGE
 
 def add_transfer_instructions_to_parent_agents(agent, children, transfer_functions):
     other_agent_name_descriptions_tools = f'\n{'-'*100}\n'.join([f"Name: {agent.name}\nDescription: {agent.description if agent.description else ''}\nTool for transfer: {transfer_functions[agent.name].__name__}" for agent in children.values()])
@@ -28,3 +28,8 @@ def add_error_escalation_instructions(agent):
     prompt = ERROR_ESCALATION_AGENT_INSTRUCTIONS
     agent.instructions = agent.instructions + f'\n\n{'-'*100}\n\n' + prompt
     return agent
+
+def get_universal_system_message(messages):
+    if messages and messages[0].get("role") == "system":
+        return SYSTEM_MESSAGE.format(system_message=messages[0].get("content"))
+    return ""

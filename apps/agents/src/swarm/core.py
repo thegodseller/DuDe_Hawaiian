@@ -39,6 +39,7 @@ class Swarm:
         model_override: str,
         stream: bool,
         debug: bool,
+        universal_sys_msg: str,
     ) -> ChatCompletionMessage:
         context_variables = defaultdict(str, context_variables)
         instructions = (
@@ -46,7 +47,7 @@ class Swarm:
             if callable(agent.instructions)
             else agent.instructions
         )
-        messages = [{"role": "system", "content": instructions}] + history
+        messages = [{"role": "system", "content": instructions + universal_sys_msg}] + history
         debug_print(debug, "Getting chat completion for...:", messages)
 
         all_functions = list(agent.child_functions.values()) + ([agent.parent_function] if agent.parent_function else [])
@@ -73,22 +74,24 @@ class Swarm:
         return self.client.chat.completions.create(**create_params)
 
     def handle_function_result(self, result, debug) -> Result:
-        match result:
-            case Result() as result:
-                return result
-
-            case Agent() as agent:
-                return Result(
-                    value=json.dumps({"assistant": agent.name}),
-                    agent=agent,
-                )
-            case _:
-                try:
-                    return Result(value=str(result))
-                except Exception as e:
-                    error_message = f"Failed to cast response to string: {result}. Make sure agent functions return a string or Result object. Error: {str(e)}"
-                    debug_print(debug, error_message)
-                    raise TypeError(error_message)
+        # Check if result is already a Result instance
+        if isinstance(result, Result):
+            return result
+        
+        # Check if result is an Agent instance
+        if isinstance(result, Agent):
+            return Result(
+                value=json.dumps({"assistant": result.name}),
+                agent=result,
+            )
+        
+        # Handle all other cases
+        try:
+            return Result(value=str(result))
+        except Exception as e:
+            error_message = f"Failed to cast response to string: {result}. Make sure agent functions return a string or Result object. Error: {str(e)}"
+            debug_print(debug, error_message)
+            raise TypeError(error_message)
 
     def handle_function_calls(
         self,
@@ -153,7 +156,8 @@ class Swarm:
         external_tools: List[str] = [],
         localize_history: bool = True,
         parent_has_child_history: bool = True,
-        tokens_used: dict = {}
+        tokens_used: dict = {},
+        universal_sys_msg: str = '',
     ) -> Response:
 
         active_agent = agent
@@ -179,6 +183,7 @@ class Swarm:
                 model_override=model_override,
                 stream=stream,
                 debug=debug,
+                universal_sys_msg=universal_sys_msg,
             )
             tokens_used = update_tokens_used(provider="openai", model=model_override or active_agent.model, tokens_used=tokens_used, completion=completion)
 

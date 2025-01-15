@@ -59,3 +59,12 @@ ERROR_ESCALATION_AGENT_INSTRUCTIONS = f"""
 # Context
 The rest of the parts of the chatbot were unable to handle the chat. Hence, the chat has been escalated to you. In addition to your other instructions, tell the user that you are having trouble handling the chat - say "I'm having trouble helping with your request. Sorry about that.". Remember you are a part of the chatbot as well.
 """
+
+
+########################
+# Universal system message formatting
+########################
+SYSTEM_MESSAGE = f"""
+# Additional System-Wide Context or Instructions:
+{{system_message}}
+"""

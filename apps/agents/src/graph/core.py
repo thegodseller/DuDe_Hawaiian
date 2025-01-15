@@ -1,5 +1,6 @@
 import os
 import sys
+from copy import deepcopy
 
 from src.swarm.types import Agent
 from src.swarm.core import Swarm
@@ -10,11 +11,10 @@ from .types import AgentRole, PromptType, ErrorType
 from .helpers.access import get_agent_data_by_name, get_agent_by_name, get_agent_config_by_name, get_tool_config_by_name, get_tool_config_by_type, get_external_tools, get_prompt_by_type, pop_agent_config_by_type, get_agent_by_type
 from .helpers.transfer import create_transfer_function_to_agent, create_transfer_function_to_parent_agent
 from .helpers.state import add_recent_messages_to_history, construct_state_from_response, reset_current_turn, reset_current_turn_agent_history
-from .helpers.instructions import add_transfer_instructions_to_child_agents, add_transfer_instructions_to_parent_agents, add_rag_instructions_to_agent, add_error_escalation_instructions
+from .helpers.instructions import add_transfer_instructions_to_child_agents, add_transfer_instructions_to_parent_agents, add_rag_instructions_to_agent, add_error_escalation_instructions, get_universal_system_message
 from .helpers.control import get_latest_assistant_msg, get_latest_non_assistant_messages, get_last_agent_name
 
 from src.utils.common import common_logger
-from copy import deepcopy
 logger = common_logger
 
 def order_messages(messages):
@@ -305,6 +305,7 @@ def run_turn(messages, start_agent_name, agent_configs, tool_configs, available_
     guardrails_agent_config, agent_configs = pop_agent_config_by_type(agent_configs, AgentRole.GUARDRAILS.value)
     
     latest_assistant_msg = get_latest_assistant_msg(messages)
+    universal_sys_msg = get_universal_system_message(messages)
     latest_non_assistant_msgs = get_latest_non_assistant_messages(messages)
     msg_type = latest_non_assistant_msgs[-1]["role"]
     
@@ -384,10 +385,10 @@ def run_turn(messages, start_agent_name, agent_configs, tool_configs, available_
     logger.info(f"Found {len(external_tools)} external tools")
     
     logger.debug("Initializing Swarm client")
-    client = Swarm()
+    swarm_client = Swarm()
     
     if not validation_error_msg:
-        response = client.run(
+        response = swarm_client.run(
             agent=last_agent,
             messages=messages,
             execute_tools=True,
@@ -395,7 +396,8 @@ def run_turn(messages, start_agent_name, agent_configs, tool_configs, available_
             localize_history=localize_history,
             parent_has_child_history=parent_has_child_history,
             max_messages_per_turn=max_messages_per_turn,
-            tokens_used=tokens_used
+            tokens_used=tokens_used, 
+            universal_sys_msg=universal_sys_msg
         )
         tokens_used = response.tokens_used
         last_agent = response.agent
