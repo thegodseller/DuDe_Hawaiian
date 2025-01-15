@@ -20,7 +20,7 @@ function UserMessage({ content }: { content: string }) {
     </div>;
 }
 
-function InternalAssistantMessage({ content, sender, latency }: { content: string, sender: string | undefined, latency: number }) {
+function InternalAssistantMessage({ content, sender, latency }: { content: string, sender: string | null | undefined, latency: number }) {
     const [expanded, setExpanded] = useState(false);
 
     // show a message icon with a + symbol to expand and show the content
@@ -52,7 +52,7 @@ function InternalAssistantMessage({ content, sender, latency }: { content: strin
     </div>;
 }
 
-function AssistantMessage({ content, sender, latency }: { content: string, sender: string | undefined, latency: number }) {
+function AssistantMessage({ content, sender, latency }: { content: string, sender: string | null | undefined, latency: number }) {
     return <div className="self-start mr-[30%] flex flex-col">
         <div className="flex gap-2 justify-between items-center">
             <div className="text-gray-500 text-sm pl-3">
@@ -104,7 +104,7 @@ function ToolCalls({
     handleResults: (results: z.infer<typeof apiV1.ToolMessage>[]) => void;
     projectId: string;
     messages: z.infer<typeof apiV1.ChatMessage>[];
-    sender: string | undefined;
+    sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
 }) {
     const resultsMap: Record<string, z.infer<typeof apiV1.ToolMessage>> = {};
@@ -147,7 +147,7 @@ function ToolCall({
     handleResult: (result: z.infer<typeof apiV1.ToolMessage>) => void;
     projectId: string;
     messages: z.infer<typeof apiV1.ChatMessage>[];
-    sender: string | undefined;
+    sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
 }) {
     let matchingWorkflowTool: z.infer<typeof WorkflowTool> | undefined;
@@ -224,7 +224,7 @@ function GetInformationToolCall({
     handleResult: (result: z.infer<typeof apiV1.ToolMessage>) => void;
     projectId: string;
     messages: z.infer<typeof apiV1.ChatMessage>[];
-    sender: string | undefined;
+    sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
 }) {
     const [result, setResult] = useState<z.infer<typeof apiV1.ToolMessage> | undefined>(availableResult);
@@ -318,7 +318,7 @@ function RetrieveUrlInfoToolCall({
     handleResult: (result: z.infer<typeof apiV1.ToolMessage>) => void;
     projectId: string;
     messages: z.infer<typeof apiV1.ChatMessage>[];
-    sender: string | undefined;
+    sender: string | null | undefined;
 }) {
     const [result, setResult] = useState<z.infer<typeof apiV1.ToolMessage> | undefined>(availableResult);
     const args = JSON.parse(toolCall.function.arguments) as { url: string };
@@ -409,7 +409,7 @@ function TransferToAgentToolCall({
     handleResult: (result: z.infer<typeof apiV1.ToolMessage>) => void;
     projectId: string;
     messages: z.infer<typeof apiV1.ChatMessage>[];
-    sender: string | undefined;
+    sender: string | null | undefined;
 }) {
     const typedResult = availableResult ? JSON.parse(availableResult.content) as { assistant: string } : undefined;
     if (!typedResult) {
@@ -438,7 +438,7 @@ function ClientToolCall({
     handleResult: (result: z.infer<typeof apiV1.ToolMessage>) => void;
     projectId: string;
     messages: z.infer<typeof apiV1.ChatMessage>[];
-    sender: string | undefined;
+    sender: string | null | undefined;
 }) {
     const [result, setResult] = useState<z.infer<typeof apiV1.ToolMessage> | undefined>(availableResult);
 
@@ -515,7 +515,7 @@ function MockToolCall({
     handleResult: (result: z.infer<typeof apiV1.ToolMessage>) => void;
     projectId: string;
     messages: z.infer<typeof apiV1.ChatMessage>[];
-    sender: string | undefined;
+    sender: string | null | undefined;
 }) {
     const [result, setResult] = useState<z.infer<typeof apiV1.ToolMessage> | undefined>(availableResult);
     const [response, setResponse] = useState('');
