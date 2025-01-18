@@ -56,7 +56,7 @@ export default function App() {
                         <NextLink
                             key={project._id}
                             href={`/projects/${project._id}`}
-                            className="flex flex-col gap-2 border border-gray-300 hover:border-gray-500 rounded p-4"
+                            className="flex flex-col gap-2 border border-gray-300 hover:border-gray-500 rounded p-4 bg-white"
                         >
                             <div className="text-lg">
                                 {project.name}

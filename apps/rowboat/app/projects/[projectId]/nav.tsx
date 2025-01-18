@@ -7,6 +7,7 @@ import Menu from "./menu";
 import { Project } from "@/app/lib/types";
 import { z } from "zod";
 import { getProjectConfig } from "@/app/actions";
+import { ChevronsLeftIcon, ChevronsRightIcon } from "lucide-react";
 
 export function Nav({
     projectId,
@@ -37,27 +38,23 @@ export function Nav({
         setCollapsed(!collapsed);
     }
 
-    return <div className={clsx("bg-gray-50 shrink-0 flex flex-col gap-6 border-r-1 border-gray-100 relative p-4", {
-        "w-64": !collapsed,
-        "w-16": collapsed
+    return <div className={clsx("shrink-0 flex flex-col gap-2 border-r-1 border-gray-100 relative p-2", {
+        "w-40": !collapsed,
+        "w-10": collapsed
     })}>
         <Tooltip content={collapsed ? "Expand" : "Collapse"} showArrow placement="right">
-            <button onClick={toggleCollapse} className="absolute bottom-[100px] right-[-16px] rounded-full border bg-white text-gray-400 border-gray-400 hover:border-black hover:text-black w-[28px] h-[28px] shadow-sm">
-                {!collapsed && <svg className="m-auto w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="m17 16-4-4 4-4m-6 8-4-4 4-4" />
-                </svg>}
-                {collapsed && <svg className="m-auto w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="m7 16 4-4-4-4m6 8 4-4-4-4" />
-                </svg>}
+            <button onClick={toggleCollapse} className="absolute bottom-[50px] left-2 text-gray-400 hover:text-black w-[28px] h-[28px]">
+                {!collapsed && <ChevronsLeftIcon size={16} className="m-auto" />}
+                {collapsed && <ChevronsRightIcon size={16} className="m-auto" />}
             </button>
         </Tooltip>
         {!collapsed && project && <div className="flex flex-col gap-1">
             <Tooltip content="Change project" showArrow placement="bottom-end">
-                <Link className="relative group flex flex-col px-3 py-3 border border-gray-200 rounded-md hover:border-gray-500" href="/projects">
-                    <div className="absolute top-[-7px] left-1 px-2 bg-gray-50 text-xs text-gray-400 group-hover:text-gray-600">
+                <Link className="relative group flex flex-col px-2 py-2 border border-gray-200 rounded-md hover:border-gray-500" href="/projects">
+                    <div className="absolute top-[-7px] left-1 px-1 bg-gray-100 text-xs text-gray-400 group-hover:text-gray-600">
                         Project
                     </div>
-                    <div className="truncate">
+                    <div className="truncate text-sm">
                         {project.name}
                     </div>
                 </Link>

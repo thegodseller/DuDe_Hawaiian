@@ -9,7 +9,7 @@ export default async function Layout({
 }) {
     return <div className="flex h-full">
         <Nav projectId={params.projectId} />
-        <div className="grow p-4 overflow-auto">
+        <div className="grow p-4 overflow-auto bg-white rounded-tl-lg">
             {children}
         </div>
     </div >;

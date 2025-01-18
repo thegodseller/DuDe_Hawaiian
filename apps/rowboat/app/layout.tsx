@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return <html lang="en" className="h-dvh">
     <UserProvider>
-      <body className={`${inter.className} h-full text-base [scrollbar-width:thin]`}>
+      <body className={`${inter.className} h-full text-base [scrollbar-width:thin] bg-gray-100`}>
         <Providers className='h-full flex flex-col'>
           {children}
         </Providers>
