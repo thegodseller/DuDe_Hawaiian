@@ -7,8 +7,7 @@ import { AgenticAPIChatRequest, convertToAgenticAPIChatMessages, convertWorkflow
 import { ComposeBox } from "./compose-box";
 import { Button } from "@nextui-org/react";
 import { apiV1 } from "rowboat-shared";
-import { CheckIcon, ClipboardIcon } from "lucide-react";
-import { CopyIcon } from "lucide-react";
+import { CheckIcon, CopyIcon } from "lucide-react";
 
 export function Chat({
     chat,
@@ -278,7 +277,7 @@ export function Chat({
             {showCopySuccess ? (
                 <CheckIcon size={16} />
             ) : (
-                <ClipboardIcon size={16} />
+                <CopyIcon size={16} />
             )}
         </Button>
         <Messages

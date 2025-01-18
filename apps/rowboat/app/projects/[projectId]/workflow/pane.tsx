@@ -1,24 +1,36 @@
+import clsx from "clsx";
+
 export function Pane({
     title,
-    actions,
+    actions = null,
     children,
     fancy = false,
 }: {
     title: React.ReactNode;
-    actions: React.ReactNode[];
+    actions?: React.ReactNode[] | null;
     children: React.ReactNode;
     fancy?: boolean;
 }) {
-    return <div className={`h-full flex flex-col overflow-auto border rounded-md ${fancy ? 'border-blue-200' : 'border-gray-200'}`}>
-        <div className={`shrink-0 flex justify-between items-center gap-2 px-2 py-1 bg-gray-50 rounded-t-md ${fancy ? 'bg-blue-50' : ''}`}>
-            <div className={`text-sm ${fancy ? 'text-blue-600' : 'text-gray-600'} uppercase font-semibold`}>
+    return <div className={clsx("h-full flex flex-col overflow-auto rounded-md p-1", {
+        "bg-gray-100": !fancy,
+        "bg-blue-100": fancy,
+    })}>
+        <div className="shrink-0 flex justify-between items-center gap-2 px-2 py-1 rounded-t-sm">
+            <div className={clsx("text-xs font-semibold uppercase", {
+                "text-gray-400": !fancy,
+                "text-blue-500": fancy,
+            })}>
                 {title}
             </div>
-            <div className="rounded-md hover:text-gray-800 px-2 py-1 text-gray-600 text-sm flex items-center gap-1">
+            {!actions && <div className="w-4 h-4" />}
+            {actions && <div className={clsx("rounded-md hover:text-gray-800 px-2 text-sm flex items-center gap-1", {
+                "text-blue-600": fancy,
+                "text-gray-400": !fancy,
+            })}>
                 {actions}
-            </div>
+            </div>}
         </div>
-        <div className="grow overflow-auto flex flex-col justify-start p-2">
+        <div className="grow bg-white rounded-md overflow-auto flex flex-col justify-start p-2">
             {children}
         </div>
     </div>;
@@ -39,7 +51,10 @@ export function ActionButton({
 }) {
     return <button
         disabled={disabled}
-        className={`rounded-md hover:text-gray-800 px-2 py-1 ${primary ? 'text-blue-600' : 'text-gray-600'} text-sm flex items-center gap-1 disabled:text-gray-300`}
+        className={clsx("rounded-md text-xs flex items-center gap-1 disabled:text-gray-300 hover:text-gray-600", {
+            "text-blue-600": primary,
+            "text-gray-400": !primary,
+        })}
         onClick={onClick}
     >
         {icon}

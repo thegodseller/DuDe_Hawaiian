@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import Menu from "./menu";
-import { Project } from "@/app/lib/types";
+import { Project, WithStringId } from "@/app/lib/types";
 import { z } from "zod";
 import { getProjectConfig } from "@/app/actions";
 import { ChevronsLeftIcon, ChevronsRightIcon } from "lucide-react";
@@ -15,7 +15,15 @@ export function Nav({
     projectId: string;
 }) {
     const [collapsed, setCollapsed] = useState(false);
-    const [project, setProject] = useState<z.infer<typeof Project> | null>(null);
+    const [project, setProject] = useState<WithStringId<z.infer<typeof Project>>>({
+        _id: projectId,
+        name: projectId,
+        createdAt: "",
+        lastUpdatedAt: "",
+        createdByUserId: "",
+        secret: "",
+        chatClientId: "",
+    });
 
     useEffect(() => {
         let ignore = false;

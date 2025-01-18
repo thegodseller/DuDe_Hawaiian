@@ -336,7 +336,7 @@ export async function createProject(formData: FormData) {
     redirect(`/projects/${projectId}/workflow`);
 }
 
-export async function getProjectConfig(projectId: string): Promise<z.infer<typeof Project>> {
+export async function getProjectConfig(projectId: string): Promise<WithStringId<z.infer<typeof Project>>> {
     await projectAuthCheck(projectId);
     const project = await projectsCollection.findOne({
         _id: projectId,

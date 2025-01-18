@@ -3,7 +3,7 @@
 import { Button, Input } from "@nextui-org/react";
 import { useState } from "react";
 import { rotateSecret } from "@/app/actions";
-import { CheckIcon, ClipboardIcon } from "lucide-react";
+import { CheckIcon, CopyIcon } from "lucide-react";
 
 export function Secret({
     initialSecret,
@@ -69,7 +69,7 @@ export function Secret({
                                 {showCopySuccess ? (
                                     <CheckIcon size={16} />
                                 ) : (
-                                    <ClipboardIcon size={16} />
+                                    <CopyIcon size={16} />
                                 )}
                             </Button>
                         ) : null

@@ -6,11 +6,8 @@ import { AgentConfig } from "./agent_config";
 import { ToolConfig } from "./tool_config";
 import { App as ChatApp } from "../playground/app";
 import { z } from "zod";
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger, Spinner } from "@nextui-org/react";
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip } from "@nextui-org/react";
 import { PromptConfig } from "./prompt_config";
-import { AgentsList } from "./agents_list";
-import { PromptsList } from "./prompts_list";
-import { ToolsList } from "./tools_list";
 import { EditableField } from "@/app/lib/components/editable-field";
 import { RelativeTime } from "@primer/react";
 
@@ -24,7 +21,8 @@ import { apiV1 } from "rowboat-shared";
 import { publishWorkflow, renameWorkflow, saveWorkflow } from "@/app/actions";
 import { PublishedBadge } from "./published_badge";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "@/app/lib/components/icons";
-import { ClipboardIcon, Layers2Icon, RadioIcon } from "lucide-react";
+import { CopyIcon, Layers2Icon, RadioIcon, RedoIcon, UndoIcon } from "lucide-react";
+import { EntityList } from "./entity_list";
 
 enablePatches();
 
@@ -640,30 +638,22 @@ export function WorkflowEditor({
 
     return <div className="flex flex-col h-full relative">
         <div className="shrink-0 flex justify-between items-center pb-2">
-            <div className="flex items-center gap-2">
-                <div className="font-semibold">Workflow</div>
-                <div className="flex items-center gap-1">
-                    <WorkflowIcon />
-                    <div className="font-semibold">
-                        <EditableField
-                            key={state.present.workflow._id}
-                            value={state.present.workflow?.name || ''}
-                            onChange={handleRenameWorkflow}
-                            placeholder="Name this version"
-                        />
-                    </div>
-                    {state.present.publishing && <Spinner size="sm" />}
-                    {isLive && <PublishedBadge />}
-                </div>
+            <div className="flex items-center gap-1 border-1 border-gray-200 rounded-md px-2 text-gray-800">
+                <WorkflowIcon size={16} />
+                <EditableField
+                    key={state.present.workflow._id}
+                    value={state.present.workflow?.name || ''}
+                    onChange={handleRenameWorkflow}
+                    placeholder="Name this version"
+                    className="text-sm font-semibold"
+                />
+                {state.present.publishing && <Spinner size="sm" />}
+                {isLive && <PublishedBadge />}
                 <Dropdown>
                     <DropdownTrigger>
-                        <Button
-                            isIconOnly
-                            variant="bordered"
-                            size="sm"
-                        >
+                        <button className="p-1 text-gray-400 hover:text-black">
                             <HamburgerIcon size={16} />
-                        </Button>
+                        </button>
                     </DropdownTrigger>
                     <DropdownMenu
                         disabledKeys={[
@@ -706,7 +696,7 @@ export function WorkflowEditor({
                         </DropdownItem>
                         <DropdownItem
                             key="clipboard"
-                            startContent={<ClipboardIcon size={16} />}
+                            startContent={<CopyIcon size={16} />}
                         >
                             Copy as JSON
                         </DropdownItem>
@@ -729,82 +719,58 @@ export function WorkflowEditor({
                         Clone this version
                     </Button>
                 </div>}
-                {!isLive && <>
-                    {state.present.saving && <div className="flex items-center gap-2">
+                {!isLive && <div className="text-xs text-gray-400">
+                    {state.present.saving && <div className="flex items-center gap-1">
                         <Spinner size="sm" />
-                        <div className="text-sm text-gray-500">Saving...</div>
+                        <div>Saving...</div>
                     </div>}
-                    {!state.present.saving && state.present.workflow && <div className="text-sm text-gray-500">
+                    {!state.present.saving && state.present.workflow && <div>
                         Updated <RelativeTime date={new Date(state.present.workflow.lastUpdatedAt)} />
                     </div>}
-                </>}
+                </div>}
                 {!isLive && <>
-                    <Button
-                        isIconOnly
-                        variant="bordered"
+                    <button
+                        className="p-1 text-gray-400 hover:text-black"
                         title="Undo"
-                        size="sm"
                         disabled={state.currentIndex <= 0}
                         onClick={() => dispatch({ type: "undo" })}
                     >
-                        <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M3 9h13a5 5 0 0 1 0 10H7M3 9l4-4M3 9l4 4" />
-                        </svg>
-                    </Button>
-                    <Button
-                        isIconOnly
-                        variant="bordered"
+                        <UndoIcon size={16} />
+                    </button>
+                    <button
+                        className="p-1 text-gray-400 hover:text-black"
                         title="Redo"
-                        size="sm"
                         disabled={state.currentIndex >= state.patches.length}
                         onClick={() => dispatch({ type: "redo" })}
                     >
-                        <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 9H8a5 5 0 0 0 0 10h9m4-10-4-4m4 4-4 4" />
-                        </svg>
-                    </Button>
+                        <RedoIcon size={16} />
+                    </button>
                 </>}
             </div>
         </div>
         <ResizablePanelGroup direction="horizontal" className="grow flex overflow-auto gap-1">
-            <ResizablePanel minSize={10} defaultSize={20}>
-                <ResizablePanelGroup direction="vertical" className="flex flex-col gap-1">
-                    <ResizablePanel minSize={10} defaultSize={50}>
-                        <AgentsList
-                            agents={state.present.workflow.agents}
-                            handleSelectAgent={handleSelectAgent}
-                            handleAddAgent={handleAddAgent}
-                            selectedAgent={state.present.selection?.type === "agent" ? state.present.selection.name : null}
-                            handleToggleAgent={handleToggleAgent}
-                            handleSetMainAgent={handleSetMainAgent}
-                            handleDeleteAgent={handleDeleteAgent}
-                            startAgentName={state.present.workflow.startAgent}
-                        />
-                    </ResizablePanel>
-                    <ResizableHandle />
-                    <ResizablePanel minSize={10} defaultSize={30}>
-                        <ToolsList
-                            tools={state.present.workflow.tools}
-                            handleSelectTool={handleSelectTool}
-                            handleAddTool={handleAddTool}
-                            selectedTool={state.present.selection?.type === "tool" ? state.present.selection.name : null}
-                            handleDeleteTool={handleDeleteTool}
-                        />
-                    </ResizablePanel>
-                    <ResizableHandle />
-                    <ResizablePanel minSize={10} defaultSize={20}>
-                        <PromptsList
-                            prompts={state.present.workflow.prompts}
-                            handleSelectPrompt={handleSelectPrompt}
-                            handleAddPrompt={handleAddPrompt}
-                            selectedPrompt={state.present.selection?.type === "prompt" ? state.present.selection.name : null}
-                            handleDeletePrompt={handleDeletePrompt}
-                        />
-                    </ResizablePanel>
-                </ResizablePanelGroup>
+            <ResizablePanel minSize={10} defaultSize={15}>
+                <EntityList
+                    agents={state.present.workflow.agents}
+                    tools={state.present.workflow.tools}
+                    prompts={state.present.workflow.prompts}
+                    selectedEntity={state.present.selection}
+                    startAgentName={state.present.workflow.startAgent}
+                    onSelectAgent={handleSelectAgent}
+                    onSelectTool={handleSelectTool}
+                    onSelectPrompt={handleSelectPrompt}
+                    onAddAgent={handleAddAgent}
+                    onAddTool={handleAddTool}
+                    onAddPrompt={handleAddPrompt}
+                    onToggleAgent={handleToggleAgent}
+                    onSetMainAgent={handleSetMainAgent}
+                    onDeleteAgent={handleDeleteAgent}
+                    onDeleteTool={handleDeleteTool}
+                    onDeletePrompt={handleDeletePrompt}
+                />
             </ResizablePanel>
             <ResizableHandle />
-            <ResizablePanel minSize={20} defaultSize={50} className="overflow-auto">
+            <ResizablePanel minSize={20} defaultSize={60} className="overflow-auto">
                 <ChatApp
                     key={'' + state.present.chatKey}
                     hidden={state.present.selection !== null}
@@ -839,7 +805,7 @@ export function WorkflowEditor({
                 />}
             </ResizablePanel>
             <ResizableHandle />
-            <ResizablePanel minSize={10} defaultSize={30}>
+            <ResizablePanel minSize={10} defaultSize={25}>
                 <Copilot
                     projectId={state.present.workflow.projectId}
                     workflow={state.present.workflow}

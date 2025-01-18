@@ -84,8 +84,8 @@ export function EditableField({
     };
 
     return (
-        <div ref={ref} className={className}>
-            <div className="flex items-center gap-2 justify-between">
+        <div ref={ref} className={clsx("flex flex-col gap-1", className)}>
+            {(label || isEditing && multiline) && <div className="flex items-center gap-2 justify-between">
                 {label && <div className="block text-sm font-medium text-foreground-500 pb-1.5">{label}</div>}
                 {isEditing && multiline && <div className="flex items-center gap-2">
                     <Button
@@ -111,7 +111,7 @@ export function EditableField({
                         Save
                     </Button>
                 </div>}
-            </div>
+            </div>}
             {isEditing ? (
                 multiline ? (
                     <Textarea

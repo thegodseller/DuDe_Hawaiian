@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Textarea, Button } from "@nextui-org/react";
-import { CheckIcon, ClipboardIcon } from 'lucide-react';
+import { CheckIcon, CopyIcon } from 'lucide-react';
 
 interface EmbedCodeProps {
     embedCode: string;
@@ -34,7 +34,7 @@ export function EmbedCode({ embedCode }: EmbedCodeProps) {
                     onClick={handleCopy}
                     isIconOnly
                 >
-                    {isCopied ? <CheckIcon size={16} /> : <ClipboardIcon size={16} />}
+                    {isCopied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
                 </Button>
             </div>
         </div>

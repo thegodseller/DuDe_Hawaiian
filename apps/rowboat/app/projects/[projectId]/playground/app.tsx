@@ -72,7 +72,7 @@ export function App({
         return <></>;
     }
 
-    return <Pane title={viewSimulationMenu ? <SimulateLabel /> : "Playground"} actions={[
+    return <Pane title={viewSimulationMenu ? <SimulateLabel /> : "Chat"} actions={[
         <ActionButton
             key="new-chat"
             icon={<svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
