@@ -130,10 +130,10 @@ function AssistantMessage({
 
     return <div className="flex flex-col gap-2 mb-8">
         <RawJsonResponse message={message} />
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
             {message.content.response.map((part, index) => {
                 if (part.type === "text") {
-                    return <div key={index}>
+                    return <div key={index} className="text-sm">
                         <MarkdownContent content={part.content} />
                     </div>;
                 } else if (part.type === "action") {
@@ -158,7 +158,7 @@ function UserMessage({
 }: {
     message: z.infer<typeof CopilotUserMessage>;
 }) {
-    return <div className="bg-gray-50 border border-gray-200 rounded-sm px-2">
+    return <div className="bg-gray-50 border border-gray-200 rounded-sm px-2 text-sm">
         <MarkdownContent content={message.content} />
     </div>
 }
@@ -376,7 +376,7 @@ function App({
 
     return <div className="h-full flex flex-col">
         <CopilotContext.Provider value={{ workflow, handleApplyChange, appliedChanges }}>
-            <div className="grow flex flex-col gap-2 overflow-auto px-2">
+            <div className="grow flex flex-col gap-2 overflow-auto px-1">
                 {messages.map((m, index) => {
                     // Calculate if this assistant message is stale
                     const isStale = m.role === 'assistant' && messages.slice(index + 1).some(
@@ -402,7 +402,7 @@ function App({
                         )}
                     </>;
                 })}
-                {loadingResponse && <div className="p-2 flex items-center animate-pulse text-gray-600">
+                {loadingResponse && <div className="px-2 py-1 flex items-center animate-pulse text-gray-600 text-xs">
                     <div>
                         {loadingMessage}
                     </div>

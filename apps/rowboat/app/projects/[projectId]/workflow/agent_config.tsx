@@ -1,11 +1,13 @@
 "use client";
 import { AgenticAPITool, DataSource, WithStringId, WorkflowAgent, WorkflowPrompt } from "@/app/lib/types";
-import { Accordion, AccordionItem, Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Radio, RadioGroup, Select, SelectItem, Textarea } from "@nextui-org/react";
+import { Button, Divider, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Radio, RadioGroup, Select, SelectItem } from "@nextui-org/react";
 import { z } from "zod";
 import { DataSourceIcon } from "@/app/lib/components/datasource-icon";
 import { ActionButton, Pane } from "./pane";
 import { EditableField } from "@/app/lib/components/editable-field";
-import MarkdownContent from "@/app/lib/components/markdown-content";
+import { Label } from "@/app/lib/components/label";
+import { PlusIcon, XIcon } from "lucide-react";
+import { List } from "./config_list";
 
 export function AgentConfig({
     agent,
@@ -38,7 +40,7 @@ export function AgentConfig({
         </ActionButton>
     ]}>
         <div className="flex flex-col gap-4">
-            {!agent.locked && (
+            {!agent.locked && <>
                 <EditableField
                     key="name"
                     label="Name"
@@ -60,7 +62,8 @@ export function AgentConfig({
                         return { valid: true };
                     }}
                 />
-            )}
+                <Divider />
+            </>}
 
             <EditableField
                 key="description"
@@ -74,6 +77,8 @@ export function AgentConfig({
                 }}
                 placeholder="Enter a description for this agent"
             />
+
+            <Divider />
 
             <div className="w-full flex flex-col">
                 <EditableField
@@ -90,6 +95,9 @@ export function AgentConfig({
                     multiline
                 />
             </div>
+
+            <Divider />
+
             <div className="w-full flex flex-col">
                 <EditableField
                     key="examples"
@@ -107,37 +115,29 @@ export function AgentConfig({
                 />
             </div>
 
-            <div className="flex flex-col gap-2 items-start">
-                <div className="text-sm">Attach prompts:</div>
-                <div className="flex gap-4 flex-wrap">
-                    {agent.prompts.map((prompt) => (
-                        <div key={prompt} className="bg-gray-100 border-1 border-gray-200 shadow-sm rounded-lg px-2 py-1 flex items-center gap-2">
-                            <div>{prompt}</div>
-                            <button
-                                onClick={() => {
-                                    const newPrompts = agent.prompts.filter((p) => p !== prompt);
-                                    handleUpdate({
-                                        ...agent,
-                                        prompts: newPrompts
-                                    });
-                                }}
-                                className="bg-white rounded-md text-gray-500 hover:text-gray-800"
-                            >
-                                <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M6 18 17.94 6M18 18 6.06 6" />
-                                </svg>
-                            </button>
-                        </div>
-                    ))}
-                </div>
-                <Dropdown>
+            <Divider />
+
+            <div className="flex flex-col gap-4 items-start">
+                <Label label="Prompts" />
+                <List
+                    items={agent.prompts.map((prompt) => ({
+                        id: prompt,
+                        node: <div>{prompt}</div>
+                    }))}
+                    onRemove={(id) => {
+                        const newPrompts = agent.prompts.filter((p) => p !== id);
+                        handleUpdate({
+                            ...agent,
+                            prompts: newPrompts
+                        });
+                    }}
+                />
+                <Dropdown size="sm">
                     <DropdownTrigger>
                         <Button
-                            variant="bordered"
+                            variant="light"
                             size="sm"
-                            startContent={<svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 12h14m-7 7V5" />
-                            </svg>}
+                            startContent={<PlusIcon size={16} />}
                         >
                             Add prompt
                         </Button>
@@ -154,40 +154,33 @@ export function AgentConfig({
                     </DropdownMenu>
                 </Dropdown>
             </div>
-            <div className="flex flex-col gap-2 items-start">
-                <div className="text-sm">RAG:</div>
-                <div className="flex gap-4 flex-wrap">
-                    {agent.ragDataSources?.map((source) => (
-                        <div key={source} className="bg-gray-100 border-1 border-gray-200 shadow-sm rounded-lg px-2 py-1 flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                                <DataSourceIcon type={dataSources.find((ds) => ds._id === source)?.data.type} />
-                                <div>{dataSources.find((ds) => ds._id === source)?.name || "Unknown"}</div>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    const newSources = agent.ragDataSources?.filter((s) => s !== source);
-                                    handleUpdate({
-                                        ...agent,
-                                        ragDataSources: newSources
-                                    });
-                                }}
-                                className="bg-white rounded-md text-gray-500 hover:text-gray-800"
-                            >
-                                <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M6 18 17.94 6M18 18 6.06 6" />
-                                </svg>
-                            </button>
+
+            <Divider />
+
+            <div className="flex flex-col gap-4 items-start">
+                <Label label="RAG" />
+                <List
+                    items={agent.ragDataSources?.map((source) => ({
+                        id: source,
+                        node: <div className="flex items-center gap-1">
+                            <DataSourceIcon type={dataSources.find((ds) => ds._id === source)?.data.type} />
+                            <div>{dataSources.find((ds) => ds._id === source)?.name || "Unknown"}</div>
                         </div>
-                    ))}
-                </div>
+                    })) || []}
+                    onRemove={(id) => {
+                        const newSources = agent.ragDataSources?.filter((s) => s !== id);
+                        handleUpdate({
+                            ...agent,
+                            ragDataSources: newSources
+                        });
+                    }}
+                />
                 <Dropdown>
                     <DropdownTrigger>
                         <Button
-                            variant="bordered"
+                            variant="light"
                             size="sm"
-                            startContent={<svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 12h14m-7 7V5" />
-                            </svg>}
+                            startContent={<PlusIcon size={16} />}
                         >
                             Add data source
                         </Button>
@@ -206,72 +199,64 @@ export function AgentConfig({
                         ))}
                     </DropdownMenu>
                 </Dropdown>
-                {agent.ragDataSources !== undefined && agent.ragDataSources.length > 0 && <Accordion>
-                    <AccordionItem
-                        key="rag"
-                        isCompact
-                        aria-label="Advanced RAG configuration"
-                        title="Advanced RAG configuration"
-                    >
-                        <div className="flex flex-col gap-4">
-                            <RadioGroup
-                                label="Return type:"
-                                orientation="horizontal"
-                                value={agent.ragReturnType}
-                                onValueChange={(value) => handleUpdate({
-                                    ...agent,
-                                    ragReturnType: value as z.infer<typeof WorkflowAgent>['ragReturnType']
-                                })}
-                            >
-                                <Radio value="chunks">Chunks</Radio>
-                                <Radio value="content">Content</Radio>
-                            </RadioGroup>
-                            <Input
-                                label="No. of matches:"
-                                labelPlacement="outside"
-                                variant="bordered"
-                                value={agent.ragK.toString()}
-                                onValueChange={(value) => handleUpdate({
-                                    ...agent,
-                                    ragK: parseInt(value)
-                                })}
-                                type="number"
-                            />
-                        </div>
-                    </AccordionItem>
-                </Accordion>}
             </div>
-            <div className="flex flex-col gap-2 items-start">
-                <div className="text-sm">Tools:</div>
-                <div className="flex gap-4 flex-wrap">
-                    {agent.tools.map((tool) => (
-                        <div key={tool} className="bg-gray-100 border-1 border-gray-200 shadow-sm rounded-lg px-2 py-1 flex items-center gap-2">
-                            <div className="font-mono">{tool}</div>
-                            <button
-                                onClick={() => {
-                                    const newTools = agent.tools.filter((t) => t !== tool);
-                                    handleUpdate({
-                                        ...agent,
-                                        tools: newTools
-                                    });
-                                }}
-                                className="bg-white rounded-md text-gray-500 hover:text-gray-800"
-                            >
-                                <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M6 18 17.94 6M18 18 6.06 6" />
-                                </svg>
-                            </button>
-                        </div>
-                    ))}
+
+            <Divider />
+
+            {agent.ragDataSources !== undefined && agent.ragDataSources.length > 0 && <>
+                <Label label="Advanced RAG configuration" />
+                <div className="ml-4 flex flex-col gap-4">
+                    <Label label="Return type" />
+                    <RadioGroup
+                        size="sm"
+                        orientation="horizontal"
+                        value={agent.ragReturnType}
+                        onValueChange={(value) => handleUpdate({
+                            ...agent,
+                            ragReturnType: value as z.infer<typeof WorkflowAgent>['ragReturnType']
+                        })}
+                    >
+                        <Radio value="chunks">Chunks</Radio>
+                        <Radio value="content">Content</Radio>
+                    </RadioGroup>
+                    <Label label="No. of matches" />
+                    <Input
+                        variant="bordered"
+                        size="sm"
+                        className="w-20"
+                        value={agent.ragK.toString()}
+                        onValueChange={(value) => handleUpdate({
+                            ...agent,
+                            ragK: parseInt(value)
+                        })}
+                        type="number"
+                    />
                 </div>
+                <Divider />
+            </>}
+
+
+            <div className="flex flex-col gap-4 items-start">
+                <Label label="Tools" />
+                <List
+                    items={agent.tools.map((tool) => ({
+                        id: tool,
+                        node: <div>{tool}</div>
+                    }))}
+                    onRemove={(id) => {
+                        const newTools = agent.tools.filter((t) => t !== id);
+                        handleUpdate({
+                            ...agent,
+                            tools: newTools
+                        });
+                    }}
+                />
                 <Dropdown>
                     <DropdownTrigger>
                         <Button
-                            variant="bordered"
+                            variant="light"
                             size="sm"
-                            startContent={<svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 12h14m-7 7V5" />
-                            </svg>}
+                            startContent={<PlusIcon size={16} />}
                         >
                             Add tool
                         </Button>
@@ -288,37 +273,29 @@ export function AgentConfig({
                     </DropdownMenu>
                 </Dropdown>
             </div>
-            <div className="flex flex-col gap-2 items-start">
-                <div className="text-sm">Connected agents:</div>
-                <div className="flex gap-4 flex-wrap">
-                    {agent.connectedAgents?.map((connectedAgentName) => (
-                        <div key={connectedAgentName} className="bg-gray-100 border-1 border-gray-200 shadow-sm rounded-lg px-2 py-1 flex items-center gap-2">
-                            <div>{connectedAgentName}</div>
-                            <button
-                                onClick={() => {
-                                    const newAgents = (agent.connectedAgents || []).filter((a) => a !== connectedAgentName);
-                                    handleUpdate({
-                                        ...agent,
-                                        connectedAgents: newAgents
-                                    });
-                                }}
-                                className="bg-white rounded-md text-gray-500 hover:text-gray-800"
-                            >
-                                <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M6 18 17.94 6M18 18 6.06 6" />
-                                </svg>
-                            </button>
-                        </div>
-                    ))}
-                </div>
+
+            <Divider />
+            <div className="flex flex-col gap-4 items-start">
+                <Label label="Connected agents" />
+                <List
+                    items={agent.connectedAgents?.map((connectedAgentName) => ({
+                        id: connectedAgentName,
+                        node: <div>{connectedAgentName}</div>
+                    })) || []}
+                    onRemove={(id) => {
+                        const newAgents = (agent.connectedAgents || []).filter((a) => a !== id);
+                        handleUpdate({
+                            ...agent,
+                            connectedAgents: newAgents
+                        });
+                    }}
+                />
                 <Dropdown>
                     <DropdownTrigger>
                         <Button
-                            variant="bordered"
+                            variant="light"
                             size="sm"
-                            startContent={<svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 12h14m-7 7V5" />
-                            </svg>}
+                            startContent={<PlusIcon size={16} />}
                         >
                             Connect agent
                         </Button>
@@ -339,27 +316,30 @@ export function AgentConfig({
                     </DropdownMenu>
                 </Dropdown>
             </div>
+
+            <Divider />
             <div className="flex flex-col gap-2 items-start">
-                <EditableField
-                    label="Model:"
-                    value={agent.model}
-                    onChange={(value) => {
-                        handleUpdate({
-                            ...agent,
-                            model: value
-                        });
-                    }}
-                    validate={(value) => {
-                        if (value.length === 0) {
-                            return { valid: false, errorMessage: "Model cannot be empty" };
-                        }
-                        return { valid: true };
-                    }}
+                <Label label="Model" />
+                <Select
+                    variant="bordered"
+                    selectedKeys={[agent.model]}
+                    size="sm"
+                    onSelectionChange={(keys) => handleUpdate({
+                        ...agent,
+                        model: keys.currentKey! as z.infer<typeof WorkflowAgent>['model']
+                    })}
                     className="w-40"
-                />
+                >
+                    {WorkflowAgent.shape.model.options.map((model) => (
+                        <SelectItem key={model.value} value={model.value}>{model.value}</SelectItem>
+                    ))}
+                </Select>
             </div>
+
+            <Divider />
+
             <div className="flex flex-col gap-2 items-start">
-                <div className="text-sm">Conversation control after turn:</div>
+                <Label label="Conversation control after turn" />
                 <Select
                     variant="bordered"
                     selectedKeys={[agent.controlType]}

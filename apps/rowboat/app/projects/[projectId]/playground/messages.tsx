@@ -8,13 +8,14 @@ import MarkdownContent from "@/app/lib/components/markdown-content";
 import Link from "next/link";
 import { apiV1 } from "rowboat-shared";
 import { EditableField } from "@/app/lib/components/editable-field";
+import { MessageSquareIcon, EllipsisIcon } from "lucide-react";
 
 function UserMessage({ content }: { content: string }) {
     return <div className="self-end ml-[30%] flex flex-col">
-        <div className="text-right text-gray-500 text-sm mr-3">
+        <div className="text-right text-gray-500 text-xs mr-3">
             User
         </div>
-        <div className="bg-gray-100 px-3 py-1 rounded-lg rounded-br-none">
+        <div className="bg-gray-100 px-3 py-1 rounded-lg rounded-br-none text-sm">
             <MarkdownContent content={content} />
         </div>
     </div>;
@@ -26,17 +27,13 @@ function InternalAssistantMessage({ content, sender, latency }: { content: strin
     // show a message icon with a + symbol to expand and show the content
     return <div className="self-start mr-[30%]">
         {!expanded && <button className="flex items-center text-gray-400 hover:text-gray-600 gap-1 group" onClick={() => setExpanded(true)}>
-            <svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M16 10.5h.01m-4.01 0h.01M8 10.5h.01M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.6a1 1 0 0 0-.69.275l-2.866 2.723A.5.5 0 0 1 8 18.635V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
-            </svg>
-            <svg className="group-hover:hidden w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeWidth="2" d="M6 12h.01m6 0h.01m5.99 0h.01" />
-            </svg>
+            <MessageSquareIcon size={16} />
+            <EllipsisIcon size={16} />
             <span className="hidden group-hover:block text-xs">Show debug message</span>
         </button>}
         {expanded && <div className="flex flex-col">
             <div className="flex gap-2 justify-between items-center">
-                <div className="text-gray-500 text-sm pl-3">
+                <div className="text-gray-500 text-xs pl-3">
                     {sender ?? 'Assistant'}
                 </div>
                 <button className="flex items-center gap-1 text-gray-400 hover:text-gray-600" onClick={() => setExpanded(false)}>
@@ -55,27 +52,25 @@ function InternalAssistantMessage({ content, sender, latency }: { content: strin
 function AssistantMessage({ content, sender, latency }: { content: string, sender: string | null | undefined, latency: number }) {
     return <div className="self-start mr-[30%] flex flex-col">
         <div className="flex gap-2 justify-between items-center">
-            <div className="text-gray-500 text-sm pl-3">
+            <div className="text-gray-500 text-xs pl-3">
                 {sender ?? 'Assistant'}
             </div>
             <div className="text-gray-400 text-xs pr-3">
                 {Math.round(latency / 1000)}s
             </div>
         </div>
-        <div className="bg-gray-100 px-3 py-1 rounded-lg rounded-bl-none">
+        <div className="bg-gray-100 px-3 py-1 rounded-lg rounded-bl-none text-sm">
             <MarkdownContent content={content} />
         </div>
     </div>;
 }
 
 function AssistantMessageLoading() {
-    return <div className="self-start mr-[30%] flex flex-col">
-        <div className="text-gray-500 text-sm ml-3">
+    return <div className="self-start mr-[30%] flex flex-col text-gray-500 items-start">
+        <div className="text-gray-500 text-xs ml-3">
             Assistant
         </div>
-        <div className="bg-gray-100 p-3 rounded-lg rounded-bl-none animate-pulse w-20">
-            <Spinner />
-        </div>
+        <Spinner size="sm" className="mt-2 ml-3" />
     </div>;
 }
 
@@ -84,8 +79,8 @@ function UserMessageLoading() {
         <div className="text-right text-gray-500 text-sm mr-3">
             User
         </div>
-        <div className="bg-gray-100 p-3 rounded-lg rounded-br-none animate-pulse w-20">
-            <Spinner />
+        <div className="bg-gray-100 p-3 rounded-lg rounded-br-none animate-pulse w-20 text-gray-800">
+            <Spinner size="sm" />
         </div>
     </div>;
 }

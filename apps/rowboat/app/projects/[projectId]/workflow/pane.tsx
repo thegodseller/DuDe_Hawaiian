@@ -39,23 +39,24 @@ export function Pane({
 export function ActionButton({
     icon = null,
     children,
-    onClick,
+    onClick = undefined,
     disabled = false,
     primary = false,
 }: {
     icon?: React.ReactNode;
     children: React.ReactNode;
-    onClick: () => void;
+    onClick?: () => void | undefined;
     disabled?: boolean;
     primary?: boolean;
 }) {
+    const onClickProp = onClick ? { onClick } : {};
     return <button
         disabled={disabled}
         className={clsx("rounded-md text-xs flex items-center gap-1 disabled:text-gray-300 hover:text-gray-600", {
             "text-blue-600": primary,
             "text-gray-400": !primary,
         })}
-        onClick={onClick}
+        {...onClickProp}
     >
         {icon}
         {children}

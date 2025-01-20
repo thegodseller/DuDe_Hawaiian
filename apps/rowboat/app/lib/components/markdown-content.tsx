@@ -7,19 +7,19 @@ export default function MarkdownContent({ content }: { content: string }) {
         remarkPlugins={[remarkGfm]}
         components={{
             h1({ children }) {
-                return <h1 className="text-2xl font-bold py-2">{children}</h1>
+                return <h1 className="text-xl font-bold py-2">{children}</h1>
             },
             h2({ children }) {
-                return <h2 className="text-xl font-bold py-2">{children}</h2>
+                return <h2 className="text-lg font-bold py-2">{children}</h2>
             },
             h3({ children }) {
-                return <h3 className="text-lg font-semibold py-2">{children}</h3>
+                return <h3 className="text-base font-semibold py-2">{children}</h3>
             },
             h4({ children }) {
-                return <h4 className="text-base font-semibold py-2">{children}</h4>
+                return <h4 className="text-sm font-semibold py-2">{children}</h4>
             },
             h5({ children }) {
-                return <h5 className="text-sm font-semibold py-2">{children}</h5>
+                return <h5 className="text-xs font-semibold py-2">{children}</h5>
             },
             h6({ children }) {
                 return <h6 className="text-xs font-semibold py-2">{children}</h6>

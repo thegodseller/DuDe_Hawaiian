@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useClickAway } from "@/hooks/use-click-away";
 import MarkdownContent from "@/app/lib/components/markdown-content";
 import clsx from "clsx";
+import { Label } from "@/app/lib/components/label";
 
 interface EditableFieldProps {
     value: string;
@@ -86,7 +87,7 @@ export function EditableField({
     return (
         <div ref={ref} className={clsx("flex flex-col gap-1", className)}>
             {(label || isEditing && multiline) && <div className="flex items-center gap-2 justify-between">
-                {label && <div className="block text-sm font-medium text-foreground-500 pb-1.5">{label}</div>}
+                {label && <Label label={label} />}
                 {isEditing && multiline && <div className="flex items-center gap-2">
                     <Button
                         size="sm"

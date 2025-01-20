@@ -1,9 +1,111 @@
 "use client";
 import { WorkflowTool } from "@/app/lib/types";
-import { Button, Select, SelectItem, Switch } from "@nextui-org/react";
+import { Accordion, AccordionItem, Button, Checkbox, Select, SelectItem, Switch } from "@nextui-org/react";
 import { z } from "zod";
 import { ActionButton, Pane } from "./pane";
 import { EditableField } from "@/app/lib/components/editable-field";
+import { Divider } from "@nextui-org/react";
+import { Label } from "@/app/lib/components/label";
+import { TrashIcon, XIcon } from "lucide-react";
+import { useState } from "react";
+
+export function ParameterConfig({
+    param,
+    handleUpdate,
+    handleDelete,
+    handleRename
+}: {
+    param: {
+        name: string,
+        description: string,
+        type: string,
+        required: boolean
+    },
+    handleUpdate: (name: string, data: {
+        description: string,
+        type: string,
+        required: boolean
+    }) => void,
+    handleDelete: (name: string) => void,
+    handleRename: (oldName: string, newName: string) => void
+}) {
+    return <Pane
+        title={param.name}
+        actions={[
+            <ActionButton
+                key="delete"
+                onClick={() => handleDelete(param.name)}
+                icon={<XIcon size={16} />}
+            >
+                Remove
+            </ActionButton>
+        ]}
+    >
+        <div className="flex flex-col gap-2">
+            <EditableField
+                label="Name"
+                value={param.name}
+                onChange={(newName) => {
+                    if (newName && newName !== param.name) {
+                        handleRename(param.name, newName);
+                    }
+                }}
+            />
+
+            <Divider />
+
+            <div className="flex flex-col gap-2">
+                <Label label="Type" />
+                <Select
+                    variant="bordered"
+                    className="w-52"
+                    size="sm"
+                    selectedKeys={new Set([param.type])}
+                    onSelectionChange={(keys) => {
+                        handleUpdate(param.name, {
+                            ...param,
+                            type: Array.from(keys)[0] as string
+                        });
+                    }}
+                >
+                    {['string', 'number', 'boolean', 'array', 'object'].map(type => (
+                        <SelectItem key={type} value={type}>
+                            {type}
+                        </SelectItem>
+                    ))}
+                </Select>
+            </div>
+
+            <Divider />
+
+            <EditableField
+                label="Description"
+                value={param.description}
+                onChange={(desc) => {
+                    handleUpdate(param.name, {
+                        ...param,
+                        description: desc
+                    });
+                }}
+            />
+
+            <Divider />
+
+            <Checkbox
+                size="sm"
+                isSelected={param.required}
+                onValueChange={() => {
+                    handleUpdate(param.name, {
+                        ...param,
+                        required: !param.required
+                    });
+                }}
+            >
+                Required
+            </Checkbox>
+        </div>
+    </Pane>;
+}
 
 export function ToolConfig({
     tool,
@@ -16,6 +118,68 @@ export function ToolConfig({
     handleUpdate: (tool: z.infer<typeof WorkflowTool>) => void,
     handleClose: () => void
 }) {
+    const [selectedParams, setSelectedParams] = useState(new Set([]));
+
+    function handleParamRename(oldName: string, newName: string) {
+        const newProperties = { ...tool.parameters!.properties };
+        newProperties[newName] = newProperties[oldName];
+        delete newProperties[oldName];
+
+        const newRequired = [...(tool.parameters?.required || [])];
+        newRequired.splice(newRequired.indexOf(oldName), 1);
+        newRequired.push(newName);
+
+        handleUpdate({
+            ...tool,
+            parameters: { ...tool.parameters!, properties: newProperties, required: newRequired }
+        });
+    }
+
+    function handleParamUpdate(name: string, data: {
+        description: string,
+        type: string,
+        required: boolean
+    }) {
+        const newProperties = { ...tool.parameters!.properties };
+        newProperties[name] = {
+            type: data.type,
+            description: data.description
+        };
+
+        const newRequired = [...(tool.parameters?.required || [])];
+        if (data.required) {
+            newRequired.push(name);
+        } else {
+            newRequired.splice(newRequired.indexOf(name), 1);
+        }
+
+        handleUpdate({
+            ...tool,
+            parameters: {
+                ...tool.parameters!,
+                properties: newProperties,
+                required: newRequired,
+            }
+        });
+    }
+
+    function handleParamDelete(paramName: string) {
+        const newProperties = { ...tool.parameters!.properties };
+        delete newProperties[paramName];
+
+        const newRequired = [...(tool.parameters?.required || [])];
+        newRequired.splice(newRequired.indexOf(paramName), 1);
+
+        handleUpdate({
+            ...tool,
+            parameters: {
+                ...tool.parameters!,
+                properties: newProperties,
+                required: newRequired,
+            }
+        });
+    }
+
     return (
         <Pane title={tool.name} actions={[
             <ActionButton
@@ -47,6 +211,8 @@ export function ToolConfig({
                     }}
                 />
 
+                <Divider />
+
                 <EditableField
                     label="Description"
                     value={tool.description}
@@ -57,179 +223,69 @@ export function ToolConfig({
                     placeholder="Describe what this tool does..."
                 />
 
-                <div className="flex items-center gap-2">
-                    <Switch
-                        size="sm"
-                        isSelected={tool.mockInPlayground ?? false}
-                        onValueChange={(value) => handleUpdate({
-                            ...tool,
-                            mockInPlayground: value
-                        })}
-                    />
-                    <span>Mock tool in Playground</span>
-                </div>
+                <Divider />
 
-                <div className="flex flex-col gap-4 w-full">
-                    <div className="text-sm">Parameters:</div>
+                <Checkbox
+                    size="sm"
+                    isSelected={tool.mockInPlayground ?? false}
+                    onValueChange={(value) => handleUpdate({
+                        ...tool,
+                        mockInPlayground: value
+                    })}
+                >
+                    Mock tool in Playground
+                </Checkbox>
 
+                <Divider />
+
+                <Label label="Parameters" />
+
+                <div className="ml-4 flex flex-col gap-2">
                     {Object.entries(tool.parameters?.properties || {}).map(([paramName, param], index) => (
-                        <div key={index} className="border border-gray-300 rounded p-4">
-                            <div className="flex flex-col gap-4">
-                                <EditableField
-                                    label="Parameter Name"
-                                    value={paramName}
-                                    onChange={(newName) => {
-                                        if (newName && newName !== paramName) {
-                                            const newProperties = { ...tool.parameters!.properties };
-                                            newProperties[newName] = newProperties[paramName];
-                                            delete newProperties[paramName];
-                                            
-                                            handleUpdate({
-                                                ...tool,
-                                                parameters: {
-                                                    ...tool.parameters!,
-                                                    properties: newProperties,
-                                                    required: tool.parameters!.required?.map(
-                                                        name => name === paramName ? newName : name
-                                                    ) || []
-                                                }
-                                            });
-                                        }
-                                    }}
-                                />
-
-                                <Select
-                                    label="Type"
-                                    labelPlacement="outside"
-                                    variant="bordered"
-                                    selectedKeys={new Set([param.type])}
-                                    onSelectionChange={(keys) => {
-                                        const newProperties = { ...tool.parameters!.properties };
-                                        newProperties[paramName] = {
-                                            ...newProperties[paramName],
-                                            type: Array.from(keys)[0] as string
-                                        };
-                                        
-                                        handleUpdate({
-                                            ...tool,
-                                            parameters: {
-                                                ...tool.parameters!,
-                                                properties: newProperties
-                                            }
-                                        });
-                                    }}
-                                >
-                                    {['string', 'number', 'boolean', 'array', 'object'].map(type => (
-                                        <SelectItem key={type} value={type}>
-                                            {type}
-                                        </SelectItem>
-                                    ))}
-                                </Select>
-
-                                <EditableField
-                                    label="Description"
-                                    value={param.description}
-                                    onChange={(desc) => {
-                                        const newProperties = { ...tool.parameters!.properties };
-                                        newProperties[paramName] = {
-                                            ...newProperties[paramName],
-                                            description: desc
-                                        };
-                                        
-                                        handleUpdate({
-                                            ...tool,
-                                            parameters: {
-                                                ...tool.parameters!,
-                                                properties: newProperties
-                                            }
-                                        });
-                                    }}
-                                />
-
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Switch
-                                            size="sm"
-                                            isSelected={tool.parameters?.required?.includes(paramName)}
-                                            onValueChange={() => {
-                                                const required = [...(tool.parameters?.required || [])];
-                                                const index = required.indexOf(paramName);
-                                                if (index === -1) {
-                                                    required.push(paramName);
-                                                } else {
-                                                    required.splice(index, 1);
-                                                }
-                                                
-                                                handleUpdate({
-                                                    ...tool,
-                                                    parameters: {
-                                                        ...tool.parameters!,
-                                                        required
-                                                    }
-                                                });
-                                            }}
-                                        />
-                                        <span>Required</span>
-                                    </div>
-
-                                    <Button
-                                        variant="bordered"
-                                        isIconOnly
-                                        onClick={() => {
-                                            const newProperties = { ...tool.parameters!.properties };
-                                            delete newProperties[paramName];
-                                            
-                                            handleUpdate({
-                                                ...tool,
-                                                parameters: {
-                                                    ...tool.parameters!,
-                                                    properties: newProperties,
-                                                    required: tool.parameters!.required?.filter(
-                                                        name => name !== paramName
-                                                    ) || []
-                                                }
-                                            });
-                                        }}
-                                    >
-                                        <svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z" />
-                                        </svg>
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-
-                    <div className="flex justify-end items-center">
-                        <Button
-                            variant="bordered"
-                            startContent={<svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 12h14m-7 7V5" />
-                            </svg>}
-                            onClick={() => {
-                                const newParamName = `param${Object.keys(tool.parameters?.properties || {}).length + 1}`;
-                                const newProperties = {
-                                    ...(tool.parameters?.properties || {}),
-                                    [newParamName]: {
-                                        type: 'string',
-                                        description: ''
-                                    }
-                                };
-                                
-                                handleUpdate({
-                                    ...tool,
-                                    parameters: {
-                                        type: 'object',
-                                        properties: newProperties,
-                                        required: [...(tool.parameters?.required || []), newParamName]
-                                    }
-                                });
+                        <ParameterConfig
+                            key={paramName}
+                            param={{
+                                name: paramName,
+                                description: param.description,
+                                type: param.type,
+                                required: tool.parameters?.required?.includes(paramName) ?? false
                             }}
-                        >
-                            Add Parameter
-                        </Button>
-                    </div>
+                            handleUpdate={handleParamUpdate}
+                            handleDelete={handleParamDelete}
+                            handleRename={handleParamRename}
+                        />
+                    ))}
                 </div>
+
+                <Button
+                    className="self-start shrink-0"
+                    variant="light"
+                    size="sm"
+                    startContent={<svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 12h14m-7 7V5" />
+                    </svg>}
+                    onClick={() => {
+                        const newParamName = `param${Object.keys(tool.parameters?.properties || {}).length + 1}`;
+                        const newProperties = {
+                            ...(tool.parameters?.properties || {}),
+                            [newParamName]: {
+                                type: 'string',
+                                description: ''
+                            }
+                        };
+
+                        handleUpdate({
+                            ...tool,
+                            parameters: {
+                                type: 'object',
+                                properties: newProperties,
+                                required: [...(tool.parameters?.required || []), newParamName]
+                            }
+                        });
+                    }}
+                >
+                    Add Parameter
+                </Button>
             </div>
         </Pane>
     );

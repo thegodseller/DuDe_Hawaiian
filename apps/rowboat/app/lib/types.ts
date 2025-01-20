@@ -159,7 +159,10 @@ export const WorkflowAgent = z.object({
     examples: z.string().optional(),
     prompts: z.array(z.string()),
     tools: z.array(z.string()),
-    model: z.string(),
+    model: z.union([
+        z.literal('gpt-4o'),
+        z.literal('gpt-4o-mini'),
+    ]),
     locked: z.boolean().default(false).describe('Whether this agent is locked and cannot be deleted').optional(),
     toggleAble: z.boolean().default(true).describe('Whether this agent can be enabled or disabled').optional(),
     global: z.boolean().default(false).describe('Whether this agent is a global agent, in which case it cannot be connected to other agents').optional(),

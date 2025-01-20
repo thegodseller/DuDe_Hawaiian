@@ -1,9 +1,7 @@
 "use client";
-import { useState } from "react";
 import { WorkflowPrompt } from "@/app/lib/types";
-import { Input, Textarea } from "@nextui-org/react";
+import { Divider, Input, Textarea } from "@nextui-org/react";
 import { z } from "zod";
-import MarkdownContent from "@/app/lib/components/markdown-content";
 import { ActionButton, Pane } from "./pane";
 import { EditableField } from "@/app/lib/components/editable-field";
 
@@ -31,41 +29,46 @@ export function PromptConfig({
     ]}>
         <div className="flex flex-col gap-4">
             {prompt.type === "base_prompt" && (
+                <>
+                    <EditableField
+                        label="Name"
+                        value={prompt.name}
+                        onChange={(value) => {
+                            handleUpdate({
+                                ...prompt,
+                                name: value
+                            });
+                        }}
+                        placeholder="Enter prompt name"
+                        validate={(value) => {
+                            if (value.length === 0) {
+                                return { valid: false, errorMessage: "Name cannot be empty" };
+                            }
+                            if (usedPromptNames.has(value)) {
+                                return { valid: false, errorMessage: "This name is already taken" };
+                            }
+                            return { valid: true };
+                        }}
+                    />
+                    <Divider />
+                </>
+            )}
+
+            <div className="w-full flex flex-col">
                 <EditableField
-                    label="Name"
-                    value={prompt.name}
+                    value={prompt.prompt}
                     onChange={(value) => {
                         handleUpdate({
                             ...prompt,
-                            name: value
+                            prompt: value
                         });
                     }}
-                    placeholder="Enter prompt name"
-                    validate={(value) => {
-                        if (value.length === 0) {
-                            return { valid: false, errorMessage: "Name cannot be empty" };
-                        }
-                        if (usedPromptNames.has(value)) {
-                            return { valid: false, errorMessage: "This name is already taken" };
-                        }
-                        return { valid: true };
-                    }}
+                    placeholder="Edit prompt here..."
+                    markdown
+                    label="Prompt"
+                    multiline
                 />
-            )}
-
-            <EditableField
-                value={prompt.prompt}
-                onChange={(value) => {
-                    handleUpdate({
-                        ...prompt,
-                        prompt: value
-                    });
-                }}
-                placeholder="Edit prompt here..."
-                markdown
-                label="Prompt"
-                multiline
-            />
+            </div>
         </div>
     </Pane>;
 } 
