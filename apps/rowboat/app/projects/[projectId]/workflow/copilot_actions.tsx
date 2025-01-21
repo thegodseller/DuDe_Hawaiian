@@ -48,9 +48,10 @@ export function Action({
         handleApplyChange(msgIndex, actionIndex);
     }
 
-    return <div className={clsx('flex flex-col rounded-sm border', {
-        'bg-gray-50 border-gray-800 shadow-sm': !stale && !allApplied,
-        'bg-gray-100 border-gray-200': stale || allApplied,
+    return <div className={clsx('flex flex-col rounded-sm border border-t-4', {
+        'bg-gray-50 border-gray-400 border-t-blue-500 shadow': !stale && !allApplied && action.action == 'create_new',
+        'bg-gray-50 border-gray-400 border-t-orange-500 shadow': !stale && !allApplied && action.action == 'edit',
+        'bg-gray-100 border-gray-400 border-t-gray-400': stale || allApplied,
     })}>
         <ActionContext.Provider value={{ msgIndex, actionIndex, action, workflow, handleApplyChange, appliedFields, stale }}>
             <ActionHeader />
