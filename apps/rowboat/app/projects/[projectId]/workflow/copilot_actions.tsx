@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Workflow, CopilotAssistantMessage, CopilotAssistantMessageActionPart } from "@/app/lib/types";
 import { PreviewModalProvider, usePreviewModal } from './preview-modal';
 import { getAppliedChangeKey } from "./copilot";
+import { CheckCheckIcon, CheckIcon, ChevronsDownIcon, ChevronsUpIcon, EyeIcon, PencilIcon, PlusIcon } from "lucide-react";
 
 const ActionContext = createContext<{
     msgIndex: number;
@@ -14,7 +15,7 @@ const ActionContext = createContext<{
     handleApplyChange: (messageIndex: number, actionIndex: number, field?: string) => void;
     appliedFields: string[];
     stale: boolean;
-}>({ msgIndex: 0, actionIndex: 0, action: null, workflow: null, handleApplyChange: () => {}, appliedFields: [], stale: false });
+}>({ msgIndex: 0, actionIndex: 0, action: null, workflow: null, handleApplyChange: () => { }, appliedFields: [], stale: false });
 
 export function Action({
     msgIndex,
@@ -33,39 +34,70 @@ export function Action({
     appliedChanges: Record<string, boolean>;
     stale: boolean;
 }) {
-    const [expanded, setExpanded] = useState(Object.entries(action.config_changes).length <= 2);
-    const changes = Object.entries(action.config_changes).slice(0, expanded ? undefined : 2);
+    const [expanded, setExpanded] = useState(false);
 
     // determine whether all changes contained in this action are applied
     const appliedFields = Object.keys(action.config_changes).filter(key => appliedChanges[getAppliedChangeKey(msgIndex, actionIndex, key)]);
     console.log('appliedFields', appliedFields);
 
-    return <div className={clsx('flex flex-col rounded-sm border shadow-sm', {
-        'bg-blue-50 border-blue-200': action.action === 'create_new',
-        'bg-amber-50 border-amber-200': action.action === 'edit',
-        'bg-gray-50 border-gray-200': stale,
+    // determine whether all changes contained in this action are applied
+    const allApplied = Object.keys(action.config_changes).every(key => appliedFields.includes(key));
+
+    // generate apply change function
+    const applyChangeHandler = () => {
+        handleApplyChange(msgIndex, actionIndex);
+    }
+
+    return <div className={clsx('flex flex-col rounded-sm border', {
+        'bg-gray-50 border-gray-800 shadow-sm': !stale && !allApplied,
+        'bg-gray-100 border-gray-200': stale || allApplied,
     })}>
         <ActionContext.Provider value={{ msgIndex, actionIndex, action, workflow, handleApplyChange, appliedFields, stale }}>
             <ActionHeader />
-            <PreviewModalProvider>
-                <ActionBody>
-                    {changes.map(([key, value]) => {
+            <ActionSummary />
+            {expanded && <PreviewModalProvider>
+                <div className="flex flex-col gap-2 px-1">
+                    {Object.entries(action.config_changes).map(([key, value]) => {
                         return <ActionField key={key} field={key} />
                     })}
-                </ActionBody>
-            </PreviewModalProvider>
-            {Object.entries(action.config_changes).length > 2 && <button className={clsx('flex rounded-b-sm flex-col items-center justify-center', {
-                'bg-blue-100 hover:bg-blue-200 text-blue-600': action.action === 'create_new',
-                'bg-amber-100 hover:bg-amber-200 text-amber-600': action.action === 'edit',
-                'bg-gray-100 hover:bg-gray-200 text-gray-600': stale,
-            })} onClick={() => setExpanded(!expanded)}>
-                {expanded ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevrons-up"><path d="m17 11-5-5-5 5" /><path d="m17 18-5-5-5 5" /></svg>
-                ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevrons-down"><path d="m7 6 5 5 5-5" /><path d="m7 13 5 5 5-5" /></svg>
-                )}
-            </button>}
+                </div>
+            </PreviewModalProvider>}
+            <div className="flex items-center">
+                <button
+                    className="grow rounded-l-sm bg-blue-100 text-blue-500 hover:bg-blue-200 disabled:bg-gray-100 disabled:text-green-500 flex flex-col items-center justify-center h-8"
+                    onClick={applyChangeHandler}
+                    disabled={stale || allApplied}
+                >
+                    <div className="flex items-center gap-2 justify-center">
+                        <CheckCheckIcon size={16} />
+                        <div className="font-medium text-xs">{allApplied ? 'Applied' : 'Apply'}</div>
+                    </div>
+                </button>
+                <button
+                    className="w-10 shrink-0 flex flex-col items-center h-8 rounded-r-sm bg-gray-100 text-gray-600 hover:bg-gray-200 justify-center"
+                    onClick={() => setExpanded(!expanded)}
+                >
+                    <div className="flex items-center gap-2 justify-center text-gray-400">
+                        {expanded ? (
+                            <ChevronsUpIcon size={16} />
+                        ) : (
+                            <ChevronsDownIcon size={16} />
+                        )}
+                    </div>
+                </button>
+            </div>
         </ActionContext.Provider>
+    </div>;
+}
+
+export function ActionSummary() {
+    const { msgIndex, actionIndex, action, workflow, handleApplyChange, appliedFields, stale } = useContext(ActionContext);
+    if (!action || !workflow) return null;
+
+    return <div className="px-1 my-1">
+        <div className="bg-white rounded-sm p-2 text-sm">
+            {action.change_description}
+        </div>
     </div>;
 }
 
@@ -76,45 +108,11 @@ export function ActionHeader() {
     const targetType = action.config_type === 'tool' ? 'tool' : action.config_type === 'agent' ? 'agent' : 'prompt';
     const change = action.action === 'create_new' ? 'Create' : 'Edit';
 
-    // determine whether all changes contained in this action are applied
-    const allApplied = Object.keys(action.config_changes).every(key => appliedFields.includes(key));
-
-    // generate apply change function
-    const applyChangeHandler = () => {
-        handleApplyChange(msgIndex, actionIndex);
-    }
-
-    return <div className={clsx('flex justify-between items-center px-2 py-1 rounded-t-sm', {
-        'bg-blue-100': action.action === 'create_new',
-        'bg-amber-100': action.action === 'edit',
-        'bg-gray-100': stale,
-    })}>
-        <div className={clsx('text-sm truncate', {
-            'text-blue-600': action.action === 'create_new',
-            'text-amber-600': action.action === 'edit',
-            'text-gray-600': stale,
-        })}>{`${change} ${targetType}`}: <span className="font-medium">{action.name}</span></div>
-        <button className={clsx('flex gap-1 items-center text-sm hover:text-black', {
-            'text-blue-600': action.action === 'create_new',
-            'text-amber-600': action.action === 'edit',
-            'text-green-600': allApplied,
-            'text-gray-600': stale,
-        })}
-            onClick={applyChangeHandler}
-            disabled={stale || allApplied}
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-check"><path d="M18 6 7 17l-5-5" /><path d="m22 10-7.5 7.5L13 16" /></svg>
-            {!allApplied && <div className="font-medium">Apply</div>}
-        </button>
+    return <div className="flex gap-2 items-center py-1 px-1">
+        {action.action == 'create_new' && <PlusIcon size={16} />}
+        {action.action == 'edit' && <PencilIcon size={16} />}
+        <div className="text-sm truncate">{`${change} ${targetType}`}: <span className="font-medium">{action.name}</span></div>
     </div>;
-}
-
-export function ActionBody({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
-    return <div className="flex flex-col gap-2 p-2">{children}</div>;
 }
 
 export function ActionField({
@@ -183,20 +181,13 @@ export function ActionField({
 
     return <div className="flex flex-col bg-white rounded-sm">
         <div className="flex justify-between items-start">
-            <div className={clsx('text-xs font-semibold px-2 py-1', {
-                'text-blue-600': action.action === 'create_new',
-                'text-amber-600': action.action === 'edit',
-                'text-gray-600': stale,
-            })}>{field}</div>
+            <div className="text-xs font-semibold px-2 py-1 text-gray-600">{field}</div>
             {previewCondition && <div className="flex gap-4 items-center bg-gray-50 rounded-bl-sm rounded-tr-sm px-2 py-1">
                 <button
                     className="text-gray-500 hover:text-black"
                     onClick={previewModalHandler}
                 >
-                    <svg className="w-[16px] h-[16px]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" strokeWidth="1.5" d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z" />
-                        <path stroke="currentColor" strokeWidth="1.5" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                    </svg>
+                    <EyeIcon size={16} />
                 </button>
                 {action.action === 'edit' && <button
                     className={clsx("text-gray-500 hover:text-black", {
@@ -206,7 +197,7 @@ export function ActionField({
                     onClick={applyChangeHandler}
                     disabled={stale || applied}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check"><path d="M20 6 9 17l-5-5" /></svg>
+                    <CheckIcon size={16} />
                 </button>}
             </div>}
         </div>
