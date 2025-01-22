@@ -1,6 +1,6 @@
 'use client';
 import { Button, Spinner, Textarea } from "@nextui-org/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import z from "zod";
 import { GetInformationToolResult, WebpageCrawlResponse, Workflow, WorkflowTool } from "@/app/lib/types";
 import { executeClientTool, getInformationTool, scrapeWebpage, suggestToolResponse } from "@/app/actions";
@@ -201,6 +201,7 @@ function ToolCall({
                 projectId={projectId}
                 messages={messages}
                 sender={sender}
+                autoSubmit={matchingWorkflowTool?.autoSubmitMockedResponse}
             />;
     }
 }
@@ -504,6 +505,7 @@ function MockToolCall({
     projectId,
     messages,
     sender,
+    autoSubmit = false,
 }: {
     toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
     result: z.infer<typeof apiV1.ToolMessage> | undefined;
@@ -511,10 +513,29 @@ function MockToolCall({
     projectId: string;
     messages: z.infer<typeof apiV1.ChatMessage>[];
     sender: string | null | undefined;
+    autoSubmit?: boolean;
 }) {
     const [result, setResult] = useState<z.infer<typeof apiV1.ToolMessage> | undefined>(availableResult);
     const [response, setResponse] = useState('');
     const [generatingResponse, setGeneratingResponse] = useState(false);
+
+    const handleSubmit = useCallback(() => {
+        let parsed;
+        try {
+            parsed = JSON.parse(response);
+        } catch (e) {
+            alert('Invalid JSON');
+            return;
+        }
+        const result: z.infer<typeof apiV1.ToolMessage> = {
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            tool_name: toolCall.function.name,
+            content: JSON.stringify(parsed),
+        };
+        setResult(result);
+        handleResult(result);
+    }, [toolCall.id, toolCall.function.name, handleResult, response]);
 
     useEffect(() => {
         if (result) {
@@ -549,23 +570,18 @@ function MockToolCall({
         };
     }, [result, response, toolCall.id, projectId, messages]);
 
-    function handleSubmit() {
-        let parsed;
-        try {
-            parsed = JSON.parse(response);
-        } catch (e) {
-            alert('Invalid JSON');
+    // auto submit if autoSubmitMockedResponse is true
+    useEffect(() => {
+        if (!autoSubmit) {
             return;
         }
-        const result: z.infer<typeof apiV1.ToolMessage> = {
-            role: 'tool',
-            tool_call_id: toolCall.id,
-            tool_name: toolCall.function.name,
-            content: JSON.stringify(parsed),
-        };
-        setResult(result);
-        handleResult(result);
-    }
+        if (result) {
+            return;
+        }
+        if (response) {
+            handleSubmit();
+        }
+    }, [autoSubmit, response, handleSubmit, result]);
 
     return <div className="flex flex-col gap-1">
         {sender && <div className='text-gray-500 text-sm ml-3'>{sender}</div>}
@@ -702,8 +718,8 @@ export function Messages({
 
     return <div className="grow pt-4 overflow-auto">
         <div className="max-w-[768px] mx-auto flex flex-col gap-8">
-            <SystemMessage 
-                content={systemMessage || ''} 
+            <SystemMessage
+                content={systemMessage || ''}
                 onChange={onSystemMessageChange}
                 locked={systemMessageLocked}
             />

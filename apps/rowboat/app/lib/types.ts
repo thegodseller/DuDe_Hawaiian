@@ -186,6 +186,7 @@ export const WorkflowTool = z.object({
     name: z.string(),
     description: z.string(),
     mockInPlayground: z.boolean().default(false).optional(),
+    autoSubmitMockedResponse: z.boolean().default(false).optional(),
     parameters: z.object({
         type: z.literal('object'),
         properties: z.record(z.object({
@@ -216,6 +217,7 @@ export const AgenticAPIPrompt = WorkflowPrompt;
 
 export const AgenticAPITool = WorkflowTool.omit({
     mockInPlayground: true,
+    autoSubmitMockedResponse: true,
 });
 
 export const Workflow = z.object({
@@ -433,7 +435,7 @@ export function convertWorkflowToAgenticAPI(workflow: z.infer<typeof Workflow>):
                 controlType: agent.controlType,
             })),
         tools: workflow.tools.map(tool => {
-            const { mockInPlayground, ...rest } = tool;
+            const { mockInPlayground, autoSubmitMockedResponse, ...rest } = tool;
             return {
                 ...rest,
             };

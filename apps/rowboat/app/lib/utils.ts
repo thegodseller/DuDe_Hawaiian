@@ -177,6 +177,7 @@ export async function getAgenticApiResponse(
     rawAPIResponse: unknown,
 }> {
     // call agentic api
+    console.log(`agentic request`, JSON.stringify(request, null, 2));
     const response = await fetch(process.env.AGENTIC_API_URL + '/chat', {
         method: 'POST',
         body: JSON.stringify(request),

@@ -273,6 +273,7 @@ function reducer(state: State, action: Action): State {
                                 description: "",
                                 parameters: undefined,
                                 mockInPlayground: true,
+                                autoSubmitMockedResponse: true,
                                 ...action.tool
                             });
                             draft.selection = {

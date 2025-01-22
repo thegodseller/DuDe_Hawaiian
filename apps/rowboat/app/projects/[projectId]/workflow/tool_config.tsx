@@ -226,6 +226,7 @@ export function ToolConfig({
                 <Divider />
 
                 <Checkbox
+                    key="mockInPlayground"
                     size="sm"
                     isSelected={tool.mockInPlayground ?? false}
                     onValueChange={(value) => handleUpdate({
@@ -235,6 +236,17 @@ export function ToolConfig({
                 >
                     Mock tool in Playground
                 </Checkbox>
+                {tool.mockInPlayground && <Checkbox
+                    key="autoSubmitMockedResponse"
+                    size="sm"
+                    isSelected={tool.autoSubmitMockedResponse ?? false}
+                    onValueChange={(value) => handleUpdate({
+                        ...tool,
+                        autoSubmitMockedResponse: value
+                    })}
+                >
+                    Auto-submit mocked response
+                </Checkbox>}
 
                 <Divider />
 
