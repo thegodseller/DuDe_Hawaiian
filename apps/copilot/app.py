@@ -1,12 +1,8 @@
-from openai import OpenAI
 from flask import Flask, request, jsonify
 from pydantic import BaseModel, ValidationError
 from typing import List
 from copilot import UserMessage, AssistantMessage, get_response
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
-import os
-
-openai_client = OpenAI()
 
 class ApiRequest(BaseModel):
     messages: List[UserMessage | AssistantMessage]

@@ -181,7 +181,7 @@ You are responsible for providing delivery information to the user.
 - For generic delivery questions, refer to relevant articles if necessary.
 - Stick to factual information when answering.
 
-🚫 Don’ts:
+🚫 Don'ts:
 - Do not provide answers without fetching delivery details when required.
 - Do not leave the user with partial information. Refrain from phrases like 'please contact support'; instead, relay information limitations gracefully.
 '''
@@ -517,7 +517,7 @@ Copilot output:
           "name": "Returns and Refunds Hub",
           "type": "hub",
           "description": "Hub agent to manage returns and refunds queries.",
-          "instructions": "## 🧑‍💼 Role:\nYou are responsible for directing returns and refunds-related queries to the appropriate agents.\n\n---\n## ⚙️ Steps to Follow:\n1. Greet the user and ask which returns or refunds-related query they need help with (e.g., 'Are you initiating a return, checking a return status, or processing a refund?').\n2. If the query matches a specific task, direct the user to the corresponding agent:\n   - Initiate Return → Returns Initiation Agent\n   - Check Return Status → Return Status Check Agent\n   - Process Refund → Refund Processing Agent\n3. If the query doesn’t match any specific task, respond with 'I’m sorry, I didn’t understand. Could you clarify your request?' or escalate to human support.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Directing queries about returns initiation, return status, and refund processing.\n\n❌ Out of Scope:\n- Handling detailed user support; pass such requests to the appropriate agent.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Direct queries promptly to sub-agents.\n\n🚫 Don’ts:\n- Attempt to handle returns or refunds directly.",
+          "instructions": "## 🧑‍💼 Role:\nYou are responsible for directing returns and refunds-related queries to the appropriate agents.\n\n---\n## ⚙️ Steps to Follow:\n1. Greet the user and ask which returns or refunds-related query they need help with (e.g., 'Are you initiating a return, checking a return status, or processing a refund?').\n2. If the query matches a specific task, direct the user to the corresponding agent:\n   - Initiate Return → Returns Initiation Agent\n   - Check Return Status → Return Status Check Agent\n   - Process Refund → Refund Processing Agent\n3. If the query doesn't match any specific task, respond with 'I'm sorry, I didn't understand. Could you clarify your request?' or escalate to human support.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Directing queries about returns initiation, return status, and refund processing.\n\n❌ Out of Scope:\n- Handling detailed user support; pass such requests to the appropriate agent.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Direct queries promptly to sub-agents.\n\n🚫 Don'ts:\n- Attempt to handle returns or refunds directly.",
           "prompts": [],
           "tools": [],
           "model": "gpt-4o",
@@ -546,7 +546,7 @@ Copilot output:
           "name": "Returns Initiation Agent",
           "type": "procedural",
           "description": "Agent to help users initiate a return request.",
-          "instructions": "## 🧑‍💼 Role:\nAssist users in initiating a return request.\n\n---\n## ⚙️ Steps to Follow:\n1. Ask the user for details about the product they want to return (e.g., order ID, reason for return).\n2. Validate the return request based on the return policy.\n3. Confirm the return request and provide further instructions (e.g., return shipping label or pickup schedule).\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Guiding users to initiate a return.\n\n❌ Out of Scope:\n- Processing refunds or checking return statuses.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Clearly communicate return policies.\n- Ensure user has all necessary details for the return.\n\n🚫 Don’ts:\n- Process refunds directly.",
+          "instructions": "## 🧑‍💼 Role:\nAssist users in initiating a return request.\n\n---\n## ⚙️ Steps to Follow:\n1. Ask the user for details about the product they want to return (e.g., order ID, reason for return).\n2. Validate the return request based on the return policy.\n3. Confirm the return request and provide further instructions (e.g., return shipping label or pickup schedule).\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Guiding users to initiate a return.\n\n❌ Out of Scope:\n- Processing refunds or checking return statuses.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Clearly communicate return policies.\n- Ensure user has all necessary details for the return.\n\n🚫 Don'ts:\n- Process refunds directly.",
           "prompts": [],
           "tools": [],
           "model": "gpt-4o",
@@ -570,7 +570,7 @@ Copilot output:
           "name": "Return Status Check Agent",
           "type": "procedural",
           "description": "Agent to provide users with updates on their return status.",
-          "instructions": "## 🧑‍💼 Role:\nProvide users with updates on their return requests.\n\n---\n## ⚙️ Steps to Follow:\n1. Ask the user for the return ID to identify the request.\n2. Use the 'get_return_status' tool to fetch the current status.\n3. Inform the user of the return status.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Providing status updates for existing return requests.\n\n❌ Out of Scope:\n- Initiating returns or processing refunds.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Ensure accurate updates using the tool.\n\n🚫 Don’ts:\n- Handle requests without a valid return ID.",
+          "instructions": "## 🧑‍💼 Role:\nProvide users with updates on their return requests.\n\n---\n## ⚙️ Steps to Follow:\n1. Ask the user for the return ID to identify the request.\n2. Use the 'get_return_status' tool to fetch the current status.\n3. Inform the user of the return status.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Providing status updates for existing return requests.\n\n❌ Out of Scope:\n- Initiating returns or processing refunds.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Ensure accurate updates using the tool.\n\n🚫 Don'ts:\n- Handle requests without a valid return ID.",
           "prompts": [],
           "tools": [
             "get_return_status"
@@ -596,7 +596,7 @@ Copilot output:
           "name": "Refund Processing Agent",
           "type": "procedural",
           "description": "Agent to assist in processing refunds for validated returns.",
-          "instructions": "## 🧑‍💼 Role:\nProcess refunds for completed return requests.\n\n---\n## ⚙️ Steps to Follow:\n1. Ask the user for the order ID and validate the return completion.\n2. Use the 'process_refund' tool to initiate the refund.\n3. Confirm the refund processing status and provide timelines.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Processing refunds for validated return requests.\n\n❌ Out of Scope:\n- Initiating returns or checking return statuses.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Verify return eligibility before processing refunds.\n\n🚫 Don’ts:\n- Process refunds without validating the return completion.",
+          "instructions": "## 🧑‍💼 Role:\nProcess refunds for completed return requests.\n\n---\n## ⚙️ Steps to Follow:\n1. Ask the user for the order ID and validate the return completion.\n2. Use the 'process_refund' tool to initiate the refund.\n3. Confirm the refund processing status and provide timelines.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Processing refunds for validated return requests.\n\n❌ Out of Scope:\n- Initiating returns or checking return statuses.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Verify return eligibility before processing refunds.\n\n🚫 Don'ts:\n- Process refunds without validating the return completion.",
           "prompts": [],
           "tools": [
             "process_refund"
@@ -624,24 +624,24 @@ def get_response(
     ) -> str:
     # if context is provided, create a prompt for the context
     if context:
-      match context:
-        case AgentContext():
-          context_prompt = f"""
+        match context:
+            case AgentContext():
+                context_prompt = f"""
 **NOTE**: The user is currently working on the following agent:
 {context.agentName}
 """
-        case PromptContext():
-          context_prompt = f"""
+            case PromptContext():
+                context_prompt = f"""
 **NOTE**: The user is currently working on the following prompt:
 {context.promptName}
 """
-        case ToolContext():
-          context_prompt = f"""
+            case ToolContext():
+                context_prompt = f"""
 **NOTE**: The user is currently working on the following tool:
 {context.toolName}
 """
-        case ChatContext():
-          context_prompt = f"""
+            case ChatContext():
+                context_prompt = f"""
 **NOTE**: The user has just tested the following chat using the workflow above and has provided feedback / question below this json dump:
 ```json
 {json.dumps(context.messages)}
