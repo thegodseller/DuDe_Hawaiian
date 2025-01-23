@@ -14,7 +14,7 @@ export const baseWorkflow: z.infer<typeof Workflow> = {
         {
             name: "Example Agent",
             type: "conversation",
-            description: "",
+            description: "An example agent",
             instructions: `## 🧑‍ Role:
 You are an helpful customer support assistant
 
