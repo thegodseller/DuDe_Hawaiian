@@ -5,7 +5,7 @@ import { Messages } from "./messages";
 import z from "zod";
 import { AgenticAPIChatRequest, convertToAgenticAPIChatMessages, convertWorkflowToAgenticAPI, PlaygroundChat, Workflow } from "@/app/lib/types";
 import { ComposeBox } from "./compose-box";
-import { Button } from "@nextui-org/react";
+import { Button, Spinner } from "@nextui-org/react";
 import { apiV1 } from "rowboat-shared";
 import { CopyAsJsonButton } from "./copy-as-json-button";
 
@@ -31,7 +31,7 @@ export function Chat({
         last_agent_name: workflow.startAgent,
     });
     const [showCopySuccess, setShowCopySuccess] = useState(false);
-    const [assistantResponseError, setAssistantResponseError] = useState<string | null>(null);
+    const [fetchResponseError, setFetchResponseError] = useState<string | null>(null);
     const [lastAgenticRequest, setLastAgenticRequest] = useState<unknown | null>(null);
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
     const [systemMessage, setSystemMessage] = useState<string | undefined>(chat.systemMessage);
@@ -85,7 +85,7 @@ export function Chat({
 
         async function process() {
             setLoadingAssistantResponse(true);
-            setAssistantResponseError(null);
+            setFetchResponseError(null);
             const { agents, tools, prompts, startAgent } = convertWorkflowToAgenticAPI(workflow);
             const request: z.infer<typeof AgenticAPIChatRequest> = {
                 messages: convertToAgenticAPIChatMessages([{
@@ -109,6 +109,9 @@ export function Chat({
                 if (ignore) {
                     return;
                 }
+                if (simulationComplete) {
+                    return;
+                }
                 setLastAgenticRequest(response.rawRequest);
                 setLastAgenticResponse(response.rawResponse);
                 setMessages([...messages, ...response.messages.map((message) => ({
@@ -120,7 +123,7 @@ export function Chat({
                 setAgenticState(response.state);
             } catch (err) {
                 if (!ignore) {
-                    setAssistantResponseError(`Failed to get assistant response: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                    setFetchResponseError(`Failed to get assistant response: ${err instanceof Error ? err.message : 'Unknown error'}`);
                 }
             } finally {
                 setLoadingAssistantResponse(false);
@@ -135,7 +138,7 @@ export function Chat({
         // if last message is not from role user
         // or tool, return
         const last = messages[messages.length - 1];
-        if (assistantResponseError) {
+        if (fetchResponseError) {
             return;
         }
         if (last.role !== 'user' && last.role !== 'tool') {
@@ -147,40 +150,44 @@ export function Chat({
         return () => {
             ignore = true;
         };
-    }, [chatId, chat.simulated, messages, projectId, agenticState, workflow, assistantResponseError, systemMessage]);
+    }, [chatId, chat.simulated, messages, projectId, agenticState, workflow, fetchResponseError, systemMessage, simulationComplete]);
 
     // simulate user turn
     useEffect(() => {
         let ignore = false;
 
-        function process() {
+        async function process() {
             if (chat.simulationData === undefined) {
                 return;
             }
 
             // fetch next user prompt
             setLoadingUserResponse(true);
-            simulateUserResponse(projectId, messages, chat.simulationData)
-                .then(response => {
-                    //console.log('User response:', response);
-                    if (ignore) {
-                        return;
-                    }
-                    if (response.trim() === 'EXIT') {
-                        setSimulationComplete(true);
-                        return;
-                    }
-                    setMessages([...messages, {
-                        role: 'user',
-                        content: response,
-                        version: 'v1' as const,
-                        chatId: chatId ?? '',
-                        createdAt: new Date().toISOString(),
-                    }]);
-                })
-                .finally(() => {
-                    setLoadingUserResponse(false);
-                });
+            try {
+
+                const response = await simulateUserResponse(projectId, messages, chat.simulationData)
+                if (ignore) {
+                    return;
+                }
+                if (simulationComplete) {
+                    return;
+                }
+                if (response.trim() === 'EXIT') {
+                    setSimulationComplete(true);
+                    return;
+                }
+                setMessages([...messages, {
+                    role: 'user',
+                    content: response,
+                    version: 'v1' as const,
+                    chatId: chatId ?? '',
+                    createdAt: new Date().toISOString(),
+                }]);
+            } catch (err) {
+                setFetchResponseError(`Failed to simulate user response: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            } finally {
+                setLoadingUserResponse(false);
+            }
         }
 
         // proceed only if chat is simulated
@@ -272,14 +279,14 @@ export function Chat({
             onSystemMessageChange={handleSystemMessageChange}
         />
         <div className="shrink-0">
-            {assistantResponseError && (
+            {fetchResponseError && (
                 <div className="max-w-[768px] mx-auto mb-4 p-2 bg-red-50 border border-red-200 rounded-lg flex gap-2 justify-between items-center">
-                    <p className="text-red-600">{assistantResponseError}</p>
+                    <p className="text-red-600">{fetchResponseError}</p>
                     <Button
                         size="sm"
                         color="danger"
                         onClick={() => {
-                            setAssistantResponseError(null);
+                            setFetchResponseError(null);
                         }}
                     >
                         Retry
@@ -292,7 +299,20 @@ export function Chat({
                     messages={messages}
                 />
             </div>}
-            {chat.simulated && simulationComplete && <p className="text-center">Simulation complete.</p>}
+            {chat.simulated && !simulationComplete && <div className="p-2 bg-gray-50 border border-gray-200 flex items-center justify-center gap-2">
+                <Spinner size="sm" />
+                <div className="text-sm text-gray-500 animate-pulse">Simulating...</div>
+                <Button
+                    size="sm"
+                    color="danger"
+                    onClick={() => {
+                        setSimulationComplete(true);
+                    }}
+                >
+                    Stop
+                </Button>
+            </div>}
+            {chat.simulated && simulationComplete && <p className="text-center text-sm">Simulation complete.</p>}
         </div>
     </div>;
 }
