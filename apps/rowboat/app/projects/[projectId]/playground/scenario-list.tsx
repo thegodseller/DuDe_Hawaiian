@@ -6,13 +6,12 @@ import { getScenarios, createScenario, updateScenario, deleteScenario } from "@/
 import { Scenario, WithStringId } from "@/app/lib/types";
 import { z } from "zod";
 import { EditableField } from "@/app/lib/components/editable-field";
-import { HamburgerIcon } from "@/app/lib/components/icons";
-import { EllipsisVerticalIcon, PlayIcon } from "lucide-react";
+import { EllipsisVerticalIcon, PlayIcon, PlusIcon } from "lucide-react";
 
 export function AddScenarioForm({
     onAdd,
 }: {
-    onAdd: (name: string, description: string) => void;
+    onAdd: (name: string, description: string) => Promise<void>;
 }) {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -20,9 +19,14 @@ export function AddScenarioForm({
     const [saving, setSaving] = useState(false);
 
     const handleAdd = async () => {
+        if (!name.trim() || !description.trim()) {
+            setError("Name and description are required");
+            return;
+        }
+
         try {
             setSaving(true);
-            await onAdd(name, description);
+            await onAdd(name.trim(), description.trim());
             setName("");
             setDescription("");
             setError(null);
@@ -34,7 +38,7 @@ export function AddScenarioForm({
     };
 
     return <div className="flex flex-col gap-2 border rounded-lg p-4 shadow-sm">
-        <div className="font-semibold text-gray-500">Add Scenario</div>
+        <div className="font-semibold text-gray-500">Add scenario</div>
         <Input
             label="Scenario Name"
             labelPlacement="outside"
@@ -61,17 +65,15 @@ export function AddScenarioForm({
         <Button
             onClick={handleAdd}
             isLoading={saving}
-            isDisabled={saving}
+            isDisabled={saving || !name.trim() || !description.trim()}
             size="sm"
             className="self-start"
             variant="bordered"
             startContent={
-                <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 12h14m-7 7V5" />
-                </svg>
+                <PlusIcon size={16} />
             }
         >
-            Add Scenario
+            Add scenario
         </Button>
     </div>
 }
@@ -158,7 +160,7 @@ export function ScenarioList({
                     size="sm"
                     variant="bordered"
                 >
-                    Add Scenario
+                    Add scenario
                 </Button>}
             </div>
             {loading && <div className="flex justify-center items-center p-8 gap-2">
