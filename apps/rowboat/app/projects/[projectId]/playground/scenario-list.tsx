@@ -7,7 +7,7 @@ import { Scenario, WithStringId } from "@/app/lib/types";
 import { z } from "zod";
 import { EditableField } from "@/app/lib/components/editable-field";
 import { HamburgerIcon } from "@/app/lib/components/icons";
-import { EllipsisVerticalIcon } from "lucide-react";
+import { EllipsisVerticalIcon, PlayIcon } from "lucide-react";
 
 export function AddScenarioForm({
     onAdd,
@@ -174,56 +174,59 @@ export function ScenarioList({
 
             {scenarios.length > 0 && <div className="flex flex-col gap-2">
                 {scenarios.map((scenario) => (
-                    <div key={scenario._id} className="flex justify-between gap-2 border p-2 rounded-md shadow-sm">
-                        <div className="flex flex-col gap-1 grow">
-                            <EditableField
-                                key={'name'}
-                                label="Name"
-                                placeholder="Scenario Name"
-                                value={scenario.name}
-                                onChange={(value) => handleEditScenario(scenario._id, value, scenario.description)}
-                                locked={scenario.tmp}
-                            />
-                            <EditableField
-                                key={'description'}
-                                label="Description"
-                                multiline
-                                markdown
-                                light
-                                placeholder="Scenario Description"
-                                value={scenario.description}
-                                onChange={(value) => handleEditScenario(scenario._id, scenario.name, value)}
-                                locked={scenario.tmp}
-                            />
-                        </div>
-                        <button
-                            className="text-sm text-blue-500 hover:text-gray-700 font-semibold uppercase"
-                            onClick={() => onPlay(scenario)}
-                        >
-                            Run &rarr;
-                        </button>
-                        <Dropdown>
-                            <DropdownTrigger>
-                                <button className="text-gray-300 hover:text-gray-700">
-                                    <EllipsisVerticalIcon size={16} />
-                                </button>
-                            </DropdownTrigger>
-                            <DropdownMenu
-                                disabledKeys={scenario.tmp ? ['delete'] : ['']}
-                                onAction={(key) => {
-                                    if (key === 'delete') {
-                                        handleDeleteScenario(scenario._id);
-                                    }
-                                }}
-                            >
-                                <DropdownItem
-                                    key="delete"
-                                    color="danger"
+                    <div key={scenario._id} className="flex flex-col gap-1 rounded-md shadow-sm border border-gray-300">
+                        <div className="flex justify-between items-start">
+                            <div className="grow font-semibold text-lg">
+                                <EditableField
+                                    key={'name'}
+                                    placeholder="Scenario Name"
+                                    value={scenario.name}
+                                    onChange={(value) => handleEditScenario(scenario._id, value, scenario.description)}
+                                    locked={scenario.tmp}
+                                />
+                            </div>
+                            <div className="shrink-0 flex items-center mr-2 bg-gray-100 p-1 rounded-b-md">
+                                <button
+                                    className="p-1 flex items-center gap-1 text-gray-500 hover:text-blue-500"
+                                    onClick={() => onPlay(scenario)}
                                 >
-                                    Delete
-                                </DropdownItem>
-                            </DropdownMenu>
-                        </Dropdown>
+                                    <PlayIcon size={16} />
+                                    <div className="text-sm font-semibold">Run</div>
+                                </button>
+                                <Dropdown>
+                                    <DropdownTrigger>
+                                        <button className="p-1 flex items-center gap-1 text-gray-500 hover:text-gray-700">
+                                            <EllipsisVerticalIcon size={16} />
+                                        </button>
+                                    </DropdownTrigger>
+                                    <DropdownMenu
+                                        disabledKeys={scenario.tmp ? ['delete'] : ['']}
+                                        onAction={(key) => {
+                                            if (key === 'delete') {
+                                                handleDeleteScenario(scenario._id);
+                                            }
+                                        }}
+                                    >
+                                        <DropdownItem
+                                            key="delete"
+                                            color="danger"
+                                        >
+                                            Delete
+                                        </DropdownItem>
+                                    </DropdownMenu>
+                                </Dropdown>
+                            </div>
+                        </div>
+                        <EditableField
+                            key={'description'}
+                            multiline
+                            markdown
+                            light
+                            placeholder="Scenario Description"
+                            value={scenario.description}
+                            onChange={(value) => handleEditScenario(scenario._id, scenario.name, value)}
+                            locked={scenario.tmp}
+                        />
                     </div>
                 ))}
             </div>}
