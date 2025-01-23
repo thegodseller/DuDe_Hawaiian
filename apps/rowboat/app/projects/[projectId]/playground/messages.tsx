@@ -1,6 +1,6 @@
 'use client';
 import { Button, Spinner, Textarea } from "@nextui-org/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import z from "zod";
 import { GetInformationToolResult, WebpageCrawlResponse, Workflow, WorkflowTool } from "@/app/lib/types";
 import { executeClientTool, getInformationTool, scrapeWebpage, suggestToolResponse } from "@/app/actions";
@@ -8,7 +8,7 @@ import MarkdownContent from "@/app/lib/components/markdown-content";
 import Link from "next/link";
 import { apiV1 } from "rowboat-shared";
 import { EditableField } from "@/app/lib/components/editable-field";
-import { MessageSquareIcon, EllipsisIcon } from "lucide-react";
+import { MessageSquareIcon, EllipsisIcon, CircleCheckIcon, ChevronsDownIcon, ChevronsRightIcon, ChevronRightIcon, ChevronDownIcon, ExternalLinkIcon, XIcon } from "lucide-react";
 
 function UserMessage({ content }: { content: string }) {
     return <div className="self-end ml-[30%] flex flex-col">
@@ -37,9 +37,7 @@ function InternalAssistantMessage({ content, sender, latency }: { content: strin
                     {sender ?? 'Assistant'}
                 </div>
                 <button className="flex items-center gap-1 text-gray-400 hover:text-gray-600" onClick={() => setExpanded(false)}>
-                    <svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M6 18 17.94 6M18 18 6.06 6" />
-                    </svg>
+                    <XIcon size={16} />
                 </button>
             </div>
             <div className="border border-gray-300 border-dashed px-3 py-1 rounded-lg rounded-bl-none">
@@ -206,6 +204,24 @@ function ToolCall({
     }
 }
 
+function ToolCallHeader({
+    toolCall,
+    result,
+}: {
+    toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
+    result: z.infer<typeof apiV1.ToolMessage> | undefined;
+}) {
+    return <div className="flex flex-col gap-1">
+        <div className='shrink-0 flex gap-2 items-center'>
+            {!result && <Spinner size="sm" />}
+            {result && <CircleCheckIcon size={16} />}
+            <div className='font-semibold text-sm'>
+                Function Call: <span className='bg-gray-100 px-2 py-1 rounded-lg font-medium'>{toolCall.function.name}</span>
+            </div>
+        </div>
+    </div>;
+}
+
 function GetInformationToolCall({
     toolCall,
     result: availableResult,
@@ -269,17 +285,7 @@ function GetInformationToolCall({
     return <div className="flex flex-col gap-1">
         {sender && <div className='text-gray-500 text-sm ml-3'>{sender}</div>}
         <div className='border border-gray-300 p-2 rounded-lg rounded-bl-none flex flex-col gap-2 mr-[30%]'>
-            <div className='flex gap-2 items-center'>
-                {!result && <Spinner />}
-
-                {result && <svg className="w-[16px] h-[16px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm13.707-1.293a1 1 0 0 0-1.414-1.414L11 12.586l-1.793-1.793a1 1 0 0 0-1.414 1.414l2.5 2.5a1 1 0 0 0 1.414 0l4-4Z" clipRule="evenodd" />
-                </svg>}
-
-                <div className='font-semibold'>
-                    Function Call: <span className='bg-gray-100 px-2 py-1 rounded-lg font-mono font-medium'>{toolCall.function.name}</span>
-                </div>
-            </div>
+            <ToolCallHeader toolCall={toolCall} result={result} />
 
             <div className='mt-1'>
                 {result ? 'Fetched' : 'Fetch'} information for question: <span className='font-mono font-semibold'>{args['question']}</span>
@@ -357,17 +363,7 @@ function RetrieveUrlInfoToolCall({
     return <div className="flex flex-col gap-1">
         {sender && <div className='text-gray-500 text-sm ml-3'>{sender}</div>}
         <div className='border border-gray-300 p-2 rounded-lg rounded-bl-none flex flex-col gap-2 mr-[30%]'>
-            <div className='flex gap-2 items-center'>
-                {!result && <Spinner />}
-
-                {result && <svg className="w-[16px] h-[16px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm13.707-1.293a1 1 0 0 0-1.414-1.414L11 12.586l-1.793-1.793a1 1 0 0 0-1.414 1.414l2.5 2.5a1 1 0 0 0 1.414 0l4-4Z" clipRule="evenodd" />
-                </svg>}
-
-                <div className='font-semibold'>
-                    Function Call: <span className='bg-gray-100 px-2 py-1 rounded-lg font-mono font-medium'>{toolCall.function.name}</span>
-                </div>
-            </div>
+            <ToolCallHeader toolCall={toolCall} result={result} />
 
             <div className='mt-1 flex flex-col gap-2'>
                 <div className="flex gap-1">
@@ -375,15 +371,13 @@ function RetrieveUrlInfoToolCall({
                         <span className='underline'>
                             {args.url}
                         </span>
-                        <svg className="w-[16px] h-[16px] shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M18 14v4.833A1.166 1.166 0 0 1 16.833 20H5.167A1.167 1.167 0 0 1 4 18.833V7.167A1.166 1.166 0 0 1 5.167 6h4.618m4.447-2H20v5.768m-7.889 2.121 7.778-7.778" />
-                        </svg>
+                        <ExternalLinkIcon size={16} />
                     </a>
                 </div>
                 {result && (
                     <ExpandableContent
                         label='Content'
-                        content={JSON.stringify(typedResult, null, 2)}
+                        content={typedResult}
                         expanded={false}
                     />
                 )}
@@ -479,20 +473,11 @@ function ClientToolCall({
     return <div className="flex flex-col gap-1">
         {sender && <div className='text-gray-500 text-sm ml-3'>{sender}</div>}
         <div className='border border-gray-300 p-2 pt-2 rounded-lg rounded-bl-none flex flex-col gap-2 mr-[30%]'>
-            <div className='shrink-0 flex gap-2 items-center'>
-                {!result && <Spinner />}
+            <ToolCallHeader toolCall={toolCall} result={result} />
 
-                {result && <svg className="w-[16px] h-[16px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm13.707-1.293a1 1 0 0 0-1.414-1.414L11 12.586l-1.793-1.793a1 1 0 0 0-1.414 1.414l2.5 2.5a1 1 0 0 0 1.414 0l4-4Z" clipRule="evenodd" />
-                </svg>}
-
-                <div className='font-semibold'>
-                    Function Call: <span className='bg-gray-100 px-2 py-1 rounded-lg font-mono font-medium'>{toolCall.function.name}</span>
-                </div>
-            </div>
             <div className='flex flex-col gap-2'>
-                <ExpandableContent label='Arguments' content={JSON.stringify(toolCall.function.arguments, null, 2)} expanded={Boolean(!result)} />
-                {result && <ExpandableContent label='Result' content={JSON.stringify(result.content, null, 2)} expanded={true} />}
+                <ExpandableContent label='Params' content={toolCall.function.arguments} expanded={Boolean(!result)} />
+                {result && <ExpandableContent label='Result' content={result.content} expanded={true} />}
             </div>
         </div>
     </div>;
@@ -546,22 +531,15 @@ function MockToolCall({
         }
         let ignore = false;
 
-        function process() {
+        async function process() {
             setGeneratingResponse(true);
 
-            suggestToolResponse(toolCall.id, projectId, messages)
-                .then((object) => {
-                    if (ignore) {
-                        return;
-                    }
-                    setResponse(JSON.stringify(object));
-                })
-                .finally(() => {
-                    if (ignore) {
-                        return;
-                    }
-                    setGeneratingResponse(false);
-                })
+            const response = await suggestToolResponse(toolCall.id, projectId, messages);
+            if (ignore) {
+                return;
+            }
+            setResponse(response);
+            setGeneratingResponse(false);
         }
         process();
 
@@ -584,24 +562,16 @@ function MockToolCall({
     }, [autoSubmit, response, handleSubmit, result]);
 
     return <div className="flex flex-col gap-1">
-        {sender && <div className='text-gray-500 text-sm ml-3'>{sender}</div>}
+        {sender && <div className='text-gray-500 text-xs ml-3'>{sender}</div>}
         <div className='border border-gray-300 p-2 pt-2 rounded-lg rounded-bl-none flex flex-col gap-2 mr-[30%]'>
-            <div className='shrink-0 flex gap-2 items-center'>
-                {!result && <Spinner />}
+            <ToolCallHeader toolCall={toolCall} result={result} />
 
-                {result && <svg className="w-[16px] h-[16px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm13.707-1.293a1 1 0 0 0-1.414-1.414L11 12.586l-1.793-1.793a1 1 0 0 0-1.414 1.414l2.5 2.5a1 1 0 0 0 1.414 0l4-4Z" clipRule="evenodd" />
-                </svg>}
-
-                <div className='font-semibold'>
-                    Function Call: <span className='bg-gray-100 px-2 py-1 rounded-lg font-mono font-medium'>{toolCall.function.name}</span>
-                </div>
-            </div>
             <div className='flex flex-col gap-2'>
-                <ExpandableContent label='Arguments' content={JSON.stringify(toolCall.function.arguments, null, 2)} expanded={Boolean(!result)} />
-                {result && <ExpandableContent label='Result' content={JSON.stringify(result.content, null, 2)} expanded={true} />}
+                <ExpandableContent label='Params' content={toolCall.function.arguments} expanded={false} />
+                {result && <ExpandableContent label='Result' content={result.content} expanded={false} />}
             </div>
-            {!result && <div className='flex flex-col gap-2 mt-2'>
+
+            {!result && !autoSubmit && <div className='flex flex-col gap-2 mt-2'>
                 <div>Response:</div>
                 <Textarea
                     maxRows={10}
@@ -611,12 +581,14 @@ function MockToolCall({
                     disabled={generatingResponse}
                     onValueChange={(value) => setResponse(value)}
                     className='font-mono'
+                    size="sm"
                 >
                 </Textarea>
                 <Button
                     onClick={handleSubmit}
                     disabled={generatingResponse}
                     isLoading={generatingResponse}
+                    size="sm"
                 >
                     Submit result
                 </Button>
@@ -631,28 +603,39 @@ function ExpandableContent({
     expanded = false
 }: {
     label: string,
-    content: string
+    content: string | object | undefined,
     expanded?: boolean
 }) {
     const [isExpanded, setIsExpanded] = useState(expanded);
+
+    const formattedContent = useMemo(() => {
+        if (typeof content === 'string') {
+            try {
+                const parsed = JSON.parse(content);
+                return JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                return content;
+            }
+        }
+        if (typeof content === 'object') {
+            return JSON.stringify(content, null, 2);
+        }
+        return 'undefined';
+    }, [content]);
 
     function toggleExpanded() {
         setIsExpanded(!isExpanded);
     }
 
     return <div className='flex flex-col gap-2'>
-        <div className='flex gap-2 items-start cursor-pointer' onClick={toggleExpanded}>
-            {!isExpanded && <svg className="mt-1 w-[16px] h-[16px] shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>}
-            {isExpanded && <svg className="mt-1 w-[16px] h-[16px] shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>}
-            <div className='text-left break-all'>{label}</div>
+        <div className='flex gap-1 items-start cursor-pointer text-gray-500' onClick={toggleExpanded}>
+            {!isExpanded && <ChevronRightIcon size={16} />}
+            {isExpanded && <ChevronDownIcon size={16} />}
+            <div className='text-left break-all text-xs'>{label}</div>
         </div>
-        {isExpanded && <div className='text-sm font-mono bg-gray-100 p-2 rounded break-all'>
-            {content}
-        </div>}
+        {isExpanded && <pre className='text-sm font-mono bg-gray-100 p-2 rounded break-all whitespace-pre-wrap overflow-x-auto'>
+            {formattedContent}
+        </pre>}
     </div>;
 }
 
