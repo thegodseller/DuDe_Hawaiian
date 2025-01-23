@@ -10,6 +10,7 @@ import clsx from "clsx";
 import { Action as WorkflowDispatch } from "./workflow_editor";
 import MarkdownContent from "@/app/lib/components/markdown-content";
 import { CopyAsJsonButton } from "../playground/copy-as-json-button";
+import { CornerDownLeftIcon, SendIcon } from "lucide-react";
 
 
 const CopilotContext = createContext<{
@@ -77,19 +78,18 @@ function ComposeBox({
         variant="bordered"
         placeholder="Enter message..."
         minRows={3}
-        maxRows={5}
+        maxRows={15}
         value={input}
         onValueChange={setInput}
         onKeyDown={handleInputKeyDown}
         className="w-full"
         endContent={<Button
+            size="sm"
             isIconOnly
             onClick={handleInput}
             className="bg-gray-100"
         >
-            <svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 6v13m0-13 4 4m-4-4-4 4" />
-            </svg>
+            <CornerDownLeftIcon size={16} />
         </Button>}
     />
 }

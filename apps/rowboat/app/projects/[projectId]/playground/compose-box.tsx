@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Spinner, Textarea } from "@nextui-org/react";
+import { CornerDownLeftIcon } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { apiV1 } from "rowboat-shared";
 import { z } from "zod";
@@ -48,22 +49,20 @@ export function ComposeBox({
         variant="bordered"
         placeholder="Enter message..."
         minRows={minRows}
-        maxRows={5}
+        maxRows={15}
         value={input}
         onValueChange={setInput}
         onKeyDown={handleInputKeyDown}
         disabled={disabled}
         className="w-full"
         endContent={<Button
+            size="sm"
             isIconOnly
             disabled={disabled}
             onClick={handleInput}
             className="bg-gray-100"
         >
-            {!loading && <svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 6v13m0-13 4 4m-4-4-4 4" />
-            </svg>}
-            {loading && <Spinner size="sm" />}
+            <CornerDownLeftIcon size={16} />
         </Button>}
     />;
 }
