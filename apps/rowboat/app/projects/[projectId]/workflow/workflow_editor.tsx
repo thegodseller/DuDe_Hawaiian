@@ -243,7 +243,7 @@ function reducer(state: State, action: Action): State {
                                 instructions: "",
                                 prompts: [],
                                 tools: [],
-                                model: "gpt-4o-mini",
+                                model: "gpt-4o",
                                 locked: false,
                                 toggleAble: true,
                                 ragReturnType: "chunks",
