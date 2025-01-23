@@ -4,6 +4,7 @@ import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@nextui-o
 import { useRef, useEffect } from "react";
 import { ActionButton, Pane } from "./pane";
 import clsx from "clsx";
+import { EllipsisVerticalIcon } from "lucide-react";
 
 interface EntityListProps {
     agents: z.infer<typeof WorkflowAgent>[];
@@ -177,9 +178,7 @@ function AgentDropdown({
     return (
         <Dropdown>
             <DropdownTrigger>
-                <svg className="w-4 h-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeWidth="3" d="M12 6h.01M12 12h.01M12 18h.01" />
-                </svg>
+                <EllipsisVerticalIcon size={16} />
             </DropdownTrigger>
             <DropdownMenu
                 disabledKeys={[
@@ -219,9 +218,7 @@ function EntityDropdown({
     return (
         <Dropdown>
             <DropdownTrigger>
-                <svg className="w-4 h-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeWidth="3" d="M12 6h.01M12 12h.01M12 18h.01" />
-                </svg>
+                <EllipsisVerticalIcon size={16} />
             </DropdownTrigger>
             <DropdownMenu
                 onAction={(key) => {

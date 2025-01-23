@@ -1,5 +1,5 @@
 'use client';
-import { Spinner } from "@nextui-org/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner } from "@nextui-org/react";
 import { useEffect, useState, useMemo } from "react";
 import { z } from "zod";
 import { PlaygroundChat, SimulationData, Workflow } from "@/app/lib/types";
@@ -8,6 +8,7 @@ import { Chat } from "./chat";
 import { useSearchParams } from "next/navigation";
 import { ActionButton, Pane } from "../workflow/pane";
 import { apiV1 } from "rowboat-shared";
+import { EllipsisVerticalIcon, MessageSquarePlusIcon, PlayIcon } from "lucide-react";
 
 function SimulateLabel() {
     return <span>Simulate<sup className="pl-1">beta</sup></span>;
@@ -75,18 +76,14 @@ export function App({
     return <Pane title={viewSimulationMenu ? <SimulateLabel /> : "Chat"} actions={[
         <ActionButton
             key="new-chat"
-            icon={<svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 10.5h.01m-4.01 0h.01M8 10.5h.01M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.6a1 1 0 0 0-.69.275l-2.866 2.723A.5.5 0 0 1 8 18.635V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
-            </svg>}
+            icon={<MessageSquarePlusIcon size={16} />}
             onClick={handleNewChatButtonClick}
         >
             New chat
         </ActionButton>,
         !viewSimulationMenu && <ActionButton
             key="simulate"
-            icon={<svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 18V6l8 6-8 6Z" />
-            </svg>}
+            icon={<PlayIcon size={16} />}
             onClick={handleSimulateButtonClick}
         >
             Simulate

@@ -7,7 +7,7 @@ import { AgenticAPIChatRequest, convertToAgenticAPIChatMessages, convertWorkflow
 import { ComposeBox } from "./compose-box";
 import { Button } from "@nextui-org/react";
 import { apiV1 } from "rowboat-shared";
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { CopyAsJsonButton } from "./copy-as-json-button";
 
 export function Chat({
     chat,
@@ -101,7 +101,7 @@ export function Chat({
                 prompts,
                 startAgent,
             };
-            setLastAgenticRequest(request);
+            setLastAgenticRequest(null);
             setLastAgenticResponse(null);
 
             try {
@@ -109,7 +109,8 @@ export function Chat({
                 if (ignore) {
                     return;
                 }
-                setLastAgenticResponse(response.rawAPIResponse);
+                setLastAgenticRequest(response.rawRequest);
+                setLastAgenticResponse(response.rawResponse);
                 setMessages([...messages, ...response.messages.map((message) => ({
                     ...message,
                     version: 'v1' as const,
@@ -250,36 +251,15 @@ export function Chat({
             lastRequest: lastAgenticRequest,
             lastResponse: lastAgenticResponse,
         }, null, 2);
-        navigator.clipboard.writeText(jsonString)
-            .then(() => {
-                setShowCopySuccess(true);
-                setTimeout(() => {
-                    setShowCopySuccess(false);
-                }, 1500);
-            })
-            .catch(err => {
-                console.error('Failed to copy chat to clipboard:', err);
-            });
-    };
+        navigator.clipboard.writeText(jsonString);
+    }
 
     function handleSystemMessageChange(message: string) {
         setSystemMessage(message);
     }
 
     return <div className="relative h-full flex flex-col gap-8 pt-8 overflow-auto">
-        <Button
-            size="sm"
-            variant="bordered"
-            isIconOnly
-            onClick={handleCopyChat}
-            className="absolute top-2 right-0"
-        >
-            {showCopySuccess ? (
-                <CheckIcon size={16} />
-            ) : (
-                <CopyIcon size={16} />
-            )}
-        </Button>
+        <CopyAsJsonButton onCopy={handleCopyChat} />
         <Messages
             projectId={projectId}
             messages={messages}

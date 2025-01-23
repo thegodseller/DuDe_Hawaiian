@@ -23,7 +23,7 @@ export function Pane({
                 {title}
             </div>
             {!actions && <div className="w-4 h-4" />}
-            {actions && <div className={clsx("rounded-md hover:text-gray-800 px-2 text-sm flex items-center gap-1", {
+            {actions && <div className={clsx("rounded-md hover:text-gray-800 px-2 text-sm flex items-center gap-2", {
                 "text-blue-600": fancy,
                 "text-gray-400": !fancy,
             })}>

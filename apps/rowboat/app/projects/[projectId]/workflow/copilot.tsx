@@ -9,6 +9,7 @@ import { Action } from "./copilot_actions";
 import clsx from "clsx";
 import { Action as WorkflowDispatch } from "./workflow_editor";
 import MarkdownContent from "@/app/lib/components/markdown-content";
+import { CopyAsJsonButton } from "../playground/copy-as-json-button";
 
 
 const CopilotContext = createContext<{
@@ -181,6 +182,8 @@ function App({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [appliedChanges, setAppliedChanges] = useState<Record<string, boolean>>({});
     const [discardContext, setDiscardContext] = useState(false);
+    const [lastRequest, setLastRequest] = useState<unknown | null>(null);
+    const [lastResponse, setLastResponse] = useState<unknown | null>(null);
 
     // Cycle through loading messages until reaching the last one
     useEffect(() => {
@@ -328,7 +331,10 @@ function App({
             setResponseError(null);
 
             try {
-                const copilotMessage = await getCopilotResponse(
+                setLastRequest(null);
+                setLastResponse(null);
+
+                const response = await getCopilotResponse(
                     projectId,
                     messages,
                     workflow,
@@ -337,7 +343,9 @@ function App({
                 if (ignore) {
                     return;
                 }
-                setMessages([...messages, copilotMessage]);
+                setLastRequest(response.rawRequest);
+                setLastResponse(response.rawResponse);
+                setMessages([...messages, response.message]);
             } catch (err) {
                 if (!ignore) {
                     setResponseError(`Failed to get copilot response: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -369,14 +377,24 @@ function App({
         };
     }, [messages, projectId, responseError, workflow, effectiveContext]);
 
+    function handleCopyChat() {
+        const jsonString = JSON.stringify({
+            messages: messages,
+            lastRequest: lastRequest,
+            lastResponse: lastResponse,
+        }, null, 2);
+        navigator.clipboard.writeText(jsonString);
+    }
+
     // scroll to bottom on new messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [messages, loadingResponse]);
 
-    return <div className="h-full flex flex-col">
+    return <div className="h-full flex flex-col relative">
         <CopilotContext.Provider value={{ workflow, handleApplyChange, appliedChanges }}>
-            <div className="grow flex flex-col gap-2 overflow-auto px-1">
+            <CopyAsJsonButton onCopy={handleCopyChat} />
+            <div className="grow flex flex-col gap-2 overflow-auto px-1 mt-6">
                 {messages.map((m, index) => {
                     // Calculate if this assistant message is stale
                     const isStale = m.role === 'assistant' && messages.slice(index + 1).some(
@@ -412,7 +430,7 @@ function App({
             </div>
             <div className="shrink-0">
                 {responseError && (
-                    <div className="max-w-[768px] mx-auto mb-4 p-2 bg-red-50 border border-red-200 rounded-lg flex gap-2 justify-between items-center">
+                    <div className="max-w-[768px] mx-auto mb-4 p-2 bg-red-50 border border-red-200 rounded-lg flex gap-2 justify-between items-center text-sm">
                         <p className="text-red-600">{responseError}</p>
                         <Button
                             size="sm"

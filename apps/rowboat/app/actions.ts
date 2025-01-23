@@ -462,7 +462,8 @@ export async function getAssistantResponse(
 ): Promise<{
     messages: z.infer<typeof apiV1.ChatMessage>[],
     state: unknown,
-    rawAPIResponse: unknown,
+    rawRequest: unknown,
+    rawResponse: unknown,
 }> {
     await projectAuthCheck(projectId);
 
@@ -470,7 +471,8 @@ export async function getAssistantResponse(
     return {
         messages: convertFromAgenticAPIChatMessages(response.messages),
         state: response.state,
-        rawAPIResponse: response.rawAPIResponse,
+        rawRequest: request,
+        rawResponse: response.rawAPIResponse,
     };
 }
 
@@ -479,7 +481,11 @@ export async function getCopilotResponse(
     messages: z.infer<typeof CopilotMessage>[],
     current_workflow_config: z.infer<typeof Workflow>,
     context: z.infer<typeof CopilotChatContext> | null,
-): Promise<z.infer<typeof CopilotAssistantMessage>> {
+): Promise<{
+    message: z.infer<typeof CopilotAssistantMessage>,
+    rawRequest: unknown,
+    rawResponse: unknown,
+}> {
     await projectAuthCheck(projectId);
 
     // prepare request
@@ -515,7 +521,12 @@ export async function getCopilotResponse(
         role: 'assistant',
         content: json.response.replace(/^```json\n/, '').replace(/\n```$/, ''),
     });
-    return msg as z.infer<typeof CopilotAssistantMessage>;
+
+    return {
+        message: msg as z.infer<typeof CopilotAssistantMessage>,
+        rawRequest: request,
+        rawResponse: json,
+    };
 }
 
 export async function suggestToolResponse(toolId: string, projectId: string, messages: z.infer<typeof apiV1.ChatMessage>[]): Promise<string> {
