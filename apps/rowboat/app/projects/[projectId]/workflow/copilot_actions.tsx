@@ -5,7 +5,8 @@ import { z } from "zod";
 import { Workflow, CopilotAssistantMessage, CopilotAssistantMessageActionPart } from "@/app/lib/types";
 import { PreviewModalProvider, usePreviewModal } from './preview-modal';
 import { getAppliedChangeKey } from "./copilot";
-import { CheckCheckIcon, CheckIcon, ChevronsDownIcon, ChevronsUpIcon, EyeIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { AlertTriangleIcon, CheckCheckIcon, CheckIcon, ChevronsDownIcon, ChevronsUpIcon, EyeIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { Tooltip } from "@nextui-org/react";
 
 const ActionContext = createContext<{
     msgIndex: number;
@@ -51,12 +52,16 @@ export function Action({
     return <div className={clsx('flex flex-col rounded-sm border border-t-4', {
         'bg-gray-50 border-gray-400 border-t-blue-500 shadow': !stale && !allApplied && action.action == 'create_new',
         'bg-gray-50 border-gray-400 border-t-orange-500 shadow': !stale && !allApplied && action.action == 'edit',
-        'bg-gray-100 border-gray-400 border-t-gray-400': stale || allApplied,
+        'bg-gray-100 border-gray-400 border-t-gray-400': stale || allApplied || action.error,
     })}>
         <ActionContext.Provider value={{ msgIndex, actionIndex, action, workflow, handleApplyChange, appliedFields, stale }}>
             <ActionHeader />
             <ActionSummary />
             {expanded && <PreviewModalProvider>
+                {action.error && <div className="flex flex-col gap-1 px-1 text-xs bg-red-50 rounded-sm">
+                    <div className="text-red-500 font-medium text-xs">This configuration is invalid and cannot be applied:</div>
+                    <div className="text-xs font-mono">{action.error}</div>
+                </div>}
                 <div className="flex flex-col gap-2 px-1">
                     {Object.entries(action.config_changes).map(([key, value]) => {
                         return <ActionField key={key} field={key} />
@@ -64,8 +69,14 @@ export function Action({
                 </div>
             </PreviewModalProvider>}
             <div className="flex items-center">
-                <button
-                    className="grow rounded-l-sm bg-blue-100 text-blue-500 hover:bg-blue-200 disabled:bg-gray-100 disabled:text-green-500 flex flex-col items-center justify-center h-8"
+                {action.error && <div className="grow rounded-l-sm bg-red-100 text-red-500 flex flex-col items-center justify-center h-8">
+                    <div className="flex items-center gap-2 justify-center">
+                        <AlertTriangleIcon size={16} />
+                        <div className="font-medium text-xs">Error</div>
+                    </div>
+                </div>}
+                {!action.error && <button
+                    className="grow rounded-l-sm bg-blue-100 text-blue-500 hover:bg-blue-200 disabled:bg-gray-100 disabled:text-gray-300 flex flex-col items-center justify-center h-8"
                     onClick={applyChangeHandler}
                     disabled={stale || allApplied}
                 >
@@ -73,7 +84,7 @@ export function Action({
                         <CheckCheckIcon size={16} />
                         <div className="font-medium text-xs">{allApplied ? 'Applied' : 'Apply'}</div>
                     </div>
-                </button>
+                </button>}
                 <button
                     className="w-10 shrink-0 flex flex-col items-center h-8 rounded-r-sm bg-gray-100 text-gray-600 hover:bg-gray-200 justify-center"
                     onClick={() => setExpanded(!expanded)}
@@ -190,7 +201,7 @@ export function ActionField({
                 >
                     <EyeIcon size={16} />
                 </button>
-                {action.action === 'edit' && <button
+                {action.action === 'edit' && !action.error && <button
                     className={clsx("text-gray-500 hover:text-black", {
                         'text-green-600': applied,
                         'text-gray-600': stale,

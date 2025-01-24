@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from "next/navigation";
-import { SimulationData, EmbeddingDoc, GetInformationToolResult, DataSource, PlaygroundChat, AgenticAPIChatRequest, AgenticAPIChatResponse, convertFromAgenticAPIChatMessages, WebpageCrawlResponse, Workflow, WorkflowAgent, CopilotAPIRequest, CopilotAPIResponse, CopilotMessage, CopilotWorkflow, convertToCopilotWorkflow, convertToCopilotApiMessage, convertToCopilotMessage, CopilotAssistantMessage, CopilotChatContext, convertToCopilotApiChatContext, Scenario, ClientToolCallRequestBody, ClientToolCallJwt, ClientToolCallRequest, WithStringId, Project } from "./lib/types";
+import { SimulationData, EmbeddingDoc, GetInformationToolResult, DataSource, PlaygroundChat, AgenticAPIChatRequest, AgenticAPIChatResponse, convertFromAgenticAPIChatMessages, WebpageCrawlResponse, Workflow, WorkflowAgent, CopilotAPIRequest, CopilotAPIResponse, CopilotMessage, CopilotWorkflow, convertToCopilotWorkflow, convertToCopilotApiMessage, convertToCopilotMessage, CopilotAssistantMessage, CopilotChatContext, convertToCopilotApiChatContext, Scenario, ClientToolCallRequestBody, ClientToolCallJwt, ClientToolCallRequest, WithStringId, Project, WorkflowTool, WorkflowPrompt } from "./lib/types";
 import { ObjectId, WithId } from "mongodb";
 import { generateObject, generateText, tool, embed } from "ai";
 import { dataSourcesCollection, embeddingsCollection, projectsCollection, webpagesCollection, agentWorkflowsCollection, scenariosCollection, projectMembersCollection } from "@/app/lib/mongodb";
@@ -16,6 +16,7 @@ import { SignJWT } from "jose";
 import { Claims, getSession } from "@auth0/nextjs-auth0";
 import { revalidatePath } from "next/cache";
 import { baseWorkflow, callClientToolWebhook, getAgenticApiResponse } from "./lib/utils";
+import { assert, error } from "node:console";
 
 const crawler = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY || '' });
 
@@ -521,6 +522,67 @@ export async function getCopilotResponse(
         role: 'assistant',
         content: json.response.replace(/^```json\n/, '').replace(/\n```$/, ''),
     });
+
+    // assert that msg.content is a CopilotAssistantMessage
+    assert(msg.role === 'assistant');
+    if (msg.role === 'assistant') {
+        for (const part of msg.content.response) {
+            if (part.type === 'action') {
+                switch (part.content.config_type) {
+                    case 'tool': {
+                        const test = {
+                            name: 'test',
+                            description: 'test',
+                            ...part.content.config_changes,
+                        } as z.infer<typeof WorkflowTool>;
+                        const result = WorkflowTool.safeParse(test);
+                        if (!result.success) {
+                            part.content.error = result.error.message;
+                        }
+                        break;
+                    }
+                    case 'agent': {
+                        const test = {
+                            name: 'test',
+                            description: 'test',
+                            type: 'conversation',
+                            instructions: 'test',
+                            prompts: [],
+                            tools: [],
+                            model: 'gpt-4o',
+                            ragReturnType: 'chunks',
+                            ragK: 10,
+                            connectedAgents: [],
+                            controlType: 'retain',
+                            ...part.content.config_changes,
+                        } as z.infer<typeof WorkflowAgent>;
+                        const result = WorkflowAgent.safeParse(test);
+                        if (!result.success) {
+                            part.content.error = result.error.message;
+                        }
+                        break;
+                    }
+                    case 'prompt': {
+                        const test = {
+                            name: 'test',
+                            type: 'base_prompt',
+                            prompt: "test",
+                            ...part.content.config_changes,
+                        } as z.infer<typeof WorkflowPrompt>;
+                        const result = WorkflowPrompt.safeParse(test);
+                        if (!result.success) {
+                            part.content.error = result.error.message;
+                        }
+                        break;
+                    }
+                    default: {
+                        part.content.error = `Unknown config type: ${part.content.config_type}`;
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     return {
         message: msg as z.infer<typeof CopilotAssistantMessage>,

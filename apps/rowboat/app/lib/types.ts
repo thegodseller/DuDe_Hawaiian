@@ -270,6 +270,7 @@ export const CopilotAssistantMessageActionPart = z.object({
         name: z.string(),
         change_description: z.string(),
         config_changes: z.record(z.string(), z.unknown()),
+        error: z.string().optional(),
     })
 });
 
