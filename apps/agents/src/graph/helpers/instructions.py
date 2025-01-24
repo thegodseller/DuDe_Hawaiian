@@ -33,3 +33,7 @@ def get_universal_system_message(messages):
     if messages and messages[0].get("role") == "system":
         return SYSTEM_MESSAGE.format(system_message=messages[0].get("content"))
     return ""
+
+def add_universal_system_message_to_agent(agent, universal_sys_msg):
+    agent.instructions = agent.instructions + f'\n\n{'-'*100}\n\n' + universal_sys_msg
+    return agent

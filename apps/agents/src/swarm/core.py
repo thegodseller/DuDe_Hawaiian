@@ -39,7 +39,6 @@ class Swarm:
         model_override: str,
         stream: bool,
         debug: bool,
-        universal_sys_msg: str,
     ) -> ChatCompletionMessage:
         context_variables = defaultdict(str, context_variables)
         instructions = (
@@ -47,7 +46,7 @@ class Swarm:
             if callable(agent.instructions)
             else agent.instructions
         )
-        messages = [{"role": "system", "content": instructions + universal_sys_msg}] + history
+        messages = [{"role": "system", "content": instructions}] + history
         debug_print(debug, "Getting chat completion for...:", messages)
 
         all_functions = list(agent.child_functions.values()) + ([agent.parent_function] if agent.parent_function else [])
@@ -156,8 +155,7 @@ class Swarm:
         external_tools: List[str] = [],
         localize_history: bool = True,
         parent_has_child_history: bool = True,
-        tokens_used: dict = {},
-        universal_sys_msg: str = '',
+        tokens_used: dict = {}
     ) -> Response:
 
         active_agent = agent
@@ -182,8 +180,7 @@ class Swarm:
                 context_variables=context_variables,
                 model_override=model_override,
                 stream=stream,
-                debug=debug,
-                universal_sys_msg=universal_sys_msg,
+                debug=debug
             )
             tokens_used = update_tokens_used(provider="openai", model=model_override or active_agent.model, tokens_used=tokens_used, completion=completion)
 
