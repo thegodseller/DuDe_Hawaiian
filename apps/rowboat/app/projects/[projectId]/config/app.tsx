@@ -7,6 +7,9 @@ import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, de
 import { CopyButton } from "@/app/lib/components/copy-button";
 import { EditableField } from "@/app/lib/components/editable-field";
 import { EyeIcon, EyeOffIcon, CopyIcon, MoreVerticalIcon, PlusIcon, EllipsisVerticalIcon } from "lucide-react";
+import { WithStringId, ApiKey } from "@/app/lib/types";
+import { z } from "zod";
+import { RelativeTime } from "@primer/react";
 
 export const metadata: Metadata = {
     title: "Project config",
@@ -142,11 +145,7 @@ export function ApiKeysSection({
 }: {
     projectId: string;
 }) {
-    const [keys, setKeys] = useState<Array<{
-        _id: string;
-        key: string;
-        createdAt: string;
-    }>>([]);
+    const [keys, setKeys] = useState<WithStringId<z.infer<typeof ApiKey>>[]>([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState<{
         type: 'success' | 'error' | 'info';
@@ -254,9 +253,11 @@ export function ApiKeysSection({
                                 <ApiKeyDisplay apiKey={key.key} />
                             </div>
                             <div className="flex-1 p-2">
-                                {new Date(key.createdAt).toLocaleDateString()}
+                                <RelativeTime date={new Date(key.createdAt)} />
                             </div>
-                            <div className="flex-1 p-2">Never</div>
+                            <div className="flex-1 p-2">
+                                {key.lastUsedAt ? <RelativeTime date={new Date(key.lastUsedAt)} /> : 'Never'}
+                            </div>
                             <div className="w-10 p-2">
                                 <Dropdown>
                                     <DropdownTrigger>
