@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import Menu from "./menu";
-import { Project, WithStringId } from "@/app/lib/types";
-import { z } from "zod";
 import { getProjectConfig } from "@/app/actions";
 import { ChevronsLeftIcon, ChevronsRightIcon } from "lucide-react";
 
@@ -15,31 +13,14 @@ export function Nav({
     projectId: string;
 }) {
     const [collapsed, setCollapsed] = useState(false);
-    const [project, setProject] = useState<WithStringId<z.infer<typeof Project>>>({
-        _id: projectId,
-        name: projectId,
-        createdAt: "",
-        lastUpdatedAt: "",
-        createdByUserId: "",
-        secret: "",
-        chatClientId: "",
-    });
+    const [projectName, setProjectName] = useState<string | null>(null);
 
     useEffect(() => {
-        let ignore = false;
-
         async function getProject() {
             const project = await getProjectConfig(projectId);
-            if (ignore) {
-                return;
-            }
-            setProject(project);
+            setProjectName(project.name);
         }
         getProject();
-
-        return () => {
-            ignore = true;
-        };
     }, [projectId]);
 
     function toggleCollapse() {
@@ -56,14 +37,14 @@ export function Nav({
                 {collapsed && <ChevronsRightIcon size={16} className="m-auto" />}
             </button>
         </Tooltip>
-        {!collapsed && project && <div className="flex flex-col gap-1">
+        {!collapsed && <div className="flex flex-col gap-1">
             <Tooltip content="Change project" showArrow placement="bottom-end">
                 <Link className="relative group flex flex-col px-2 py-2 border border-gray-200 rounded-md hover:border-gray-500" href="/projects">
                     <div className="absolute top-[-7px] left-1 px-1 bg-gray-100 text-xs text-gray-400 group-hover:text-gray-600">
                         Project
                     </div>
                     <div className="truncate text-sm">
-                        {project.name}
+                        {projectName || projectId}
                     </div>
                 </Link>
             </Tooltip>

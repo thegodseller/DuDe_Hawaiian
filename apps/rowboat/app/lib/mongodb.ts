@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-import { PlaygroundChat, DataSource, EmbeddingDoc, Project, Webpage, ChatClientId, Workflow, Scenario, ProjectMember } from "./types";
+import { PlaygroundChat, DataSource, EmbeddingDoc, Project, Webpage, ChatClientId, Workflow, Scenario, ProjectMember, ApiKey } from "./types";
 import { z } from 'zod';
 
 const client = new MongoClient(process.env["MONGODB_CONNECTION_STRING"] || "mongodb://localhost:27017");
@@ -12,3 +12,4 @@ export const projectMembersCollection = db.collection<z.infer<typeof ProjectMemb
 export const webpagesCollection =  db.collection<z.infer<typeof Webpage>>('webpages');
 export const agentWorkflowsCollection = db.collection<z.infer<typeof Workflow>>("agent_workflows");
 export const scenariosCollection = db.collection<z.infer<typeof Scenario>>("scenarios");
+export const apiKeysCollection = db.collection<z.infer<typeof ApiKey>>("api_keys");

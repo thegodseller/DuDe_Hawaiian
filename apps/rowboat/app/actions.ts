@@ -1,10 +1,10 @@
 'use server';
 
 import { redirect } from "next/navigation";
-import { SimulationData, EmbeddingDoc, GetInformationToolResult, DataSource, PlaygroundChat, AgenticAPIChatRequest, AgenticAPIChatResponse, convertFromAgenticAPIChatMessages, WebpageCrawlResponse, Workflow, WorkflowAgent, CopilotAPIRequest, CopilotAPIResponse, CopilotMessage, CopilotWorkflow, convertToCopilotWorkflow, convertToCopilotApiMessage, convertToCopilotMessage, CopilotAssistantMessage, CopilotChatContext, convertToCopilotApiChatContext, Scenario, ClientToolCallRequestBody, ClientToolCallJwt, ClientToolCallRequest, WithStringId, Project, WorkflowTool, WorkflowPrompt } from "./lib/types";
+import { SimulationData, EmbeddingDoc, GetInformationToolResult, DataSource, PlaygroundChat, AgenticAPIChatRequest, AgenticAPIChatResponse, convertFromAgenticAPIChatMessages, WebpageCrawlResponse, Workflow, WorkflowAgent, CopilotAPIRequest, CopilotAPIResponse, CopilotMessage, CopilotWorkflow, convertToCopilotWorkflow, convertToCopilotApiMessage, convertToCopilotMessage, CopilotAssistantMessage, CopilotChatContext, convertToCopilotApiChatContext, Scenario, ClientToolCallRequestBody, ClientToolCallJwt, ClientToolCallRequest, WithStringId, Project, WorkflowTool, WorkflowPrompt, ApiKey } from "./lib/types";
 import { ObjectId, WithId } from "mongodb";
 import { generateObject, generateText, tool, embed } from "ai";
-import { dataSourcesCollection, embeddingsCollection, projectsCollection, webpagesCollection, agentWorkflowsCollection, scenariosCollection, projectMembersCollection } from "@/app/lib/mongodb";
+import { dataSourcesCollection, embeddingsCollection, projectsCollection, webpagesCollection, agentWorkflowsCollection, scenariosCollection, projectMembersCollection, apiKeysCollection } from "@/app/lib/mongodb";
 import { z } from 'zod';
 import { openai } from "@ai-sdk/openai";
 import FirecrawlApp, { ScrapeResponse } from '@mendable/firecrawl-js';
@@ -978,4 +978,94 @@ export async function executeClientTool(
 
     const result = await callClientToolWebhook(toolCall, projectId);
     return result;
+}
+
+export async function createApiKey(projectId: string): Promise<WithStringId<z.infer<typeof ApiKey>>> {
+    await projectAuthCheck(projectId);
+
+    // count existing keys
+    const count = await apiKeysCollection.countDocuments({ projectId });
+    if (count >= 3) {
+        throw new Error('Maximum number of API keys reached');
+    }
+
+    // create key
+    const key = crypto.randomBytes(32).toString('hex');
+    const doc: z.infer<typeof ApiKey> = {
+        projectId,
+        key,
+        createdAt: new Date().toISOString(),
+    };
+    await apiKeysCollection.insertOne(doc);
+    const { _id, ...rest } = doc as WithStringId<z.infer<typeof ApiKey>>;
+    return { ...rest, _id: _id.toString() };
+}
+
+export async function deleteApiKey(projectId: string, id: string) {
+    await projectAuthCheck(projectId);
+    await apiKeysCollection.deleteOne({ projectId, _id: new ObjectId(id) });
+}
+
+export async function listApiKeys(projectId: string): Promise<WithStringId<z.infer<typeof ApiKey>>[]> {
+    await projectAuthCheck(projectId);
+    const keys = await apiKeysCollection.find({ projectId }).toArray();
+    return keys.map(k => ({ ...k, _id: k._id.toString() }));
+}
+
+export async function updateProjectName(projectId: string, name: string) {
+    await projectAuthCheck(projectId);
+    await projectsCollection.updateOne({ _id: projectId }, { $set: { name } });
+    revalidatePath(`/projects/${projectId}`, 'layout');
+}
+
+export async function deleteProject(projectId: string) {
+    await projectAuthCheck(projectId);
+
+    // delete api keys
+    await apiKeysCollection.deleteMany({
+        projectId,
+    });
+
+    // delete embeddings
+    const sources = await dataSourcesCollection.find({
+        projectId,
+    }, {
+        projection: {
+            _id: true,
+        }
+    }).toArray();
+
+    const ids = sources.map(s => s._id);
+
+    // delete data sources
+    await embeddingsCollection.deleteMany({
+        sourceId: { $in: ids.map(i => i.toString()) },
+    });
+    await dataSourcesCollection.deleteMany({
+        _id: {
+            $in: ids,
+        }
+    });
+
+    // delete project members
+    await projectMembersCollection.deleteMany({
+        projectId,
+    });
+
+    // delete workflows
+    await agentWorkflowsCollection.deleteMany({
+        projectId,
+    });
+
+    // delete scenarios
+    await scenariosCollection.deleteMany({
+        projectId,
+    });
+
+    // delete project
+    await projectsCollection.deleteOne({
+        _id: projectId,
+    });
+
+    redirect('/projects');
 }
