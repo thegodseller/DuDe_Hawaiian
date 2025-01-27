@@ -1,7 +1,7 @@
 'use client';
 
 import { Metadata } from "next";
-import { Spinner, Textarea, Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure } from "@nextui-org/react";
+import { Spinner, Textarea, Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider } from "@nextui-org/react";
 import { ReactNode, useEffect, useState, useCallback } from "react";
 import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret } from "@/app/actions";
 import { CopyButton } from "@/app/lib/components/copy-button";
@@ -10,6 +10,7 @@ import { EyeIcon, EyeOffIcon, CopyIcon, MoreVerticalIcon, PlusIcon, EllipsisVert
 import { WithStringId, ApiKey } from "@/app/lib/types";
 import { z } from "zod";
 import { RelativeTime } from "@primer/react";
+import { Label } from "@/app/lib/components/label";
 
 export const metadata: Metadata = {
     title: "Project config",
@@ -22,8 +23,8 @@ export function Section({
     title: string;
     children: React.ReactNode;
 }) {
-    return <div className="w-full flex flex-col gap-4 border border-gray-200 p-4 rounded-md">
-        <h2 className="font-semibold pt-4">{title}</h2>
+    return <div className="w-full flex flex-col gap-4 border border-gray-300 p-4 rounded-md">
+        <h2 className="font-semibold pb-2 border-b border-gray-200">{title}</h2>
         {children}
     </div>;
 }
@@ -33,7 +34,7 @@ export function SectionRow({
 }: {
     children: ReactNode;
 }) {
-    return <div className="flex flex-row items-center">{children}</div>;
+    return <div className="flex flex-col gap-2">{children}</div>;
 }
 
 export function LeftLabel({
@@ -41,9 +42,7 @@ export function LeftLabel({
 }: {
     label: string;
 }) {
-    return <div className="w-1/2">
-        <div className="text-gray-600 font-semibold text-right text-sm pr-2">{label}:</div>
-    </div>;
+    return <Label label={label} />;
 }
 
 export function RightContent({
@@ -51,7 +50,7 @@ export function RightContent({
 }: {
     children: React.ReactNode;
 }) {
-    return <div className="w-1/2">{children}</div>;
+    return <div>{children}</div>;
 }
 
 export function BasicSettingsSection({
@@ -78,6 +77,7 @@ export function BasicSettingsSection({
     }
 
     return <Section title="Basic settings">
+
         <SectionRow>
             <LeftLabel label="Project name" />
             <RightContent>
@@ -86,10 +86,13 @@ export function BasicSettingsSection({
                     {!loading && <EditableField
                         value={projectName || ''}
                         onChange={updateName}
+                        className="w-full"
                     />}
                 </div>
             </RightContent>
         </SectionRow>
+
+        <Divider />
 
         <SectionRow>
             <LeftLabel label="Project ID" />
@@ -229,6 +232,7 @@ export function ApiKeysSection({
                 </Button>
             </div>
 
+            <Divider />
             {loading && <Spinner size="sm" />}
             {!loading && <div className="border rounded-lg text-sm">
                 <div className="flex items-center border-b p-4">
@@ -326,10 +330,11 @@ export function SecretSection({
         <p className="text-sm">
             The project secret is used for:
         </p>
-        <ul className="list-disc list-inside text-sm">
+        <ul className="list-disc list-inside text-sm ml-4">
             <li>Signing tool-call requests sent to your webhook</li>
             <li>Signing user-data sent through the chat widget</li>
         </ul>
+        <Divider />
         <SectionRow>
             <LeftLabel label="Project secret" />
             <RightContent>
@@ -407,6 +412,7 @@ export function WebhookUrlSection({
         <p className="text-sm">
             Tool calls issued through the chat widget will be posted to this URL.
         </p>
+        <Divider />
         <SectionRow>
             <LeftLabel label="Webhook URL" />
             <RightContent>
@@ -416,6 +422,7 @@ export function WebhookUrlSection({
                         value={webhookUrl || ''}
                         onChange={update}
                         validate={validate}
+                        className="w-full"
                     />}
                 </div>
             </RightContent>
