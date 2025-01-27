@@ -89,7 +89,7 @@ You are an helpful customer support assistant
             tools: [],
             model: "gpt-4o-mini",
             locked: true,
-            toggleAble: true,
+            toggleAble: false,
             ragReturnType: "chunks",
             ragK: 3,
             connectedAgents: [],
