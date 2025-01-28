@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import clsx from "clsx";
 import Menu from "./menu";
 import { getProjectConfig } from "@/app/actions";
-import { ChevronsLeftIcon, ChevronsRightIcon } from "lucide-react";
+import { ChevronsLeftIcon, ChevronsRightIcon, FolderOpenIcon, PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
 
 export function Nav({
     projectId,
@@ -32,9 +32,9 @@ export function Nav({
         "w-10": collapsed
     })}>
         <Tooltip content={collapsed ? "Expand" : "Collapse"} showArrow placement="right">
-            <button onClick={toggleCollapse} className="absolute bottom-[50px] left-2 text-gray-400 hover:text-black w-[28px] h-[28px]">
-                {!collapsed && <ChevronsLeftIcon size={16} className="m-auto" />}
-                {collapsed && <ChevronsRightIcon size={16} className="m-auto" />}
+            <button onClick={toggleCollapse} className="absolute bottom-[50px] right-2 text-gray-400 hover:text-black w-[28px] h-[28px]">
+                {!collapsed && <PanelLeftCloseIcon size={16} className="m-auto" />}
+                {collapsed && <PanelLeftOpenIcon size={16} className="m-auto" />}
             </button>
         </Tooltip>
         {!collapsed && <div className="flex flex-col gap-1">
@@ -43,12 +43,20 @@ export function Nav({
                     <div className="absolute top-[-7px] left-1 px-1 bg-gray-100 text-xs text-gray-400 group-hover:text-gray-600">
                         Project
                     </div>
-                    <div className="truncate text-sm">
-                        {projectName || projectId}
+                    <div className="flex flex-row items-center gap-2">
+                        <FolderOpenIcon size={16} />
+                        <div className="truncate text-sm">
+                            {projectName || projectId}
+                        </div>
                     </div>
                 </Link>
             </Tooltip>
         </div>}
+        {collapsed && <Tooltip content="Change project" showArrow placement="right">
+            <Link href="/projects">
+                <FolderOpenIcon size={16} className="ml-1" />
+            </Link>
+        </Tooltip>}
         <Menu projectId={projectId} collapsed={collapsed} />
     </div>;
 }
