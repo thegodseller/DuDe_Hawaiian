@@ -59,6 +59,10 @@ export function AgentConfig({
                         if (usedAgentNames.has(value)) {
                             return { valid: false, errorMessage: "This name is already taken" };
                         }
+                        // validate against this regex: ^[a-zA-Z0-9_-]+$
+                        if (!/^[a-zA-Z0-9_-\s]+$/.test(value)) {
+                            return { valid: false, errorMessage: "Name must contain only letters, numbers, underscores, hyphens, and spaces" };
+                        }
                         return { valid: true };
                     }}
                 />
