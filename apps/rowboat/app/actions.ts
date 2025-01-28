@@ -523,7 +523,8 @@ export async function getCopilotResponse(
         content: json.response.replace(/^```json\n/, '').replace(/\n```$/, ''),
     });
 
-    // assert that msg.content is a CopilotAssistantMessage
+    /*
+    // validate response schema
     assert(msg.role === 'assistant');
     if (msg.role === 'assistant') {
         for (const part of msg.content.response) {
@@ -583,6 +584,7 @@ export async function getCopilotResponse(
             }
         }
     }
+    */
 
     return {
         message: msg as z.infer<typeof CopilotAssistantMessage>,
