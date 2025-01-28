@@ -27,7 +27,7 @@ jobs:
       - name: Install and Deploy
         working-directory: apps/docs
         run: |
-          pip install mkdocs-material
+          pip install -r requirements.txt
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           mkdocs gh-deploy --force
