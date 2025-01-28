@@ -70,6 +70,7 @@ export function EditableField({
                 }
                 setIsEditing(false);
             }
+            /* DISABLE shift+enter save for multiline fields
             if (multiline && e.key === "Enter" && e.shiftKey) {
                 e.preventDefault();
                 if (isValid && localValue !== value) {
@@ -77,6 +78,7 @@ export function EditableField({
                 }
                 setIsEditing(false);
             }
+            */
             if (e.key === "Escape") {
                 setLocalValue(value);
                 setIsEditing(false);
