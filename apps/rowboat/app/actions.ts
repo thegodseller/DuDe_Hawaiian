@@ -523,7 +523,6 @@ export async function getCopilotResponse(
         content: json.response.replace(/^```json\n/, '').replace(/\n```$/, ''),
     });
 
-    /*
     // validate response schema
     assert(msg.role === 'assistant');
     if (msg.role === 'assistant') {
@@ -534,11 +533,19 @@ export async function getCopilotResponse(
                         const test = {
                             name: 'test',
                             description: 'test',
-                            ...part.content.config_changes,
                         } as z.infer<typeof WorkflowTool>;
-                        const result = WorkflowTool.safeParse(test);
-                        if (!result.success) {
-                            part.content.error = result.error.message;
+                        // iterate over each field in part.content.config_changes
+                        // and test if the final object schema is valid
+                        // if not, discard that field
+                        for (const [key, value] of Object.entries(part.content.config_changes)) {
+                            const result = WorkflowTool.safeParse({
+                                ...test,
+                                [key]: value,
+                            });
+                            if (!result.success) {
+                                console.log(`discarding field ${key} from ${part.content.config_type}: ${part.content.name}`, result.error.message);
+                                delete part.content.config_changes[key];
+                            }
                         }
                         break;
                     }
@@ -555,11 +562,19 @@ export async function getCopilotResponse(
                             ragK: 10,
                             connectedAgents: [],
                             controlType: 'retain',
-                            ...part.content.config_changes,
                         } as z.infer<typeof WorkflowAgent>;
-                        const result = WorkflowAgent.safeParse(test);
-                        if (!result.success) {
-                            part.content.error = result.error.message;
+                        // iterate over each field in part.content.config_changes
+                        // and test if the final object schema is valid
+                        // if not, discard that field
+                        for (const [key, value] of Object.entries(part.content.config_changes)) {
+                            const result = WorkflowAgent.safeParse({
+                                ...test,
+                                [key]: value,
+                            });
+                            if (!result.success) {
+                                console.log(`discarding field ${key} from ${part.content.config_type}: ${part.content.name}`, result.error.message);
+                                delete part.content.config_changes[key];
+                            }
                         }
                         break;
                     }
@@ -568,11 +583,19 @@ export async function getCopilotResponse(
                             name: 'test',
                             type: 'base_prompt',
                             prompt: "test",
-                            ...part.content.config_changes,
                         } as z.infer<typeof WorkflowPrompt>;
-                        const result = WorkflowPrompt.safeParse(test);
-                        if (!result.success) {
-                            part.content.error = result.error.message;
+                        // iterate over each field in part.content.config_changes
+                        // and test if the final object schema is valid
+                        // if not, discard that field
+                        for (const [key, value] of Object.entries(part.content.config_changes)) {
+                            const result = WorkflowPrompt.safeParse({
+                                ...test,
+                                [key]: value,
+                            });
+                            if (!result.success) {
+                                console.log(`discarding field ${key} from ${part.content.config_type}: ${part.content.name}`, result.error.message);
+                                delete part.content.config_changes[key];
+                            }
                         }
                         break;
                     }
@@ -584,7 +607,6 @@ export async function getCopilotResponse(
             }
         }
     }
-    */
 
     return {
         message: msg as z.infer<typeof CopilotAssistantMessage>,
