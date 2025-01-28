@@ -39,6 +39,7 @@ interface StateItem {
     publishSuccess: boolean;
     pendingChanges: boolean;
     chatKey: number;
+    lastUpdatedAt: string;
 }
 
 interface State {
@@ -194,7 +195,7 @@ function reducer(state: State, action: Action): State {
             newState = produce(state, draft => {
                 draft.present.saving = action.saving;
                 draft.present.pendingChanges = action.saving;
-                draft.present.workflow.lastUpdatedAt = !action.saving ? new Date().toISOString() : state.present.workflow.lastUpdatedAt;
+                draft.present.lastUpdatedAt = !action.saving ? new Date().toISOString() : state.present.workflow.lastUpdatedAt;
             });
             break;
         }
@@ -257,6 +258,7 @@ function reducer(state: State, action: Action): State {
                                 name: action.agent.name || newAgentName
                             };
                             draft.pendingChanges = true;
+                            draft.chatKey++;
                             break;
                         }
                         case "add_tool": {
@@ -281,6 +283,7 @@ function reducer(state: State, action: Action): State {
                                 name: action.tool.name || newToolName
                             };
                             draft.pendingChanges = true;
+                            draft.chatKey++;
                             break;
                         }
                         case "add_prompt": {
@@ -303,6 +306,7 @@ function reducer(state: State, action: Action): State {
                                 name: action.prompt.name || newPromptName
                             };
                             draft.pendingChanges = true;
+                            draft.chatKey++;
                             break;
                         }
                         case "delete_agent":
@@ -493,6 +497,7 @@ export function WorkflowEditor({
             publishSuccess: false,
             pendingChanges: false,
             chatKey: 0,
+            lastUpdatedAt: workflow.lastUpdatedAt,
         }
     });
     const [chatMessages, setChatMessages] = useState<z.infer<typeof apiV1.ChatMessage>[]>([]);
@@ -726,7 +731,7 @@ export function WorkflowEditor({
                         <div>Saving...</div>
                     </div>}
                     {!state.present.saving && state.present.workflow && <div>
-                        Updated <RelativeTime date={new Date(state.present.workflow.lastUpdatedAt)} />
+                        Updated <RelativeTime date={new Date(state.present.lastUpdatedAt)} />
                     </div>}
                 </div>}
                 {!isLive && <>
