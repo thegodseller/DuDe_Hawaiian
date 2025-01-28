@@ -157,7 +157,6 @@ export const WorkflowAgent = z.object({
     type: z.union([
         z.literal('conversation'),
         z.literal('post_process'),
-        z.literal('guardrails'),
         z.literal('escalation'),
     ]),
     description: z.string(),
