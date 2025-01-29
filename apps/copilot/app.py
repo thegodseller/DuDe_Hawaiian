@@ -34,7 +34,8 @@ def require_api_key(f):
             return jsonify({'error': 'Missing or invalid authorization header'}), 401
 
         token = auth_header.split('Bearer ')[1]
-        if token != os.environ.get('API_KEY', 'test'):
+        actual = os.environ.get('API_KEY', '').strip()
+        if actual and token != actual:
             return jsonify({'error': 'Invalid API key'}), 403
 
         return f(*args, **kwargs)
