@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify
 from datetime import datetime
+from functools import wraps
+import os
 
 from src.graph.core import run_turn
 from src.graph.tools import RAG_TOOL, CLOSE_CHAT_TOOL
@@ -9,11 +11,30 @@ logger = common_logger
 
 app = Flask(__name__)
  
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok"})
+
 @app.route("/")
 def home():
     return "Hello, World!"
 
+def require_api_key(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing or invalid authorization header'}), 401
+
+        token = auth_header.split('Bearer ')[1]
+        if token != os.environ.get('API_KEY'):
+            return jsonify({'error': 'Invalid API key'}), 403
+
+        return f(*args, **kwargs)
+    return decorated
+
 @app.route("/chat", methods=["POST"])
+@require_api_key
 def chat():
     print('='*200)
     logger.info('='*200)

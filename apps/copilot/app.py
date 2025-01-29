@@ -3,6 +3,8 @@ from pydantic import BaseModel, ValidationError
 from typing import List
 from copilot import UserMessage, AssistantMessage, get_response
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
+import os
+from functools import wraps
 
 class ApiRequest(BaseModel):
     messages: List[UserMessage | AssistantMessage]
@@ -24,7 +26,26 @@ def validate_request(request_data: ApiRequest) -> None:
     if not isinstance(request_data.messages[-1], UserMessage):
         raise ValueError('Last message must be a user message')
 
+def require_api_key(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing or invalid authorization header'}), 401
+
+        token = auth_header.split('Bearer ')[1]
+        if token != os.environ.get('API_KEY'):
+            return jsonify({'error': 'Invalid API key'}), 403
+
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'ok'})
+
 @app.route('/chat', methods=['POST'])
+@require_api_key
 def chat():
     try:
         # Log incoming request
@@ -74,4 +95,4 @@ def chat():
 
 if __name__ == '__main__':
     print("Starting Flask server...")
-    app.run(port=5000, debug=True)
+    app.run(port=3002, host='0.0.0.0', debug=True)

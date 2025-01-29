@@ -74,8 +74,9 @@ Copy `.env.example` to `.env` and add your API keys
 - To set up the server on a remote machine: `gunicorn -b 0.0.0.0:4040 src.app.main:app`
 
 ### 🖥️ Run test client
-`python -m tests.app_client --sample_request default_example.json`
+`python -m tests.app_client --sample_request default_example.json --api_key test`
 - `--sample_request`: Path to the sample request file, under `tests/sample_requests` folder
+- `--api_key`: API key to use for authentication. This is the same key as the one in the `.env` file.
 
 ## 📖 More details
 

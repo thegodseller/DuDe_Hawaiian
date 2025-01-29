@@ -162,11 +162,12 @@ export async function getAgenticApiResponse(
 }> {
     // call agentic api
     console.log(`agentic request`, JSON.stringify(request, null, 2));
-    const response = await fetch(process.env.AGENTIC_API_URL + '/chat', {
+    const response = await fetch(process.env.AGENTS_API_URL + '/chat', {
         method: 'POST',
         body: JSON.stringify(request),
         headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.AGENTS_API_KEY}`,
         },
     });
     if (!response.ok) {

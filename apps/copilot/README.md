@@ -24,6 +24,7 @@ pip install -r requirements.txt
 4. Set up your OpenAI API key:
 ```bash
 export OPENAI_API_KEY='your-api-key-here'  # On Windows, use: set OPENAI_API_KEY=your-api-key-here
+export API_KEY='test-api-key' # set a shared API key for the application
 ```
 
 ## Running the Application
@@ -33,24 +34,27 @@ export OPENAI_API_KEY='your-api-key-here'  # On Windows, use: set OPENAI_API_KEY
 python app.py
 ```
 
-The server will start on `http://localhost:5000`
+The server will start on `http://localhost:3002`
 
 ## API Usage
 
 The application exposes a single endpoint at `/chat` that accepts POST requests.
 
 ### Example Request:
-```json
-{
-  "messages": [
-    {
-      "role": "user",
-      "content": "Your message here"
-    }
-  ],
-  "workflow_schema": "Your workflow schema here",
-  "current_workflow_config": "Your current workflow configuration here"
-}
+```bash
+curl -X POST http://localhost:3002/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer test-api-key" \
+  -d '{
+    "messages": [
+      {
+        "role": "user",
+        "content": "Your message here"
+      }
+    ],
+    "workflow_schema": "Your workflow schema here",
+    "current_workflow_config": "Your current workflow configuration here"
+  }'
 ```
 
 ### Example Response:
