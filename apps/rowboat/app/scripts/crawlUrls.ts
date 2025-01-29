@@ -596,6 +596,7 @@ async function mergeFirecrawlAndOxylabs(_logger: PrefixLogger): Promise<Set<stri
             await firecrawlFile.close();
         }
 
+        /*
         // Read OxyLabs JSONL file
         const oxylabsFile = await fs.open('crawled-oxylabs.jsonl', 'r');
         try {
@@ -636,6 +637,7 @@ async function mergeFirecrawlAndOxylabs(_logger: PrefixLogger): Promise<Set<stri
         } finally {
             await oxylabsFile.close();
         }
+        */
     } catch (e) {
         throw e;
     } finally {
