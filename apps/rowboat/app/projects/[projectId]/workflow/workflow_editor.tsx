@@ -316,6 +316,10 @@ function reducer(state: State, action: Action): State {
                             draft.workflow.agents = draft.workflow.agents.filter(
                                 (agent) => agent.name !== action.name
                             );
+                            draft.workflow.agents = draft.workflow.agents.map(agent => ({
+                                ...agent,
+                                connectedAgents: agent.connectedAgents.filter(connectedAgent => connectedAgent !== action.name)
+                            }));
                             draft.selection = null;
                             draft.pendingChanges = true;
                             draft.chatKey++;
