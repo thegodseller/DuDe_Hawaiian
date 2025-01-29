@@ -167,7 +167,7 @@ export async function getAgenticApiResponse(
         body: JSON.stringify(request),
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.AGENTS_API_KEY}`,
+            'Authorization': `Bearer ${process.env.AGENTS_API_KEY || 'test'}`,
         },
     });
     if (!response.ok) {

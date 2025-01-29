@@ -504,7 +504,7 @@ export async function getCopilotResponse(
         body: JSON.stringify(request),
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.COPILOT_API_KEY}`,
+            'Authorization': `Bearer ${process.env.COPILOT_API_KEY || 'test'}`,
         },
     });
     if (!response.ok) {
