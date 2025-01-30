@@ -228,6 +228,13 @@ def check_request_validity(messages, agent_configs, tool_configs, prompt_configs
             missing_keys = [key for key in ["name", "instructions", "tools", "model"] if key not in agent_config]
             error_msg = f"Invalid agent config - missing keys: {missing_keys}"
             error_type = ErrorType.FATAL.value
+
+    # All tool configs should have: name, parameters --> Fatal
+    for tool_config in tool_configs:
+        if not all(key in tool_config for key in ["name", "parameters"]):
+            missing_keys = [key for key in ["name", "parameters"] if key not in tool_config]
+            error_msg = f"Invalid tool config - missing keys: {missing_keys}"
+            error_type = ErrorType.FATAL.value
     
     # Check for cycles in the agent config graph. Raise error if cycle is found, along with the agents involved in the cycle. 
     def find_cycles(agent_name, agent_configs, visited=None, path=None):
