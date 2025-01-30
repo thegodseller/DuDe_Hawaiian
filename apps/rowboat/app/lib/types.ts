@@ -200,7 +200,7 @@ export const WorkflowTool = z.object({
             description: z.string(),
         })),
         required: z.array(z.string()).optional(),
-    }).optional(),
+    }),
 });
 
 export const AgenticAPIAgent = WorkflowAgent
