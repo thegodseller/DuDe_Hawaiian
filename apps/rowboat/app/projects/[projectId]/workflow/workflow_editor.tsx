@@ -273,7 +273,10 @@ function reducer(state: State, action: Action): State {
                             draft.workflow?.tools.push({
                                 name: newToolName,
                                 description: "",
-                                parameters: undefined,
+                                parameters: {
+                                    type: "object",
+                                    properties: {},
+                                },
                                 mockInPlayground: true,
                                 autoSubmitMockedResponse: true,
                                 ...action.tool
