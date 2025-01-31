@@ -6,6 +6,7 @@ import json
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
 
 openai_client = OpenAI()
+MODEL_NAME = "o1"  # OpenAI model name
 
 class UserMessage(BaseModel):
     role: Literal["user"]
@@ -503,7 +504,7 @@ User: {last_message.content}
     print(json.dumps(updated_msgs, indent=2))
 
     response = openai_client.chat.completions.create(
-        model="gpt-4o",
+        model=MODEL_NAME,
         messages=updated_msgs,
         response_format={"type": "json_object"}
     )
