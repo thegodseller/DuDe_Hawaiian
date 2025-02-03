@@ -15,7 +15,8 @@ import crypto from 'crypto';
 import { SignJWT } from "jose";
 import { Claims, getSession } from "@auth0/nextjs-auth0";
 import { revalidatePath } from "next/cache";
-import { baseWorkflow, callClientToolWebhook, getAgenticApiResponse } from "./lib/utils";
+import { callClientToolWebhook, getAgenticApiResponse } from "./lib/utils";
+import { templates } from "./lib/project_templates";
 import { assert, error } from "node:console";
 
 const crawler = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY || '' });
@@ -58,8 +59,12 @@ export async function createWorkflow(projectId: string): Promise<WithStringId<z.
     const nextWorkflowNumber = doc.nextWorkflowNumber;
 
     // create the workflow
+    const { agents, prompts, tools, startAgent } = templates['default'];
     const workflow = {
-        ...baseWorkflow,
+        agents,
+        prompts,
+        tools,
+        startAgent,
         projectId,
         createdAt: new Date().toISOString(),
         lastUpdatedAt: new Date().toISOString(),
@@ -315,9 +320,12 @@ export async function scrapeWebpage(url: string): Promise<z.infer<typeof Webpage
 export async function createProject(formData: FormData) {
     const user = await authCheck();
     const name = formData.get('name') as string;
+    const templateKey = formData.get('template') as string;
     const projectId = crypto.randomUUID();
     const chatClientId = crypto.randomBytes(16).toString('base64url');
     const secret = crypto.randomBytes(32).toString('hex');
+
+    // create project
     await projectsCollection.insertOne({
         _id: projectId,
         name: name,
@@ -326,7 +334,23 @@ export async function createProject(formData: FormData) {
         createdByUserId: user.sub,
         chatClientId,
         secret,
+        nextWorkflowNumber: 1,
     });
+
+    // add first workflow version
+    const { agents, prompts, tools, startAgent } = templates[templateKey];
+    await agentWorkflowsCollection.insertOne({
+        _id: new ObjectId(),
+        projectId,
+        agents,
+        prompts,
+        tools,
+        startAgent,
+        createdAt: (new Date()).toISOString(),
+        lastUpdatedAt: (new Date()).toISOString(),
+        name: `Version 1`,
+    });
+
     // add user to project
     await projectMembersCollection.insertOne({
         userId: user.sub,
@@ -334,6 +358,7 @@ export async function createProject(formData: FormData) {
         createdAt: (new Date()).toISOString(),
         lastUpdatedAt: (new Date()).toISOString(),
     });
+
     redirect(`/projects/${projectId}/workflow`);
 }
 

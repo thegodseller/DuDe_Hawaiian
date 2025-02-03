@@ -9,16 +9,15 @@ import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow,
 
 export function App({
     projectId,
-    startWithWorkflowId,
 }: {
     projectId: string;
-    startWithWorkflowId: string | null;
 }) {
     const [selectorKey, setSelectorKey] = useState(0);
     const [workflow, setWorkflow] = useState<WithStringId<z.infer<typeof Workflow>> | null>(null);
     const [publishedWorkflowId, setPublishedWorkflowId] = useState<string | null>(null);
     const [dataSources, setDataSources] = useState<WithStringId<z.infer<typeof DataSource>>[] | null>(null);
     const [loading, setLoading] = useState(false);
+    const [autoSelectIfOnlyOneWorkflow, setAutoSelectIfOnlyOneWorkflow] = useState(true);
 
     const handleSelect = useCallback(async (workflowId: string) => {
         setLoading(true);
@@ -36,6 +35,7 @@ export function App({
     function handleShowSelector() {
         // clear the last workflow id from local storage
         localStorage.removeItem(`lastWorkflowId_${projectId}`);
+        setAutoSelectIfOnlyOneWorkflow(false);
         setWorkflow(null);
     }
 
@@ -74,17 +74,12 @@ export function App({
 
     // Add this useEffect for initial load
     useEffect(() => {
-        // if startWithWorkflowId is provided, use it
-        if (startWithWorkflowId) {
-            handleSelect(startWithWorkflowId);
-            return;
-        }
         // Check localStorage first, fall back to lastWorkflowId prop
         const storedWorkflowId = localStorage.getItem(`lastWorkflowId_${projectId}`);
         if (storedWorkflowId) {
             handleSelect(storedWorkflowId);
         }
-    }, [handleSelect, projectId, startWithWorkflowId]);
+    }, [handleSelect, projectId]);
 
     // if workflow is null, show the selector
     // else show workflow editor
@@ -98,6 +93,7 @@ export function App({
             key={selectorKey}
             handleSelect={handleSelect}
             handleCreateNewVersion={handleCreateNewVersion}
+            autoSelectIfOnlyOneWorkflow={autoSelectIfOnlyOneWorkflow}
         />}
         {!loading && workflow && (dataSources !== null) && <WorkflowEditor
             key={workflow._id}
