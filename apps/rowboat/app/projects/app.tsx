@@ -7,8 +7,10 @@ import { default as NextLink } from "next/link";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { listProjects } from "../actions";
+import { useRouter } from 'next/navigation';
 
 export default function App() {
+    const router = useRouter();
     const [projects, setProjects] = useState<z.infer<typeof Project>[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -21,6 +23,9 @@ export default function App() {
             if (!ignore) {
                 setProjects(projects);
                 setIsLoading(false);
+                if (projects.length === 0) {
+                    router.push('/projects/new');
+                }
             }
         }
 
@@ -29,7 +34,7 @@ export default function App() {
         return () => {
             ignore = true;
         }
-    }, []);
+    }, [router]);
 
     return (
         <div className="h-full pt-4 px-4 overflow-auto">

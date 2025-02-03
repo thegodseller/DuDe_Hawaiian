@@ -38,10 +38,12 @@ export function WorkflowSelector({
     projectId,
     handleSelect,
     handleCreateNewVersion,
+    autoSelectIfOnlyOneWorkflow,
 }: {
     projectId: string;
     handleSelect: (workflowId: string) => void;
     handleCreateNewVersion: () => void;
+    autoSelectIfOnlyOneWorkflow: boolean;
 }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -76,6 +78,10 @@ export function WorkflowSelector({
                 setTotalPages(Math.ceil(total / pageSize));
                 setPublishedWorkflowId(publishedWorkflowId);
                 setError(null);
+
+                if (autoSelectIfOnlyOneWorkflow && workflows.length === 1) {
+                    handleSelect(workflows[0]._id);
+                }
             } catch (e) {
                 setError('Failed to load workflows');
             } finally {
@@ -90,7 +96,7 @@ export function WorkflowSelector({
         return () => {
             ignore = true;
         }
-    }, [projectId, currentPage, retryCount]);
+    }, [projectId, currentPage, retryCount, autoSelectIfOnlyOneWorkflow, handleSelect]);
 
     return <div className="flex flex-col gap-2 max-w-[768px] mx-auto w-full border border-gray-200 rounded-lg p-4">
         <div className="flex items-center gap-2 justify-between">

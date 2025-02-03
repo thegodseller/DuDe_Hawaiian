@@ -237,6 +237,17 @@ export const Workflow = z.object({
     projectId: z.string(),
 });
 
+export const WorkflowTemplate = Workflow
+    .omit({
+        projectId: true,
+        lastUpdatedAt: true,
+        createdAt: true,
+    })
+    .extend({
+        name: z.string(),
+        description: z.string(),
+    });
+
 export type WithStringId<T> = T & { _id: string };
 
 export const CopilotWorkflow = Workflow.omit({
