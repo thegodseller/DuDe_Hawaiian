@@ -6,7 +6,7 @@ on:
       - 'apps/rowboat/**'
 
 jobs:
-  build:
+  build-rowboat-nextjs:
     runs-on: ubuntu-latest
     
     steps:
