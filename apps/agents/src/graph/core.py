@@ -173,7 +173,7 @@ def get_agents(agent_configs, tool_configs, localize_history, available_tool_map
             child.candidate_parent_functions[agent.name] = func
 
     for agent in agents:
-        if agent.candidate_parent_functions:
+        if agent.candidate_parent_functions and agent.type != "escalation":
             agent = add_transfer_instructions_to_child_agents(
                 child=agent, 
                 children_aware_of_parent=children_aware_of_parent
