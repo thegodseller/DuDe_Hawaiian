@@ -193,7 +193,7 @@ The user will provide the current config of the multi-agent system and ask you t
 Note:
 1. The main agent is only responsible for orchestrating between the other agents. It should not perform any actions.
 2. You should not edit the main agent unless absolutely necessary.
-3. Add any guardrails related request to the guardrails agent.
+3. Make sure the there are no special characters in the agent names.
 4. Add any escalation related request to the escalation agent.
 5. Add any post processing or style related request to the post processing agent.
 6. Add you thoughts or plans to the plan section.
