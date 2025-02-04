@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { SimulationData, EmbeddingDoc, GetInformationToolResult, DataSource, PlaygroundChat, AgenticAPIChatRequest, AgenticAPIChatResponse, convertFromAgenticAPIChatMessages, WebpageCrawlResponse, Workflow, WorkflowAgent, CopilotAPIRequest, CopilotAPIResponse, CopilotMessage, CopilotWorkflow, convertToCopilotWorkflow, convertToCopilotApiMessage, convertToCopilotMessage, CopilotAssistantMessage, CopilotChatContext, convertToCopilotApiChatContext, Scenario, ClientToolCallRequestBody, ClientToolCallJwt, ClientToolCallRequest, WithStringId, Project, WorkflowTool, WorkflowPrompt, ApiKey } from "./lib/types";
 import { ObjectId, WithId } from "mongodb";
-import { generateObject, generateText, tool, embed } from "ai";
+import { generateObject, generateText, embed } from "ai";
 import { dataSourcesCollection, embeddingsCollection, projectsCollection, webpagesCollection, agentWorkflowsCollection, scenariosCollection, projectMembersCollection, apiKeysCollection } from "@/app/lib/mongodb";
 import { z } from 'zod';
 import { openai } from "@ai-sdk/openai";
@@ -12,12 +12,13 @@ import { embeddingModel } from "./lib/embedding";
 import { apiV1 } from "rowboat-shared";
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import crypto from 'crypto';
-import { SignJWT } from "jose";
 import { Claims, getSession } from "@auth0/nextjs-auth0";
 import { revalidatePath } from "next/cache";
 import { callClientToolWebhook, getAgenticApiResponse } from "./lib/utils";
 import { templates } from "./lib/project_templates";
 import { assert, error } from "node:console";
+import { check_query_limit } from "./lib/rate_limiting";
+import { QueryLimitError } from "./lib/client_utils";
 
 const crawler = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY || '' });
 
@@ -319,6 +320,19 @@ export async function scrapeWebpage(url: string): Promise<z.infer<typeof Webpage
 
 export async function createProject(formData: FormData) {
     const user = await authCheck();
+
+    // ensure that projects created by this user is less than
+    // configured limit
+    const projectsLimit = Number(process.env.MAX_PROJECTS_PER_USER) || 0;
+    if (projectsLimit > 0) {
+        const count = await projectsCollection.countDocuments({
+            createdByUserId: user.sub,
+        });
+        if (count >= projectsLimit) {
+            throw new Error('You have reached your project limit. Please upgrade your plan.');
+        }
+    }
+
     const name = formData.get('name') as string;
     const templateKey = formData.get('template') as string;
     const projectId = crypto.randomUUID();
@@ -492,6 +506,9 @@ export async function getAssistantResponse(
     rawResponse: unknown,
 }> {
     await projectAuthCheck(projectId);
+    if (!await check_query_limit(projectId)) {
+        throw new QueryLimitError();
+    }
 
     const response = await getAgenticApiResponse(request);
     return {
@@ -513,6 +530,9 @@ export async function getCopilotResponse(
     rawResponse: unknown,
 }> {
     await projectAuthCheck(projectId);
+    if (!await check_query_limit(projectId)) {
+        throw new QueryLimitError();
+    }
 
     // prepare request
     const request: z.infer<typeof CopilotAPIRequest> = {
@@ -643,6 +663,9 @@ export async function getCopilotResponse(
 
 export async function suggestToolResponse(toolId: string, projectId: string, messages: z.infer<typeof apiV1.ChatMessage>[]): Promise<string> {
     await projectAuthCheck(projectId);
+    if (!await check_query_limit(projectId)) {
+        throw new QueryLimitError();
+    }
 
     const prompt = `
 # Your Specific Task:
@@ -891,6 +914,10 @@ export async function simulateUserResponse(
     simulationData: z.infer<typeof SimulationData>
 ): Promise<string> {
     await projectAuthCheck(projectId);
+    if (!await check_query_limit(projectId)) {
+        throw new QueryLimitError();
+    }
+
     const articlePrompt = `
 # Your Specific Task:
 

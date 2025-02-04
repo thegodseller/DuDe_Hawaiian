@@ -6,6 +6,7 @@ import { ObjectId, WithId } from "mongodb";
 import { authCheck } from "../../../utils";
 import { AgenticAPIChatRequest, convertFromAgenticAPIChatMessages, convertToAgenticAPIChatMessages, convertWorkflowToAgenticAPI } from "@/app/lib/types";
 import { callClientToolWebhook, getAgenticApiResponse } from "@/app/lib/utils";
+import { check_query_limit } from "@/app/lib/rate_limiting";
 
 const chatsCollection = db.collection<z.infer<typeof apiV1.Chat>>("chats");
 const chatMessagesCollection = db.collection<z.infer<typeof apiV1.ChatMessage>>("chatMessages");
@@ -17,6 +18,11 @@ export async function POST(
 ): Promise<Response> {
     return await authCheck(req, async (session) => {
         const { chatId } = await params;
+
+        // check query limit
+        if (!await check_query_limit(session.projectId)) {
+            return Response.json({ error: "Query limit exceeded" }, { status: 429 });
+        }
 
         // parse and validate the request body
         let body;
