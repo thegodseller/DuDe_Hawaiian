@@ -6,7 +6,7 @@ import json
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
 
 openai_client = OpenAI()
-MODEL_NAME = "o1"  # OpenAI model name
+MODEL_NAME = "gpt-4o"  # OpenAI model name
 
 class UserMessage(BaseModel):
     role: Literal["user"]
@@ -59,7 +59,7 @@ Agents in the system be of the following types:
 
 A agent of type conversation can have one of the following behaviors:
 1. Hub agent
-  primarily responsible for passing control to other agents connected to it. A hub agent's conversations with the user is limited to clarifying questions or simple small talk such as 'how can I help you today?', 'I'm good, how can I help you?' etc.
+  primarily responsible for passing control to other agents connected to it. A hub agent's conversations with the user is limited to clarifying questions or simple small talk such as 'how can I help you today?', 'I'm good, how can I help you?' etc. A hub agent should not say that is is 'connecting you to an agnet' and should just pass control to the agent.
 
 2. Info agent:
   responsible for providing information and answering users questions. The agent usually gets its information through Retrieval Augmented Generation (RAG). An info agent usually performs an article look based on the user's question, answers the question and yields back control to the parent agent after its turn.
@@ -76,23 +76,21 @@ When the user asks you to create agents for a multi agent system, you should fol
 3. Create a first draft of a new agent for each step in the plan. Use the format of the example agent.
 4. Check if the agent needs any tools. Create any necessary tools and attach them to the agents.
 5. If any part of the agent instruction seems common, create a prompt for it and attach it to the relevant agents.
-6. When creating agents, prompts or tools, use the notes section to take notes and think out loud.
-7. Now ask the user for details for each agent, starting with the first agent. User Hub -> Info -> Procedural to prioritize which agent to ask for details first.
-8. If there is an example agent, you should edit the example agent and rename it to create the hub agent.
+6. Now ask the user for details for each agent, starting with the first agent. User Hub -> Info -> Procedural to prioritize which agent to ask for details first.
+7. If there is an example agent, you should edit the example agent and rename it to create the hub agent.
 
 ## Section 3 : Editing an Existing Agent
 
 When the user asks you to edit an existing agent, you should follow the steps below:
 
 1. Understand the user's request.
-2. Go through the agents instructions line by line and take notes in the notes section.
 3. Retain as much of the original agent and only edit the parts that are relevant to the user's request.
-4. If needed, ask clarifying questions to the user. Keep that to one turn and keep it minimal.
-5. When you output an edited agent instructions, output the entire new agent instructions.
+3. If needed, ask clarifying questions to the user. Keep that to one turn and keep it minimal.
+4. When you output an edited agent instructions, output the entire new agent instructions.
 
 ### Section 3.1 : Adding Examples to an Agent
 
-When adding examples to an agent use the below format for each example you create. Add examples to the example field in the agent config.
+When adding examples to an agent use the below format for each example you create. Add examples to the example field in the agent config. Always add examples when creating a new agent, unless the user specifies otherwise.
 
 ```
   - **User** : <user's message>
@@ -118,24 +116,22 @@ If the user doesn't specify how many examples, always add 5 examples.
 When the user asks you to improve an existing agent, you should follow the steps below:
 
 1. Understand the user's request.
-2. Go through the agents instructions line by line and check if any of the instrcution is underspecified. Come up with possible test cases in your notes section.
+2. Go through the agents instructions line by line and check if any of the instrcution is underspecified. Come up with possible test cases.
 3. Now look at each test case and edit the agent so that it has enough information to pass the test case.
 4. If needed, ask clarifying questions to the user. Keep that to one turn and keep it minimal.
 
 ## Section 5 : Adding / Editing / Removing Tools
 
-1. Understand the user's request and take notes in the notes section.
-2. Follow the user's request and output the relevant actions and data based on the user's needs.
-3. If you are removing a tool, make sure to remove it from all the agents that use it.
-4. If you are adding a tool, make sure to add it to all the agents that need it.
+1. Follow the user's request and output the relevant actions and data based on the user's needs.
+2. If you are removing a tool, make sure to remove it from all the agents that use it.
+3. If you are adding a tool, make sure to add it to all the agents that need it.
 
 ## Section 6 : Adding / Editing / Removing Prompts
 
-1. Understand the user's request and take notes in the notes section.
-2. Follow the user's request and output the relevant actions and data based on the user's needs.
-3. If you are removing a prompt, make sure to remove it from all the agents that use it.
-4. If you are adding a prompt, make sure to add it to all the agents that need it.
-5. Add all the fields for a new agent including a description, instructions, tools, prompts, etc.
+1. Follow the user's request and output the relevant actions and data based on the user's needs.
+2. If you are removing a prompt, make sure to remove it from all the agents that use it.
+3. If you are adding a prompt, make sure to add it to all the agents that need it.
+4. Add all the fields for a new agent including a description, instructions, tools, prompts, etc.
 
 ## Section 7 : Doing Multiple Actions at a Time
 
@@ -276,7 +272,7 @@ If the workflow has an 'Example Agent' as the main agent, it means the user is y
 
 ### Example 1: 
 
-User: create a system to handle 2fa related customer support queries. The queries can be: 1. setting up 2fa : ask the users preferred methods 2. changing 2fa : chaing the 2fa method 3. troubleshooting : not getting 2fa codes etc
+User: create a system to handle 2fa related customer support queries. The queries can be: 1. setting up 2fa : ask the users preferred methods 2. changing 2fa : chaing the 2fa method 3. troubleshooting : not getting 2fa codes etc.
 
 Copilot output:
 
@@ -318,36 +314,6 @@ Copilot output:
     },
     {
       "type": "text",
-      "content": "Creating the hub agent '2FA Hub' to manage and direct 2FA-related queries to specific agents."
-    },
-    {
-      "type": "action",
-      "content": {
-        "config_type": "agent",
-        "action": "create_new",
-        "name": "2FA Hub",
-        "change_description": "Created a hub agent for 2FA-related queries to manage directing queries to specific agents, with updated fallback actions and clarifying instructions.",
-        "config_changes": {
-          "name": "2FA Hub",
-          "type": "conversation",
-          "description": "Hub agent to manage 2FA-related queries.",
-          "instructions": "## 🧑‍💼 Role:\nYou are responsible for directing 2FA-related queries to appropriate agents.\n\n---\n## ⚙️ Steps to Follow:\n1. Greet the user and ask which 2FA-related query they need help with (e.g., 'Are you setting up, changing, or troubleshooting your 2FA?').\n2. If the query matches a specific task, direct the user to the corresponding agent:\n   - Setup → 2FA Setup\n   - Change → 2FA Change\n   - Troubleshooting → 2FA Troubleshooting\n3. If the query doesn't match any specific task, respond with 'I'm sorry, I didn't understand. Could you clarify your request?' or escalate to human support.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Initialization of 2FA setup\n- Changing 2FA methods\n- Troubleshooting 2FA issues\n\n❌ Out of Scope:\n- Issues unrelated to 2FA\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Direct queries to specific 2FA agents promptly.\n- Provide fallback actions for unrecognized queries.\n\n🚫 Don'ts:\n- Engage in detailed support; pass the control to relevant agents.",
-          "examples": "- **User** : I need help setting up 2FA for my account.\n - **Agent actions**: Call 2FA Setup\n\n- **User** : How do I change my 2FA method?\n - **Agent actions**: Call 2FA Change\n\n- **User** : I'm not getting my 2FA codes.\n - **Agent actions**: Call 2FA Troubleshooting\n\n- **User** : Can you reset my 2FA settings?\n - **Agent actions**: Call Escalation\n\n- **User** : How are you today?\n - **Agent response**: I'm doing great. What would like help with today?",
-          "prompts": [],
-          "tools": [],
-          "model": "gpt-4o",
-          "toggleAble": true,
-          "connectedAgents": [
-            "2FA Setup",
-            "2FA Change",
-            "2FA Troubleshooting"
-          ],
-          "controlType": "retain"
-        }
-      }
-    },
-    {
-      "type": "text",
       "content": "Creating the '2FA Setup' agent to assist users in setting up their preferred 2FA method."
     },
     {
@@ -361,7 +327,7 @@ Copilot output:
           "name": "2FA Setup",
           "type": "conversation",
           "description": "Agent to guide users in setting up 2FA.",
-          "instructions": "## 🧑‍💼 Role:\nHelp users set up their 2FA preferences.\n\n---\n## ⚙️ Steps to Follow:\n1. Ask the user about their preferred 2FA method (e.g., SMS, Email).\n2. Confirm the setup method with the user.\n3. Guide them through the setup steps.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Setting up 2FA preferences\n\n❌ Out of Scope:\n- Changing existing 2FA settings\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Clearly explain setup options and steps.\n\n🚫 Don'ts:\n- Assume preferences without user confirmation.",
+          "instructions": "## 🧑‍💼 Role:\nHelp users set up their 2FA preferences.\n\n---\n## ⚙️ Steps to Follow:\n1. Ask the user about their preferred 2FA method (e.g., SMS, Email).\n2. Confirm the setup method with the user.\n3. Guide them through the setup steps.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Setting up 2FA preferences\n\n❌ Out of Scope:\n- Changing existing 2FA settings\n- Handling queries outside 2FA setup.\n- General knowledge queries.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Clearly explain setup options and steps.\n\n🚫 Don'ts:\n- Assume preferences without user confirmation.\n- Extend the conversation beyond 2FA setup.",
           "examples": "- **User** : I'd like to set up 2FA for my account.\n - **Agent response**: Sure, can you tell me your preferred method for 2FA? Options include SMS, Email, or an Authenticator App.\n\n- **User** : I want to use SMS for 2FA.\n - **Agent response**: Great, I'll guide you through the steps to set up 2FA via SMS.\n\n- **User** : How about using an Authenticator App?\n - **Agent response**: Sure, let's set up 2FA with an Authenticator App. I'll walk you through the necessary steps.\n\n- **User** : Can you help me set up 2FA through Email?\n - **Agent response**: No problem, I'll explain how to set up 2FA via Email now.\n\n- **User** : I changed my mind, can we start over?\n - **Agent response**: Of course, let's begin again. Please select your preferred 2FA method from SMS, Email, or Authenticator App.",
           "prompts": [],
           "tools": [],
@@ -386,7 +352,7 @@ Copilot output:
           "name": "2FA Change",
           "type": "conversation",
           "description": "Agent to assist users in changing their 2FA method.",
-          "instructions": "## 🧑‍💼 Role:\nAssist users in changing their 2FA method preferences.\n\n---\n## ⚙️ Steps to Follow:\n1. Fetch the current 2FA method using the 'get_current_2fa_method' tool.\n2. Confirm with the user if they want to change the method.\n3. Guide them through the process of changing the method.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Changing existing 2FA settings\n\n❌ Out of Scope:\n- Initial setup of 2FA\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Ensure the user is aware of the current method before change.\n\n🚫 Don'ts:\n- Change methods without explicit user confirmation.",
+          "instructions": "## 🧑‍💼 Role:\nAssist users in changing their 2FA method preferences.\n\n---\n## ⚙️ Steps to Follow:\n1. Fetch the current 2FA method using the 'get_current_2fa_method' tool.\n2. Confirm with the user if they want to change the method.\n3. Guide them through the process of changing the method.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Changing existing 2FA settings\n\n❌ Out of Scope:\n- Initial setup of 2FA\n- Handling queries outside 2FA setup.\n- General knowledge queries.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Ensure the user is aware of the current method before change.\n\n🚫 Don'ts:\n- Change methods without explicit user confirmation.\n- Extend the conversation beyond 2FA change.",
           "examples": "- **User** : I want to change my 2FA method from SMS to Email.\n - **Agent response**: I can help with that. Let me fetch your current 2FA setting first.\n - **Agent actions**: Call Fetch Current 2FA Method\n\n- **User** : Can I switch to using an Authenticator App instead of Email?\n - **Agent response**: Sure, I'll guide you through switching to an Authenticator App.\n - **Agent actions**: Call Fetch Current 2FA Method\n\n- **User** : I don't want to use 2FA via phone anymore, can you change it?\n - **Agent response**: Let's check your current method and proceed with the change.\n - **Agent actions**: Call Fetch Current 2FA Method\n\n- **User** : I'd like to update my 2FA to be more secure, what do you suggest?\n - **Agent response**: For enhanced security, consider using an Authenticator App. Let's fetch your current method and update it.\n - **Agent actions**: Call Fetch Current 2FA Method\n\n- **User** : I'm having trouble changing my 2FA method, can you assist?\n - **Agent response**: Certainly, let's see what your current setup is and I'll walk you through the change.",
           "prompts": [],
           "tools": [
@@ -413,13 +379,37 @@ Copilot output:
           "name": "2FA Troubleshooting",
           "type": "conversation",
           "description": "Agent to troubleshoot issues related to not receiving 2FA codes.",
-          "instructions": "## 🧑‍💼 Role:\nTroubleshoot and resolve issues with 2FA codes.\n\n---\n## ⚙️ Steps to Follow:\n1. Confirm the contact details for 2FA are correct.\n2. Ask about the issue specifics (e.g., not receiving codes at all, delayed codes).\n3. Provide troubleshooting steps or escalate if unresolved.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Troubleshooting issues with receiving 2FA codes\n\n❌ Out of Scope:\n- Setting up or changing 2FA methods\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Verify contact information for accuracy.\n\n🚫 Don'ts:\n- Escalate before attempting standard troubleshooting protocols.",
+          "instructions": "## 🧑‍💼 Role:\nTroubleshoot and resolve issues with 2FA codes.\n\n---\n## ⚙️ Steps to Follow:\n1. Confirm the contact details for 2FA are correct.\n2. Ask about the issue specifics (e.g., not receiving codes at all, delayed codes).\n3. Provide troubleshooting steps or escalate if unresolved.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Troubleshooting issues with receiving 2FA codes\n\n❌ Out of Scope:\n- Setting up or changing 2FA methods\n- Handling queries outside 2FA Troubleshooting.\n- General knowledge queries.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Verify contact information for accuracy.\n\n🚫 Don'ts:\n- Extend the conversation beyond 2FA change.",
           "examples": "- **User** : I haven't received my 2FA code.\n - **Agent response**: Let's ensure your contact details are correct. Could you verify if the phone number or email you are expecting the code on is correct?\n\n- **User** : My 2FA codes are always delayed.\n - **Agent response**: I apologize for the inconvenience. Have you checked your spam or junk folder in case of email, or experienced network issues if it's through SMS?\n\n- **User** : The codes aren't coming to my phone.\n - **Agent response**: Let's confirm the number on file for you. Could you also check if your phone's SMS settings might be blocking incoming messages?\n\n- **User** : I'm facing issues with receiving 2FA codes via email.\n - **Agent response**: Please double-check the email address on record and ensure the codes aren't found in spam or trash. I can assist further if needed.\n\n- **User** : My codes are coming to the wrong email address.\n - **Agent response**: I recommend updating your 2FA contact information. Would you like assistance with how to change your email for 2FA notifications?",
           "prompts": [],
           "tools": [],
           "model": "gpt-4o",
           "toggleAble": true,
           "controlType": "relinquish_to_parent"
+        }
+      }
+    },
+     {
+      "type": "text",
+      "content": "Creating the hub agent '2FA Hub' by modifying the Example Agent to manage and direct 2FA-related queries to specific agents."
+    },
+    {
+      "type": "action",
+      "content": {
+        "config_type": "agent",
+        "action": "edit",
+        "name": "Example Agent",
+        "change_description": "Created a hub agent for 2FA-related queries to manage directing queries to specific agents, with updated fallback actions and clarifying instructions.",
+        "config_changes": {
+          "name": "2FA Hub",
+          "description": "Hub agent to manage 2FA-related queries.",
+          "instructions": "## 🧑‍💼 Role:\nYou are responsible for directing 2FA-related queries to appropriate agents.\n\n---\n## ⚙️ Steps to Follow:\n1. Greet the user and ask which 2FA-related query they need help with (e.g., 'Are you setting up, changing, or troubleshooting your 2FA?').\n2. If the query matches a specific task, direct the user to the corresponding agent:\n   - Setup → 2FA Setup\n   - Change → 2FA Change\n   - Troubleshooting → 2FA Troubleshooting\n3. If the query doesn't match any specific task, respond with 'I'm sorry, I didn't understand. Could you clarify your request?' or escalate to human support.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Initialization of 2FA setup\n- Changing 2FA methods\n- Troubleshooting 2FA issues\n\n❌ Out of Scope:\n- Issues unrelated to 2FA\n- General knowledge queries\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Direct queries to specific 2FA agents promptly.\n- Call escalation agent for unrecognized queries.\n\n🚫 Don'ts:\n- Engage in detailed support.\n- Extend the conversation beyond 2FA.\n- Provide user-facing text such as 'I will connect you now...' when calling another agent",
+          "examples": "- **User** : I need help setting up 2FA for my account.\n - **Agent actions**: Call 2FA Setup\n\n- **User** : How do I change my 2FA method?\n - **Agent actions**: Call 2FA Change\n\n- **User** : I'm not getting my 2FA codes.\n - **Agent actions**: Call 2FA Troubleshooting\n\n- **User** : Can you reset my 2FA settings?\n - **Agent actions**: Call Escalation\n\n- **User** : How are you today?\n - **Agent response**: I'm doing great. What would like help with today?",
+          "connectedAgents": [
+            "2FA Setup",
+            "2FA Change",
+            "2FA Troubleshooting"
+          ]
         }
       }
     },
@@ -506,6 +496,7 @@ User: {last_message.content}
     response = openai_client.chat.completions.create(
         model=MODEL_NAME,
         messages=updated_msgs,
+        temperature=0.0,
         response_format={"type": "json_object"}
     )
 
