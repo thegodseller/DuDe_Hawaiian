@@ -6,7 +6,7 @@ on:
       - 'apps/rowboat/**'
 
 jobs:
-  build:
+  build-rowboat-nextjs:
     runs-on: ubuntu-latest
     
     steps:
@@ -15,6 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
+          cache-dependency-path: 'apps/rowboat/package-lock.json'
           node-version: '20'
           cache: 'npm'
           
