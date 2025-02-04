@@ -5,6 +5,7 @@ import { ObjectId } from "mongodb";
 import { authCheck } from "@/app/api/v1/utils";
 import { convertFromApiToAgenticApiMessages, convertFromAgenticApiToApiMessages, AgenticAPIChatRequest, ApiRequest, ApiResponse, convertWorkflowToAgenticAPI } from "@/app/lib/types";
 import { getAgenticApiResponse } from "@/app/lib/utils";
+import { check_query_limit } from "@/app/lib/rate_limiting";
 
 // get next turn / agent response
 export async function POST(
@@ -12,6 +13,11 @@ export async function POST(
     { params }: { params: Promise<{ projectId: string }> }
 ): Promise<Response> {
     const { projectId } = await params;
+
+    // check query limit
+    if (!await check_query_limit(projectId)) {
+        return Response.json({ error: "Query limit exceeded" }, { status: 429 });
+    }
 
     return await authCheck(projectId, req, async () => {
         // parse and validate the request body
