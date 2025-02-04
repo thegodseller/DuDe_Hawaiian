@@ -53,6 +53,7 @@ export function Chat({
             createdAt: new Date().toISOString(),
         }];
         setMessages(updatedMessages);
+        setFetchResponseError(null);
     }
 
     function handleToolCallResults(results: z.infer<typeof apiV1.ToolMessage>[]) {
@@ -126,7 +127,9 @@ export function Chat({
                     setFetchResponseError(`Failed to get assistant response: ${err instanceof Error ? err.message : 'Unknown error'}`);
                 }
             } finally {
-                setLoadingAssistantResponse(false);
+                if (!ignore) {
+                    setLoadingAssistantResponse(false);
+                }
             }
         }
 
@@ -183,6 +186,7 @@ export function Chat({
                     chatId: chatId ?? '',
                     createdAt: new Date().toISOString(),
                 }]);
+                setFetchResponseError(null);
             } catch (err) {
                 setFetchResponseError(`Failed to simulate user response: ${err instanceof Error ? err.message : 'Unknown error'}`);
             } finally {

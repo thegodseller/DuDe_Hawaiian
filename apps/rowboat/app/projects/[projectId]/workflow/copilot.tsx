@@ -220,6 +220,7 @@ function App({
             role: 'user',
             content: prompt,
         }]);
+        setResponseError(null);
     }
 
     const handleApplyChange = useCallback((
@@ -351,7 +352,9 @@ function App({
                     setResponseError(`Failed to get copilot response: ${err instanceof Error ? err.message : 'Unknown error'}`);
                 }
             } finally {
-                setLoadingResponse(false);
+                if (!ignore) {
+                    setLoadingResponse(false);
+                }
             }
         }
 
