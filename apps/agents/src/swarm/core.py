@@ -39,6 +39,7 @@ class Swarm:
         model_override: str,
         stream: bool,
         debug: bool,
+        temperature: float
     ) -> ChatCompletionMessage:
         context_variables = defaultdict(str, context_variables)
         instructions = (
@@ -65,6 +66,7 @@ class Swarm:
             "tools": funcs_and_tools or None,
             "tool_choice": agent.tool_choice,
             "stream": stream,
+            "temperature": temperature
         }
 
         if funcs_and_tools:
@@ -155,7 +157,8 @@ class Swarm:
         external_tools: List[str] = [],
         localize_history: bool = True,
         parent_has_child_history: bool = True,
-        tokens_used: dict = {}
+        tokens_used: dict = {},
+        temperature: float = 0.0
     ) -> Response:
 
         active_agent = agent
@@ -180,7 +183,8 @@ class Swarm:
                 context_variables=context_variables,
                 model_override=model_override,
                 stream=stream,
-                debug=debug
+                debug=debug,
+                temperature=temperature
             )
             tokens_used = update_tokens_used(provider="openai", model=model_override or active_agent.model, tokens_used=tokens_used, completion=completion)
 

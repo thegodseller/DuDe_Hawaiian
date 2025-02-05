@@ -2,8 +2,6 @@ name: Rowboat Next.js Build
 
 on:
   pull_request:
-    paths:
-      - 'apps/rowboat/**'
 
 jobs:
   build-rowboat-nextjs:
