@@ -164,7 +164,7 @@ export function AgentConfig({
             <div className="flex flex-col gap-4 items-start">
                 <Label label="RAG (beta)" />
                 {agent.ragDataSources && agent.ragDataSources.length > 0 && <div className="text-xs text-red-500">
-                    <sup>*</sup> RAG data sources are currently not supported in the API.
+                    <sup>*</sup> RAG data sources are currently not supported in the API. (coming soon)
                 </div>}
                 <List
                     items={agent.ragDataSources?.map((source) => ({
