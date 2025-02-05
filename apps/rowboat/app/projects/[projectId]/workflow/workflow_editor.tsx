@@ -149,6 +149,8 @@ function reducer(state: State, action: Action): State {
                 const inverse = state.inversePatches[state.currentIndex - 1];
                 draft.present = applyPatches(state.present, inverse);
                 draft.currentIndex--;
+                draft.present.pendingChanges = true;
+                draft.present.chatKey++;
             });
             break;
         }
@@ -158,7 +160,9 @@ function reducer(state: State, action: Action): State {
                 const patch = state.patches[state.currentIndex];
                 draft.present = applyPatches(state.present, patch);
                 draft.currentIndex++;
-            });
+                draft.present.pendingChanges = true;
+                draft.present.chatKey++;
+             });
             break;
         }
         case "update_workflow_name": {
