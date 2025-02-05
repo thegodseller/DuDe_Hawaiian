@@ -33,7 +33,7 @@ export function App() {
                             href="/api/auth/login"
                         >
                             <LogInIcon className="w-4 h-4" />
-                            Sign in to get started
+                            Sign in or sign up
                         </a>
                     )}
                     {user && <div className="flex items-center gap-2">
