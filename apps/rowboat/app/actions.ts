@@ -579,6 +579,11 @@ export async function getCopilotResponse(
                         const test = {
                             name: 'test',
                             description: 'test',
+                            parameters: {
+                                type: 'object',
+                                properties: {},
+                                required: [],
+                            },
                         } as z.infer<typeof WorkflowTool>;
                         // iterate over each field in part.content.config_changes
                         // and test if the final object schema is valid
