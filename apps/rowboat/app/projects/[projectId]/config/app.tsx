@@ -394,10 +394,7 @@ export function WebhookUrlSection({
 
     function validate(url: string) {
         try {
-            const parsedUrl = new URL(url);
-            if (parsedUrl.protocol !== 'https:') {
-                return { valid: false, errorMessage: 'URL must use HTTPS' };
-            }
+            new URL(url);
             return { valid: true };
         } catch {
             return { valid: false, errorMessage: 'Please enter a valid URL' };
