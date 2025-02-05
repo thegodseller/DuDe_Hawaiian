@@ -38,7 +38,7 @@ export function SourcesList({
     return <div className="flex flex-col h-full">
         <div className="shrink-0 flex justify-between items-center pb-4 border-b border-b-gray-100">
             <div className="flex flex-col">
-                <h1 className="text-lg">Data sources</h1>
+                <h1 className="text-lg">Data sources <sup>(beta)</sup></h1>
             </div>
             <div className="flex items-center gap-2">
                 <Button
