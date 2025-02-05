@@ -4,8 +4,8 @@ import { z } from 'zod';
 export const templates: { [key: string]: z.infer<typeof WorkflowTemplate> } = {
     // Default template
     'default': {
-        name: 'Default Template',
-        description: 'This is the default template',
+        name: 'Blank Template',
+        description: 'A blank canvas to build your support agents.',
         startAgent: "Example Agent",
         agents: [
             {
@@ -87,10 +87,118 @@ You are an helpful customer support assistant
         tools: [],
     },
 
+    // single agent
+    "single_agent": {
+        "name": "Example Single Agent",
+        "description": "With tool calls and escalation.",
+        "startAgent": "Account Balance Checker",
+            "agents": [
+              {
+                "name": "Post process",
+                "type": "post_process",
+                "description": "Minimal post processing",
+                "instructions": "- Avoid adding any additional phrases such as 'Let me know if you need anything else!' or similar.",
+                "prompts": [],
+                "tools": [],
+                "model": "gpt-4o",
+                "locked": true,
+                "global": true,
+                "ragReturnType": "chunks",
+                "ragK": 3,
+                "connectedAgents": [],
+                "controlType": "relinquish_to_parent"
+              },
+              {
+                "name": "Escalation",
+                "type": "escalation",
+                "description": "Escalation agent",
+                "instructions": "## 🧑‍💼 Role:\nHandle scenarios where the system needs to escalate a request to a human representative.\n\n---\n## ⚙️ Steps to Follow:\n1. Inform the user that their details are being escalated to a human agent.\n2. Call the 'close_chat' tool to close the chat session.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Escalating issues to human agents\n- Closing chat sessions\n\n❌ Out of Scope:\n- Handling queries that do not require escalation\n- Providing solutions without escalation\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Clearly inform the user about the escalation.\n- Ensure the chat is closed after escalation.\n\n🚫 Don'ts:\n- Attempt to resolve issues without escalation.\n- Leave the chat open after informing the user about escalation.",
+                "prompts": [],
+                "tools": [
+                  "close_chat"
+                ],
+                "model": "gpt-4o",
+                "locked": true,
+                "toggleAble": false,
+                "ragReturnType": "chunks",
+                "ragK": 3,
+                "connectedAgents": [],
+                "controlType": "retain",
+                "examples": "- **User** : I need help with something urgent.\n - **Agent response**: Your request is being escalated to a human agent.\n - **Agent actions**: Call close_chat\n\n- **User** : Can you escalate this issue?\n - **Agent response**: Your details are being escalated to a human agent.\n - **Agent actions**: Call close_chat"
+              },
+              {
+                "name": "Account Balance Checker",
+                "type": "conversation",
+                "description": "Agent to check the user's account balance.",
+                "disabled": false,
+                "instructions": "## 🧑‍💼 Role:\nAssist users in checking their account balance.\n\n---\n## ⚙️ Steps to Follow:\n1. Greet them with 'Hello, welcome to RowBoat Bank.'\n2. If the user hasn't provided their request yet, ask 'How may I help you today?'\n3. If the request is related to checking account balance, proceed with the following steps:\n   - Ask the user to confirm the last 4 digits of their debit card.\n   - Use the 'get_account_balance' tool to fetch the account balance.\n   - Inform the user of their account balance based on the output of 'get_account_balance'\n4. If the user requests to talk to a human, call the 'Escalation' agent.\n5. If the request is not related to checking account balance, inform the user: 'Sorry, I can only help you with account balance.'\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Fetching and providing account balance\n- Escalating to human agents upon request\n\n❌ Out of Scope:\n- Handling queries unrelated to account balance\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Always call get_account_balance to fetch the user's account balance\n- Be clear and concise in communication.\n- Call the Escalation agent if the user requests to speak with a human.\n\n🚫 Don'ts:\n- Extend the conversation beyond account balance checking.",
+                "prompts": [],
+                "tools": [
+                  "get_account_balance"
+                ],
+                "model": "gpt-4o",
+                "locked": false,
+                "toggleAble": true,
+                "ragReturnType": "chunks",
+                "ragK": 3,
+                "connectedAgents": [
+                  "Escalation"
+                ],
+                "controlType": "retain",
+                "examples": "- **User** : Can you tell me my account balance?\n - **Agent response**: Sure, can you confirm the last 4 digits of your debit card?\n - **Agent actions**: Call get_account_balance\n\n- **User** : The last 4 digits are 1234.\n - **Agent actions**: Call get_account_balance\n - **Agent response**: Your account balance is $500.\n\n- **User** : What's my balance?\n - **Agent actions**: Call get_account_balance\n - **Agent response**: Your account balance is $500.\n\n- **User** : I need help with my credit card.\n - **Agent response**: Sorry, I can only help you with account balance.\n\n- **User** : I need to know my balance, please.\n - **Agent response**: Of course, please provide the last 4 digits of your debit card.\n - **Agent actions**: Call get_account_balance\n\n- **User** : How much money do I have in my account?\n - **Agent response**: Please confirm the last 4 digits of your debit card to proceed.\n - **Agent actions**: Call get_account_balance\n\n- **User** : My card ends in 5678.\n - **Agent actions**: Call get_account_balance\n - **Agent response**: Your account balance is $500.\n\n- **User** : Can you check my balance?\n - **Agent response**: Certainly, could you provide the last 4 digits of your debit card?\n - **Agent actions**: Call get_account_balance\n\n- **User** : I want to know my account balance.\n - **Agent response**: Sure, please confirm the last 4 digits of your debit card.\n - **Agent actions**: Call get_account_balance\n\n- **User** : The last 4 digits are 9876.\n - **Agent actions**: Call get_account_balance\n - **Agent response**: Your account balance is $500.\n\n- **User** : Hi\n - **Agent response**: Hello, welcome to RowBoat Bank. How may I help you today?\n\n- **User** : Hi, I want to check my balance\n - **Agent response**: Hello, welcome to RowBoat Bank. Sure, can you confirm the last 4 digits of your debit card?\n - **Agent actions**: Call get_account_balance\n\n- **User** : Who are you?\n - **Agent response**: I'm a friendly RowBoat Bank assistant, how can I help you today?\n\n- **User** : Who built you?\n - **Agent response**: I was created by the RowBoat Bank team to assist you with your banking needs. How may I help you today?\n\n- **User** : How are you?\n - **Agent response**: I'm here to help you with your banking queries. How can I assist you today?\n\n- **User** : I want to talk to a human.\n - **Agent actions**: Call Escalation\n - **Agent response**: Your request is being escalated to a human agent."
+              }
+            ],
+            "prompts": [
+              {
+                "name": "Style prompt",
+                "type": "style_prompt",
+                "prompt": "You should be empathetic and helpful."
+              }
+            ],
+            "tools": [
+              {
+                "name": "get_account_balance",
+                "description": "Return account balance typically around $15000 for the user.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string",
+                      "description": "The unique identifier for the user whose account balance is being queried."
+                    }
+                  },
+                  "required": [
+                    "user_id"
+                  ]
+                },
+                "mockInPlayground": true,
+                "autoSubmitMockedResponse": true
+              },
+              {
+                "name": "close_chat",
+                "description": "return 'The chat is now closed'",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "param1": {
+                      "type": "string",
+                      "description": ""
+                    }
+                  },
+                  "required": [
+                    "param1"
+                  ]
+                },
+                "mockInPlayground": true,
+                "autoSubmitMockedResponse": true
+              }
+        ]
+    },
+
     // Scooter Subscription
-    'scooter-subscription': {
-        "name": "Scooter Subscription",
-        "description": "Helps users with product and delivery information of ScootUp scooter",
+    'multi_agent': {
+        "name": "Example Multi-Agent",
+        "description": "With tool calls, escalation, structured output, post processing, and prompt organization.",
         "startAgent": "Main agent",
         "agents": [
             {
@@ -287,144 +395,5 @@ You are an helpful customer support assistant
                 "autoSubmitMockedResponse": true
             }
         ],
-    },
-
-    // Customer Feedback
-    "customer-feedback": {
-        "name": "Customer Feedback",
-        "description": "Collects and processes customer feedback about products and services",
-        "startAgent": "Feedback Collector",
-        "agents": [
-            {
-                "name": "Feedback Collector",
-                "type": "conversation",
-                "description": "Collects initial feedback from customers",
-                "instructions": `## 🧑‍💼 Role:
-You are a friendly feedback collection agent. Your goal is to gather detailed customer feedback about their experience.
-
----
-## ⚙️ Steps to Follow:
-1. Greet the customer warmly
-2. Ask about their recent experience
-3. Get specific details about what they liked or didn't like
-4. Thank them for their feedback
-
----
-## 🎯 Scope:
-✅ In Scope:
-- Questions about product/service experience
-- Collecting specific feedback
-- Rating requests
-
-❌ Out of Scope:
-- Technical support
-- Sales inquiries
-- Account-specific issues
-
----
-## 📋 Guidelines:
-✔️ Dos:
-- Ask open-ended questions
-- Show appreciation for feedback
-- Keep the conversation focused
-
-❌ Don'ts:
-- Don't make promises about changes
-- Don't defend or justify issues
-- Don't ask for personal information`,
-                "prompts": ["Style prompt"],
-                "tools": [],
-                "model": "gpt-4o-mini",
-                "toggleAble": true,
-                "ragReturnType": "chunks",
-                "ragK": 3,
-                "connectedAgents": ["Feedback Analyzer", "Escalation"],
-                "controlType": "retain"
-            },
-            {
-                "name": "Feedback Analyzer",
-                "type": "conversation",
-                "description": "Analyzes and categorizes customer feedback",
-                "instructions": `## 🧑‍💼 Role:
-You analyze customer feedback to identify key themes and sentiment.
-
----
-## ⚙️ Steps to Follow:
-1. Review the customer's feedback
-2. Identify main themes and topics
-3. Assess sentiment (positive/negative/neutral)
-4. Categorize the feedback appropriately
-
----
-## 🎯 Scope:
-✅ In Scope:
-- Feedback analysis
-- Theme identification
-- Sentiment assessment
-
-❌ Out of Scope:
-- Direct customer interaction
-- Problem resolution
-- Policy changes
-
----
-## 📋 Guidelines:
-✔️ Dos:
-- Focus on key themes
-- Be objective in analysis
-- Note specific details
-
-❌ Don'ts:
-- Don't make assumptions
-- Don't suggest solutions
-- Don't engage directly with customers`,
-                "prompts": ["Style prompt"],
-                "tools": [],
-                "model": "gpt-4o-mini",
-                "toggleAble": true,
-                "ragReturnType": "chunks",
-                "ragK": 3,
-                "connectedAgents": [],
-                "controlType": "relinquish_to_parent"
-            },
-            {
-                "name": "Post process",
-                "type": "post_process",
-                "description": "",
-                "instructions": "Ensure responses are clear, professional, and maintain a positive tone.",
-                "prompts": [],
-                "tools": [],
-                "model": "gpt-4o-mini",
-                "locked": true,
-                "global": true,
-                "ragReturnType": "chunks",
-                "ragK": 3,
-                "connectedAgents": [],
-                "controlType": "retain"
-            },
-            {
-                "name": "Escalation",
-                "type": "escalation",
-                "description": "Handles escalated feedback cases",
-                "instructions": "Get the customer's contact information and assure them their feedback will be reviewed by management.",
-                "prompts": [],
-                "tools": [],
-                "model": "gpt-4o-mini",
-                "locked": true,
-                "toggleAble": false,
-                "ragReturnType": "chunks",
-                "ragK": 3,
-                "connectedAgents": [],
-                "controlType": "retain"
-            }
-        ],
-        "prompts": [
-            {
-                "name": "Style prompt",
-                "type": "style_prompt",
-                "prompt": "Maintain a professional yet friendly tone. Be concise and clear in your responses."
-            }
-        ],
-        "tools": []
     }
-};
+}
