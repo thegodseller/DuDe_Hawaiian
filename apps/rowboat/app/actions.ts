@@ -435,8 +435,18 @@ export async function createCrawlDataSource(projectId: string, formData: FormDat
 export async function createUrlsDataSource(projectId: string, formData: FormData) {
     await projectAuthCheck(projectId);
     const urls = formData.get('urls') as string;
-    // take first 100 urls
-    const limitedUrls = urls.split('\n').slice(0, 100).map((url) => url.trim());
+    // take first 100 valid urls (as in parse them)
+    const limitedUrls = urls.split('\n')
+        .map((url) => url.trim())
+        .filter((url) => {
+            try {
+                new URL(url);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        })
+        .slice(0, 100);
     const name = formData.get('name') as string;
 
     const result = await dataSourcesCollection.insertOne({

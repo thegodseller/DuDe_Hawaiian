@@ -7,8 +7,10 @@ export default async function Layout({
     params: { projectId: string }
     children: React.ReactNode
 }) {
+    const useDataSources = process.env.USE_DATA_SOURCES === 'true';
+
     return <div className="flex h-full">
-        <Nav projectId={params.projectId} />
+        <Nav projectId={params.projectId} useDataSources={useDataSources} />
         <div className="grow p-2 overflow-auto bg-white rounded-tl-lg">
             {children}
         </div>

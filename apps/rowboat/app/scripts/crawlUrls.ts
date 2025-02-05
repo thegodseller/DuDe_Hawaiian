@@ -685,6 +685,18 @@ async function saveWebpagesToMongodb(logger: PrefixLogger, job: WithId<z.infer<t
     });
 }
 
+async function dummyRewrite(_logger: PrefixLogger) {
+    const logger = _logger.child('dummyRewrite');
+    await batchMode({
+        inputFilePath: 'crawled.jsonl',
+        outputFilePath: 'rewritten.jsonl',
+        batchSize: 10,
+        processBatch: async (batch: Webpage[]): Promise<Webpage[]> => {
+            return batch;
+        }
+    });
+}
+
 async function rewrite(_logger: PrefixLogger) {
     const logger = _logger.child('rewrite');
 
@@ -950,7 +962,8 @@ async function mongodb(logger: PrefixLogger, job: WithId<z.infer<typeof DataSour
                 await dataSourcesCollection.updateOne({ _id: job._id }, { $set: { 'data.scrapedUrls': Array.from(crawledUrls).join('\n') } });
             }
             // rewrite the merged results as simplified html and markdown
-            await rewrite(logger);
+            // await rewrite(logger);
+            await dummyRewrite(logger);
             await saveWebpagesToMongodb(logger, job);
             await chunk(logger, job);
             await embeddings(logger);
