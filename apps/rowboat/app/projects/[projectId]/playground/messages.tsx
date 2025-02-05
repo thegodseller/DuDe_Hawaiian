@@ -443,6 +443,7 @@ function ClientToolCall({
             try {
                 response = await executeClientTool(
                     toolCall,
+                    messages,
                     projectId,
                 );
             } catch (e) {

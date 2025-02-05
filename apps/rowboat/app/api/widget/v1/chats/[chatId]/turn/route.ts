@@ -118,7 +118,11 @@ export async function POST(
                 const toolCallResults = await Promise.all(lastMessage.tool_calls.map(async toolCall => {
                     console.log('executing tool call', toolCall);
                     try {
-                        return await callClientToolWebhook(toolCall, session.projectId);
+                        return await callClientToolWebhook(
+                            toolCall,
+                            [...messages, ...unsavedMessages],
+                            session.projectId,
+                        );
                     } catch (error) {
                         console.error(`Error executing tool call ${toolCall.id}:`, error);
                         return { error: "Tool execution failed" };

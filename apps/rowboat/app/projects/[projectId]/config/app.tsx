@@ -328,12 +328,8 @@ export function SecretSection({
 
     return <Section title="Secret">
         <p className="text-sm">
-            The project secret is used for:
+            The project secret is used for signing tool-call requests sent to your webhook
         </p>
-        <ul className="list-disc list-inside text-sm ml-4">
-            <li>Signing tool-call requests sent to your webhook</li>
-            <li>Signing user-data sent through the chat widget</li>
-        </ul>
         <Divider />
         <SectionRow>
             <LeftLabel label="Project secret" />
@@ -398,10 +394,7 @@ export function WebhookUrlSection({
 
     function validate(url: string) {
         try {
-            const parsedUrl = new URL(url);
-            if (parsedUrl.protocol !== 'https:') {
-                return { valid: false, errorMessage: 'URL must use HTTPS' };
-            }
+            new URL(url);
             return { valid: true };
         } catch {
             return { valid: false, errorMessage: 'Please enter a valid URL' };
@@ -410,7 +403,7 @@ export function WebhookUrlSection({
 
     return <Section title="Webhook URL">
         <p className="text-sm">
-            Tool calls issued through the chat widget will be posted to this URL.
+            In workflow editor, tool calls will be posted to this URL, unless they are mocked.
         </p>
         <Divider />
         <SectionRow>
@@ -587,7 +580,7 @@ export default function App({
                 <SecretSection projectId={projectId} />
                 <ApiKeysSection projectId={projectId} />
                 <WebhookUrlSection projectId={projectId} />
-                <ChatWidgetSection projectId={projectId} />
+                {/* <ChatWidgetSection projectId={projectId} /> */}
                 <DeleteProjectSection projectId={projectId} />
             </div>
         </div>
