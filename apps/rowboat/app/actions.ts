@@ -1054,11 +1054,12 @@ export async function updateWebhookUrl(projectId: string, url: string) {
 
 export async function executeClientTool(
     toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number],
+    messages: z.infer<typeof apiV1.ChatMessage>[],
     projectId: string,
 ): Promise<unknown> {
     await projectAuthCheck(projectId);
 
-    const result = await callClientToolWebhook(toolCall, projectId);
+    const result = await callClientToolWebhook(toolCall, messages, projectId);
     return result;
 }
 

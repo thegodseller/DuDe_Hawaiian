@@ -7,6 +7,7 @@ import crypto from "crypto";
 
 export async function callClientToolWebhook(
     toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number],
+    messages: z.infer<typeof apiV1.ChatMessage>[],
     projectId: string,
 ): Promise<unknown> {
     const project = await projectsCollection.findOne({
@@ -23,6 +24,7 @@ export async function callClientToolWebhook(
     // prepare request body
     const content = JSON.stringify({
         toolCall,
+        messages,
     } as z.infer<typeof ClientToolCallRequestBody>);
     const requestId = crypto.randomUUID();
     const bodyHash = crypto
