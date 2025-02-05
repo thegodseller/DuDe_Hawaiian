@@ -10,9 +10,9 @@ export function Form({
 }: {
     projectId: string;
 }) {
-    const [sourceType, setSourceType] = useState("crawl");
+    const [sourceType, setSourceType] = useState("");
 
-    const createCrawlDataSourceWithProjectId = createCrawlDataSource.bind(null, projectId);
+    // const createCrawlDataSourceWithProjectId = createCrawlDataSource.bind(null, projectId);
     const createUrlsDataSourceWithProjectId = createUrlsDataSource.bind(null, projectId);
 
     function handleSourceTypeChange(event: React.ChangeEvent<HTMLSelectElement>) {
@@ -26,22 +26,23 @@ export function Form({
                 selectedKeys={[sourceType]}
                 onChange={handleSourceTypeChange}
             >
-                <SelectItem
+                {/* <SelectItem
                     key="crawl"
                     value="crawl"
                     startContent={<DataSourceIcon type="crawl" />}
                 >
                     Crawl URLs
-                </SelectItem>
+                </SelectItem> */}
                 <SelectItem
                     key="urls"
                     value="urls"
                     startContent={<DataSourceIcon type="urls" />}
                 >
-                    Specify URLs
+                    Scrape URLs
                 </SelectItem>
             </Select>
-            {sourceType === "crawl" && <form
+
+            {/* {sourceType === "crawl" && <form
                 action={createCrawlDataSourceWithProjectId}
                 className="flex flex-col gap-4"
             >
@@ -95,7 +96,7 @@ export function Form({
                         </svg>,
                     }}
                 />
-            </form>}
+            </form>} */}
 
             {sourceType === "urls" && <form
                 action={createUrlsDataSourceWithProjectId}
@@ -127,7 +128,7 @@ export function Form({
                     <p>Note:</p>
                     <ul className="list-disc ml-4">
                         <li>Expect about 5-10 minutes to scrape 100 pages</li>
-                        <li>Only the first 100 URLs will be scraped</li>
+                        <li>Only the first 100 (valid) URLs will be scraped</li>
                     </ul>
                 </div>
                 <FormStatusButton

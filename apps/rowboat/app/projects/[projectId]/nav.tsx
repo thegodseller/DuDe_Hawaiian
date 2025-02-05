@@ -9,8 +9,10 @@ import { ChevronsLeftIcon, ChevronsRightIcon, FolderOpenIcon, PanelLeftCloseIcon
 
 export function Nav({
     projectId,
+    useDataSources,
 }: {
     projectId: string;
+    useDataSources: boolean;
 }) {
     const [collapsed, setCollapsed] = useState(false);
     const [projectName, setProjectName] = useState<string | null>(null);
@@ -57,6 +59,6 @@ export function Nav({
                 <FolderOpenIcon size={16} className="ml-1" />
             </Link>
         </Tooltip>}
-        <Menu projectId={projectId} collapsed={collapsed} />
+        <Menu projectId={projectId} collapsed={collapsed} useDataSources={useDataSources} />
     </div>;
 }
