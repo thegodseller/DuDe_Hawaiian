@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useEffect, useState, useCallback } from "react";
 import { PublishedBadge } from "./published_badge";
 import { RelativeTime } from "@primer/react";
-import { listWorkflows } from "@/app/actions";
+import { listWorkflows } from "@/app/actions/workflow_actions";
 import { Button, Divider, Pagination } from "@nextui-org/react";
 import { WorkflowIcon } from "@/app/lib/components/icons";
 import { PlusIcon } from "lucide-react";

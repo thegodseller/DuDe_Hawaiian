@@ -6,7 +6,7 @@ import { Project } from "../lib/types";
 import { default as NextLink } from "next/link";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { listProjects } from "../actions";
+import { listProjects } from "../actions/project_actions";
 import { useRouter } from 'next/navigation';
 
 export default function App() {

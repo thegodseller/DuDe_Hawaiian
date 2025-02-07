@@ -3,7 +3,7 @@ import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import z from "zod";
 import { GetInformationToolResult, WebpageCrawlResponse, Workflow, WorkflowTool } from "@/app/lib/types";
-import { executeClientTool, getInformationTool, scrapeWebpage, suggestToolResponse } from "@/app/actions";
+import { executeClientTool, getInformationTool, scrapeWebpage, suggestToolResponse } from "@/app/actions/actions";
 import MarkdownContent from "@/app/lib/components/markdown-content";
 import Link from "next/link";
 import { apiV1 } from "rowboat-shared";
@@ -293,14 +293,15 @@ function GetInformationToolCall({
                     {typedResult && typedResult.results.length === 0 && <div>No matches found.</div>}
                     {typedResult && typedResult.results.length > 0 && <ul className="list-disc ml-6">
                         {typedResult.results.map((result, index) => {
-                            return <li key={'' + index}>
-                                <Link target="_blank" className="underline" href={result.url}>
-                                    {result.url}
-                                </Link>
+                            return <li key={'' + index} className="mb-2">
+                                <ExpandableContent
+                                    label={result.title || result.name}
+                                    content={result.content}
+                                    expanded={false}
+                                />
                             </li>
                         })}
-                    </ul>
-                    }
+                    </ul>}
                 </div>}
             </div>
         </div>

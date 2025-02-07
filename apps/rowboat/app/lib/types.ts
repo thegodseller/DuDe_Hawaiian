@@ -54,29 +54,57 @@ export const DataSource = z.object({
     name: z.string(),
     projectId: z.string(),
     active: z.boolean().default(true),
-    status: z.union([z.literal('new'), z.literal('processing'), z.literal('completed'), z.literal('error')]),
-    detailedStatus: z.string().optional(),
+    status: z.union([
+        z.literal('pending'),
+        z.literal('ready'),
+        z.literal('error'),
+        z.literal('deleted'),
+    ]),
+    version: z.number(),
     error: z.string().optional(),
-    attempts: z.number().default(0).optional(),
     createdAt: z.string().datetime(),
+    lastUpdatedAt: z.string().datetime().optional(),
+    attempts: z.number(),
     lastAttemptAt: z.string().datetime().optional(),
+    pendingRefresh: z.boolean().default(false).optional(),
     data: z.discriminatedUnion('type', [
         z.object({
-            type: z.literal('crawl'),
-            startUrl: z.string(),
-            limit: z.number(),
-            firecrawlId: z.string().optional(),
-            oxylabsId: z.string().optional(),
-            crawledUrls: z.string().optional(),
+            type: z.literal('urls'),
         }),
         z.object({
-            type: z.literal('urls'),
-            urls: z.array(z.string()),
-            scrapedUrls: z.string().optional(),
-            missingUrls: z.string().optional(),
+            type: z.literal('files'),
         }),
     ]),
 });
+
+export const DataSourceDoc = z.object({
+    sourceId: z.string(),
+    name: z.string(),
+    version: z.number(),
+    status: z.union([
+        z.literal('pending'),
+        z.literal('ready'),
+        z.literal('error'),
+        z.literal('deleted'),
+    ]),
+    content: z.string().optional(),
+    createdAt: z.string().datetime(),
+    lastUpdatedAt: z.string().datetime().optional(),
+    error: z.string().optional(),
+    data: z.discriminatedUnion('type', [
+        z.object({
+            type: z.literal('url'),
+            url: z.string(),
+        }),
+        z.object({
+            type: z.literal('file'),
+            name: z.string(),
+            size: z.number(),
+            mimeType: z.string(),
+            s3Key: z.string(),
+        }),
+    ]),
+})
 
 export const EmbeddingDoc = z.object({
     content: z.string(),
@@ -118,9 +146,10 @@ export const ApiKey = z.object({
 
 export const GetInformationToolResultItem = z.object({
     title: z.string(),
+    name: z.string(),
     content: z.string(),
-    url: z.string(),
-    score: z.number().optional(),
+    docId: z.string(),
+    sourceId: z.string(),
 });
 
 export const GetInformationToolResult = z.object({
@@ -150,6 +179,19 @@ export const AgenticAPIChatMessage = z.object({
         z.literal('internal'),
         z.literal('external'),
     ]).optional(),
+});
+
+export const EmbeddingRecord = z.object({
+    id: z.string().uuid(),
+    vector: z.array(z.number()),
+    payload: z.object({
+        projectId: z.string(),
+        sourceId: z.string(),
+        docId: z.string(),
+        content: z.string(),
+        title: z.string(),
+        name: z.string(),
+    }),
 });
 
 export const WorkflowAgent = z.object({

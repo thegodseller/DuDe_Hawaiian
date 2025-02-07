@@ -5,7 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { WorkflowEditor } from "./workflow_editor";
 import { WorkflowSelector } from "./workflow_selector";
 import { Spinner } from "@nextui-org/react";
-import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow, listSources } from "@/app/actions";
+import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow } from "@/app/actions/workflow_actions";
+import { listDataSources } from "@/app/actions/datasource_actions";
 
 export function App({
     projectId,
@@ -23,7 +24,7 @@ export function App({
         setLoading(true);
         const workflow = await fetchWorkflow(projectId, workflowId);
         const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
-        const dataSources = await listSources(projectId);
+        const dataSources = await listDataSources(projectId);
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflowId);
         setWorkflow(workflow);
@@ -43,7 +44,7 @@ export function App({
         setLoading(true);
         const workflow = await createWorkflow(projectId);
         const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
-        const dataSources = await listSources(projectId);
+        const dataSources = await listDataSources(projectId);
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflow._id);
         setWorkflow(workflow);
@@ -56,7 +57,7 @@ export function App({
         setLoading(true);
         const workflow = await cloneWorkflow(projectId, workflowId);
         const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
-        const dataSources = await listSources(projectId);
+        const dataSources = await listDataSources(projectId);
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflow._id);
         setWorkflow(workflow);

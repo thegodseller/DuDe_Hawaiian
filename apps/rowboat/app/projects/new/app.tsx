@@ -1,6 +1,6 @@
 'use client';
 import { cn, Input } from "@nextui-org/react";
-import { createProject } from "@/app/actions";
+import { createProject } from "@/app/actions/project_actions";
 import { templates } from "@/app/lib/project_templates";
 import { WorkflowTemplate } from "@/app/lib/types";
 import { FormStatusButton } from "@/app/lib/components/FormStatusButton";

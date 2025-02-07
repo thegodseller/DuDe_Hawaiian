@@ -4,7 +4,7 @@ import { ActionButton, Pane } from "./pane";
 import { useEffect, useRef, useState, createContext, useContext, useCallback } from "react";
 import { CopilotAssistantMessage, CopilotMessage, CopilotUserMessage, Workflow, CopilotChatContext, CopilotAssistantMessageActionPart } from "@/app/lib/types";
 import { z } from "zod";
-import { getCopilotResponse } from "@/app/actions";
+import { getCopilotResponse } from "@/app/actions/actions";
 import { Action } from "./copilot_actions";
 import clsx from "clsx";
 import { Action as WorkflowDispatch } from "./workflow_editor";
