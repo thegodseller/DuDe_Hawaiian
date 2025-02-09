@@ -1,5 +1,5 @@
 'use client';
-import { toggleDataSource } from "@/app/actions";
+import { toggleDataSource } from "@/app/actions/datasource_actions";
 import { Spinner } from "@nextui-org/react";
 import { Switch } from "@nextui-org/react";
 import { useState } from "react";
@@ -39,6 +39,6 @@ export function ToggleSource({
             </Switch>
             {loading && <Spinner size="sm" />}
         </div>
-        {!compact && !isActive && <p className="text-sm text-red-800">This data source will not be used in chats.</p>}
+        {!compact && !isActive && <p className="text-sm text-red-800">This data source will not be used for RAG.</p>}
     </div>;
 }

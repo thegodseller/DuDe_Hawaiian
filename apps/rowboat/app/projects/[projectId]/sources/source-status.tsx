@@ -24,7 +24,7 @@ export function SourceStatus({
                 There was an unexpected error while processing this resource.
             </div>}
         </div>}
-        {status == 'processing' && <div className="flex flex-col gap-1 items-start">
+        {status == 'pending' && <div className="flex flex-col gap-1 items-start">
             <div className="flex gap-1 items-center">
                 <Spinner size="sm" />
                 <div className="text-gray-400">
@@ -35,20 +35,7 @@ export function SourceStatus({
                 This source is being processed. This may take a few minutes.
             </div>}
         </div>}
-        {status == 'new' && <div className="flex flex-col gap-1 items-start">
-            <div className="flex gap-1 items-center">
-                <svg className="w-[24px] h-[24px]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                </svg>
-                <div>
-                    Queued
-                </div>
-            </div>
-            {!compact && <div className="text-sm text-gray-400">
-                This source is waiting to be processed.
-            </div>}
-        </div>}
-        {status === 'completed' && <div className="flex flex-col gap-1 items-start">
+        {status === 'ready' && <div className="flex flex-col gap-1 items-start">
             <div className="flex gap-1 items-center">
                 <svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                     <path fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm13.707-1.293a1 1 0 0 0-1.414-1.414L11 12.586l-1.793-1.793a1 1 0 0 0-1.414 1.414l2.5 2.5a1 1 0 0 0 1.414 0l4-4Z" clipRule="evenodd" />

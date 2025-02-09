@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/resizable"
 import { Copilot } from "./copilot";
 import { apiV1 } from "rowboat-shared";
-import { publishWorkflow, renameWorkflow, saveWorkflow } from "@/app/actions";
+import { publishWorkflow, renameWorkflow, saveWorkflow } from "@/app/actions/workflow_actions";
 import { PublishedBadge } from "./published_badge";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "@/app/lib/components/icons";
 import { CopyIcon, Layers2Icon, RadioIcon, RedoIcon, UndoIcon } from "lucide-react";

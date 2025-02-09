@@ -1,5 +1,5 @@
 'use client';
-import { getAssistantResponse, simulateUserResponse } from "@/app/actions";
+import { getAssistantResponse, simulateUserResponse } from "@/app/actions/actions";
 import { useEffect, useState } from "react";
 import { Messages } from "./messages";
 import z from "zod";

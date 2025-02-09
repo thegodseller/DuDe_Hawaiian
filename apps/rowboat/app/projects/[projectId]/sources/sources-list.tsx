@@ -7,7 +7,7 @@ import { DataSourceIcon } from "@/app/lib/components/datasource-icon";
 import { useEffect, useState } from "react";
 import { DataSource, WithStringId } from "@/app/lib/types";
 import { z } from "zod";
-import { listSources } from "@/app/actions";
+import { listDataSources } from "@/app/actions/datasource_actions";
 
 export function SourcesList({
     projectId,
@@ -22,7 +22,7 @@ export function SourcesList({
 
         async function fetchSources() {
             setLoading(true);
-            const sources = await listSources(projectId);
+            const sources = await listDataSources(projectId);
             if (!ignore) {
                 setSources(sources);
                 setLoading(false);
@@ -81,13 +81,9 @@ export function SourcesList({
                                     </Link>
                                 </td>
                                 <td className="py-4">
-                                    {source.data.type == 'crawl' && <div className="flex gap-1 items-center">
-                                        <DataSourceIcon type="crawl" />
-                                        <div>Crawl URLs</div>
-                                    </div>}
                                     {source.data.type == 'urls' && <div className="flex gap-1 items-center">
                                         <DataSourceIcon type="urls" />
-                                        <div>Specify URLs</div>
+                                        <div>List URLs</div>
                                     </div>}
                                 </td>
                                 <td className="py-4">
