@@ -5,7 +5,7 @@ import { z } from "zod";
 import { PlaygroundChat, SimulationData, SimulationScenarioData, Workflow } from "@/app/lib/types";
 import { SimulateScenarioOption, SimulateURLOption } from "./simulation-options";
 import { Chat } from "./chat";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ActionButton, Pane } from "../workflow/pane";
 import { apiV1 } from "rowboat-shared";
 import { EllipsisVerticalIcon, MessageSquarePlusIcon, PlayIcon } from "lucide-react";
@@ -29,6 +29,7 @@ export function App({
     messageSubscriber?: (messages: z.infer<typeof apiV1.ChatMessage>[]) => void;
 }) {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const initialChatId = useMemo(() => searchParams.get('chatId'), [searchParams]);
     const [existingChatId, setExistingChatId] = useState<string | null>(initialChatId);
     const [loadingChat, setLoadingChat] = useState<boolean>(false);
@@ -75,7 +76,7 @@ export function App({
     }
 
     function handleSimulateButtonClick() {
-        setViewSimulationMenu(true);
+        router.push(`/projects/${projectId}/simulation`);
     }
 
     function handleNewChatButtonClick() {
@@ -100,7 +101,7 @@ export function App({
             >
                 New chat
             </ActionButton>,
-            !viewSimulationMenu && <ActionButton
+            <ActionButton
                 key="simulate"
                 icon={<PlayIcon size={16} />}
                 onClick={handleSimulateButtonClick}
