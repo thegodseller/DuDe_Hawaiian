@@ -3,7 +3,7 @@ import { usePathname } from "next/navigation";
 import { Tooltip } from "@nextui-org/react";
 import Link from "next/link";
 import clsx from "clsx";
-import { DatabaseIcon, SettingsIcon, WorkflowIcon } from "lucide-react";
+import { DatabaseIcon, SettingsIcon, WorkflowIcon, PlayIcon } from "lucide-react";
 
 function NavLink({ href, label, icon, collapsed, selected = false }: { href: string, label: string, icon: React.ReactNode, collapsed: boolean, selected?: boolean }) {
     return <Link
@@ -54,6 +54,13 @@ export default function Menu({
             collapsed={collapsed}
             icon={<WorkflowIcon size={16} />}
             selected={pathname.startsWith(`/projects/${projectId}/workflow`)}
+        />
+        <NavLink
+            href={`/projects/${projectId}/simulation`}
+            label="Simulation"
+            collapsed={collapsed}
+            icon={<PlayIcon size={16} />}
+            selected={pathname.startsWith(`/projects/${projectId}/simulation`)}
         />
         {useDataSources && <NavLink
             href={`/projects/${projectId}/sources`}
