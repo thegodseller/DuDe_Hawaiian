@@ -156,8 +156,10 @@ export default function SimulationApp() {
   };
 
   const runSingleScenario = (scenario: ScenarioType) => {
-    // Navigate to the workflow playground with the scenario
-    router.push(`/projects/${projectId}/workflow/playground?scenarioId=${scenario._id}`);
+    // Store scenario ID in localStorage instead of URL parameter
+    localStorage.setItem('pendingScenarioId', scenario._id);
+    // Navigate to the playground without query parameter
+    router.push(`/projects/${projectId}/workflow`);
     setMenuOpenScenarioId(null);
   };
 

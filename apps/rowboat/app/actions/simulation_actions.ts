@@ -5,6 +5,7 @@ import { scenariosCollection } from "@/app/lib/mongodb";
 import { z } from 'zod';
 import { projectAuthCheck } from "./project_actions";
 import { Scenario, type WithStringId } from "@/app/lib/types";
+import { SimulationScenarioData } from "@/app/lib/types";
 
 export async function getScenarios(projectId: string): Promise<WithStringId<z.infer<typeof Scenario>>[]> {
     await projectAuthCheck(projectId);
@@ -16,18 +17,22 @@ export async function getScenarios(projectId: string): Promise<WithStringId<z.in
     }));
 }
 
-export async function getScenario(projectId: string, scenarioId: string): Promise<WithStringId<z.infer<typeof Scenario>> | null> {
+export async function getScenario(projectId: string, scenarioId: string): Promise<WithStringId<z.infer<typeof SimulationScenarioData>>> {
     await projectAuthCheck(projectId);
 
+    // fetch scenario
     const scenario = await scenariosCollection.findOne({
         _id: new ObjectId(scenarioId),
         projectId,
     });
-
-    if (!scenario) return null;
+    if (!scenario) {
+        throw new Error('Scenario not found');
+    }
+    const { _id, description, ...rest } = scenario;
     return {
-        ...scenario,
-        _id: scenario._id.toString(),
+        ...rest,
+        _id: _id.toString(),
+        scenario: description,
     };
 }
 
