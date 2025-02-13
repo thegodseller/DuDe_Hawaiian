@@ -62,6 +62,14 @@ export default function SimulationApp() {
     getScenarios(projectId as string).then(setScenarios);
   }, [projectId]);
 
+  useEffect(() => {
+    if (menuOpenScenarioId) {
+      const closeMenu = () => setMenuOpenScenarioId(null);
+      window.addEventListener('click', closeMenu);
+      return () => window.removeEventListener('click', closeMenu);
+    }
+  }, [menuOpenScenarioId]);
+
   const createNewScenario = async () => {
     if (!projectId) return;
     const newScenarioId = await createScenario(
