@@ -50,14 +50,14 @@ export default function Menu({
         /> */}
         <NavLink
             href={`/projects/${projectId}/workflow`}
-            label="Workflow"
+            label="Build"
             collapsed={collapsed}
             icon={<WorkflowIcon size={16} />}
             selected={pathname.startsWith(`/projects/${projectId}/workflow`)}
         />
         <NavLink
             href={`/projects/${projectId}/simulation`}
-            label="Simulation"
+            label="Test"
             collapsed={collapsed}
             icon={<PlayIcon size={16} />}
             selected={pathname.startsWith(`/projects/${projectId}/simulation`)}
@@ -71,7 +71,7 @@ export default function Menu({
         />}
         <NavLink
             href={`/projects/${projectId}/config`}
-            label="Config"
+            label="Integrate"
             collapsed={collapsed}
             icon={<SettingsIcon size={16} />}
             selected={pathname.startsWith(`/projects/${projectId}/config`)}

@@ -654,17 +654,13 @@ function SystemMessage({
         <div className="border border-gray-300 p-2 rounded-lg flex flex-col gap-2">
             <EditableField
                 light
-                label="System message"
+                label="Context"
                 value={content}
                 onChange={onChange}
                 multiline
                 markdown
                 locked={locked}
-                placeholder={`Use this space to simulate user information provided to the assistant at start of chat. Example:
-- userName: John Doe
-- email: john@gmail.com 
-                
-This is intended for testing only.`}
+                placeholder={`Provide context about the user (e.g. user ID, user name) to the assistant at the start of chat, for testing purposes.`}
             />
         </div>
     );
