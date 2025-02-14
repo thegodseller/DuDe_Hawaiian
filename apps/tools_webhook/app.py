@@ -10,8 +10,8 @@ import jwt
 from flask import Flask, jsonify, request
 from jwt import InvalidTokenError
 
-from tools_webhook.function_map import FUNCTIONS_MAP
-from tools_webhook.tool_caller import call_tool
+from .function_map import FUNCTIONS_MAP
+from .tool_caller import call_tool
 
 app = Flask(__name__)
 

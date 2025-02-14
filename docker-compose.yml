@@ -48,6 +48,16 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - API_KEY=${COPILOT_API_KEY}
+    restart: unless-stopped
+
+  tools_webhook:
+    build:
+      context: ./apps/tools_webhook
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3005"
+    environment:
+      - SIGNING_SECRET=${SIGNING_SECRET}
     restart: unless-stopped 
 
   docs:
