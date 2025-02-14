@@ -64,7 +64,7 @@ export default function Menu({
         />
         {useDataSources && <NavLink
             href={`/projects/${projectId}/sources`}
-            label="Data sources"
+            label="Connect"
             collapsed={collapsed}
             icon={<DatabaseIcon size={16} />}
             selected={pathname.startsWith(`/projects/${projectId}/sources`)}
