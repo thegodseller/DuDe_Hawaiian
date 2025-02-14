@@ -53,6 +53,7 @@ export function App({
             messages: [],
             simulated: true,
             simulationData: data,
+            systemMessage: 'context' in data ? data.context : '',
         });
     }, [counter, projectId]);
 
@@ -62,7 +63,10 @@ export function App({
             console.log('Scenario Effect triggered:', { scenarioId, projectId });
             getScenario(projectId, scenarioId).then((scenario) => {
                 console.log('Scenario data received:', scenario);
-                beginSimulation(scenario as z.infer<typeof SimulationScenarioData>);
+                beginSimulation({
+                    ...scenario,
+                    systemMessage: scenario.context || '',
+                } as z.infer<typeof SimulationScenarioData>);
                 localStorage.removeItem('pendingScenarioId');
             }).catch(error => {
                 console.error('Error fetching scenario:', error);

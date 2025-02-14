@@ -95,6 +95,7 @@ export default function SimulationApp() {
       {
         name: updatedScenario.name,
         description: updatedScenario.description,
+        context: updatedScenario.context,
       }
     );
     // Refresh scenarios list
@@ -436,6 +437,13 @@ function ScenarioViewer({
         <div className="border-t border-gray-200 my-4"></div>
         
         <div className="flex flex-col">
+          <div className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">CONTEXT</div>
+          <div className="text-base whitespace-pre-wrap">{scenario.context}</div>
+        </div>
+        
+        <div className="border-t border-gray-200 my-4"></div>
+        
+        <div className="flex flex-col">
           <div className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">DESCRIPTION</div>
           <div className="text-base whitespace-pre-wrap">{scenario.description}</div>
         </div>
@@ -454,6 +462,7 @@ function ScenarioEditor({
   onCancel: () => void;
 }) {
   const [name, setName] = useState(scenario.name);
+  const [context, setContext] = useState(scenario.context || '');
   const [description, setDescription] = useState(scenario.description);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -461,6 +470,7 @@ function ScenarioEditor({
     onSave({
       ...scenario,
       name,
+      context,
       description,
     });
   };
@@ -493,6 +503,18 @@ function ScenarioEditor({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 px-3 py-2"
+          />
+        </div>
+
+        <div className="border-t border-gray-200 my-4"></div>
+
+        <div>
+          <div className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">CONTEXT</div>
+          <textarea
+            value={context}
+            onChange={(e) => setContext(e.target.value)}
+            rows={4}
             className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 px-3 py-2"
           />
         </div>

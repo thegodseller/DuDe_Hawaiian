@@ -110,6 +110,7 @@ export function ScenarioList({
                 _id: tmpId,
                 name,
                 description,
+                context: '',
                 projectId,
                 createdAt: new Date().toISOString(),
                 lastUpdatedAt: new Date().toISOString(),
@@ -120,6 +121,7 @@ export function ScenarioList({
                 _id: id,
                 name,
                 description,
+                context: '',
                 projectId,
                 createdAt: new Date().toISOString(),
                 lastUpdatedAt: new Date().toISOString(),
@@ -135,7 +137,11 @@ export function ScenarioList({
 
     async function handleEditScenario(scenarioId: string, name: string, description: string) {
         setSaving(true);
-        setScenarios(scenarios.map(scenario => scenario._id === scenarioId ? { ...scenario, name, description } : scenario));
+        setScenarios(scenarios.map(scenario => 
+            scenario._id === scenarioId 
+                ? { ...scenario, name, description, context: scenario.context }
+                : scenario
+        ));
         await updateScenario(projectId, scenarioId, name, description);
         setSaving(false);
     }

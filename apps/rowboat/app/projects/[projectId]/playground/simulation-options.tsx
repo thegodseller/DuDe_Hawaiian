@@ -57,6 +57,7 @@ export function SimulateScenarioOption({
             projectId={projectId}
             onPlay={(scenario) => beginSimulation({
                 scenario: scenario.description,
+                context: scenario.context,
             })}
         />
     );

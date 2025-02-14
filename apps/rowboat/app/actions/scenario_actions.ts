@@ -20,6 +20,7 @@ export async function createScenario(projectId: string, name: string, descriptio
         projectId,
         name,
         description,
+        context: '',  // Always empty string
         lastUpdatedAt: now,
         createdAt: now,
     });
