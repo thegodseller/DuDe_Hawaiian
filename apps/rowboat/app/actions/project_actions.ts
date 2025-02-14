@@ -7,7 +7,9 @@ import crypto from 'crypto';
 import { revalidatePath } from "next/cache";
 import { templates } from "../lib/project_templates";
 import { authCheck } from "./actions";
-import { ApiKey, WithStringId, Project } from "../lib/types";
+import { WithStringId } from "../lib/types/types";
+import { ApiKey } from "../lib/types/project_types";
+import { Project } from "../lib/types/project_types";
 
 export async function projectAuthCheck(projectId: string) {
     const user = await authCheck();

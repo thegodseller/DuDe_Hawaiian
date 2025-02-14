@@ -3,7 +3,11 @@ import { agentWorkflowsCollection, db, projectsCollection } from "../../../../li
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { authCheck } from "../../utils";
-import { convertFromApiToAgenticApiMessages, convertFromAgenticApiToApiMessages, AgenticAPIChatRequest, ApiRequest, ApiResponse, convertWorkflowToAgenticAPI } from "../../../../lib/types";
+import { ApiRequest, ApiResponse } from "../../../../lib/types/types";
+import { convertFromAgenticApiToApiMessages } from "../../../../lib/types/agents_api_types";
+import { convertFromApiToAgenticApiMessages } from "../../../../lib/types/agents_api_types";
+import { convertWorkflowToAgenticAPI } from "../../../../lib/types/agents_api_types";
+import { AgenticAPIChatRequest } from "../../../../lib/types/agents_api_types";
 import { getAgenticApiResponse } from "../../../../lib/utils";
 import { check_query_limit } from "../../../../lib/rate_limiting";
 

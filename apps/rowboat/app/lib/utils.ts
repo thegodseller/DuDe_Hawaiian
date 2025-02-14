@@ -1,4 +1,11 @@
-import { AgenticAPIChatMessage, AgenticAPIChatRequest, AgenticAPIChatResponse, ClientToolCallJwt, ClientToolCallRequest, ClientToolCallRequestBody, convertFromAgenticAPIChatMessages, Workflow } from "../lib/types";
+import { convertFromAgenticAPIChatMessages } from "./types/agents_api_types";
+import { ClientToolCallRequest } from "./types/tool_types";
+import { ClientToolCallJwt } from "./types/tool_types";
+import { ClientToolCallRequestBody } from "./types/tool_types";
+import { AgenticAPIChatResponse } from "./types/agents_api_types";
+import { AgenticAPIChatRequest } from "./types/agents_api_types";
+import { Workflow } from "./types/workflow_types";
+import { AgenticAPIChatMessage } from "./types/agents_api_types";
 import { z } from "zod";
 import { projectsCollection } from "./mongodb";
 import { apiV1 } from "rowboat-shared";

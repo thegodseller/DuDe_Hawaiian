@@ -1,5 +1,6 @@
 'use client';
-import { DataSource, WithStringId } from "../../../../lib/types";
+import { WithStringId } from "../../../../lib/types/types";
+import { DataSource } from "../../../../lib/types/datasource_types";
 import { PageSection } from "../../../../lib/components/PageSection";
 import { ToggleSource } from "../toggle-source";
 import { Spinner } from "@nextui-org/react";

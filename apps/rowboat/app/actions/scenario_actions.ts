@@ -2,7 +2,8 @@
 import { ObjectId } from "mongodb";
 import { scenariosCollection } from "../lib/mongodb";
 import { z } from 'zod';
-import { Scenario, WithStringId } from "../lib/types";
+import { WithStringId } from "../lib/types/types";
+import { Scenario } from "../lib/types/testing_types";
 import { projectAuthCheck } from "./project_actions";
 
 export async function getScenarios(projectId: string): Promise<WithStringId<z.infer<typeof Scenario>>[]> {

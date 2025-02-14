@@ -2,7 +2,9 @@
 import { createContext, useContext, useState } from "react";
 import clsx from "clsx";
 import { z } from "zod";
-import { Workflow, CopilotAssistantMessage, CopilotAssistantMessageActionPart } from "../../../lib/types";
+import { CopilotAssistantMessage } from "../../../lib/types/copilot_types";
+import { CopilotAssistantMessageActionPart } from "../../../lib/types/copilot_types";
+import { Workflow } from "../../../lib/types/workflow_types";
 import { PreviewModalProvider, usePreviewModal } from './preview-modal';
 import { getAppliedChangeKey } from "./copilot";
 import { AlertTriangleIcon, CheckCheckIcon, CheckIcon, ChevronsDownIcon, ChevronsUpIcon, EyeIcon, PencilIcon, PlusIcon } from "lucide-react";

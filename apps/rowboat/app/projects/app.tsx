@@ -2,7 +2,7 @@
 
 import { Link, Button, Spinner } from "@nextui-org/react";
 import { RelativeTime } from "@primer/react";
-import { Project } from "../lib/types";
+import { Project } from "../lib/types/project_types";
 import { default as NextLink } from "next/link";
 import { useEffect, useState } from "react";
 import { z } from "zod";

@@ -6,7 +6,9 @@ import { z } from 'zod';
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { projectAuthCheck } from "./project_actions";
-import { DataSource, DataSourceDoc, WithStringId } from "../lib/types";
+import { WithStringId } from "../lib/types/types";
+import { DataSourceDoc } from "../lib/types/datasource_types";
+import { DataSource } from "../lib/types/datasource_types";
 import { uploadsS3Client } from "../lib/uploads_s3_client";
 
 export async function getDataSource(projectId: string, sourceId: string): Promise<WithStringId<z.infer<typeof DataSource>>> {

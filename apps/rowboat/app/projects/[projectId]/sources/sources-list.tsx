@@ -5,7 +5,8 @@ import { ToggleSource } from "./toggle-source";
 import { SelfUpdatingSourceStatus } from "./self-updating-source-status";
 import { DataSourceIcon } from "../../../lib/components/datasource-icon";
 import { useEffect, useState } from "react";
-import { DataSource, WithStringId } from "../../../lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { DataSource } from "../../../lib/types/datasource_types";
 import { z } from "zod";
 import { listDataSources } from "../../../actions/datasource_actions";
 

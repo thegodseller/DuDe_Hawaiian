@@ -7,7 +7,8 @@ import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, de
 import { CopyButton } from "../../../lib/components/copy-button";
 import { EditableField } from "../../../lib/components/editable-field";
 import { EyeIcon, EyeOffIcon, CopyIcon, MoreVerticalIcon, PlusIcon, EllipsisVerticalIcon } from "lucide-react";
-import { WithStringId, ApiKey } from "../../../lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { ApiKey } from "../../../lib/types/project_types";
 import { z } from "zod";
 import { RelativeTime } from "@primer/react";
 import { Label } from "../../../lib/components/label";

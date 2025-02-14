@@ -1,5 +1,7 @@
 "use client";
-import { DataSource, Workflow, WithStringId } from "../../../lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { Workflow } from "../../../lib/types/workflow_types";
+import { DataSource } from "../../../lib/types/datasource_types";
 import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { WorkflowEditor } from "./workflow_editor";

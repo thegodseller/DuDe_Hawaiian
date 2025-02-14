@@ -9,7 +9,8 @@ import {
     updateScenario, 
     deleteScenario,
 } from '../../../actions/simulation_actions';
-import { Scenario, type WithStringId } from '../../../lib/types';
+import { type WithStringId } from '../../../lib/types/types';
+import { Scenario } from "../../../lib/types/testing_types";
 import { z } from 'zod';
 
 type ScenarioType = WithStringId<z.infer<typeof Scenario>>;

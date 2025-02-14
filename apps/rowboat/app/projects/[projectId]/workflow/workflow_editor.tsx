@@ -1,5 +1,10 @@
 "use client";
-import { DataSource, Workflow, WorkflowAgent, WorkflowPrompt, WorkflowTool, WithStringId } from "../../../lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { Workflow } from "../../../lib/types/workflow_types";
+import { WorkflowTool } from "../../../lib/types/workflow_types";
+import { WorkflowPrompt } from "../../../lib/types/workflow_types";
+import { WorkflowAgent } from "../../../lib/types/workflow_types";
+import { DataSource } from "../../../lib/types/datasource_types";
 import { useReducer, Reducer, useState, useCallback, useEffect, useRef } from "react";
 import { produce, applyPatches, enablePatches, produceWithPatches, Patch } from 'immer';
 import { AgentConfig } from "./agent_config";

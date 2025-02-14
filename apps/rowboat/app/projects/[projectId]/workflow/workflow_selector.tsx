@@ -1,5 +1,6 @@
 "use client";
-import { Workflow, WithStringId } from "../../../lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { Workflow } from "../../../lib/types/workflow_types";
 import { z } from "zod";
 import { useEffect, useState, useCallback } from "react";
 import { PublishedBadge } from "./published_badge";

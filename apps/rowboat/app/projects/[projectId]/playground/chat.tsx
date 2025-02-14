@@ -3,7 +3,11 @@ import { getAssistantResponse, simulateUserResponse } from "../../../actions/act
 import { useEffect, useState } from "react";
 import { Messages } from "./messages";
 import z from "zod";
-import { AgenticAPIChatRequest, convertToAgenticAPIChatMessages, convertWorkflowToAgenticAPI, PlaygroundChat, Workflow } from "../../../lib/types";
+import { PlaygroundChat } from "../../../lib/types/types";
+import { convertToAgenticAPIChatMessages } from "../../../lib/types/agents_api_types";
+import { convertWorkflowToAgenticAPI } from "../../../lib/types/agents_api_types";
+import { AgenticAPIChatRequest } from "../../../lib/types/agents_api_types";
+import { Workflow } from "../../../lib/types/workflow_types";
 import { ComposeBox } from "./compose-box";
 import { Button, Spinner } from "@nextui-org/react";
 import { apiV1 } from "rowboat-shared";

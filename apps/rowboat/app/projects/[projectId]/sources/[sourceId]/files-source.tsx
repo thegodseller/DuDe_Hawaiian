@@ -1,6 +1,8 @@
 "use client";
 import { PageSection } from "../../../../lib/components/PageSection";
-import { DataSource, DataSourceDoc, WithStringId } from "../../../../lib/types";
+import { WithStringId } from "../../../../lib/types/types";
+import { DataSourceDoc } from "../../../../lib/types/datasource_types";
+import { DataSource } from "../../../../lib/types/datasource_types";
 import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";

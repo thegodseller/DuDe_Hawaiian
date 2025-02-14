@@ -2,7 +2,12 @@
 import { Button, Textarea } from "@nextui-org/react";
 import { ActionButton, Pane } from "./pane";
 import { useEffect, useRef, useState, createContext, useContext, useCallback } from "react";
-import { CopilotAssistantMessage, CopilotMessage, CopilotUserMessage, Workflow, CopilotChatContext, CopilotAssistantMessageActionPart } from "../../../lib/types";
+import { CopilotChatContext } from "../../../lib/types/copilot_types";
+import { CopilotMessage } from "../../../lib/types/copilot_types";
+import { CopilotAssistantMessage } from "../../../lib/types/copilot_types";
+import { CopilotAssistantMessageActionPart } from "../../../lib/types/copilot_types";
+import { CopilotUserMessage } from "../../../lib/types/copilot_types";
+import { Workflow } from "../../../lib/types/workflow_types";
 import { z } from "zod";
 import { getCopilotResponse } from "../../../actions/actions";
 import { Action } from "./copilot_actions";

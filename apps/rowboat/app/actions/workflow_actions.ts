@@ -4,7 +4,8 @@ import { projectsCollection, agentWorkflowsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import { templates } from "../lib/project_templates";
 import { projectAuthCheck } from "./project_actions";
-import { Workflow, WithStringId } from "../lib/types";
+import { WithStringId } from "../lib/types/types";
+import { Workflow } from "../lib/types/workflow_types";
 
 export async function createWorkflow(projectId: string): Promise<WithStringId<z.infer<typeof Workflow>>> {
     await projectAuthCheck(projectId);

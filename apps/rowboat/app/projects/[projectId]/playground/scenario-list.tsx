@@ -3,7 +3,8 @@
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Spinner, Textarea } from "@nextui-org/react";
 import { useState, useEffect } from "react";
 import { getScenarios, createScenario, updateScenario, deleteScenario } from "../../../actions/scenario_actions";
-import { Scenario, WithStringId } from "../../../lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { Scenario } from "../../../lib/types/testing_types";
 import { z } from "zod";
 import { EditableField } from "../../../lib/components/editable-field";
 import { EllipsisVerticalIcon, PlayIcon, PlusIcon } from "lucide-react";

@@ -1,4 +1,4 @@
-import { WorkflowTemplate } from './types';
+import { WorkflowTemplate } from "./types/workflow_types";
 import { z } from 'zod';
 
 export const templates: { [key: string]: z.infer<typeof WorkflowTemplate> } = {

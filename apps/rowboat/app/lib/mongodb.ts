@@ -1,5 +1,13 @@
 import { MongoClient } from "mongodb";
-import { PlaygroundChat, DataSource, EmbeddingDoc, Project, Webpage, ChatClientId, Workflow, Scenario, ProjectMember, ApiKey, DataSourceDoc } from "./types";
+import { PlaygroundChat, Webpage, ChatClientId } from "./types/types";
+import { Workflow } from "./types/workflow_types";
+import { ApiKey } from "./types/project_types";
+import { ProjectMember } from "./types/project_types";
+import { Project } from "./types/project_types";
+import { EmbeddingDoc } from "./types/datasource_types";
+import { DataSourceDoc } from "./types/datasource_types";
+import { DataSource } from "./types/datasource_types";
+import { Scenario } from "./types/testing_types";
 import { z } from 'zod';
 
 const client = new MongoClient(process.env["MONGODB_CONNECTION_STRING"] || "mongodb://localhost:27017");

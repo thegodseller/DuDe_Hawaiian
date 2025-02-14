@@ -1,5 +1,9 @@
 "use client";
-import { AgenticAPITool, DataSource, WithStringId, WorkflowAgent, WorkflowPrompt } from "../../../lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { AgenticAPITool } from "../../../lib/types/agents_api_types";
+import { WorkflowPrompt } from "../../../lib/types/workflow_types";
+import { WorkflowAgent } from "../../../lib/types/workflow_types";
+import { DataSource } from "../../../lib/types/datasource_types";
 import { Button, Divider, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Radio, RadioGroup, Select, SelectItem } from "@nextui-org/react";
 import { z } from "zod";
 import { DataSourceIcon } from "../../../lib/components/datasource-icon";

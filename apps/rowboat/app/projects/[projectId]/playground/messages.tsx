@@ -2,7 +2,10 @@
 import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import z from "zod";
-import { GetInformationToolResult, WebpageCrawlResponse, Workflow, WorkflowTool } from "../../../lib/types";
+import { Workflow } from "../../../lib/types/workflow_types";
+import { WorkflowTool } from "../../../lib/types/workflow_types";
+import { WebpageCrawlResponse } from "../../../lib/types/tool_types";
+import { GetInformationToolResult } from "../../../lib/types/tool_types";
 import { executeClientTool, getInformationTool, scrapeWebpage, suggestToolResponse } from "../../../actions/actions";
 import MarkdownContent from "../../../lib/components/markdown-content";
 import Link from "next/link";

@@ -1,5 +1,5 @@
 "use client";
-import { WorkflowTool } from "../../../lib/types";
+import { WorkflowTool } from "../../../lib/types/workflow_types";
 import { Accordion, AccordionItem, Button, Checkbox, Select, SelectItem, Switch } from "@nextui-org/react";
 import { z } from "zod";
 import { ActionButton, Pane } from "./pane";

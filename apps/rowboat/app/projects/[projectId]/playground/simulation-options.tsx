@@ -1,7 +1,7 @@
 'use client';
 import { Input, Textarea } from "@nextui-org/react";
 import { FormStatusButton } from "../../../lib/components/FormStatusButton";
-import { SimulationData } from "../../../lib/types";
+import { SimulationData } from "../../../lib/types/testing_types";
 import { z } from "zod";
 import { scrapeWebpage } from "../../../actions/actions";
 import { ScenarioList } from "./scenario-list";

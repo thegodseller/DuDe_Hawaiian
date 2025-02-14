@@ -1,6 +1,6 @@
 'use client';
 import { getDataSource } from "../../../actions/datasource_actions";
-import { DataSource } from "../../../lib/types";
+import { DataSource } from "../../../lib/types/datasource_types";
 import { useEffect, useState } from "react";
 import { z } from 'zod';
 import { SourceStatus } from "./source-status";

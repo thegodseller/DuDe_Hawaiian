@@ -2,7 +2,10 @@
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner } from "@nextui-org/react";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { z } from "zod";
-import { PlaygroundChat, SimulationData, SimulationScenarioData, Workflow } from "../../../lib/types";
+import { PlaygroundChat } from "../../../lib/types/types";
+import { Workflow } from "../../../lib/types/workflow_types";
+import { SimulationData } from "../../../lib/types/testing_types";
+import { SimulationScenarioData } from "../../../lib/types/testing_types";
 import { SimulateScenarioOption, SimulateURLOption } from "./simulation-options";
 import { Chat } from "./chat";
 import { useSearchParams, useRouter } from "next/navigation";

@@ -1,5 +1,5 @@
 "use client";
-import { WorkflowPrompt } from "../../../lib/types";
+import { WorkflowPrompt } from "../../../lib/types/workflow_types";
 import { Divider, Input, Textarea } from "@nextui-org/react";
 import { z } from "zod";
 import { ActionButton, Pane } from "./pane";
