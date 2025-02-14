@@ -20,3 +20,23 @@ export const SimulationChatMessagesData = z.object({
 });
 export const SimulationData = z.union([SimulationArticleData, SimulationScenarioData, SimulationChatMessagesData]);
 
+export const SimulationRun = z.object({
+    projectId: z.string(),
+    status: z.union([
+        z.literal('pending'),
+        z.literal('running'),
+        z.literal('completed'),
+        z.literal('cancelled'),
+        z.literal('failed')
+    ]),
+    scenarioIds: z.array(z.string()),
+    startedAt: z.string().datetime(),
+    completedAt: z.string().datetime().optional(),
+});
+
+export const SimulationResult = z.object({
+    scenarioId: z.string(),
+    result: z.union([z.literal('pass'), z.literal('fail')]),
+    details: z.string()
+});
+
