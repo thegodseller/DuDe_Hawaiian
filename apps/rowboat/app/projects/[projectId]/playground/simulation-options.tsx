@@ -1,9 +1,9 @@
 'use client';
 import { Input, Textarea } from "@nextui-org/react";
-import { FormStatusButton } from "@/app/lib/components/FormStatusButton";
-import { SimulationData } from "@/app/lib/types";
+import { FormStatusButton } from "../../../lib/components/FormStatusButton";
+import { SimulationData } from "../../../lib/types";
 import { z } from "zod";
-import { scrapeWebpage } from "@/app/actions/actions";
+import { scrapeWebpage } from "../../../actions/actions";
 import { ScenarioList } from "./scenario-list";
 
 export function SimulateURLOption({

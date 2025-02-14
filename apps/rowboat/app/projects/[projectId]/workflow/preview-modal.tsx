@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import clsx from "clsx";
-import MarkdownContent from "@/app/lib/components/markdown-content";
+import MarkdownContent from "../../../lib/components/markdown-content";
 import React, { PureComponent } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 

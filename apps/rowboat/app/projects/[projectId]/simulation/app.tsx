@@ -8,8 +8,8 @@ import {
     createScenario, 
     updateScenario, 
     deleteScenario,
-} from '@/app/actions/simulation_actions';
-import { Scenario, type WithStringId } from '@/app/lib/types';
+} from '../../../actions/simulation_actions';
+import { Scenario, type WithStringId } from '../../../lib/types';
 import { z } from 'zod';
 
 type ScenarioType = WithStringId<z.infer<typeof Scenario>>;

@@ -1,17 +1,17 @@
 'use client';
-import { DataSource, WithStringId } from "@/app/lib/types";
-import { PageSection } from "@/app/lib/components/PageSection";
+import { DataSource, WithStringId } from "../../../../lib/types";
+import { PageSection } from "../../../../lib/components/PageSection";
 import { ToggleSource } from "../toggle-source";
 import { Spinner } from "@nextui-org/react";
 import { SourceStatus } from "../source-status";
 import { DeleteSource } from "./delete";
 import { useEffect, useState } from "react";
-import { DataSourceIcon } from "@/app/lib/components/datasource-icon";
+import { DataSourceIcon } from "../../../../lib/components/datasource-icon";
 import { z } from "zod";
 import { TableLabel, TableValue } from "./shared";
 import { ScrapeSource } from "./scrape-source";
 import { FilesSource } from "./files-source";
-import { getDataSource } from "@/app/actions/datasource_actions";
+import { getDataSource } from "../../../../actions/datasource_actions";
 
 export function SourcePage({
     sourceId,

@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
-import { agentWorkflowsCollection, db, projectsCollection } from "@/app/lib/mongodb";
+import { agentWorkflowsCollection, db, projectsCollection } from "../../../../lib/mongodb";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
-import { authCheck } from "@/app/api/v1/utils";
-import { convertFromApiToAgenticApiMessages, convertFromAgenticApiToApiMessages, AgenticAPIChatRequest, ApiRequest, ApiResponse, convertWorkflowToAgenticAPI } from "@/app/lib/types";
-import { getAgenticApiResponse } from "@/app/lib/utils";
-import { check_query_limit } from "@/app/lib/rate_limiting";
+import { authCheck } from "../../utils";
+import { convertFromApiToAgenticApiMessages, convertFromAgenticApiToApiMessages, AgenticAPIChatRequest, ApiRequest, ApiResponse, convertWorkflowToAgenticAPI } from "../../../../lib/types";
+import { getAgenticApiResponse } from "../../../../lib/utils";
+import { check_query_limit } from "../../../../lib/rate_limiting";
 
 // get next turn / agent response
 export async function POST(

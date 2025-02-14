@@ -1,9 +1,9 @@
 import { Button, Input, InputProps, Kbd, Textarea } from "@nextui-org/react";
 import { useEffect, useRef, useState } from "react";
-import { useClickAway } from "@/hooks/use-click-away";
-import MarkdownContent from "@/app/lib/components/markdown-content";
+import { useClickAway } from "../../../hooks/use-click-away";
+import MarkdownContent from "./markdown-content";
 import clsx from "clsx";
-import { Label } from "@/app/lib/components/label";
+import { Label } from "./label";
 
 interface EditableFieldProps {
     value: string;

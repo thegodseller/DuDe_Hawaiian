@@ -1,7 +1,7 @@
 import logo from "@/public/rowboat-logo.png";
 import Image from "next/image";
 import Link from "next/link";
-import { UserButton } from "@/app/lib/components/user_button";
+import { UserButton } from "../lib/components/user_button";
 
 export default function Layout({
     children,

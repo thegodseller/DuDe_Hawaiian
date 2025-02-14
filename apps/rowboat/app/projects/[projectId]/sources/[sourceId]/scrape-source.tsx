@@ -1,15 +1,15 @@
 "use client";
-import { PageSection } from "@/app/lib/components/PageSection";
-import { DataSource, DataSourceDoc, WithStringId } from "@/app/lib/types";
+import { PageSection } from "../../../../lib/components/PageSection";
+import { DataSource, DataSourceDoc, WithStringId } from "../../../../lib/types";
 import { z } from "zod";
 import { Recrawl } from "./web-recrawl";
-import { deleteDocsFromDataSource, listDocsInDataSource, recrawlWebDataSource, addDocsToDataSource } from "@/app/actions/datasource_actions";
+import { deleteDocsFromDataSource, listDocsInDataSource, recrawlWebDataSource, addDocsToDataSource } from "../../../../actions/datasource_actions";
 import { useState, useEffect } from "react";
 import { Spinner } from "@nextui-org/react";
 import { Pagination } from "@nextui-org/react";
 import { ExternalLinkIcon } from "lucide-react";
 import { Textarea } from "@nextui-org/react";
-import { FormStatusButton } from "@/app/lib/components/FormStatusButton";
+import { FormStatusButton } from "../../../../lib/components/FormStatusButton";
 import { PlusIcon } from "lucide-react";
 
 function UrlListItem({

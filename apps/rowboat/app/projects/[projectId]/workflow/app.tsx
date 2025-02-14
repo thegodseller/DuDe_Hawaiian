@@ -1,12 +1,12 @@
 "use client";
-import { DataSource, Workflow, WithStringId } from "@/app/lib/types";
+import { DataSource, Workflow, WithStringId } from "../../../lib/types";
 import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { WorkflowEditor } from "./workflow_editor";
 import { WorkflowSelector } from "./workflow_selector";
 import { Spinner } from "@nextui-org/react";
-import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow } from "@/app/actions/workflow_actions";
-import { listDataSources } from "@/app/actions/datasource_actions";
+import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow } from "../../../actions/workflow_actions";
+import { listDataSources } from "../../../actions/datasource_actions";
 
 export function App({
     projectId,

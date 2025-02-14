@@ -3,14 +3,14 @@
 import { Metadata } from "next";
 import { Spinner, Textarea, Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider } from "@nextui-org/react";
 import { ReactNode, useEffect, useState, useCallback } from "react";
-import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret } from "@/app/actions/project_actions";
-import { CopyButton } from "@/app/lib/components/copy-button";
-import { EditableField } from "@/app/lib/components/editable-field";
+import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret } from "../../../actions/project_actions";
+import { CopyButton } from "../../../lib/components/copy-button";
+import { EditableField } from "../../../lib/components/editable-field";
 import { EyeIcon, EyeOffIcon, CopyIcon, MoreVerticalIcon, PlusIcon, EllipsisVerticalIcon } from "lucide-react";
-import { WithStringId, ApiKey } from "@/app/lib/types";
+import { WithStringId, ApiKey } from "../../../lib/types";
 import { z } from "zod";
 import { RelativeTime } from "@primer/react";
-import { Label } from "@/app/lib/components/label";
+import { Label } from "../../../lib/components/label";
 
 export const metadata: Metadata = {
     title: "Project config",

@@ -2,14 +2,14 @@
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner } from "@nextui-org/react";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { z } from "zod";
-import { PlaygroundChat, SimulationData, SimulationScenarioData, Workflow } from "@/app/lib/types";
+import { PlaygroundChat, SimulationData, SimulationScenarioData, Workflow } from "../../../lib/types";
 import { SimulateScenarioOption, SimulateURLOption } from "./simulation-options";
 import { Chat } from "./chat";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ActionButton, Pane } from "../workflow/pane";
 import { apiV1 } from "rowboat-shared";
 import { EllipsisVerticalIcon, MessageSquarePlusIcon, PlayIcon } from "lucide-react";
-import { getScenario } from "@/app/actions/simulation_actions";
+import { getScenario } from "../../../actions/simulation_actions";
 
 function SimulateLabel() {
     return <span>Simulate<sup className="pl-1">beta</sup></span>;

@@ -1,4 +1,4 @@
-import { CopyButton } from "@/app/lib/components/copy-button";
+import { CopyButton } from "../../../lib/components/copy-button";
 
 export function CopyAsJsonButton({ onCopy }: { onCopy: () => void }) {
     return <div className="absolute top-0 right-0">

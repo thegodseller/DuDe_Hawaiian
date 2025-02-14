@@ -1,7 +1,7 @@
 'use server';
 import { redirect } from "next/navigation";
 import { ObjectId } from "mongodb";
-import { dataSourcesCollection, embeddingsCollection, projectsCollection, agentWorkflowsCollection, scenariosCollection, projectMembersCollection, apiKeysCollection, dataSourceDocsCollection } from "@/app/lib/mongodb";
+import { dataSourcesCollection, embeddingsCollection, projectsCollection, agentWorkflowsCollection, scenariosCollection, projectMembersCollection, apiKeysCollection, dataSourceDocsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import crypto from 'crypto';
 import { revalidatePath } from "next/cache";

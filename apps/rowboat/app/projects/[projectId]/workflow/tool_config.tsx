@@ -1,11 +1,11 @@
 "use client";
-import { WorkflowTool } from "@/app/lib/types";
+import { WorkflowTool } from "../../../lib/types";
 import { Accordion, AccordionItem, Button, Checkbox, Select, SelectItem, Switch } from "@nextui-org/react";
 import { z } from "zod";
 import { ActionButton, Pane } from "./pane";
-import { EditableField } from "@/app/lib/components/editable-field";
+import { EditableField } from "../../../lib/components/editable-field";
 import { Divider } from "@nextui-org/react";
-import { Label } from "@/app/lib/components/label";
+import { Label } from "../../../lib/components/label";
 import { TrashIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 

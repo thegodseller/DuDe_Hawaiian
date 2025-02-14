@@ -1,9 +1,9 @@
 'use client';
 import { Input, Select, SelectItem, Textarea } from "@nextui-org/react"
 import { useState } from "react";
-import { createDataSource, addDocsToDataSource } from "@/app/actions/datasource_actions";
-import { FormStatusButton } from "@/app/lib/components/FormStatusButton";
-import { DataSourceIcon } from "@/app/lib/components/datasource-icon";
+import { createDataSource, addDocsToDataSource } from "../../../../actions/datasource_actions";
+import { FormStatusButton } from "../../../../lib/components/FormStatusButton";
+import { DataSourceIcon } from "../../../../lib/components/datasource-icon";
 import { PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { apiV1 } from "rowboat-shared";
-import { db } from "@/app/lib/mongodb";
+import { db } from "../../../../../../lib/mongodb";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { authCheck } from "../../../utils";

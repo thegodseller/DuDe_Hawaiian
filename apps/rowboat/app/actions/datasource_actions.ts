@@ -1,7 +1,7 @@
 'use server';
 import { redirect } from "next/navigation";
 import { ObjectId, WithId } from "mongodb";
-import { dataSourcesCollection, dataSourceDocsCollection } from "@/app/lib/mongodb";
+import { dataSourcesCollection, dataSourceDocsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";

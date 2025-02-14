@@ -2,12 +2,12 @@
 import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import z from "zod";
-import { GetInformationToolResult, WebpageCrawlResponse, Workflow, WorkflowTool } from "@/app/lib/types";
-import { executeClientTool, getInformationTool, scrapeWebpage, suggestToolResponse } from "@/app/actions/actions";
-import MarkdownContent from "@/app/lib/components/markdown-content";
+import { GetInformationToolResult, WebpageCrawlResponse, Workflow, WorkflowTool } from "../../../lib/types";
+import { executeClientTool, getInformationTool, scrapeWebpage, suggestToolResponse } from "../../../actions/actions";
+import MarkdownContent from "../../../lib/components/markdown-content";
 import Link from "next/link";
 import { apiV1 } from "rowboat-shared";
-import { EditableField } from "@/app/lib/components/editable-field";
+import { EditableField } from "../../../lib/components/editable-field";
 import { MessageSquareIcon, EllipsisIcon, CircleCheckIcon, ChevronsDownIcon, ChevronsRightIcon, ChevronRightIcon, ChevronDownIcon, ExternalLinkIcon, XIcon } from "lucide-react";
 
 function UserMessage({ content }: { content: string }) {

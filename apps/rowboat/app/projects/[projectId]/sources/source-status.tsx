@@ -1,4 +1,4 @@
-import { DataSource } from "@/app/lib/types";
+import { DataSource } from "../../../lib/types";
 import { Spinner } from "@nextui-org/react";
 import { Link } from "@nextui-org/react";
 import { z } from 'zod';

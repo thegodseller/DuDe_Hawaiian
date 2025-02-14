@@ -1,6 +1,6 @@
 'use server';
 import { ObjectId } from "mongodb";
-import { scenariosCollection } from "@/app/lib/mongodb";
+import { scenariosCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import { Scenario, WithStringId } from "../lib/types";
 import { projectAuthCheck } from "./project_actions";

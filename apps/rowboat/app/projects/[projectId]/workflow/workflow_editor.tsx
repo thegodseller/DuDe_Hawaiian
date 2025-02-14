@@ -1,5 +1,5 @@
 "use client";
-import { DataSource, Workflow, WorkflowAgent, WorkflowPrompt, WorkflowTool, WithStringId } from "@/app/lib/types";
+import { DataSource, Workflow, WorkflowAgent, WorkflowPrompt, WorkflowTool, WithStringId } from "../../../lib/types";
 import { useReducer, Reducer, useState, useCallback, useEffect, useRef } from "react";
 import { produce, applyPatches, enablePatches, produceWithPatches, Patch } from 'immer';
 import { AgentConfig } from "./agent_config";
@@ -8,19 +8,19 @@ import { App as ChatApp } from "../playground/app";
 import { z } from "zod";
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip } from "@nextui-org/react";
 import { PromptConfig } from "./prompt_config";
-import { EditableField } from "@/app/lib/components/editable-field";
+import { EditableField } from "../../../lib/components/editable-field";
 import { RelativeTime } from "@primer/react";
 
 import {
     ResizableHandle,
     ResizablePanel,
     ResizablePanelGroup,
-} from "@/components/ui/resizable"
+} from "../../../../components/ui/resizable"
 import { Copilot } from "./copilot";
 import { apiV1 } from "rowboat-shared";
-import { publishWorkflow, renameWorkflow, saveWorkflow } from "@/app/actions/workflow_actions";
+import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
 import { PublishedBadge } from "./published_badge";
-import { BackIcon, HamburgerIcon, WorkflowIcon } from "@/app/lib/components/icons";
+import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
 import { CopyIcon, Layers2Icon, RadioIcon, RedoIcon, UndoIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
 

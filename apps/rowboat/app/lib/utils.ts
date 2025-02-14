@@ -1,4 +1,4 @@
-import { AgenticAPIChatMessage, AgenticAPIChatRequest, AgenticAPIChatResponse, ClientToolCallJwt, ClientToolCallRequest, ClientToolCallRequestBody, convertFromAgenticAPIChatMessages, Workflow } from "@/app/lib/types";
+import { AgenticAPIChatMessage, AgenticAPIChatRequest, AgenticAPIChatResponse, ClientToolCallJwt, ClientToolCallRequest, ClientToolCallRequestBody, convertFromAgenticAPIChatMessages, Workflow } from "../lib/types";
 import { z } from "zod";
 import { projectsCollection } from "./mongodb";
 import { apiV1 } from "rowboat-shared";

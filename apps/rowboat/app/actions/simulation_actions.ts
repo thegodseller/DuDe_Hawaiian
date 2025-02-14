@@ -1,11 +1,11 @@
 'use server';
 
 import { ObjectId } from "mongodb";
-import { scenariosCollection } from "@/app/lib/mongodb";
+import { scenariosCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import { projectAuthCheck } from "./project_actions";
-import { Scenario, type WithStringId } from "@/app/lib/types";
-import { SimulationScenarioData } from "@/app/lib/types";
+import { Scenario, type WithStringId } from "../lib/types";
+import { SimulationScenarioData } from "../lib/types";
 
 export async function getScenarios(projectId: string): Promise<WithStringId<z.infer<typeof Scenario>>[]> {
     await projectAuthCheck(projectId);

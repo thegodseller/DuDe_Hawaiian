@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { WorkflowAgent, WorkflowPrompt, AgenticAPITool } from "@/app/lib/types";
+import { WorkflowAgent, WorkflowPrompt, AgenticAPITool } from "../../../lib/types";
 import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@nextui-org/react";
 import { useRef, useEffect } from "react";
 import { ActionButton, Pane } from "./pane";

@@ -4,7 +4,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { z } from "zod";
 import { Session } from "../../utils";
 import { apiV1 } from "rowboat-shared";
-import { projectsCollection } from "@/app/lib/mongodb";
+import { projectsCollection } from "../../../../../lib/mongodb";
 
 export async function POST(req: NextRequest): Promise<Response> {
     return await clientIdCheck(req, async (projectId) => {

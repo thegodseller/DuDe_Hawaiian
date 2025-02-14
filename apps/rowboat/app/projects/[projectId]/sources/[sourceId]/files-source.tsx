@@ -1,10 +1,10 @@
 "use client";
-import { PageSection } from "@/app/lib/components/PageSection";
-import { DataSource, DataSourceDoc, WithStringId } from "@/app/lib/types";
+import { PageSection } from "../../../../lib/components/PageSection";
+import { DataSource, DataSourceDoc, WithStringId } from "../../../../lib/types";
 import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { deleteDocsFromDataSource, getUploadUrlsForFilesDataSource, addDocsToDataSource, getDownloadUrlForFile, listDocsInDataSource } from "@/app/actions/datasource_actions";
+import { deleteDocsFromDataSource, getUploadUrlsForFilesDataSource, addDocsToDataSource, getDownloadUrlForFile, listDocsInDataSource } from "../../../../actions/datasource_actions";
 import { RelativeTime } from "@primer/react";
 import { Pagination, Spinner } from "@nextui-org/react";
 import { DownloadIcon } from "lucide-react";

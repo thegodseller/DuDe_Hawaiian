@@ -1,12 +1,12 @@
 "use client";
-import { Workflow, WithStringId } from "@/app/lib/types";
+import { Workflow, WithStringId } from "../../../lib/types";
 import { z } from "zod";
 import { useEffect, useState, useCallback } from "react";
 import { PublishedBadge } from "./published_badge";
 import { RelativeTime } from "@primer/react";
-import { listWorkflows } from "@/app/actions/workflow_actions";
+import { listWorkflows } from "../../../actions/workflow_actions";
 import { Button, Divider, Pagination } from "@nextui-org/react";
-import { WorkflowIcon } from "@/app/lib/components/icons";
+import { WorkflowIcon } from "../../../lib/components/icons";
 import { PlusIcon } from "lucide-react";
 
 const pageSize = 5;

@@ -1,9 +1,9 @@
 "use client";
-import { WorkflowPrompt } from "@/app/lib/types";
+import { WorkflowPrompt } from "../../../lib/types";
 import { Divider, Input, Textarea } from "@nextui-org/react";
 import { z } from "zod";
 import { ActionButton, Pane } from "./pane";
-import { EditableField } from "@/app/lib/components/editable-field";
+import { EditableField } from "../../../lib/components/editable-field";
 
 export function PromptConfig({
     prompt,

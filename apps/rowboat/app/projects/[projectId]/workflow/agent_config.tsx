@@ -1,11 +1,11 @@
 "use client";
-import { AgenticAPITool, DataSource, WithStringId, WorkflowAgent, WorkflowPrompt } from "@/app/lib/types";
+import { AgenticAPITool, DataSource, WithStringId, WorkflowAgent, WorkflowPrompt } from "../../../lib/types";
 import { Button, Divider, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Radio, RadioGroup, Select, SelectItem } from "@nextui-org/react";
 import { z } from "zod";
-import { DataSourceIcon } from "@/app/lib/components/datasource-icon";
+import { DataSourceIcon } from "../../../lib/components/datasource-icon";
 import { ActionButton, Pane } from "./pane";
-import { EditableField } from "@/app/lib/components/editable-field";
-import { Label } from "@/app/lib/components/label";
+import { EditableField } from "../../../lib/components/editable-field";
+import { Label } from "../../../lib/components/label";
 import { PlusIcon, XIcon } from "lucide-react";
 import { List } from "./config_list";
 

@@ -2,13 +2,13 @@
 import { Button, Textarea } from "@nextui-org/react";
 import { ActionButton, Pane } from "./pane";
 import { useEffect, useRef, useState, createContext, useContext, useCallback } from "react";
-import { CopilotAssistantMessage, CopilotMessage, CopilotUserMessage, Workflow, CopilotChatContext, CopilotAssistantMessageActionPart } from "@/app/lib/types";
+import { CopilotAssistantMessage, CopilotMessage, CopilotUserMessage, Workflow, CopilotChatContext, CopilotAssistantMessageActionPart } from "../../../lib/types";
 import { z } from "zod";
-import { getCopilotResponse } from "@/app/actions/actions";
+import { getCopilotResponse } from "../../../actions/actions";
 import { Action } from "./copilot_actions";
 import clsx from "clsx";
 import { Action as WorkflowDispatch } from "./workflow_editor";
-import MarkdownContent from "@/app/lib/components/markdown-content";
+import MarkdownContent from "../../../lib/components/markdown-content";
 import { CopyAsJsonButton } from "../playground/copy-as-json-button";
 import { CornerDownLeftIcon, SendIcon } from "lucide-react";
 

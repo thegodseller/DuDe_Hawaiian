@@ -3,11 +3,11 @@
 import { Button, Link, Spinner } from "@nextui-org/react";
 import { ToggleSource } from "./toggle-source";
 import { SelfUpdatingSourceStatus } from "./self-updating-source-status";
-import { DataSourceIcon } from "@/app/lib/components/datasource-icon";
+import { DataSourceIcon } from "../../../lib/components/datasource-icon";
 import { useEffect, useState } from "react";
-import { DataSource, WithStringId } from "@/app/lib/types";
+import { DataSource, WithStringId } from "../../../lib/types";
 import { z } from "zod";
-import { listDataSources } from "@/app/actions/datasource_actions";
+import { listDataSources } from "../../../actions/datasource_actions";
 
 export function SourcesList({
     projectId,

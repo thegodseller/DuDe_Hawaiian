@@ -2,10 +2,10 @@
 
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Spinner, Textarea } from "@nextui-org/react";
 import { useState, useEffect } from "react";
-import { getScenarios, createScenario, updateScenario, deleteScenario } from "@/app/actions/scenario_actions";
-import { Scenario, WithStringId } from "@/app/lib/types";
+import { getScenarios, createScenario, updateScenario, deleteScenario } from "../../../actions/scenario_actions";
+import { Scenario, WithStringId } from "../../../lib/types";
 import { z } from "zod";
-import { EditableField } from "@/app/lib/components/editable-field";
+import { EditableField } from "../../../lib/components/editable-field";
 import { EllipsisVerticalIcon, PlayIcon, PlusIcon } from "lucide-react";
 
 export function AddScenarioForm({

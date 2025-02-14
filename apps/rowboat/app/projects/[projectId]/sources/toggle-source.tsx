@@ -1,5 +1,5 @@
 'use client';
-import { toggleDataSource } from "@/app/actions/datasource_actions";
+import { toggleDataSource } from "../../../actions/datasource_actions";
 import { Spinner } from "@nextui-org/react";
 import { Switch } from "@nextui-org/react";
 import { useState } from "react";

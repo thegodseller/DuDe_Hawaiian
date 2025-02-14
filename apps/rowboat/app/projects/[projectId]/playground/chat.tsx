@@ -1,9 +1,9 @@
 'use client';
-import { getAssistantResponse, simulateUserResponse } from "@/app/actions/actions";
+import { getAssistantResponse, simulateUserResponse } from "../../../actions/actions";
 import { useEffect, useState } from "react";
 import { Messages } from "./messages";
 import z from "zod";
-import { AgenticAPIChatRequest, convertToAgenticAPIChatMessages, convertWorkflowToAgenticAPI, PlaygroundChat, Workflow } from "@/app/lib/types";
+import { AgenticAPIChatRequest, convertToAgenticAPIChatMessages, convertWorkflowToAgenticAPI, PlaygroundChat, Workflow } from "../../../lib/types";
 import { ComposeBox } from "./compose-box";
 import { Button, Spinner } from "@nextui-org/react";
 import { apiV1 } from "rowboat-shared";

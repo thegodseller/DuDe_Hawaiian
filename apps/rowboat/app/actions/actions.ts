@@ -1,7 +1,7 @@
 'use server';
 import { SimulationData, EmbeddingDoc, GetInformationToolResult, AgenticAPIChatRequest, convertFromAgenticAPIChatMessages, WebpageCrawlResponse, Workflow, WorkflowAgent, CopilotAPIRequest, CopilotAPIResponse, CopilotMessage, CopilotWorkflow, convertToCopilotWorkflow, convertToCopilotApiMessage, convertToCopilotMessage, CopilotAssistantMessage, CopilotChatContext, convertToCopilotApiChatContext, WorkflowTool, WorkflowPrompt, EmbeddingRecord } from "../lib/types";
 import { generateObject, generateText, embed } from "ai";
-import { dataSourceDocsCollection, dataSourcesCollection, embeddingsCollection, webpagesCollection } from "@/app/lib/mongodb";
+import { dataSourceDocsCollection, dataSourcesCollection, embeddingsCollection, webpagesCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import { openai } from "@ai-sdk/openai";
 import FirecrawlApp, { ScrapeResponse } from '@mendable/firecrawl-js';

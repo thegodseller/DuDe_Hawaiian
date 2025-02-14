@@ -1,6 +1,6 @@
 'use server';
 import { ObjectId, WithId } from "mongodb";
-import { projectsCollection, agentWorkflowsCollection } from "@/app/lib/mongodb";
+import { projectsCollection, agentWorkflowsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import { templates } from "../lib/project_templates";
 import { projectAuthCheck } from "./project_actions";
