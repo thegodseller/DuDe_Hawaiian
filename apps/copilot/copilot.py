@@ -480,7 +480,7 @@ You are responsible for providing delivery information to the user.
 output format:
 ```json
 {
-  "response": "<new agent instructions with relevant changes>"
+  "agent_instructions": "<new agent instructions with relevant changes>"
 }
 ```
 """

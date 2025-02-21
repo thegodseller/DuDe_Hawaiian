@@ -200,10 +200,15 @@ export async function getCopilotAgentInstructions(
 
     // parse and return response
     const json = await response.json();
+
     console.log(`copilot response`, JSON.stringify(json, null, 2));
     let copilotResponse: z.infer<typeof CopilotAPIResponse>;
+    let agent_instructions: string;
     try {
         copilotResponse = CopilotAPIResponse.parse(json);
+        const content = json.response.replace(/^```json\n/, '').replace(/\n```$/, '');
+        agent_instructions = JSON.parse(content).agent_instructions;
+
     } catch (e) {
         console.error('Failed to parse copilot response', e);
         throw new Error(`Failed to parse copilot response: ${e}`);
@@ -213,5 +218,5 @@ export async function getCopilotAgentInstructions(
     }
 
     // return response
-    return copilotResponse.response;
+    return agent_instructions;
 }
