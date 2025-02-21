@@ -2,13 +2,11 @@
 import { createContext, useContext, useState } from "react";
 import clsx from "clsx";
 import { z } from "zod";
-import { CopilotAssistantMessage } from "../../../lib/types/copilot_types";
 import { CopilotAssistantMessageActionPart } from "../../../lib/types/copilot_types";
 import { Workflow } from "../../../lib/types/workflow_types";
 import { PreviewModalProvider, usePreviewModal } from './preview-modal';
 import { getAppliedChangeKey } from "./copilot";
 import { AlertTriangleIcon, CheckCheckIcon, CheckIcon, ChevronsDownIcon, ChevronsUpIcon, EyeIcon, PencilIcon, PlusIcon } from "lucide-react";
-import { Tooltip } from "@nextui-org/react";
 
 const ActionContext = createContext<{
     msgIndex: number;
@@ -176,6 +174,11 @@ export function ActionField({
         (action.config_type === 'prompt' && field === 'prompt') ||
         (action.config_type === 'tool' && field === 'description');
 
+    // generate apply change function
+    const applyChangeHandler = () => {
+        handleApplyChange(msgIndex, actionIndex, field);
+    }
+    
     // generate preview modal function
     const previewModalHandler = () => {
         if (previewCondition) {
@@ -183,14 +186,11 @@ export function ActionField({
                 oldValue ? (typeof oldValue === 'string' ? oldValue : JSON.stringify(oldValue)) : undefined,
                 (typeof newValue === 'string' ? newValue : JSON.stringify(newValue)),
                 markdownPreviewCondition,
-                `${action.name} - ${field}`
+                `${action.name} - ${field}`,
+                "Review changes",
+                applyChangeHandler
             );
         }
-    }
-
-    // generate apply change function
-    const applyChangeHandler = () => {
-        handleApplyChange(msgIndex, actionIndex, field);
     }
 
     return <div className="flex flex-col bg-white rounded-sm">

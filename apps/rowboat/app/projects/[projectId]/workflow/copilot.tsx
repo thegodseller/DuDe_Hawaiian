@@ -9,8 +9,8 @@ import { CopilotAssistantMessageActionPart } from "../../../lib/types/copilot_ty
 import { CopilotUserMessage } from "../../../lib/types/copilot_types";
 import { Workflow } from "../../../lib/types/workflow_types";
 import { z } from "zod";
-import { getCopilotResponse } from "../../../actions/actions";
-import { Action } from "./copilot_actions";
+import { getCopilotResponse } from "@/app/actions/copilot_actions";
+import { Action } from "./copilot_action_components";
 import clsx from "clsx";
 import { Action as WorkflowDispatch } from "./workflow_editor";
 import MarkdownContent from "../../../lib/components/markdown-content";

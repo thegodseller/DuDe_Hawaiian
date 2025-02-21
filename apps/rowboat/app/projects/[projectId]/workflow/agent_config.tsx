@@ -1,7 +1,7 @@
 "use client";
 import { WithStringId } from "../../../lib/types/types";
 import { AgenticAPITool } from "../../../lib/types/agents_api_types";
-import { WorkflowPrompt, WorkflowAgent } from "../../../lib/types/workflow_types";
+import { WorkflowPrompt, WorkflowAgent, Workflow } from "../../../lib/types/workflow_types";
 import { DataSource } from "../../../lib/types/datasource_types";
 import { Button, Divider, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Radio, RadioGroup, Select, SelectItem } from "@nextui-org/react";
 import { z } from "zod";
@@ -9,10 +9,19 @@ import { DataSourceIcon } from "../../../lib/components/datasource-icon";
 import { ActionButton, StructuredPanel } from "../../../lib/components/structured-panel";
 import { EditableField } from "../../../lib/components/editable-field";
 import { Label } from "../../../lib/components/label";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, SparklesIcon } from "lucide-react";
 import { List } from "./config_list";
+import { useState, useEffect, useRef } from "react";
+import { usePreviewModal } from "./preview-modal";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@nextui-org/react";
+import { Textarea } from "@nextui-org/react";
+import { PreviewModalProvider } from "./preview-modal";
+import { CopilotMessage } from "@/app/lib/types/copilot_types";
+import { getCopilotAgentInstructions } from "@/app/actions/copilot_actions";
 
 export function AgentConfig({
+    projectId,
+    workflow,
     agent,
     usedAgentNames,
     agents,
@@ -22,6 +31,8 @@ export function AgentConfig({
     handleUpdate,
     handleClose,
 }: {
+    projectId: string,
+    workflow: z.infer<typeof Workflow>,
     agent: z.infer<typeof WorkflowAgent>,
     usedAgentNames: Set<string>,
     agents: z.infer<typeof WorkflowAgent>[],
@@ -56,6 +67,9 @@ export function AgentConfig({
             value: id,
         });
     }
+
+    const [showGenerateModal, setShowGenerateModal] = useState(false);
+    const { showPreview } = usePreviewModal();
 
     return <StructuredPanel title={agent.name} actions={[
         <ActionButton
@@ -113,22 +127,34 @@ export function AgentConfig({
 
             <Divider />
 
-            <div className="w-full flex flex-col">
-                <EditableField
-                    key="instructions"
-                    value={agent.instructions}
-                    onChange={(value) => {
-                        handleUpdate({
-                            ...agent,
-                            instructions: value
-                        });
-                    }}
-                    markdown
-                    label="Instructions"
-                    multiline
-                    mentions
-                    mentionsAtValues={atMentions}
-                />
+            <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                    <Label label="Instructions" />
+                    <Button
+                        variant="light"
+                        size="sm"
+                        startContent={<SparklesIcon size={16} />}
+                        onPress={() => setShowGenerateModal(true)}
+                    >
+                        Generate
+                    </Button>
+                </div>
+                <div className="w-full flex flex-col">
+                    <EditableField
+                        key="instructions"
+                        value={agent.instructions}
+                        onChange={(value) => {
+                            handleUpdate({
+                                ...agent,
+                                instructions: value
+                            });
+                        }}
+                        markdown
+                        multiline
+                        mentions
+                        mentionsAtValues={atMentions}
+                    />
+                </div>
             </div>
 
             <Divider />
@@ -270,6 +296,150 @@ export function AgentConfig({
                     <SelectItem key="relinquish_to_start" value="relinquish_to_start">Relinquish to &apos;start&apos; agent</SelectItem>
                 </Select>
             </div>
+
+            <Divider />
+
+            <PreviewModalProvider>
+                <GenerateInstructionsModal 
+                    projectId={projectId}
+                    workflow={workflow}
+                    agent={agent}
+                    isOpen={showGenerateModal}
+                    onClose={() => setShowGenerateModal(false)}
+                    currentInstructions={agent.instructions}
+                    onApply={(newInstructions) => {
+                        handleUpdate({
+                            ...agent,
+                            instructions: newInstructions
+                        });
+                    }}
+                />
+            </PreviewModalProvider>
         </div>
     </StructuredPanel>;
+}
+
+function GenerateInstructionsModal({
+    projectId,
+    workflow,
+    agent,
+    isOpen,
+    onClose,
+    currentInstructions,
+    onApply
+}: {
+    projectId: string,
+    workflow: z.infer<typeof Workflow>,
+    agent: z.infer<typeof WorkflowAgent>,
+    isOpen: boolean,
+    onClose: () => void,
+    currentInstructions: string,
+    onApply: (newInstructions: string) => void
+}) {
+    const [prompt, setPrompt] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const { showPreview } = usePreviewModal();
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            setPrompt("");
+            setIsLoading(false);
+            setError(null);
+            textareaRef.current?.focus();
+        }
+    }, [isOpen]);
+
+    const handleGenerate = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const msgs: z.infer<typeof CopilotMessage>[] = [
+                {
+                    role: 'user',
+                    content: prompt,
+                },
+            ];
+            const newInstructions = await getCopilotAgentInstructions(projectId, msgs, workflow, agent.name);
+            
+            onClose();
+            
+            showPreview(
+                currentInstructions,
+                newInstructions,
+                true, // markdown enabled
+                "Generated Instructions",
+                "Review the changes below:", // message before diff
+                () => onApply(newInstructions) // apply callback
+            );
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (prompt.trim() && !isLoading) {
+                handleGenerate();
+            }
+        }
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} size="lg">
+            <ModalContent>
+                <ModalHeader>Generate Instructions</ModalHeader>
+                <ModalBody>
+                    <div className="flex flex-col gap-4">
+                        {error && (
+                            <div className="p-2 bg-red-50 border border-red-200 rounded-lg flex gap-2 justify-between items-center text-sm">
+                                <p className="text-red-600">{error}</p>
+                                <Button
+                                    size="sm"
+                                    color="danger"
+                                    onClick={() => {
+                                        setError(null);
+                                        handleGenerate();
+                                    }}
+                                >
+                                    Retry
+                                </Button>
+                            </div>
+                        )}
+                        <Textarea
+                            ref={textareaRef}
+                            label="What should this agent do?"
+                            placeholder="e.g., This agent should help users analyze their data and provide insights..."
+                            variant="bordered"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            disabled={isLoading}
+                        />
+                    </div>
+                </ModalBody>
+                <ModalFooter>
+                    <Button 
+                        variant="light" 
+                        onPress={onClose}
+                        disabled={isLoading}
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        color="primary"
+                        onPress={handleGenerate}
+                        isLoading={isLoading}
+                        disabled={!prompt.trim()}
+                    >
+                        Generate
+                    </Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+    );
 }

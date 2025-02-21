@@ -861,6 +861,8 @@ export function WorkflowEditor({
                 />
                 {state.present.selection?.type === "agent" && <AgentConfig
                     key={state.present.selection.name}
+                    projectId={state.present.workflow.projectId}
+                    workflow={state.present.workflow}
                     agent={state.present.workflow.agents.find((agent) => agent.name === state.present.selection!.name)!}
                     usedAgentNames={new Set(state.present.workflow.agents.filter((agent) => agent.name !== state.present.selection!.name).map((agent) => agent.name))}
                     agents={state.present.workflow.agents}
