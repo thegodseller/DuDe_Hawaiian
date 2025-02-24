@@ -37,7 +37,7 @@ export function SourcesList({
     }, [projectId]);
 
     return <div className="flex flex-col h-full">
-        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-b-gray-100">
+        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-border">
             <div className="flex flex-col">
                 <h1 className="text-lg">Data sources <sup>(beta)</sup></h1>
             </div>

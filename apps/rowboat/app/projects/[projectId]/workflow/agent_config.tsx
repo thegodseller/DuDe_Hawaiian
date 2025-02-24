@@ -20,6 +20,7 @@ import { PreviewModalProvider } from "./preview-modal";
 import { CopilotMessage } from "@/app/lib/types/copilot_types";
 import { getCopilotAgentInstructions } from "@/app/actions/copilot_actions";
 import { Dropdown as CustomDropdown } from "../../../lib/components/dropdown";
+import { createAtMentions } from "../../../lib/components/atmentions";
 
 export function AgentConfig({
     projectId,
@@ -46,31 +47,12 @@ export function AgentConfig({
 }) {
     const [isAdvancedConfigOpen, setIsAdvancedConfigOpen] = useState(false);
 
-    const atMentions = [];
-    for (const a of agents) {
-        if (a.disabled || a.name === agent.name) {
-            continue;
-        }
-        const id = `agent:${a.name}`;
-        atMentions.push({
-            id,
-            value: id,
-        });
-    }
-    for (const prompt of prompts) {
-        const id = `prompt:${prompt.name}`;
-        atMentions.push({
-            id,
-            value: id,
-        });
-    }
-    for (const tool of tools) {
-        const id = `tool:${tool.name}`;
-        atMentions.push({
-            id,
-            value: id,
-        });
-    }
+    const atMentions = createAtMentions({
+        agents,
+        prompts,
+        tools,
+        currentAgentName: agent.name
+    });
 
     const [showGenerateModal, setShowGenerateModal] = useState(false);
     const { showPreview } = usePreviewModal();

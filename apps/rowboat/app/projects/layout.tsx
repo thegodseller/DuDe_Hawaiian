@@ -1,4 +1,5 @@
 import logo from "@/public/rowboat-logo.png";
+import logoDark from "@/public/rowboat-logo-dark-mode.png";
 import Image from "next/image";
 import Link from "next/link";
 import { UserButton } from "../lib/components/user_button";
@@ -17,6 +18,13 @@ export default function Layout({
                         src={logo}
                         height={24}
                         alt="RowBoat Labs Logo"
+                        className="block dark:hidden"
+                    />
+                    <Image
+                        src={logoDark}
+                        height={24}
+                        alt="RowBoat Labs Logo"
+                        className="hidden dark:block"
                     />
                 </Link>
             </div>

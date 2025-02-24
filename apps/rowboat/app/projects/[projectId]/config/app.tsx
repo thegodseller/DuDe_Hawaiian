@@ -24,8 +24,8 @@ export function Section({
     title: string;
     children: React.ReactNode;
 }) {
-    return <div className="w-full flex flex-col gap-4 border border-gray-300 p-4 rounded-md">
-        <h2 className="font-semibold pb-2 border-b border-gray-200">{title}</h2>
+    return <div className="w-full flex flex-col gap-4 border border-border p-4 rounded-md">
+        <h2 className="font-semibold pb-2 border-b border-border">{title}</h2>
         {children}
     </div>;
 }
@@ -235,8 +235,8 @@ export function ApiKeysSection({
 
             <Divider />
             {loading && <Spinner size="sm" />}
-            {!loading && <div className="border rounded-lg text-sm">
-                <div className="flex items-center border-b p-4">
+            {!loading && <div className="border border-border rounded-lg text-sm">
+                <div className="flex items-center border-b border-border p-4">
                     <div className="flex-[3] font-normal">API Key</div>
                     <div className="flex-1 font-normal">Created</div>
                     <div className="flex-1 font-normal">Last Used</div>
@@ -253,7 +253,7 @@ export function ApiKeysSection({
                 </div>}
                 <div className="flex flex-col">
                     {keys.map((key) => (
-                        <div key={key._id} className="flex items-start border-b last:border-b-0 p-4">
+                        <div key={key._id} className="flex items-start border-b border-border last:border-b-0 p-4">
                             <div className="flex-[3] p-2">
                                 <ApiKeyDisplay apiKey={key.key} />
                             </div>
@@ -570,7 +570,7 @@ export default function App({
     projectId: string;
 }) {
     return <div className="flex flex-col h-full">
-        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-b-gray-100">
+        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-border">
             <div className="flex flex-col">
                 <h1 className="text-lg">Project config</h1>
             </div>

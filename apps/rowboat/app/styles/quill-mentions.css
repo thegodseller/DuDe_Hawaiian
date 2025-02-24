@@ -1,0 +1,65 @@
+/* Quill mention styles */
+.ql-mention-list-container {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    background-color: white;
+    z-index: 1000;
+}
+
+/* Dark mode styles */
+.dark .ql-mention-list-container {
+    background-color: #1f2937;
+    border-color: #374151;
+}
+
+.dark .ql-mention-list-container * {
+    background-color: #1f2937 !important;
+    color: #f9fafb !important;
+}
+
+.dark .ql-mention-list-item {
+    color: #f9fafb !important;
+    background-color: #1f2937 !important;
+}
+
+.dark .ql-mention-list-container .ql-mention-list-item.selected,
+.dark .ql-mention-list-container .ql-mention-list-item:hover {
+    background-color: #6b7280 !important;
+}
+
+.dark .ql-mention-list-item > * {
+    background-color: inherit !important;
+}
+
+/* Mention item styles with tags */
+.dark .ql-mention-list-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 4px 8px !important;
+}
+
+.mention-type-tag {
+    font-size: 0.7rem !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    margin-left: 8px !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+}
+
+.mention-type-tag.agent {
+    background-color: #3b82f6 !important;
+    color: white !important;
+}
+
+.mention-type-tag.prompt {
+    background-color: #10b981 !important;
+    color: white !important;
+}
+
+.mention-type-tag.tool {
+    background-color: #f59e0b !important;
+    color: white !important;
+} 
