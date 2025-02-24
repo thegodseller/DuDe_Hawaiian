@@ -92,7 +92,7 @@ function ComposeBox({
             size="sm"
             isIconOnly
             onClick={handleInput}
-            className="bg-gray-100"
+            className="bg-gray-100 dark:bg-gray-800"
         >
             <CornerDownLeftIcon size={16} />
         </Button>}
@@ -107,12 +107,12 @@ function RawJsonResponse({
     const [expanded, setExpanded] = useState(false);
     return <div className="flex flex-col gap-2">
         <button
-            className="w-4 text-gray-300 hover:text-gray-600"
+            className="w-4 text-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
             onClick={() => setExpanded(!expanded)}
         >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-rectangle-ellipsis"><rect width="20" height="12" x="2" y="6" rx="2" /><path d="M12 12h.01" /><path d="M17 12h.01" /><path d="M7 12h.01" /></svg>
         </button>
-        <pre className={clsx("text-sm bg-gray-50 border border-gray-200 rounded-sm p-2 overflow-x-auto", {
+        <pre className={clsx("text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm p-2 overflow-x-auto", {
             'hidden': !expanded,
         })}>
             {JSON.stringify(message.content, null, 2)}
@@ -164,7 +164,7 @@ function UserMessage({
 }: {
     message: z.infer<typeof CopilotUserMessage>;
 }) {
-    return <div className="bg-gray-50 border border-gray-200 rounded-sm px-2 text-sm">
+    return <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm px-2 text-sm">
         <MarkdownContent content={message.content} />
     </div>
 }
@@ -449,7 +449,7 @@ function App({
                         )}
                     </>;
                 })}
-                {loadingResponse && <div className="px-2 py-1 flex items-center animate-pulse text-gray-600 text-xs">
+                {loadingResponse && <div className="px-2 py-1 flex items-center animate-pulse text-gray-600 dark:text-gray-400 text-xs">
                     <div>
                         {loadingMessage}
                     </div>
@@ -459,8 +459,8 @@ function App({
             </div>
             <div className="shrink-0">
                 {responseError && (
-                    <div className="max-w-[768px] mx-auto mb-4 p-2 bg-red-50 border border-red-200 rounded-lg flex gap-2 justify-between items-center text-sm">
-                        <p className="text-red-600">{responseError}</p>
+                    <div className="max-w-[768px] mx-auto mb-4 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex gap-2 justify-between items-center text-sm">
+                        <p className="text-red-600 dark:text-red-400">{responseError}</p>
                         <Button
                             size="sm"
                             color="danger"
@@ -473,7 +473,7 @@ function App({
                     </div>
                 )}
                 {effectiveContext && <div className="flex items-start">
-                    <div className="flex items-center gap-1 bg-gray-100 text-sm px-2 py-1 rounded-sm shadow-sm mb-2">
+                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 text-sm px-2 py-1 rounded-sm shadow-sm mb-2">
                         <div>
                             {effectiveContext.type === 'chat' && "Chat"}
                             {effectiveContext.type === 'agent' && `Agent: ${effectiveContext.name}`}
@@ -481,7 +481,7 @@ function App({
                             {effectiveContext.type === 'prompt' && `Prompt: ${effectiveContext.name}`}
                         </div>
                         <button 
-                            className="text-gray-500 hover:text-gray-600" 
+                            className="text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300" 
                             onClick={() => setDiscardContext(true)}
                         >
                             <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
