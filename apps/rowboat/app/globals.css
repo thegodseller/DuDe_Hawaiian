@@ -75,6 +75,30 @@ html, body {
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Add these new utility classes */
+  .card-shadow {
+    @apply shadow-sm dark:shadow-none dark:border-border;
+  }
+
+  .hover-effect {
+    @apply hover:bg-accent/10 dark:hover:bg-accent/20 transition-colors;
+  }
+
+  .border-subtle {
+    @apply border-border dark:border-border/50;
+  }
+}
+
+/* Add this to disable color transitions */
+* {
+  -webkit-transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out !important;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out !important;
+}
+
+/* Ensure smooth transitions */
+* {
+  @apply transition-colors duration-200;
 }
 
 /* Add these styles alongside your other global styles */
@@ -84,6 +108,40 @@ html, body {
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     background-color: white;
     z-index: 1000;
+}
+
+/* Base dark mode styles */
+.dark .ql-mention-list-container {
+    background-color: #1f2937;
+    border-color: #374151;
+}
+
+.dark .ql-mention-list-container * {
+    background-color: #1f2937 !important;
+    color: #f9fafb !important;
+}
+
+/* Target individual items */
+.dark .ql-mention-list-item {
+    color: #f9fafb !important;
+    background-color: #1f2937 !important;
+}
+
+/* Target hover and selected states for individual items */
+.dark .ql-mention-list-container .ql-mention-list-item.selected,
+.dark .ql-mention-list-container .ql-mention-list-item:hover {
+    background-color: #6b7280 !important;
+}
+
+/* Ensure the background color only applies to the item itself */
+.dark .ql-mention-list-item > * {
+    background-color: inherit !important;
+}
+
+/* Additional catch-all for any other possible class combinations */
+.dark [class*="mention"].selected,
+.dark [class*="mention"]:hover {
+    background-color: #6b7280 !important;
 }
 
 .ql-mention-list {
@@ -108,4 +166,29 @@ html, body {
 
 .ql-editor .mention .invalid {
   color: red;
+}
+
+/* Add custom scrollbar styling */
+.dark *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark *::-webkit-scrollbar-track {
+  background: #1f2937; /* dark gray background */
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background: #4b5563; /* medium gray thumb */
+  border-radius: 4px;
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: #6b7280; /* lighter gray on hover */
+}
+
+/* For Firefox */
+.dark * {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1f2937;
 }
