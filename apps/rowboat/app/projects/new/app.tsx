@@ -21,15 +21,21 @@ function TemplateCard({
     selected: boolean
 }) {
     return <button
-        className={cn("relative flex flex-col gap-2 border border-gray-300 hover:border-gray-500 rounded p-4 pt-6 bg-white shadow-sm", selected && "border-gray-800 shadow-md")}
+        className={cn(
+            "relative flex flex-col gap-2 rounded p-4 pt-6 shadow-sm",
+            "border border-gray-300 dark:border-gray-700",
+            "hover:border-gray-500 dark:hover:border-gray-500",
+            "bg-white dark:bg-gray-900",
+            selected && "border-gray-800 dark:border-gray-300 shadow-md"
+        )}
         type="button"
         onClick={() => onSelect(templateKey)}
     >
-        {selected && <div className="absolute top-0 right-0 bg-gray-200 flex items-center justify-center rounded p-1">
+        {selected && <div className="absolute top-0 right-0 bg-gray-200 dark:bg-gray-800 flex items-center justify-center rounded p-1">
             <CheckIcon size={16} />
         </div>}
-        <div className="text-lg">{template.name}</div>
-        <div className="shrink-0 text-sm text-gray-500 text-left">{template.description}</div>
+        <div className="text-lg dark:text-gray-100">{template.name}</div>
+        <div className="shrink-0 text-sm text-gray-500 dark:text-gray-400 text-left">{template.description}</div>
     </button>
 }
 
@@ -57,9 +63,9 @@ export default function App() {
         setSelectedTemplate(templateKey);
     }
 
-    return <div className="h-full pt-4 px-4 overflow-auto">
-        <div className="max-w-[768px] mx-auto p-4 bg-white rounded-lg">
-            <div className="text-lg pb-2 border-b border-b-gray-100">Create a new project</div>
+    return <div className="h-full pt-4 px-4 overflow-auto bg-gray-50 dark:bg-gray-950">
+        <div className="max-w-[768px] mx-auto p-4 bg-white dark:bg-gray-900 rounded-lg">
+            <div className="text-lg pb-2 border-b border-b-gray-100 dark:border-b-gray-800 dark:text-gray-100">Create a new project</div>
             <form className="mt-4 flex flex-col gap-4" action={createProject}>
                 <Input
                     required
@@ -70,7 +76,7 @@ export default function App() {
                     labelPlacement="outside"
                 />
                 <input type="hidden" name="template" value={selectedTemplate} />
-                <div className="text-sm">Select a template</div>
+                <div className="text-sm dark:text-gray-300">Select a template</div>
                 <div className="grid grid-cols-3 gap-4">
                     <TemplateCard
                         key="default"
