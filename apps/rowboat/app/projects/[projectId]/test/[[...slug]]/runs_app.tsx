@@ -227,11 +227,11 @@ function ViewRun({
                     </div>
                     <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
                         <div className="text-sm text-green-600 dark:text-green-400">Passed</div>
-                        <div className="text-2xl font-semibold text-green-700 dark:text-green-400">{run.aggregateResults?.pass || 0}</div>
+                        <div className="text-2xl font-semibold text-green-700 dark:text-green-400">{run.aggregateResults?.passCount || 0}</div>
                     </div>
                     <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20">
                         <div className="text-sm text-red-600 dark:text-red-400">Failed</div>
-                        <div className="text-2xl font-semibold text-red-700 dark:text-red-400">{run.aggregateResults?.fail || 0}</div>
+                        <div className="text-2xl font-semibold text-red-700 dark:text-red-400">{run.aggregateResults?.failCount || 0}</div>
                     </div>
                 </div>
 
@@ -389,10 +389,10 @@ function RunList({
                                         Total: {run.aggregateResults.total}
                                     </div>
                                     <div className="text-green-600 dark:text-green-400">
-                                        Passed: {run.aggregateResults.pass}
+                                        Passed: {run.aggregateResults.passCount}
                                     </div>
                                     <div className="text-red-600 dark:text-red-400">
-                                        Failed: {run.aggregateResults.fail}
+                                        Failed: {run.aggregateResults.failCount}
                                     </div>
                                 </div>
                             </div>

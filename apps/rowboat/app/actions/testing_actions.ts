@@ -436,8 +436,8 @@ export async function createRun(
         startedAt: new Date().toISOString(),
         aggregateResults: {
             total: 0,
-            pass: 0,
-            fail: 0,
+            passCount: 0,
+            failCount: 0,
         },
     };
     const insertResult = await testRunsCollection.insertOne(doc);
@@ -455,8 +455,8 @@ export async function updateRun(
         completedAt?: string;
         aggregateResults?: {
             total: number;
-            pass: number;
-            fail: number;
+            passCount: number;
+            failCount: number;
         };
     }
 ): Promise<void> {

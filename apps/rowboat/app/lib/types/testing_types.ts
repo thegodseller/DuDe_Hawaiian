@@ -38,8 +38,8 @@ export const TestRun = z.object({
     completedAt: z.string().optional(),
     aggregateResults: z.object({
       total: z.number(),
-      pass: z.number(),
-      fail: z.number(),
+      passCount: z.number(),
+      failCount: z.number(),
     }).optional(),
 });
 
