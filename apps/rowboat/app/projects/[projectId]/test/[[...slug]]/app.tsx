@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { ScenariosApp } from "./scenarios_app";
 import { ProfilesApp } from "./profiles_app";
 import { SimulationsApp } from "./simulations_app";
-import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import { RunsApp } from "./runs_app";
 
@@ -49,10 +48,7 @@ export function App({
                 {menuItems.map((item) => (
                     <li key={item.label}>
                         <Link
-                            className={cn(
-                                "block p-2 rounded-md text-sm",
-                                pathname.startsWith(item.href) ? "bg-gray-100" : "hover:bg-gray-100"
-                            )}
+                            className={`block p-2 rounded-md text-sm ${pathname.startsWith(item.href) ? "bg-gray-100" : "hover:bg-gray-100"}`}
                             href={item.href}>{item.label}</Link>
                     </li>
                 ))}
