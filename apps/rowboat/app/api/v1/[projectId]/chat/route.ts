@@ -18,9 +18,9 @@ export async function POST(
 ): Promise<Response> {
     const { projectId } = await params;
     const requestId = crypto.randomUUID();
-    const logger = new PrefixLogger(`[${requestId}]`);
+    const logger = new PrefixLogger(`${requestId}`);
 
-    logger.log(`Processing chat request for project ${projectId}`);
+    logger.log(`Got chat request for project ${projectId}`);
 
     // check query limit
     if (!await check_query_limit(projectId)) {
@@ -37,6 +37,7 @@ export async function POST(
             logger.log(`Invalid JSON in request body: ${e}`);
             return Response.json({ error: "Invalid JSON in request body" }, { status: 400 });
         }
+        logger.log(`Request json: ${JSON.stringify(body, null, 2)}`);
         const result = ApiRequest.safeParse(body);
         if (!result.success) {
             logger.log(`Invalid request body: ${result.error.message}`);
@@ -71,15 +72,7 @@ export async function POST(
         }
         
         // if test profile is provided in the request, use it
-        let profile: z.infer<typeof TestProfile> = {
-            projectId: projectId,
-            name: 'Default',
-            createdAt: new Date().toISOString(),
-            lastUpdatedAt: new Date().toISOString(),
-            context: '',
-            mockTools: false,
-            mockPrompt: '',
-        };
+        let profile: z.infer<typeof TestProfile> | null = null;
         if (result.data.testProfileId) {
             const testProfile = await testProfilesCollection.findOne({
                 projectId: projectId,
@@ -90,6 +83,21 @@ export async function POST(
                 return Response.json({ error: "Test profile not found" }, { status: 404 });
             }
             profile = testProfile;
+        } else {
+            // if no test profile is provided, use the default profile
+            const defaultProfile = await testProfilesCollection.findOne({
+                projectId: projectId,
+                _id: new ObjectId(project.defaultTestProfileId),
+            });
+            if (!defaultProfile) {
+                logger.log(`Default test profile not found for project ${projectId}`);
+                return Response.json({ error: "Default test profile not found" }, { status: 404 });
+            }
+            profile = defaultProfile;
+        }
+        if (!profile) {
+            logger.log(`No test profile found for project ${projectId}`);
+            return Response.json({ error: "No test profile found" }, { status: 404 });
         }
 
         // if profile has a context available, overwrite the system message in the request (if there is one)
