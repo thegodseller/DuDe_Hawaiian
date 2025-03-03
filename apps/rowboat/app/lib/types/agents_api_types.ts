@@ -44,7 +44,7 @@ export const AgenticAPIAgent = WorkflowAgent
 export const AgenticAPIPrompt = WorkflowPrompt;
 
 export const AgenticAPITool = WorkflowTool.omit({
-    mockInPlayground: true,
+    mockTool: true,
     autoSubmitMockedResponse: true,
 });
 
@@ -91,7 +91,7 @@ export function convertWorkflowToAgenticAPI(workflow: z.infer<typeof Workflow>):
                 return agenticAgent;
             }),
         tools: workflow.tools.map(tool => {
-            const { mockInPlayground, autoSubmitMockedResponse, ...rest } = tool;
+            const { mockTool, autoSubmitMockedResponse, ...rest } = tool;
             return {
                 ...rest,
             };

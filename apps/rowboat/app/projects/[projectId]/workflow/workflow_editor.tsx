@@ -285,7 +285,7 @@ function reducer(state: State, action: Action): State {
                                     type: "object",
                                     properties: {},
                                 },
-                                mockInPlayground: true,
+                                mockTool: true,
                                 autoSubmitMockedResponse: true,
                                 ...action.tool
                             });
@@ -534,14 +534,12 @@ export function WorkflowEditor({
     publishedWorkflowId,
     handleShowSelector,
     handleCloneVersion,
-    initialTestProfile,
 }: {
     dataSources: WithStringId<z.infer<typeof DataSource>>[];
     workflow: WithStringId<z.infer<typeof Workflow>>;
     publishedWorkflowId: string | null;
     handleShowSelector: () => void;
     handleCloneVersion: (workflowId: string) => void;
-    initialTestProfile: z.infer<typeof TestProfile>;
 }) {
     const [state, dispatch] = useReducer<Reducer<State, Action>>(reducer, {
         patches: [],
@@ -862,7 +860,6 @@ export function WorkflowEditor({
                     projectId={state.present.workflow.projectId}
                     workflow={state.present.workflow}
                     messageSubscriber={updateChatMessages}
-                    initialTestProfile={initialTestProfile}
                 />
                 {state.present.selection?.type === "agent" && <AgentConfig
                     key={state.present.selection.name}

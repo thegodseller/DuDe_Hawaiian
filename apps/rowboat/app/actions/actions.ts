@@ -99,13 +99,13 @@ export async function getAssistantResponse(
     };
 }
 
-export async function suggestToolResponse(toolId: string, projectId: string, messages: z.infer<typeof apiV1.ChatMessage>[], testProfile: z.infer<typeof TestProfile>): Promise<string> {
+export async function suggestToolResponse(toolId: string, projectId: string, messages: z.infer<typeof apiV1.ChatMessage>[], mockInstructions: string): Promise<string> {
     await projectAuthCheck(projectId);
     if (!await check_query_limit(projectId)) {
         throw new QueryLimitError();
     }
 
-    return await mockToolResponse(toolId, messages, testProfile);
+    return await mockToolResponse(toolId, messages, mockInstructions);
 }
 
 export async function getInformationTool(

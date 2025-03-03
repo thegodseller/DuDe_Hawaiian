@@ -221,7 +221,7 @@ export class PrefixLogger {
     }
 }
 
-export async function mockToolResponse(toolId: string, messages: z.infer<typeof ApiMessage>[], testProfile: z.infer<typeof TestProfile>): Promise<string> {
+export async function mockToolResponse(toolId: string, messages: z.infer<typeof ApiMessage>[], mockInstructions: string): Promise<string> {
     const prompt = `Given below is a chat between a user and a customer support assistant.
 The assistant has requested a tool call with ID {{toolID}}.
 
@@ -234,10 +234,6 @@ and also some instructions on how to mock the tool call.
 {{messages}}
 <<<END_OF_CHAT_HISTORY
 
->>>CONTEXT
-{{context}}
-<<<END_OF_CONTEXT
-
 >>>MOCK_INSTRUCTIONS
 {{mockInstructions}}
 <<<END_OF_MOCK_INSTRUCTIONS
@@ -246,8 +242,7 @@ The current date is {{date}}.
 `
         .replace('{{toolID}}', toolId)
         .replace(`{{date}}`, new Date().toISOString())
-        .replace('{{context}}', testProfile.context)
-        .replace('{{mockInstructions}}', testProfile.mockPrompt || '')
+        .replace('{{mockInstructions}}', mockInstructions)
         .replace('{{messages}}', JSON.stringify(messages.map((m) => {
             let tool_calls;
             if ('tool_calls' in m && m.role == 'assistant') {

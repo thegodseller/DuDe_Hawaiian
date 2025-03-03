@@ -33,8 +33,9 @@ export const WorkflowPrompt = z.object({
 export const WorkflowTool = z.object({
     name: z.string(),
     description: z.string(),
-    mockInPlayground: z.boolean().default(false).optional(),
+    mockTool: z.boolean().default(false).optional(),
     autoSubmitMockedResponse: z.boolean().default(false).optional(),
+    mockInstructions: z.string().optional(),
     parameters: z.object({
         type: z.literal('object'),
         properties: z.record(z.object({

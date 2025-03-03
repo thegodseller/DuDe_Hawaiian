@@ -230,10 +230,10 @@ export function ToolConfig({
                 <div className="ml-4 flex flex-col gap-2">
                     <RadioGroup
                         defaultValue="mock"
-                        value={tool.mockInPlayground ? "mock" : "api"}
+                        value={tool.mockTool ? "mock" : "api"}
                         onValueChange={(value) => handleUpdate({
                             ...tool,
-                            mockInPlayground: value === "mock",
+                            mockTool: value === "mock",
                             autoSubmitMockedResponse: value === "mock" ? true : undefined
                         })}
                         orientation="horizontal"
@@ -264,7 +264,7 @@ export function ToolConfig({
                         </Radio>
                     </RadioGroup>
 
-                    {tool.mockInPlayground && (
+                    {tool.mockTool && <>
                         <div className="ml-0">
                             <Checkbox
                                 key="autoSubmitMockedResponse"
@@ -281,9 +281,22 @@ export function ToolConfig({
                                 Auto-submit mocked response in playground
                             </Checkbox>
                         </div>
-                    )}
 
-                    {!tool.mockInPlayground && (
+                        <Divider />
+
+                        <EditableField
+                            label="Mock instructions"
+                            value={tool.mockInstructions || ''}
+                            onChange={(value) => handleUpdate({
+                                ...tool,
+                                mockInstructions: value
+                            })}
+                            placeholder="Enter mock instructions..."
+                            multiline
+                        />
+                    </>}
+
+                    {!tool.mockTool && (
                         <div className="ml-0 text-danger text-xs">
                             Please configure your webhook in the <strong>Integrate</strong> page if you haven&apos;t already.
                         </div>

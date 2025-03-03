@@ -24,16 +24,14 @@ export function App({
     projectId,
     workflow,
     messageSubscriber,
-    initialTestProfile,
 }: {
     hidden?: boolean;
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     messageSubscriber?: (messages: z.infer<typeof apiV1.ChatMessage>[]) => void;
-    initialTestProfile: z.infer<typeof TestProfile>;
 }) {
     const [counter, setCounter] = useState<number>(0);
-    const [testProfile, setTestProfile] = useState<z.infer<typeof TestProfile>>(initialTestProfile);
+    const [testProfile, setTestProfile] = useState<z.infer<typeof TestProfile> | null>(null);
     const [chat, setChat] = useState<z.infer<typeof PlaygroundChat>>({
         projectId,
         createdAt: new Date().toISOString(),
@@ -42,7 +40,7 @@ export function App({
         systemMessage: defaultSystemMessage,
     });
 
-    function handleTestProfileChange(profile: WithStringId<z.infer<typeof TestProfile>>) {
+    function handleTestProfileChange(profile: WithStringId<z.infer<typeof TestProfile>> | null) {
         setTestProfile(profile);
         setCounter(counter + 1);
     }

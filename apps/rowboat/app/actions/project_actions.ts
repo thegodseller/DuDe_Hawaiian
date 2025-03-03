@@ -41,7 +41,6 @@ export async function createProject(formData: FormData) {
     const projectId = crypto.randomUUID();
     const chatClientId = crypto.randomBytes(16).toString('base64url');
     const secret = crypto.randomBytes(32).toString('hex');
-    const defaultTestProfileId = new ObjectId();
 
     // create project
     await projectsCollection.insertOne({
@@ -54,7 +53,6 @@ export async function createProject(formData: FormData) {
         secret,
         nextWorkflowNumber: 1,
         testRunCounter: 0,
-        defaultTestProfileId: defaultTestProfileId.toString(),
     });
 
     // add first workflow version
@@ -68,17 +66,6 @@ export async function createProject(formData: FormData) {
         createdAt: (new Date()).toISOString(),
         lastUpdatedAt: (new Date()).toISOString(),
         name: `Version 1`,
-    });
-
-    // add default test profile
-    await testProfilesCollection.insertOne({
-        _id: defaultTestProfileId,
-        projectId,
-        name: "Default",
-        context: "",
-        mockTools: false,
-        createdAt: (new Date()).toISOString(),
-        lastUpdatedAt: (new Date()).toISOString(),
     });
 
     // add user to project

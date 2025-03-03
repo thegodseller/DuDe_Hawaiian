@@ -22,7 +22,7 @@ export const TestSimulation = z.object({
     projectId: z.string(),
     name: z.string().min(1, "Name cannot be empty"),
     scenarioId: z.string(),
-    profileId: z.string(),
+    profileId: z.string().nullable(),
     passCriteria: z.string(),
     createdAt: z.string().datetime(),
     lastUpdatedAt: z.string().datetime(),

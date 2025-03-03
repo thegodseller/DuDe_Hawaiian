@@ -38,7 +38,7 @@ function EditSimulation({
                 if (simulation) {
                     const [scenarioResult, profileResult] = await Promise.all([
                         getScenario(projectId, simulation.scenarioId),
-                        getProfile(projectId, simulation.profileId),
+                        simulation.profileId ? getProfile(projectId, simulation.profileId) : Promise.resolve(null),
                     ]);
                     setScenario(scenarioResult);
                     setProfile(profileResult);
@@ -62,14 +62,14 @@ function EditSimulation({
                 throw new Error("Name and Pass Criteria are required");
             }
 
-            if (!scenario || !profile) {
-                throw new Error("Please select all required fields");
+            if (!scenario) {
+                throw new Error("Please select a scenario");
             }
 
             await updateSimulation(projectId, simulationId, {
                 name,
                 scenarioId: scenario._id,
-                profileId: profile._id,
+                profileId: profile?._id || null,
                 passCriteria
             });
             router.push(`/projects/${projectId}/test/simulations/${simulationId}`);
@@ -124,13 +124,14 @@ function EditSimulation({
                     </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium">Profile</label>
+                    <label className="text-sm font-medium">Profile (optional)</label>
                     <div className="flex items-center gap-2">
                         {profile ? (
                             <div className="text-sm text-blue-600">{profile.name}</div>
                         ) : (
                             <div className="text-sm text-gray-500">No profile selected</div>
                         )}
+                        {profile && <Button size="sm" variant="bordered" onClick={() => setProfile(null)}>Remove</Button>}
                         <Button
                             size="sm"
                             onClick={() => setIsProfileModalOpen(true)}
@@ -147,7 +148,7 @@ function EditSimulation({
                             children: "Update",
                             size: "sm",
                             type: "submit",
-                            isDisabled: !scenario || !profile,
+                            isDisabled: !scenario,
                         }}
                     />
                     <Button
@@ -199,7 +200,7 @@ function ViewSimulation({
             if (simulation) {
                 const [scenarioResult, profileResult] = await Promise.all([
                     getScenario(projectId, simulation.scenarioId),
-                    getProfile(projectId, simulation.profileId),
+                    simulation.profileId ? getProfile(projectId, simulation.profileId) : Promise.resolve(null),
                 ]);
                 setScenario(scenarioResult);
                 setProfile(profileResult);
@@ -384,14 +385,11 @@ function NewSimulation({
             if (!scenario) {
                 throw new Error("Please select a scenario");
             }
-            if (!profile) {
-                throw new Error("Please select a profile");
-            }
 
             const result = await createSimulation(projectId, {
                 name,
                 scenarioId: scenario._id,
-                profileId: profile._id,
+                profileId: profile?._id || null,
                 passCriteria,
             });
             router.push(`/projects/${projectId}/test/simulations/${result._id}`);
@@ -448,13 +446,14 @@ function NewSimulation({
                 </div>
             </div>
             <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Profile</label>
+                <label className="text-sm font-medium">Profile (optional)</label>
                 <div className="flex items-center gap-2">
                     {profile ? (
                         <div className="text-sm text-blue-600">{profile.name}</div>
                     ) : (
                         <div className="text-sm text-gray-500">No profile selected</div>
                     )}
+                    {profile && <Button size="sm" variant="bordered" onClick={() => setProfile(null)}>Remove</Button>}
                     <Button
                         size="sm"
                         onClick={() => setIsProfileModalOpen(true)}
@@ -470,7 +469,7 @@ function NewSimulation({
                     children: "Create",
                     size: "sm",
                     type: "submit",
-                    isDisabled: !scenario || !profile,
+                    isDisabled: !scenario,
                 }}
             />
         </form>
@@ -559,7 +558,7 @@ function SimulationList({
         }
         async function resolveProfiles() {
             const profileIds = simulationList.reduce((acc, simulation) => {
-                if (!acc.includes(simulation.profileId)) {
+                if (simulation.profileId && !acc.includes(simulation.profileId)) {
                     acc.push(simulation.profileId);
                 }
                 return acc;
@@ -632,8 +631,12 @@ function SimulationList({
                             )}
                         </div>
                         <div className="col-span-1 px-4 truncate">
-                            {profileMap[simulation.profileId]?.name || (
-                                <span className="text-gray-500 font-mono text-xs">{simulation.profileId}</span>
+                            {simulation.profileId ? (
+                                profileMap[simulation.profileId]?.name || (
+                                    <span className="text-gray-500 font-mono text-xs">{simulation.profileId}</span>
+                                )
+                            ) : (
+                                <span className="text-gray-500 font-mono text-xs">None</span>
                             )}
                         </div>
                         <div className="col-span-1 px-4 truncate">

@@ -15,21 +15,22 @@ import { CopyAsJsonButton } from "./copy-as-json-button";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { ProfileSelector } from "@/app/lib/components/selectors/profile-selector";
 import { WithStringId } from "@/app/lib/types/types";
+import { XCircleIcon, XIcon } from "lucide-react";
 
 export function Chat({
     chat,
     projectId,
     workflow,
     messageSubscriber,
-    testProfile,
+    testProfile=null,
     onTestProfileChange,
 }: {
     chat: z.infer<typeof PlaygroundChat>;
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     messageSubscriber?: (messages: z.infer<typeof apiV1.ChatMessage>[]) => void;
-    testProfile: z.infer<typeof TestProfile>;
-    onTestProfileChange: (profile: WithStringId<z.infer<typeof TestProfile>>) => void;
+    testProfile?: z.infer<typeof TestProfile> | null;
+    onTestProfileChange: (profile: WithStringId<z.infer<typeof TestProfile>> | null) => void;
 }) {
     const [messages, setMessages] = useState<z.infer<typeof apiV1.ChatMessage>[]>(chat.messages);
     const [loadingAssistantResponse, setLoadingAssistantResponse] = useState<boolean>(false);
@@ -41,7 +42,7 @@ export function Chat({
     const [fetchResponseError, setFetchResponseError] = useState<string | null>(null);
     const [lastAgenticRequest, setLastAgenticRequest] = useState<unknown | null>(null);
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
-    const [systemMessage, setSystemMessage] = useState<string | undefined>(testProfile.context);
+    const [systemMessage, setSystemMessage] = useState<string | undefined>(testProfile?.context);
     const [isProfileSelectorOpen, setIsProfileSelectorOpen] = useState(false);
 
     // collect published tool call results
@@ -279,15 +280,20 @@ export function Chat({
 
     return <div className="relative h-full flex flex-col gap-8 pt-8 overflow-auto">
         <CopyAsJsonButton onCopy={handleCopyChat} />
-        <div className="absolute top-0 left-0">
+        <div className="absolute top-0 left-0 flex items-center gap-1">
             <Tooltip content={"Change profile"} placement="right">
                 <button
                     className="border border-gray-200 dark:border-gray-800 p-2 rounded-lg text-xs hover:bg-gray-100 dark:hover:bg-gray-800"
                     onClick={() => setIsProfileSelectorOpen(true)}
                 >
-                    {`Test profile: ${testProfile.name}`}
+                    {`${testProfile?.name || 'Select test profile'}`}
                 </button>
             </Tooltip>
+            {testProfile && <Tooltip content={"Remove profile"} placement="right">
+                <button className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" onClick={() => onTestProfileChange(null)}>
+                    <XIcon className="w-4 h-4" />
+                </button>
+            </Tooltip>}
         </div>
         <ProfileSelector
             projectId={projectId}

@@ -10,7 +10,6 @@ import { Spinner } from "@heroui/react";
 import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow } from "../../../actions/workflow_actions";
 import { listDataSources } from "../../../actions/datasource_actions";
 import { TestProfile } from "@/app/lib/types/testing_types";
-import { getDefaultProfile } from "../../../actions/testing_actions";
 
 export function App({
     projectId,
@@ -21,7 +20,6 @@ export function App({
     const [workflow, setWorkflow] = useState<WithStringId<z.infer<typeof Workflow>> | null>(null);
     const [publishedWorkflowId, setPublishedWorkflowId] = useState<string | null>(null);
     const [dataSources, setDataSources] = useState<WithStringId<z.infer<typeof DataSource>>[] | null>(null);
-    const [defaultTestProfile, setDefaultTestProfile] = useState<z.infer<typeof TestProfile> | null>(null);
     const [loading, setLoading] = useState(false);
     const [autoSelectIfOnlyOneWorkflow, setAutoSelectIfOnlyOneWorkflow] = useState(true);
 
@@ -30,13 +28,11 @@ export function App({
         const workflow = await fetchWorkflow(projectId, workflowId);
         const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
         const dataSources = await listDataSources(projectId);
-        const defaultTestProfile = await getDefaultProfile(projectId);
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflowId);
         setWorkflow(workflow);
         setPublishedWorkflowId(publishedWorkflowId);
         setDataSources(dataSources);
-        setDefaultTestProfile(defaultTestProfile);
         setLoading(false);
     }, [projectId]);
 
@@ -52,13 +48,11 @@ export function App({
         const workflow = await createWorkflow(projectId);
         const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
         const dataSources = await listDataSources(projectId);
-        const testProfile = await getDefaultProfile(projectId);
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflow._id);
         setWorkflow(workflow);
         setPublishedWorkflowId(publishedWorkflowId);
         setDataSources(dataSources);
-        setDefaultTestProfile(testProfile);
         setLoading(false);
     }
 
@@ -67,13 +61,11 @@ export function App({
         const workflow = await cloneWorkflow(projectId, workflowId);
         const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
         const dataSources = await listDataSources(projectId);
-        const testProfile = await getDefaultProfile(projectId);
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflow._id);
         setWorkflow(workflow);
         setPublishedWorkflowId(publishedWorkflowId);
         setDataSources(dataSources);
-        setDefaultTestProfile(testProfile);
         setLoading(false);
     }
 
@@ -107,11 +99,10 @@ export function App({
             handleCreateNewVersion={handleCreateNewVersion}
             autoSelectIfOnlyOneWorkflow={autoSelectIfOnlyOneWorkflow}
         />}
-        {!loading && workflow && (dataSources !== null) && (defaultTestProfile !== null) && <WorkflowEditor
+        {!loading && workflow && (dataSources !== null) && <WorkflowEditor
             key={workflow._id}
             workflow={workflow}
             dataSources={dataSources}
-            initialTestProfile={defaultTestProfile}
             publishedWorkflowId={publishedWorkflowId}
             handleShowSelector={handleShowSelector}
             handleCloneVersion={handleCloneVersion}

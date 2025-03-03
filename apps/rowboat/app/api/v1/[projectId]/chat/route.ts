@@ -72,9 +72,9 @@ export async function POST(
         }
         
         // if test profile is provided in the request, use it
-        let profile: z.infer<typeof TestProfile> | null = null;
+        let testProfile: z.infer<typeof TestProfile> | null = null;
         if (result.data.testProfileId) {
-            const testProfile = await testProfilesCollection.findOne({
+            testProfile = await testProfilesCollection.findOne({
                 projectId: projectId,
                 _id: new ObjectId(result.data.testProfileId),
             });
@@ -82,34 +82,18 @@ export async function POST(
                 logger.log(`Test profile ${result.data.testProfileId} not found for project ${projectId}`);
                 return Response.json({ error: "Test profile not found" }, { status: 404 });
             }
-            profile = testProfile;
-        } else {
-            // if no test profile is provided, use the default profile
-            const defaultProfile = await testProfilesCollection.findOne({
-                projectId: projectId,
-                _id: new ObjectId(project.defaultTestProfileId),
-            });
-            if (!defaultProfile) {
-                logger.log(`Default test profile not found for project ${projectId}`);
-                return Response.json({ error: "Default test profile not found" }, { status: 404 });
-            }
-            profile = defaultProfile;
-        }
-        if (!profile) {
-            logger.log(`No test profile found for project ${projectId}`);
-            return Response.json({ error: "No test profile found" }, { status: 404 });
         }
 
         // if profile has a context available, overwrite the system message in the request (if there is one)
         let currentMessages = reqMessages;
-        if (profile.context) {
+        if (testProfile?.context) {
             // if there is a system message, overwrite it
             const systemMessageIndex = reqMessages.findIndex(m => m.role === "system");
             if (systemMessageIndex !== -1) {
-                currentMessages[systemMessageIndex].content = profile.context;
+                currentMessages[systemMessageIndex].content = testProfile.context;
             } else {
                 // if there is no system message, add one
-                currentMessages.unshift({ role: "system", content: profile.context });
+                currentMessages.unshift({ role: "system", content: testProfile.context });
             }
         }
 
@@ -183,9 +167,9 @@ export async function POST(
                         try {
                             // if tool is supposed to be mocked, mock it
                             const workflowTool = workflow.tools.find(t => t.name === toolCall.function.name);
-                            if (profile.mockTools) {
+                            if (testProfile?.mockTools || workflowTool?.mockTool) {
                                 logger.log(`Mocking tool call ${toolCall.function.name}`);
-                                result = await mockToolResponse(toolCall.id, currentMessages, profile);
+                                result = await mockToolResponse(toolCall.id, currentMessages, testProfile?.mockPrompt || workflowTool?.mockInstructions || '');
                             } else {
                                 // else run the tool call by calling the client tool webhook
                                 logger.log(`Running client tool webhook for tool ${toolCall.function.name}`);

@@ -171,13 +171,13 @@ export async function createSimulation(
     data: {
         name: string;
         scenarioId: string;
-        profileId: string;
+        profileId: string | null;
         passCriteria: string;
     }
 ): Promise<WithStringId<z.infer<typeof TestSimulation>>> {
     await projectAuthCheck(projectId);
 
-    const doc = {
+    const doc: z.infer<typeof TestSimulation> = {
         ...data,
         projectId,
         createdAt: new Date().toISOString(),
@@ -196,7 +196,7 @@ export async function updateSimulation(
     updates: {
         name?: string;
         scenarioId?: string;
-        profileId?: string;
+        profileId?: string | null;
         passCriteria?: string;
     }
 ): Promise<void> {
@@ -243,34 +243,6 @@ export async function listProfiles(
         })),
         total,
     };
-}
-
-export async function getDefaultProfile(projectId: string): Promise<WithStringId<z.infer<typeof TestProfile>> | null> {
-    await projectAuthCheck(projectId);
-    const project = await projectsCollection.findOne({ _id: projectId });
-    if (!project) {
-        return null;
-    }
-    if (!project.defaultTestProfileId) {
-        // create a default profile
-        const profile = await createProfile(projectId, {
-            name: 'Default',
-            context: '',
-            mockTools: false,
-            mockPrompt: '',
-        });
-        await setDefaultProfile(projectId, profile._id);
-        return profile;
-    }
-    return getProfile(projectId, project.defaultTestProfileId);
-}
-
-export async function setDefaultProfile(projectId: string, profileId: string): Promise<void> {
-    await projectAuthCheck(projectId);
-    await projectsCollection.updateOne(
-        { _id: projectId },
-        { $set: { defaultTestProfileId: profileId } }
-    );
 }
 
 export async function getProfile(projectId: string, profileId: string): Promise<WithStringId<z.infer<typeof TestProfile>> | null> {

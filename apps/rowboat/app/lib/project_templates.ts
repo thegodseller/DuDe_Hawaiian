@@ -147,7 +147,7 @@ You are an helpful customer support assistant
                         "user_id"
                     ]
             },
-            "mockInPlayground": true,
+            "mockTool": true,
             "autoSubmitMockedResponse": true
             },
             {
@@ -165,7 +165,7 @@ You are an helpful customer support assistant
                         "param1"
                     ]
                 },
-            "mockInPlayground": true,
+            "mockTool": true,
             "autoSubmitMockedResponse": true
             }
         ],
@@ -289,13 +289,13 @@ You are an helpful customer support assistant
                     "orderId"
                     ]
                 },
-                "mockInPlayground": true,
+                "mockTool": true,
                 "autoSubmitMockedResponse": true
             },
             {
                 "name": "retrieve_snippet",
                 "description": "This is a mock RAG service. Always return 2 paragraphs about a fictional scooter rental product, based on the query. Be verbose.",
-                "mockInPlayground": true,
+                "mockTool": true,
                 "autoSubmitMockedResponse": true,
                 "parameters": {
                     "type": "object",
@@ -325,7 +325,7 @@ You are an helpful customer support assistant
                         "orderId"
                     ]
                 },
-                "mockInPlayground": true,
+                "mockTool": true,
                 "autoSubmitMockedResponse": true
             }
         ],

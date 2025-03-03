@@ -2,7 +2,7 @@ import Link from "next/link";
 import { WithStringId } from "@/app/lib/types/types";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { useEffect, useState, useRef } from "react";
-import { createProfile, getProfile, listProfiles, updateProfile, deleteProfile, setDefaultProfile } from "@/app/actions/testing_actions";
+import { createProfile, getProfile, listProfiles, updateProfile, deleteProfile } from "@/app/actions/testing_actions";
 import { Button, Input, Pagination, Spinner, Switch, Textarea, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Tooltip } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
@@ -134,7 +134,6 @@ function ViewProfile({
 }) {
     const router = useRouter();
     const [profile, setProfile] = useState<WithStringId<z.infer<typeof TestProfile>> | null>(null);
-    const [defaultProfileId, setDefaultProfileId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -142,9 +141,7 @@ function ViewProfile({
     useEffect(() => {
         async function fetchProfile() {
             const profile = await getProfile(projectId, profileId);
-            const projectConfig = await getProjectConfig(projectId);
             setProfile(profile);
-            setDefaultProfileId(projectConfig.defaultTestProfileId || null);
             setLoading(false);
         }
         fetchProfile();
@@ -157,11 +154,6 @@ function ViewProfile({
         } catch (error) {
             setDeleteError(`Failed to delete profile: ${error}`);
         }
-    }
-
-    async function handleSetDefault() {
-        await setDefaultProfile(projectId, profileId);
-        router.push(`/projects/${projectId}/test/profiles`);
     }
 
     return <div className="h-full flex flex-col gap-2">
@@ -186,13 +178,7 @@ function ViewProfile({
                     <div className="flex border-b py-2">
                         <div className="flex-[1] font-medium text-gray-600">Name</div>
                         <div className="flex-[2]">
-                            <div className="flex flex-col gap-2">
-                                <div>{profile.name}</div>
-                                {defaultProfileId === profile._id && <div className="flex items-center gap-2">
-                                    <StarIcon className="w-4 h-4" />
-                                    <div className="text-gray-600">This is the default profile</div>
-                                </div>}
-                            </div>
+                            <div className="flex-[2] whitespace-pre-wrap">{profile.name}</div>
                         </div>
                     </div>
                     <div className="flex border-b py-2">
@@ -224,21 +210,14 @@ function ViewProfile({
                     >
                         Edit
                     </Button>
-                    {defaultProfileId !== profile._id && <Button
+                    <Button
                         size="sm"
                         color="danger"
                         variant="flat"
                         onClick={() => setIsDeleteModalOpen(true)}
                     >
                         Delete
-                    </Button>}
-                    {defaultProfileId !== profile._id && <Button
-                        size="sm"
-                        onClick={() => handleSetDefault()}
-                        startContent={<StarIcon className="w-4 h-4" />}
-                    >
-                        Set as default profile
-                    </Button>}
+                    </Button>
                 </div>
 
                 <Modal
@@ -399,7 +378,6 @@ function ProfileList({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [profiles, setProfiles] = useState<WithStringId<z.infer<typeof TestProfile>>[]>([]);
-    const [defaultProfileId, setDefaultProfileId] = useState<string | null>(null);
     const [total, setTotal] = useState(0);
 
     useEffect(() => {
@@ -410,11 +388,9 @@ function ProfileList({
             setError(null);
             try {
                 const profiles = await listProfiles(projectId, page, pageSize);
-                const projectConfig = await getProjectConfig(projectId);
                 if (!ignore) {
                     setProfiles(profiles.profiles);
                     setTotal(Math.ceil(profiles.total / pageSize));
-                    setDefaultProfileId(projectConfig.defaultTestProfileId || null);
                 }
             } catch (error) {
                 if (!ignore) {
@@ -470,17 +446,12 @@ function ProfileList({
                 {profiles.map((profile) => (
                     <div key={profile._id} className="grid grid-cols-8 py-2 border-b hover:bg-gray-50 text-sm">
                         <div className="col-span-2 px-4 truncate">
-                            <div className="flex items-center gap-2">
-                                <Link
-                                    href={`/projects/${projectId}/test/profiles/${profile._id}`}
-                                    className="text-blue-600 hover:underline"
-                                >
-                                    {profile.name}
-                                </Link>
-                                {defaultProfileId === profile._id && <Tooltip content="Default Profile">
-                                    <StarIcon className="w-4 h-4" />
-                                </Tooltip>}
-                            </div>
+                            <Link
+                                href={`/projects/${projectId}/test/profiles/${profile._id}`}
+                                className="text-blue-600 hover:underline"
+                            >
+                                {profile.name}
+                            </Link>
                         </div>
                         <div className="col-span-3 px-4 truncate">{profile.context}</div>
                         <div className="col-span-1 px-4">{profile.mockTools ? "Yes" : "No"}</div>
