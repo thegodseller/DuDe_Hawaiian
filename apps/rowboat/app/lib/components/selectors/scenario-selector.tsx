@@ -2,7 +2,7 @@ import { WithStringId } from "@/app/lib/types/types";
 import { TestScenario } from "@/app/lib/types/testing_types";
 import { useCallback, useEffect, useState } from "react";
 import { listScenarios } from "@/app/actions/testing_actions";
-import { Button, Pagination, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@nextui-org/react";
+import { Button, Pagination, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { z } from "zod";
 
 interface ScenarioSelectorProps {

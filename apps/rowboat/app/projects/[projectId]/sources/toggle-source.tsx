@@ -1,7 +1,7 @@
 'use client';
 import { toggleDataSource } from "../../../actions/datasource_actions";
-import { Spinner } from "@nextui-org/react";
-import { Switch } from "@nextui-org/react";
+import { Spinner } from "@heroui/react";
+import { Switch } from "@heroui/react";
 import { useState } from "react";
 
 export function ToggleSource({

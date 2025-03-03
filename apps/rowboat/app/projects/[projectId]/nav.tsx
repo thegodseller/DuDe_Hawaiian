@@ -1,5 +1,5 @@
 'use client';
-import { Tooltip } from "@nextui-org/react";
+import { Tooltip } from "@heroui/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import clsx from "clsx";

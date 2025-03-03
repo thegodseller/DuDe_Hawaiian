@@ -1,6 +1,6 @@
 'use client';
 import { usePathname } from "next/navigation";
-import { Tooltip } from "@nextui-org/react";
+import { Tooltip } from "@heroui/react";
 import Link from "next/link";
 import { DatabaseIcon, SettingsIcon, WorkflowIcon, PlayIcon } from "lucide-react";
 import MenuItem from "../../lib/components/menu-item";

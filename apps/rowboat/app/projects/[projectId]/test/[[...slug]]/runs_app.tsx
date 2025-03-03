@@ -3,7 +3,7 @@ import { WithStringId } from "@/app/lib/types/types";
 import { TestSimulation, TestRun } from "@/app/lib/types/testing_types";
 import { useEffect, useState, useRef } from "react";
 import { createRun, getRun, getSimulation, listRuns } from "@/app/actions/testing_actions";
-import { Button, Input, Pagination, Spinner, Chip } from "@nextui-org/react";
+import { Button, Input, Pagination, Spinner, Chip } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
 import { ArrowLeftIcon, PlusIcon, WorkflowIcon } from "lucide-react";

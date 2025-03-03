@@ -1,5 +1,5 @@
 'use client';
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner } from "@nextui-org/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner } from "@heroui/react";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { z } from "zod";
 import { PlaygroundChat } from "../../../lib/types/types";

@@ -7,10 +7,10 @@ import { z } from "zod";
 import { Recrawl } from "./web-recrawl";
 import { deleteDocsFromDataSource, listDocsInDataSource, recrawlWebDataSource, addDocsToDataSource } from "../../../../actions/datasource_actions";
 import { useState, useEffect } from "react";
-import { Spinner } from "@nextui-org/react";
-import { Pagination } from "@nextui-org/react";
+import { Spinner } from "@heroui/react";
+import { Pagination } from "@heroui/react";
 import { ExternalLinkIcon } from "lucide-react";
-import { Textarea } from "@nextui-org/react";
+import { Textarea } from "@heroui/react";
 import { FormStatusButton } from "../../../../lib/components/form-status-button";
 import { PlusIcon } from "lucide-react";
 

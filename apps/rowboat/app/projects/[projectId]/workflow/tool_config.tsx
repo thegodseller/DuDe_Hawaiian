@@ -1,14 +1,14 @@
 "use client";
 import { WorkflowTool } from "../../../lib/types/workflow_types";
-import { Accordion, AccordionItem, Button, Checkbox, Select, SelectItem, Switch, RadioGroup, Radio } from "@nextui-org/react";
+import { Accordion, AccordionItem, Button, Checkbox, Select, SelectItem, Switch, RadioGroup, Radio } from "@heroui/react";
 import { z } from "zod";
 import { ActionButton, StructuredPanel } from "../../../lib/components/structured-panel";
 import { EditableField } from "../../../lib/components/editable-field";
-import { Divider } from "@nextui-org/react";
+import { Divider } from "@heroui/react";
 import { Label } from "../../../lib/components/label";
 import { TrashIcon, XIcon } from "lucide-react";
 import { useState } from "react";
-import { Link as NextUILink } from "@nextui-org/react";
+import { Link as NextUILink } from "@heroui/react";
 import Link from "next/link";
 
 export function ParameterConfig({
@@ -71,7 +71,7 @@ export function ParameterConfig({
                     }}
                 >
                     {['string', 'number', 'boolean', 'array', 'object'].map(type => (
-                        <SelectItem key={type} value={type}>
+                        <SelectItem key={type}>
                             {type}
                         </SelectItem>
                     ))}

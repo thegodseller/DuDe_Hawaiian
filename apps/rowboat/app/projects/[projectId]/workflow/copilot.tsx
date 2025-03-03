@@ -1,5 +1,5 @@
 'use client';
-import { Button, Textarea } from "@nextui-org/react";
+import { Button, Textarea } from "@heroui/react";
 import { ActionButton, StructuredPanel } from "../../../lib/components/structured-panel";
 import { useEffect, useRef, useState, createContext, useContext, useCallback } from "react";
 import { CopilotChatContext } from "../../../lib/types/copilot_types";

@@ -1,5 +1,5 @@
 'use client';
-import { cn, Input } from "@nextui-org/react";
+import { cn, Input } from "@heroui/react";
 import { createProject } from "../../actions/project_actions";
 import { templates } from "../../lib/project_templates";
 import { WorkflowTemplate } from "../../lib/types/workflow_types";

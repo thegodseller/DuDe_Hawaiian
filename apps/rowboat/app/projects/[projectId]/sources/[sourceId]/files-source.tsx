@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { deleteDocsFromDataSource, getUploadUrlsForFilesDataSource, addDocsToDataSource, getDownloadUrlForFile, listDocsInDataSource } from "../../../../actions/datasource_actions";
 import { RelativeTime } from "@primer/react";
-import { Pagination, Spinner } from "@nextui-org/react";
+import { Pagination, Spinner } from "@heroui/react";
 import { DownloadIcon } from "lucide-react";
 
 function FileListItem({

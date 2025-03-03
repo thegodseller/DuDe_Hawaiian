@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "@/app/providers/theme-provider"
-import { Button } from "@nextui-org/react"
+import { Button } from "@heroui/react"
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme()

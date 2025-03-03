@@ -2,7 +2,7 @@ import { WithStringId } from "@/app/lib/types/types";
 import { Workflow } from "@/app/lib/types/workflow_types";
 import { useCallback, useEffect, useState } from "react";
 import { listWorkflows } from "@/app/actions/workflow_actions";
-import { Button, Pagination, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@nextui-org/react";
+import { Button, Pagination, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { z } from "zod";
 import { RelativeTime } from "@primer/react";
 import { WorkflowIcon } from "../icons";

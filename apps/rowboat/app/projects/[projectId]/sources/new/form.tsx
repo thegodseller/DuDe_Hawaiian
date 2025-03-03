@@ -1,5 +1,5 @@
 'use client';
-import { Input, Select, SelectItem, Textarea } from "@nextui-org/react"
+import { Input, Select, SelectItem, Textarea } from "@heroui/react"
 import { useState } from "react";
 import { createDataSource, addDocsToDataSource } from "../../../../actions/datasource_actions";
 import { FormStatusButton } from "../../../../lib/components/form-status-button";
@@ -90,14 +90,12 @@ export function Form({
                 </SelectItem> */}
                 <SelectItem
                     key="urls"
-                    value="urls"
                     startContent={<DataSourceIcon type="urls" />}
                 >
                     Scrape URLs
                 </SelectItem>
                 <SelectItem
                     key="files"
-                    value="files"
                     startContent={<DataSourceIcon type="files" />}
                 >
                     Upload files

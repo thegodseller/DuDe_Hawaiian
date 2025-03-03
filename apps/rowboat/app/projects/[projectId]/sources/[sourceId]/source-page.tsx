@@ -3,7 +3,7 @@ import { WithStringId } from "../../../../lib/types/types";
 import { DataSource } from "../../../../lib/types/datasource_types";
 import { PageSection } from "../../../../lib/components/page-section";
 import { ToggleSource } from "../toggle-source";
-import { Spinner } from "@nextui-org/react";
+import { Spinner } from "@heroui/react";
 import { SourceStatus } from "../source-status";
 import { DeleteSource } from "./delete";
 import { useEffect, useState } from "react";

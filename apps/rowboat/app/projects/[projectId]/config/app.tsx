@@ -1,7 +1,7 @@
 'use client';
 
 import { Metadata } from "next";
-import { Spinner, Textarea, Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider } from "@nextui-org/react";
+import { Spinner, Textarea, Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider } from "@heroui/react";
 import { ReactNode, useEffect, useState, useCallback } from "react";
 import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret } from "../../../actions/project_actions";
 import { CopyButton } from "../../../lib/components/copy-button";
@@ -272,8 +272,9 @@ export function ApiKeysSection({
                                     </DropdownTrigger>
                                     <DropdownMenu>
                                         <DropdownItem
+                                            key='delete'
                                             className="text-destructive"
-                                            onClick={() => handleDeleteKey(key._id)}
+                                            onPress={() => handleDeleteKey(key._id)}
                                         >
                                             Delete
                                         </DropdownItem>

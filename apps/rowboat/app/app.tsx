@@ -4,7 +4,7 @@ import Image from 'next/image';
 import logo from "@/public/rowboat-logo.png";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useRouter } from "next/navigation";
-import { Spinner } from "@nextui-org/react";
+import { Spinner } from "@heroui/react";
 import { LogInIcon } from "lucide-react";
 
 export function App() {

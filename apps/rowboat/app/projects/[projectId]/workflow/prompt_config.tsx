@@ -1,6 +1,6 @@
 "use client";
 import { WorkflowAgent, WorkflowPrompt, WorkflowTool } from "../../../lib/types/workflow_types";
-import { Divider } from "@nextui-org/react";
+import { Divider } from "@heroui/react";
 import { z } from "zod";
 import { ActionButton, StructuredPanel } from "../../../lib/components/structured-panel";
 import { EditableField } from "../../../lib/components/editable-field";

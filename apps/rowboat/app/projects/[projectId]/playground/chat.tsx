@@ -9,7 +9,7 @@ import { convertWorkflowToAgenticAPI } from "../../../lib/types/agents_api_types
 import { AgenticAPIChatRequest } from "../../../lib/types/agents_api_types";
 import { Workflow } from "../../../lib/types/workflow_types";
 import { ComposeBox } from "./compose-box";
-import { Button, Spinner, Tooltip } from "@nextui-org/react";
+import { Button, Spinner, Tooltip } from "@heroui/react";
 import { apiV1 } from "rowboat-shared";
 import { CopyAsJsonButton } from "./copy-as-json-button";
 import { TestProfile } from "@/app/lib/types/testing_types";

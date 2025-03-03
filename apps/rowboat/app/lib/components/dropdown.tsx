@@ -1,4 +1,4 @@
-import { Select, SelectItem } from "@nextui-org/react";
+import { Select, SelectItem } from "@heroui/react";
 import { ReactNode } from "react";
 
 export interface DropdownOption {
@@ -28,7 +28,7 @@ export function Dropdown({
             onSelectionChange={(keys) => onChange(keys.currentKey as string)}
         >
             {options.map((option) => (
-                <SelectItem key={option.key} value={option.key}>
+                <SelectItem key={option.key}>
                     {option.label}
                 </SelectItem>
             ))}

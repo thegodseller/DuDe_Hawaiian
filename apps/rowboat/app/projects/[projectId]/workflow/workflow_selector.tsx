@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { PublishedBadge } from "./published_badge";
 import { RelativeTime } from "@primer/react";
 import { listWorkflows } from "../../../actions/workflow_actions";
-import { Button, Divider, Pagination } from "@nextui-org/react";
+import { Button, Divider, Pagination } from "@heroui/react";
 import { WorkflowIcon } from "../../../lib/components/icons";
 import { PlusIcon } from "lucide-react";
 

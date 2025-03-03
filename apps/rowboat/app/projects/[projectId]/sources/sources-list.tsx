@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Link, Spinner } from "@nextui-org/react";
+import { Button, Link, Spinner } from "@heroui/react";
 import { ToggleSource } from "./toggle-source";
 import { SelfUpdatingSourceStatus } from "./self-updating-source-status";
 import { DataSourceIcon } from "../../../lib/components/datasource-icon";

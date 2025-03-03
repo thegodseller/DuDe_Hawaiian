@@ -1,6 +1,6 @@
 'use client';
 
-import { Pagination as NextUiPagination } from "@nextui-org/react";
+import { Pagination as NextUiPagination } from "@heroui/react";
 import { usePathname, useRouter } from "next/navigation";
 
 export function Pagination({

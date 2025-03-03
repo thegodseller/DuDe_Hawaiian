@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { InfoIcon } from "lucide-react";
-import { Tooltip } from "@nextui-org/react";
+import { Tooltip } from "@heroui/react";
 
 export function ActionButton({
     icon = null,

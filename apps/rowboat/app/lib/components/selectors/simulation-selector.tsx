@@ -2,7 +2,7 @@ import { WithStringId } from "@/app/lib/types/types";
 import { TestSimulation } from "@/app/lib/types/testing_types";
 import { useCallback, useEffect, useState } from "react";
 import { listSimulations } from "@/app/actions/testing_actions";
-import { Button, Pagination, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Chip } from "@nextui-org/react";
+import { Button, Pagination, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Chip } from "@heroui/react";
 import { z } from "zod";
 import { RelativeTime } from "@primer/react";
 

@@ -3,7 +3,7 @@ import { WithStringId } from "@/app/lib/types/types";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { useEffect, useState, useRef } from "react";
 import { createProfile, getProfile, listProfiles, updateProfile, deleteProfile, setDefaultProfile } from "@/app/actions/testing_actions";
-import { Button, Input, Pagination, Spinner, Switch, Textarea, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Tooltip } from "@nextui-org/react";
+import { Button, Input, Pagination, Spinner, Switch, Textarea, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Tooltip } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
 import { PlusIcon, ArrowLeftIcon, StarIcon } from "lucide-react";

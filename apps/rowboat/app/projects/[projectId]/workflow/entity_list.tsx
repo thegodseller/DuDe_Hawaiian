@@ -2,7 +2,7 @@ import { z } from "zod";
 import { AgenticAPITool } from "../../../lib/types/agents_api_types";
 import { WorkflowPrompt } from "../../../lib/types/workflow_types";
 import { WorkflowAgent } from "../../../lib/types/workflow_types";
-import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@nextui-org/react";
+import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@heroui/react";
 import { useRef, useEffect } from "react";
 import { ActionButton, StructuredPanel } from "../../../lib/components/structured-panel";
 import clsx from "clsx";

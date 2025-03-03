@@ -6,7 +6,7 @@ import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { WorkflowEditor } from "./workflow_editor";
 import { WorkflowSelector } from "./workflow_selector";
-import { Spinner } from "@nextui-org/react";
+import { Spinner } from "@heroui/react";
 import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow } from "../../../actions/workflow_actions";
 import { listDataSources } from "../../../actions/datasource_actions";
 import { TestProfile } from "@/app/lib/types/testing_types";

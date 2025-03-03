@@ -3,7 +3,7 @@ import { WithStringId } from "@/app/lib/types/types";
 import { TestScenario } from "@/app/lib/types/testing_types";
 import { useEffect, useState, useRef } from "react";
 import { createScenario, getScenario, listScenarios, updateScenario, deleteScenario } from "@/app/actions/testing_actions";
-import { Button, Input, Pagination, Spinner, Textarea, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@nextui-org/react";
+import { Button, Input, Pagination, Spinner, Textarea, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
 import { ArrowLeftIcon, PlusIcon } from "lucide-react";

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Spinner, Textarea } from "@nextui-org/react";
+import { Button, Spinner, Textarea } from "@heroui/react";
 import { CornerDownLeftIcon } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { apiV1 } from "rowboat-shared";

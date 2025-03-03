@@ -4,7 +4,7 @@ import MarkdownContent from "../../../lib/components/markdown-content";
 import React, { PureComponent } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import { XIcon } from "lucide-react";
-import { Button } from "@nextui-org/react";
+import { Button } from "@heroui/react";
 
 // Create the context type
 export type PreviewModalContextType = {

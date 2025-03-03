@@ -1,6 +1,6 @@
 'use client';
 
-import { Link, Button, Spinner } from "@nextui-org/react";
+import { Link, Button, Spinner } from "@heroui/react";
 import { RelativeTime } from "@primer/react";
 import { Project } from "../lib/types/project_types";
 import { default as NextLink } from "next/link";

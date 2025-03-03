@@ -1,4 +1,4 @@
-import { Button, Input, InputProps, Kbd, Textarea } from "@nextui-org/react";
+import { Button, Input, InputProps, Kbd, Textarea } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
 import { useClickAway } from "../../../hooks/use-click-away";
 import MarkdownContent from "./markdown-content";

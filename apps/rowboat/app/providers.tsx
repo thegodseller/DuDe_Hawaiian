@@ -1,15 +1,15 @@
 // app/providers.tsx
 'use client'
 
-import { NextUIProvider } from '@nextui-org/react'
+import { HeroUIProvider } from "@heroui/react"
 import { useRouter } from 'next/navigation'
 
 export function Providers({ className, children }: { className: string, children: React.ReactNode }) {
   const router = useRouter();
 
   return (
-    <NextUIProvider className={className} navigate={router.push}>
+    <HeroUIProvider className={className} navigate={router.push}>
       {children}
-    </NextUIProvider >
+    </HeroUIProvider >
   )
 }

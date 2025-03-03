@@ -1,6 +1,6 @@
 import { DataSource } from "../../../lib/types/datasource_types";
-import { Spinner } from "@nextui-org/react";
-import { Link } from "@nextui-org/react";
+import { Spinner } from "@heroui/react";
+import { Link } from "@heroui/react";
 import { z } from 'zod';
 
 export function SourceStatus({

@@ -11,7 +11,7 @@ import { AgentConfig } from "./agent_config";
 import { ToolConfig } from "./tool_config";
 import { App as ChatApp } from "../playground/app";
 import { z } from "zod";
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip } from "@nextui-org/react";
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip } from "@heroui/react";
 import { PromptConfig } from "./prompt_config";
 import { EditableField } from "../../../lib/components/editable-field";
 import { RelativeTime } from "@primer/react";
