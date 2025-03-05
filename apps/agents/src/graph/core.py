@@ -13,6 +13,7 @@ from .helpers.transfer import create_transfer_function_to_agent, create_transfer
 from .helpers.state import add_recent_messages_to_history, construct_state_from_response, reset_current_turn, reset_current_turn_agent_history
 from .helpers.instructions import add_transfer_instructions_to_child_agents, add_transfer_instructions_to_parent_agents, add_rag_instructions_to_agent, add_error_escalation_instructions, get_universal_system_message, add_universal_system_message_to_agent
 from .helpers.control import get_latest_assistant_msg, get_latest_non_assistant_messages, get_last_agent_name
+from src.swarm.types import Response
 
 from src.utils.common import common_logger
 logger = common_logger
@@ -474,6 +475,21 @@ def run_turn(messages, start_agent_name, agent_configs, tool_configs, available_
         turn_messages.extend(response.messages)
         logger.info("Response post-processed")
     
+    else:
+        logger.info("No post-processing agent found. Duplicating last response and setting to external.")
+        duplicate_msg = deepcopy(turn_messages[-1])
+        duplicate_msg["response_type"] = "external"
+        duplicate_msg["sender"] = duplicate_msg["sender"] + ' >> External'
+        response = Response(
+            messages=[duplicate_msg],
+            tokens_used=tokens_used,
+            agent=last_agent,
+            error_msg=''
+        )
+        response.messages = order_messages(response.messages)
+        turn_messages.extend(response.messages)
+        logger.info("Last response duplicated and set to external")
+
     if guardrails_agent_config:
         logger.info("Guardrails agent not implemented (ignoring)")
         pass
