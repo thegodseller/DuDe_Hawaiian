@@ -67,7 +67,7 @@ function EditProfile({
         </div>}
         {error && <div className="bg-red-100 p-2 rounded-md text-red-800 flex items-center gap-2 text-sm">
             {error}
-            <Button size="sm" color="danger" onClick={() => formRef.current?.requestSubmit()}>Retry</Button>
+            <Button size="sm" color="danger" onPress={() => formRef.current?.requestSubmit()}>Retry</Button>
         </div>}
         {!loading && profile && (
             <form ref={formRef} action={handleSubmit} className="flex flex-col gap-2">
@@ -214,7 +214,7 @@ function ViewProfile({
                         size="sm"
                         color="danger"
                         variant="flat"
-                        onClick={() => setIsDeleteModalOpen(true)}
+                        onPress={() => setIsDeleteModalOpen(true)}
                     >
                         Delete
                     </Button>
@@ -323,7 +323,7 @@ function NewProfile({
         </Button>
         {error && <div className="bg-red-100 p-2 rounded-md text-red-800 flex items-center gap-2 text-sm">
             {error}
-            <Button size="sm" color="danger" onClick={() => formRef.current?.requestSubmit()}>Retry</Button>
+            <Button size="sm" color="danger" onPress={() => formRef.current?.requestSubmit()}>Retry</Button>
         </div>}
         <form ref={formRef} action={handleSubmit} className="flex flex-col gap-2">
             <Input
@@ -416,7 +416,7 @@ function ProfileList({
         <h1 className="text-medium font-bold text-gray-800 pb-2 border-b border-gray-200">Profiles</h1>
         <Button
             size="sm"
-            onClick={() => router.push(`/projects/${projectId}/test/profiles/new`)}
+            onPress={() => router.push(`/projects/${projectId}/test/profiles/new`)}
             className="self-end"
             startContent={<PlusIcon className="w-4 h-4" />}
         >
@@ -428,7 +428,7 @@ function ProfileList({
         </div>}
         {error && <div className="bg-red-100 p-2 rounded-md text-red-800 flex items-center gap-2 text-sm">
             {error}
-            <Button size="sm" color="danger" onClick={() => setError(null)}>Retry</Button>
+            <Button size="sm" color="danger" onPress={() => setError(null)}>Retry</Button>
         </div>}
         {!loading && !error && <>
             {profiles.length === 0 && <div className="text-gray-600 text-center">No profiles found</div>}

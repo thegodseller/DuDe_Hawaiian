@@ -59,7 +59,7 @@ export function ComposeBox({
             size="sm"
             isIconOnly
             disabled={disabled}
-            onClick={handleInput}
+            onPress={handleInput}
             className="bg-default-100"
         >
             <CornerDownLeftIcon size={16} />

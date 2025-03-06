@@ -61,7 +61,7 @@ function EditScenario({
             <Button
                 size="sm"
                 color="danger"
-                onClick={() => {
+                onPress={() => {
                     formRef.current?.requestSubmit();
                 }}
             >
@@ -187,7 +187,7 @@ function ViewScenario({
                         size="sm"
                         color="danger"
                         variant="flat"
-                        onClick={() => setIsDeleteModalOpen(true)}
+                        onPress={() => setIsDeleteModalOpen(true)}
                     >
                         Delete
                     </Button>
@@ -292,7 +292,7 @@ function NewScenario({
             <Button
                 size="sm"
                 color="danger"
-                onClick={() => {
+                onPress={() => {
                     formRef.current?.requestSubmit();
                 }}
             >
@@ -375,7 +375,7 @@ function ScenarioList({
         <h1 className="text-medium font-bold text-gray-800 pb-2 border-b border-gray-200">Scenarios</h1>
         <Button
             size="sm"
-            onClick={() => router.push(`/projects/${projectId}/test/scenarios/new`)}
+            onPress={() => router.push(`/projects/${projectId}/test/scenarios/new`)}
             className="self-end"
             startContent={<PlusIcon className="w-4 h-4" />}
         >
@@ -387,7 +387,7 @@ function ScenarioList({
         </div>}
         {error && <div className="bg-red-100 p-2 rounded-md text-red-800 flex items-center gap-2 text-sm">
             {error}
-            <Button size="sm" color="danger" onClick={() => setError(null)}>Retry</Button>
+            <Button size="sm" color="danger" onPress={() => setError(null)}>Retry</Button>
         </div>}
         {!loading && !error && <>
             {scenarios.length === 0 && <div className="text-gray-600 text-center">No scenarios found</div>}

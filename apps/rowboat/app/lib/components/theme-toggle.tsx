@@ -11,7 +11,7 @@ export function ThemeToggle() {
     <Button
       variant="light"
       isIconOnly
-      onClick={toggleTheme}
+      onPress={toggleTheme}
       aria-label="Toggle theme"
       className="text-foreground"
     >

@@ -786,7 +786,7 @@ export function WorkflowEditor({
                     <Button
                         variant="bordered"
                         size="sm"
-                        onClick={() => handleCloneVersion(state.present.workflow._id)}
+                        onPress={() => handleCloneVersion(state.present.workflow._id)}
                     >
                         Clone this version
                     </Button>

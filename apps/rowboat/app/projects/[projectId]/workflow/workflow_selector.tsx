@@ -105,7 +105,7 @@ export function WorkflowSelector({
             <Button
                 color="primary"
                 startContent={<PlusIcon size={16} />}
-                onClick={handleCreateNewVersion}
+                onPress={handleCreateNewVersion}
             >
                 Create new version
             </Button>

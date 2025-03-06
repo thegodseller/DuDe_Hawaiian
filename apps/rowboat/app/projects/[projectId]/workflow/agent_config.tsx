@@ -210,7 +210,7 @@ export function AgentConfig({
                                             size="sm"
                                             variant="light"
                                             className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-500"
-                                            onClick={() => {
+                                            onPress={() => {
                                                 const newSources = agent.ragDataSources?.filter((s) => s !== source);
                                                 handleUpdate({
                                                     ...agent,
@@ -409,7 +409,7 @@ function GenerateInstructionsModal({
                                 <Button
                                     size="sm"
                                     color="danger"
-                                    onClick={() => {
+                                    onPress={() => {
                                         setError(null);
                                         handleGenerate();
                                     }}

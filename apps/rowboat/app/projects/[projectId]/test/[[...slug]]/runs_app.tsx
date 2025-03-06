@@ -68,7 +68,7 @@ function NewRun({
             <Button
                 size="sm"
                 color="danger"
-                onClick={() => {
+                onPress={() => {
                     formRef.current?.requestSubmit();
                 }}
             >
@@ -86,7 +86,7 @@ function NewRun({
                     )}
                     <Button
                         size="sm"
-                        onClick={() => setIsWorkflowSelectorOpen(true)}
+                        onPress={() => setIsWorkflowSelectorOpen(true)}
                         type="button"
                     >
                         {selectedWorkflow ? "Change" : "Select"} Workflow
@@ -96,7 +96,7 @@ function NewRun({
             <div className="flex flex-col gap-2">
                 <Button
                     size="sm"
-                    onClick={() => setIsSimulationSelectorOpen(true)}
+                    onPress={() => setIsSimulationSelectorOpen(true)}
                     type="button"
                     className="self-start"
                 >
@@ -338,7 +338,7 @@ function RunList({
             <h1 className="text-xl font-semibold text-gray-800 dark:text-neutral-200">Test Runs</h1>
             <Button
                 size="sm"
-                onClick={() => router.push(`/projects/${projectId}/test/runs/new`)}
+                onPress={() => router.push(`/projects/${projectId}/test/runs/new`)}
                 startContent={<PlusIcon className="w-4 h-4" />}
             >
                 New Run
@@ -351,7 +351,7 @@ function RunList({
         </div>}
         {error && <div className="bg-red-100 p-2 rounded-md text-red-800 flex items-center gap-2 text-sm">
             {error}
-            <Button size="sm" color="danger" onClick={() => setError(null)}>Retry</Button>
+            <Button size="sm" color="danger" onPress={() => setError(null)}>Retry</Button>
         </div>}
         {!loading && !error && <>
             {runs.length === 0 && <div className="text-gray-600 text-center">No test runs found</div>}

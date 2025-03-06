@@ -86,7 +86,7 @@ function EditSimulation({
         </div>}
         {error && <div className="bg-red-100 p-2 rounded-md text-red-800 flex items-center gap-2 text-sm">
             {error}
-            <Button size="sm" color="danger" onClick={() => formRef.current?.requestSubmit()}>Retry</Button>
+            <Button size="sm" color="danger" onPress={() => formRef.current?.requestSubmit()}>Retry</Button>
         </div>}
         {!loading && simulation && (
             <form ref={formRef} action={handleSubmit} className="flex flex-col gap-2">
@@ -116,7 +116,7 @@ function EditSimulation({
                         )}
                         <Button
                             size="sm"
-                            onClick={() => setIsScenarioModalOpen(true)}
+                            onPress={() => setIsScenarioModalOpen(true)}
                             type="button"
                         >
                             {scenario ? "Change" : "Select"} Scenario
@@ -134,7 +134,7 @@ function EditSimulation({
                         {profile && <Button size="sm" variant="bordered" onClick={() => setProfile(null)}>Remove</Button>}
                         <Button
                             size="sm"
-                            onClick={() => setIsProfileModalOpen(true)}
+                            onPress={() => setIsProfileModalOpen(true)}
                             type="button"
                         >
                             {profile ? "Change" : "Select"} Profile
@@ -291,7 +291,7 @@ function ViewSimulation({
                         size="sm"
                         color="danger"
                         variant="flat"
-                        onClick={() => setIsDeleteModalOpen(true)}
+                        onPress={() => setIsDeleteModalOpen(true)}
                     >
                         Delete
                     </Button>
@@ -438,7 +438,7 @@ function NewSimulation({
                     )}
                     <Button
                         size="sm"
-                        onClick={() => setIsScenarioModalOpen(true)}
+                        onPress={() => setIsScenarioModalOpen(true)}
                         type="button"
                     >
                         {scenario ? "Change" : "Select"} Scenario
@@ -456,7 +456,7 @@ function NewSimulation({
                     {profile && <Button size="sm" variant="bordered" onClick={() => setProfile(null)}>Remove</Button>}
                     <Button
                         size="sm"
-                        onClick={() => setIsProfileModalOpen(true)}
+                        onPress={() => setIsProfileModalOpen(true)}
                         type="button"
                     >
                         {profile ? "Change" : "Select"} Profile
@@ -587,7 +587,7 @@ function SimulationList({
         <h1 className="text-medium font-bold text-gray-800 pb-2 border-b border-gray-200">Simulations</h1>
         <Button
             size="sm"
-            onClick={() => router.push(`/projects/${projectId}/test/simulations/new`)}
+            onPress={() => router.push(`/projects/${projectId}/test/simulations/new`)}
             className="self-end"
             startContent={<PlusIcon className="w-4 h-4" />}
         >
@@ -599,7 +599,7 @@ function SimulationList({
         </div>}
         {error && <div className="bg-red-100 p-2 rounded-md text-red-800 flex items-center gap-2 text-sm">
             {error}
-            <Button size="sm" color="danger" onClick={() => setError(null)}>Retry</Button>
+            <Button size="sm" color="danger" onPress={() => setError(null)}>Retry</Button>
         </div>}
         {!loading && !error && <>
             {simulationList.length === 0 && <div className="text-gray-600 text-center">No simulation found</div>}

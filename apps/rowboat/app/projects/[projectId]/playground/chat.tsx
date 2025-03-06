@@ -320,7 +320,7 @@ export function Chat({
                     <Button
                         size="sm"
                         color="danger"
-                        onClick={() => {
+                        onPress={() => {
                             setFetchResponseError(null);
                         }}
                     >
@@ -340,7 +340,7 @@ export function Chat({
                 <Button
                     size="sm"
                     color="danger"
-                    onClick={() => {
+                    onPress={() => {
                         setSimulationComplete(true);
                     }}
                 >

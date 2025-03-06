@@ -223,7 +223,7 @@ export function ApiKeysSection({
                     API keys are used to authenticate requests to the Rowboat API.
                 </p>
                 <Button
-                    onClick={handleCreateKey}
+                    onPress={handleCreateKey}
                     size="sm"
                     startContent={<PlusIcon className="w-4 h-4" />}
                     variant="flat"
@@ -359,7 +359,7 @@ export function SecretSection({
                             size="sm"
                             variant="flat"
                             color="warning"
-                            onClick={handleRotateSecret}
+                            onPress={handleRotateSecret}
                             isDisabled={loading}
                         >
                             Rotate

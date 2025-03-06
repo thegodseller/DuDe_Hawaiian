@@ -58,7 +58,7 @@ export function WorkflowSelector({ projectId, isOpen, onOpenChange, onSelect }: 
                             </div>}
                             {error && <div className="bg-red-100 p-2 rounded-md text-red-800 flex items-center gap-2 text-sm">
                                 {error}
-                                <Button size="sm" color="danger" onClick={() => fetchWorkflows(page)}>Retry</Button>
+                                <Button size="sm" color="danger" onPress={() => fetchWorkflows(page)}>Retry</Button>
                             </div>}
                             {!loading && !error && <>
                                 {workflows.length === 0 && <div className="text-gray-600 text-center">No workflows found</div>}

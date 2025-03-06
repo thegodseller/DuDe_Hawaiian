@@ -331,7 +331,7 @@ export function ToolConfig({
                     startContent={<svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                         <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 12h14m-7 7V5" />
                     </svg>}
-                    onClick={() => {
+                    onPress={() => {
                         const newParamName = `param${Object.keys(tool.parameters?.properties || {}).length + 1}`;
                         const newProperties = {
                             ...(tool.parameters?.properties || {}),

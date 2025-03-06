@@ -535,7 +535,7 @@ function MockToolCall({
                 >
                 </Textarea>
                 <Button
-                    onClick={handleSubmit}
+                    onPress={handleSubmit}
                     disabled={generatingResponse}
                     isLoading={generatingResponse}
                     size="sm"

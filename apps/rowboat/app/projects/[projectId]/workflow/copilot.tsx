@@ -91,7 +91,7 @@ function ComposeBox({
         endContent={<Button
             size="sm"
             isIconOnly
-            onClick={handleInput}
+            onPress={handleInput}
             className="bg-gray-100 dark:bg-gray-800"
         >
             <CornerDownLeftIcon size={16} />
@@ -464,7 +464,7 @@ function App({
                         <Button
                             size="sm"
                             color="danger"
-                            onClick={() => {
+                            onPress={() => {
                                 setResponseError(null);
                             }}
                         >

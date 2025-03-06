@@ -116,7 +116,7 @@ function PreviewModal({
                 {onApply && <Button
                     variant="solid"
                     color="primary"
-                    onClick={() => {
+                    onPress={() => {
                         onApply();
                         onClose();
                     }}
