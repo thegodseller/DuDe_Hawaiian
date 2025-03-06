@@ -76,6 +76,9 @@ export async function createProject(formData: FormData) {
         lastUpdatedAt: (new Date()).toISOString(),
     });
 
+    // add first api key
+    await createApiKey(projectId);
+
     redirect(`/projects/${projectId}/workflow`);
 }
 
