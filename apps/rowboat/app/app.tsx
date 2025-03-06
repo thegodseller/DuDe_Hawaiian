@@ -15,6 +15,11 @@ export function App() {
         router.push("/projects");
     }
 
+    // Add auto-redirect for non-authenticated users
+    if (!isLoading && !user && !error) {
+        router.push("/api/auth/login");
+    }
+
     return (
         <div className="min-h-screen w-full bg-[url('/landing-bg.jpg')] bg-cover bg-center flex flex-col items-center justify-between py-10">
             {/* Main content box */}
@@ -25,17 +30,8 @@ export function App() {
                         alt="RowBoat Logo"
                         height={40}
                     />
-                    {isLoading && <Spinner size="sm" />}
+                    {(isLoading || (!user && !error)) && <Spinner size="sm" />}
                     {error && <div className="text-red-500">{error.message}</div>}
-                    {!isLoading && !error && !user && (
-                        <a
-                            className="bg-white/80 hover:bg-white/90 transition-colors text-black px-6 py-3 rounded-md flex items-center gap-2"
-                            href="/api/auth/login"
-                        >
-                            <LogInIcon className="w-4 h-4" />
-                            Sign in or sign up
-                        </a>
-                    )}
                     {user && <div className="flex items-center gap-2">
                         <Spinner size="sm" />
                         <div className="text-sm text-gray-400">Welcome, {user.name}</div>
