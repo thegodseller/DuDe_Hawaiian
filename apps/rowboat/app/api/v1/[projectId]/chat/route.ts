@@ -210,7 +210,7 @@ export async function POST(
         } while (hasToolCalls);
 
         const responseBody: z.infer<typeof ApiResponse> = {
-            messages: currentMessages,
+            messages: currentMessages.slice(reqMessages.length),
             state: currentState,
         };
         return Response.json(responseBody);
