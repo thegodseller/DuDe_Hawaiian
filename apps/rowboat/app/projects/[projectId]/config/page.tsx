@@ -11,5 +11,8 @@ export default function Page({
         projectId: string;
     };
 }) {
-    return <App projectId={params.projectId} />;
+    return <App
+        projectId={params.projectId}
+        chatWidgetHost={process.env.CHAT_WIDGET_HOST || 'https://chat.rowboatlabs.com'}
+    />;
 }

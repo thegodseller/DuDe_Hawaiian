@@ -9,6 +9,7 @@ import { DataSourceDoc } from "./types/datasource_types";
 import { DataSource } from "./types/datasource_types";
 import { TestScenario, TestResult, TestRun, TestProfile, TestSimulation } from "./types/testing_types";
 import { z } from 'zod';
+import { apiV1 } from "rowboat-shared";
 
 const client = new MongoClient(process.env["MONGODB_CONNECTION_STRING"] || "mongodb://localhost:27017");
 
@@ -26,3 +27,5 @@ export const testProfilesCollection = db.collection<z.infer<typeof TestProfile>>
 export const testSimulationsCollection = db.collection<z.infer<typeof TestSimulation>>("test_simulations");
 export const testRunsCollection = db.collection<z.infer<typeof TestRun>>("test_runs");
 export const testResultsCollection = db.collection<z.infer<typeof TestResult>>("test_results");
+export const chatsCollection = db.collection<z.infer<typeof apiV1.Chat>>("chats");
+export const chatMessagesCollection = db.collection<z.infer<typeof apiV1.ChatMessage>>("chat_messages");

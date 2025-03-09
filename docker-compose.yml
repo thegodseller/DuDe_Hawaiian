@@ -26,6 +26,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - MAX_QUERIES_PER_MINUTE=${MAX_QUERIES_PER_MINUTE}
       - MAX_PROJECTS_PER_USER=${MAX_PROJECTS_PER_USER}
+      - CHAT_WIDGET_HOST=${CHAT_WIDGET_HOST}
     restart: unless-stopped
 
   agents:
@@ -76,6 +77,18 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    restart: unless-stopped
+  
+  chat_widget:
+    build:
+      context: ./apps/chat_widget
+      dockerfile: Dockerfile
+    ports:
+      - "3006:3006"
+    environment:
+      - PORT=3006
+      - CHAT_WIDGET_HOST=${CHAT_WIDGET_HOST}
+      - ROWBOAT_HOST=${ROWBOAT_HOST}
     restart: unless-stopped
 
   redis:

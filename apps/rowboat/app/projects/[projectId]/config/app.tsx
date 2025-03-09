@@ -427,8 +427,10 @@ export function WebhookUrlSection({
 
 export function ChatWidgetSection({
     projectId,
+    chatWidgetHost,
 }: {
     projectId: string;
+    chatWidgetHost: string;
 }) {
     const [loading, setLoading] = useState(false);
     const [chatClientId, setChatClientId] = useState<string | null>(null);
@@ -448,7 +450,7 @@ export function ChatWidgetSection({
     };
     (function(d) {
         var s = d.createElement('script');
-        s.src = 'https://chat.rowboatlabs.com/bootstrap.js';
+        s.src = '${chatWidgetHost}/api/bootstrap.js';
         s.async = true;
         d.getElementsByTagName('head')[0].appendChild(s);
     })(document);
@@ -567,8 +569,10 @@ export function DeleteProjectSection({
 
 export default function App({
     projectId,
+    chatWidgetHost,
 }: {
     projectId: string;
+    chatWidgetHost: string;
 }) {
     return <div className="flex flex-col h-full">
         <div className="shrink-0 flex justify-between items-center pb-4 border-b border-border">
@@ -582,7 +586,7 @@ export default function App({
                 <SecretSection projectId={projectId} />
                 <ApiKeysSection projectId={projectId} />
                 <WebhookUrlSection projectId={projectId} />
-                {/* <ChatWidgetSection projectId={projectId} /> */}
+                <ChatWidgetSection projectId={projectId} chatWidgetHost={chatWidgetHost} />
                 <DeleteProjectSection projectId={projectId} />
             </div>
         </div>

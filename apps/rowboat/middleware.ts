@@ -41,5 +41,5 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
 }
 
 export const config = {
-  matcher: ['/projects/:path*', '/api/v1/:path*'],
+  matcher: ['/projects/:path*', '/api/v1/:path*', '/api/widget/v1/:path*'],
 };

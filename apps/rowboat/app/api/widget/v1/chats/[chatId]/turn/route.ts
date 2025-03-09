@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { apiV1 } from "rowboat-shared";
-import { agentWorkflowsCollection, db, projectsCollection } from "../../../../../../lib/mongodb";
+import { agentWorkflowsCollection, projectsCollection, chatsCollection, chatMessagesCollection } from "../../../../../../lib/mongodb";
 import { z } from "zod";
 import { ObjectId, WithId } from "mongodb";
 import { authCheck } from "../../../utils";
@@ -8,11 +8,12 @@ import { convertFromAgenticAPIChatMessages } from "../../../../../../lib/types/a
 import { convertToAgenticAPIChatMessages } from "../../../../../../lib/types/agents_api_types";
 import { convertWorkflowToAgenticAPI } from "../../../../../../lib/types/agents_api_types";
 import { AgenticAPIChatRequest } from "../../../../../../lib/types/agents_api_types";
-import { callClientToolWebhook, getAgenticApiResponse } from "../../../../../../lib/utils";
+import { callClientToolWebhook, getAgenticApiResponse, runRAGToolCall, mockToolResponse } from "../../../../../../lib/utils";
 import { check_query_limit } from "../../../../../../lib/rate_limiting";
+import { PrefixLogger } from "../../../../../../lib/utils";
 
-const chatsCollection = db.collection<z.infer<typeof apiV1.Chat>>("chats");
-const chatMessagesCollection = db.collection<z.infer<typeof apiV1.ChatMessage>>("chatMessages");
+// Add max turns constant at the top with other constants
+const MAX_TURNS = 3;
 
 // get next turn / agent response
 export async function POST(
@@ -21,9 +22,13 @@ export async function POST(
 ): Promise<Response> {
     return await authCheck(req, async (session) => {
         const { chatId } = await params;
+        const logger = new PrefixLogger(`widget-chat:${chatId}`);
+        
+        logger.log(`Processing turn request for chat ${chatId}`);
 
         // check query limit
         if (!await check_query_limit(session.projectId)) {
+            logger.log(`Query limit exceeded for project ${session.projectId}`);
             return Response.json({ error: "Query limit exceeded" }, { status: 429 });
         }
 
@@ -32,10 +37,12 @@ export async function POST(
         try {
             body = await req.json();
         } catch (e) {
+            logger.log(`Invalid JSON in request body: ${e}`);
             return Response.json({ error: "Invalid JSON in request body" }, { status: 400 });
         }
         const result = apiV1.ApiChatTurnRequest.safeParse(body);
         if (!result.success) {
+            logger.log(`Invalid request body: ${result.error.message}`);
             return Response.json({ error: `Invalid request body: ${result.error.message}` }, { status: 400 });
         }
         const userMessage: z.infer<typeof apiV1.ChatMessage> = {
@@ -90,7 +97,15 @@ export async function POST(
         const unsavedMessages: z.infer<typeof apiV1.ChatMessage>[] = [userMessage];
         let resolvingToolCalls = true;
         let state: unknown = chat.agenticState ?? {last_agent_name: startAgent};
+        let turns = 0;  // Add turns counter
+
         while (resolvingToolCalls) {
+            if (turns >= MAX_TURNS) {
+                logger.log(`Max turns (${MAX_TURNS}) reached for chat ${chatId}`);
+                throw new Error("Max turns reached");
+            }
+            turns++;
+
             const request: z.infer<typeof AgenticAPIChatRequest> = {
                 messages: convertToAgenticAPIChatMessages([systemMessage, ...messages, ...unsavedMessages]),
                 state,
@@ -99,7 +114,7 @@ export async function POST(
                 prompts,
                 startAgent,
             };
-            console.log("turn: sending agentic request", JSON.stringify(request, null, 2));
+            logger.log(`Turn ${turns}: sending agentic request`);
             const response = await getAgenticApiResponse(request);
             state = response.state;
             if (response.messages.length === 0) {
@@ -116,18 +131,43 @@ export async function POST(
             // if the last messages is tool call, execute them
             const lastMessage = convertedMessages[convertedMessages.length - 1];
             if (lastMessage.role === 'assistant' && 'tool_calls' in lastMessage) {
-                // execute tool calls
-                console.log("Executing tool calls", lastMessage.tool_calls);
+                logger.log(`Processing ${lastMessage.tool_calls.length} tool calls`);
                 const toolCallResults = await Promise.all(lastMessage.tool_calls.map(async toolCall => {
-                    console.log('executing tool call', toolCall);
+                    logger.log(`Executing tool call: ${toolCall.function.name}`);
                     try {
+                        if (toolCall.function.name === "getArticleInfo") {
+                            logger.log(`Processing RAG tool call for agent ${lastMessage.agenticSender}`);
+                            const agent = workflow.agents.find(a => a.name === lastMessage.agenticSender);
+                            if (!agent || !agent.ragDataSources) {
+                                throw new Error("Agent not found or has no data sources");
+                            }
+                            return await runRAGToolCall(
+                                session.projectId,
+                                toolCall.function.arguments,
+                                agent.ragDataSources,
+                                agent.ragReturnType,
+                                agent.ragK
+                            );
+                        }
+
+                        const workflowTool = workflow.tools.find(t => t.name === toolCall.function.name);
+                        if (workflowTool?.mockTool) {
+                            logger.log(`Using mock response for tool: ${toolCall.function.name}`);
+                            return await mockToolResponse(
+                                toolCall.id,
+                                [...messages, ...unsavedMessages],
+                                workflowTool.mockInstructions || ''
+                            );
+                        }
+
+                        logger.log(`Calling webhook for tool: ${toolCall.function.name}`);
                         return await callClientToolWebhook(
                             toolCall,
                             [...messages, ...unsavedMessages],
                             session.projectId,
                         );
                     } catch (error) {
-                        console.error(`Error executing tool call ${toolCall.id}:`, error);
+                        logger.log(`Error executing tool call ${toolCall.id}: ${error}`);
                         return { error: "Tool execution failed" };
                     }
                 }));
@@ -151,11 +191,11 @@ export async function POST(
             }
         }
 
-        // save unsaved messages and update chat state
+        logger.log(`Saving ${unsavedMessages.length} new messages and updating chat state`);
         await chatMessagesCollection.insertMany(unsavedMessages);
         await chatsCollection.updateOne({ _id: new ObjectId(chatId) }, { $set: { agenticState: state } });
 
-        // send back the last message
+        logger.log(`Turn processing completed successfully`);
         const lastMessage = unsavedMessages[unsavedMessages.length - 1] as WithId<z.infer<typeof apiV1.ChatMessage>>;
         return Response.json({
             ...lastMessage,
