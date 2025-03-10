@@ -161,7 +161,7 @@ export function AgentConfig({
                     />
                 </FormSection>
 
-                {useRag && <FormSection label="RAG (beta)" showDivider>
+                {useRag && <FormSection label="RAG" showDivider>
                     <div className="flex flex-col gap-3">
                         <Dropdown>
                             <DropdownTrigger>
