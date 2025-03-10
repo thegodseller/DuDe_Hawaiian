@@ -10,8 +10,7 @@ import { ActionButton, StructuredPanel } from "../../../lib/components/structure
 import { FormSection } from "../../../lib/components/form-section";
 import { EditableField } from "../../../lib/components/editable-field";
 import { Label } from "../../../lib/components/label";
-import { PlusIcon, SparklesIcon, ChevronRight, ChevronDown } from "lucide-react";
-import { List } from "./config_list";
+import { PlusIcon, ChevronRight, ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { usePreviewModal } from "./preview-modal";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
@@ -33,6 +32,7 @@ export function AgentConfig({
     dataSources,
     handleUpdate,
     handleClose,
+    useRag,
 }: {
     projectId: string,
     workflow: z.infer<typeof Workflow>,
@@ -44,6 +44,7 @@ export function AgentConfig({
     dataSources: WithStringId<z.infer<typeof DataSource>>[],
     handleUpdate: (agent: z.infer<typeof WorkflowAgent>) => void,
     handleClose: () => void,
+    useRag: boolean,
 }) {
     const [isAdvancedConfigOpen, setIsAdvancedConfigOpen] = useState(false);
 
@@ -160,7 +161,7 @@ export function AgentConfig({
                     />
                 </FormSection>
 
-                <FormSection label="RAG (beta)" showDivider>
+                {useRag && <FormSection label="RAG (beta)" showDivider>
                     <div className="flex flex-col gap-3">
                         <Dropdown>
                             <DropdownTrigger>
@@ -272,7 +273,7 @@ export function AgentConfig({
                             </>
                         )}
                     </div>
-                </FormSection>
+                </FormSection>}
 
                 <FormSection label="Model" showDivider>
                     <CustomDropdown

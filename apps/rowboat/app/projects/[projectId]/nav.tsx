@@ -5,14 +5,14 @@ import { useEffect, useState } from "react";
 import clsx from "clsx";
 import Menu from "./menu";
 import { getProjectConfig } from "../../actions/project_actions";
-import { ChevronsLeftIcon, ChevronsRightIcon, FolderOpenIcon, PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
+import { FolderOpenIcon, PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
 
 export function Nav({
     projectId,
-    useDataSources,
+    useRag,
 }: {
     projectId: string;
-    useDataSources: boolean;
+    useRag: boolean;
 }) {
     const [collapsed, setCollapsed] = useState(false);
     const [projectName, setProjectName] = useState<string | null>(null);
@@ -56,6 +56,6 @@ export function Nav({
                 <FolderOpenIcon size={16} className="ml-1" />
             </Link>
         </Tooltip>}
-        <Menu projectId={projectId} collapsed={collapsed} useDataSources={useDataSources} />
+        <Menu projectId={projectId} collapsed={collapsed} useRag={useRag} />
     </div>;
 }

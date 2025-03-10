@@ -1,11 +1,8 @@
 import '../lib/loadenv';
-import FirecrawlApp from '@mendable/firecrawl-js';
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { z } from 'zod';
 import { dataSourceDocsCollection, dataSourcesCollection } from '../lib/mongodb';
-import { EmbeddingRecord } from "../lib/types/datasource_types";
-import { DataSourceDoc } from "../lib/types/datasource_types";
-import { DataSource } from "../lib/types/datasource_types";
+import { EmbeddingRecord, DataSourceDoc, DataSource } from "../lib/types/datasource_types";
 import { WithId } from 'mongodb';
 import { embedMany } from 'ai';
 import { embeddingModel } from '../lib/embedding';
@@ -14,6 +11,7 @@ import { PrefixLogger } from "../lib/utils";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { uploadsS3Client } from '../lib/uploads_s3_client';
+import crypto from 'crypto';
 
 const splitter = new RecursiveCharacterTextSplitter({
     separators: ['\n\n', '\n', '. ', '.', ''],
@@ -31,11 +29,11 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
 async function getFileContent(s3Key: string): Promise<Buffer> {
     const command = new GetObjectCommand({
-        Bucket: process.env.UPLOADS_S3_BUCKET,
+        Bucket: process.env.RAG_UPLOADS_S3_BUCKET,
         Key: s3Key,
     });
     const response = await uploadsS3Client.send(command);
-    const chunks: Buffer[] = [];
+    const chunks: Uint8Array[] = [];
     for await (const chunk of response.Body as any) {
         chunks.push(chunk);
     }

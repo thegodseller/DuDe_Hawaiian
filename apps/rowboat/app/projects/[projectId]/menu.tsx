@@ -44,11 +44,11 @@ function NavLink({ href, label, icon, collapsed, selected = false }: {
 export default function Menu({
     projectId,
     collapsed,
-    useDataSources,
+    useRag,
 }: {
     projectId: string;
     collapsed: boolean;
-    useDataSources: boolean;
+    useRag: boolean;
 }) {
     const pathname = usePathname();
 
@@ -68,7 +68,7 @@ export default function Menu({
                 icon={<PlayIcon size={16} />}
                 selected={pathname.startsWith(`/projects/${projectId}/test`)}
             />
-            {useDataSources && (
+            {useRag && (
                 <NavLink
                     href={`/projects/${projectId}/sources`}
                     label="Connect"

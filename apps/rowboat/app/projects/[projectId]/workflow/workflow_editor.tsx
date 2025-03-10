@@ -534,12 +534,14 @@ export function WorkflowEditor({
     publishedWorkflowId,
     handleShowSelector,
     handleCloneVersion,
+    useRag,
 }: {
     dataSources: WithStringId<z.infer<typeof DataSource>>[];
     workflow: WithStringId<z.infer<typeof Workflow>>;
     publishedWorkflowId: string | null;
     handleShowSelector: () => void;
     handleCloneVersion: (workflowId: string) => void;
+    useRag: boolean;
 }) {
     const [state, dispatch] = useReducer<Reducer<State, Action>>(reducer, {
         patches: [],
@@ -873,6 +875,7 @@ export function WorkflowEditor({
                     dataSources={dataSources}
                     handleUpdate={handleUpdateAgent.bind(null, state.present.selection.name)}
                     handleClose={handleUnselectAgent}
+                    useRag={useRag}
                 />}
                 {state.present.selection?.type === "tool" && <ToolConfig
                     key={state.present.selection.name}

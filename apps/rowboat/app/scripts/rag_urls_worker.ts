@@ -3,27 +3,15 @@ import FirecrawlApp from '@mendable/firecrawl-js';
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { z } from 'zod';
 import { dataSourceDocsCollection, dataSourcesCollection } from '../lib/mongodb';
-import { EmbeddingRecord } from "../lib/types/datasource_types";
-import { DataSourceDoc } from "../lib/types/datasource_types";
-import { DataSource } from "../lib/types/datasource_types";
+import { EmbeddingRecord, DataSourceDoc, DataSource } from "../lib/types/datasource_types";
 import { WithId } from 'mongodb';
 import { embedMany } from 'ai';
 import { embeddingModel } from '../lib/embedding';
 import { qdrantClient } from '../lib/qdrant';
 import { PrefixLogger } from "../lib/utils";
+import crypto from 'crypto';
 
 const firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
-
-const firecrawlHttpAuth = {
-    'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
-}
-
-type Webpage = {
-    title: string,
-    url: string,
-    markdown: string,
-    html: string,
-}
 
 const splitter = new RecursiveCharacterTextSplitter({
     separators: ['\n\n', '\n', '. ', '.', ''],
@@ -35,18 +23,6 @@ const second = 1000;
 const minute = 60 * second;
 const hour = 60 * minute;
 const day = 24 * hour;
-
-const firecrawlStatusPollInterval = 60 * second;
-
-/*
-const source: z.infer<typeof SourceSchema> = {
-  _id: new ObjectId(),
-  url: "https://www.example.com",
-  type: "web",
-  status: 'processing',
-  createdAt: new Date().toISOString(),
-};
-*/
 
 async function retryable<T>(fn: () => Promise<T>, maxAttempts: number = 3): Promise<T> {
     let attempts = 0;

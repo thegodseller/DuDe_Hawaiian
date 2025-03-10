@@ -53,6 +53,7 @@ export async function createProject(formData: FormData) {
         secret,
         nextWorkflowNumber: 1,
         testRunCounter: 0,
+        webhookUrl: 'http://tools_webhook:3005/tool_call',
     });
 
     // add first workflow version

@@ -569,9 +569,11 @@ export function DeleteProjectSection({
 
 export default function App({
     projectId,
+    useChatWidget,
     chatWidgetHost,
 }: {
     projectId: string;
+    useChatWidget: boolean;
     chatWidgetHost: string;
 }) {
     return <div className="flex flex-col h-full">
@@ -586,7 +588,7 @@ export default function App({
                 <SecretSection projectId={projectId} />
                 <ApiKeysSection projectId={projectId} />
                 <WebhookUrlSection projectId={projectId} />
-                <ChatWidgetSection projectId={projectId} chatWidgetHost={chatWidgetHost} />
+                {useChatWidget && <ChatWidgetSection projectId={projectId} chatWidgetHost={chatWidgetHost} />}
                 <DeleteProjectSection projectId={projectId} />
             </div>
         </div>

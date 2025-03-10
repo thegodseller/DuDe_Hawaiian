@@ -186,26 +186,28 @@ function ToolCall({
                     sender={sender}
                 />;
             }
-            if (matchingWorkflowTool && testProfile && !testProfile.mockTools) {
-                return <ClientToolCall
+            if (!matchingWorkflowTool || 
+                matchingWorkflowTool.mockTool || 
+                (testProfile && testProfile.mockTools)) {
+                return <MockToolCall
                     toolCall={toolCall}
                     result={result}
                     handleResult={handleResult}
                     projectId={projectId}
                     messages={messages}
                     sender={sender}
+                    testProfile={testProfile}
+                    workflowTool={matchingWorkflowTool}
+                    systemMessage={systemMessage}
                 />;
             }
-            return <MockToolCall
+            return <ClientToolCall
                 toolCall={toolCall}
                 result={result}
                 handleResult={handleResult}
                 projectId={projectId}
                 messages={messages}
                 sender={sender}
-                testProfile={testProfile}
-                workflowTool={matchingWorkflowTool}
-                systemMessage={systemMessage}
             />;
     }
 }

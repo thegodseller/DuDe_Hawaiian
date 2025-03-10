@@ -9,12 +9,13 @@ import { WorkflowSelector } from "./workflow_selector";
 import { Spinner } from "@heroui/react";
 import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow } from "../../../actions/workflow_actions";
 import { listDataSources } from "../../../actions/datasource_actions";
-import { TestProfile } from "@/app/lib/types/testing_types";
 
 export function App({
     projectId,
+    useRag,
 }: {
     projectId: string;
+    useRag: boolean;
 }) {
     const [selectorKey, setSelectorKey] = useState(0);
     const [workflow, setWorkflow] = useState<WithStringId<z.infer<typeof Workflow>> | null>(null);
@@ -106,6 +107,7 @@ export function App({
             publishedWorkflowId={publishedWorkflowId}
             handleShowSelector={handleShowSelector}
             handleCloneVersion={handleCloneVersion}
+            useRag={useRag}
         />}
     </>
 }

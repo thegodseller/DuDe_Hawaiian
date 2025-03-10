@@ -294,7 +294,7 @@ export async function getDownloadUrlForFile(
     }
 
     const command = new GetObjectCommand({
-        Bucket: process.env.UPLOADS_S3_BUCKET,
+        Bucket: process.env.RAG_UPLOADS_S3_BUCKET,
         Key: file.data.s3Key,
     });
 
@@ -328,7 +328,7 @@ export async function getUploadUrlsForFilesDataSource(
         const s3Key = `datasources/files/${projectIdPrefix}/${projectId}/${sourceId}/${fileId}/${file.name}`;
         // Generate presigned URL
         const command = new PutObjectCommand({
-            Bucket: process.env.UPLOADS_S3_BUCKET,
+            Bucket: process.env.RAG_UPLOADS_S3_BUCKET,
             Key: s3Key,
             ContentType: file.type,
         });
