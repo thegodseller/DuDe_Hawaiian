@@ -1,21 +1,13 @@
-import { promises as fs } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
 export const dynamic = 'force-dynamic'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Read the file once when the module loads
-const jsFileContents = fs.readFile(
-  path.join(__dirname, 'bootstrap.js'),
-  'utf-8'
-);
+// Fetch template once when module loads
+const templatePromise = fetch(process.env.CHAT_WIDGET_HOST + '/bootstrap.template.js')
+  .then(res => res.text());
 
 export async function GET() {
   try {
     // Reuse the cached content
-    const template = await jsFileContents;
+    const template = await templatePromise;
     
     // Replace placeholder values with actual URLs
     const contents = template
