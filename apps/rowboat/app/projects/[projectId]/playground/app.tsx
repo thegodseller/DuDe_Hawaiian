@@ -1,21 +1,14 @@
 'use client';
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner } from "@heroui/react";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { PlaygroundChat } from "../../../lib/types/types";
 import { Workflow } from "../../../lib/types/workflow_types";
 import { Chat } from "./chat";
-import { useSearchParams, useRouter } from "next/navigation";
 import { ActionButton, Pane } from "../workflow/pane";
 import { apiV1 } from "rowboat-shared";
-import { EllipsisVerticalIcon, MessageSquarePlusIcon, PlayIcon } from "lucide-react";
-import { getScenario } from "../../../actions/testing_actions";
-import clsx from "clsx";
-import { TestProfile, TestScenario } from "@/app/lib/types/testing_types";
+import { MessageSquarePlusIcon } from "lucide-react";
+import { TestProfile } from "@/app/lib/types/testing_types";
 import { WithStringId } from "@/app/lib/types/types";
-function SimulateLabel() {
-    return <span>Simulate<sup className="pl-1">beta</sup></span>;
-}
 
 const defaultSystemMessage = '';
 
