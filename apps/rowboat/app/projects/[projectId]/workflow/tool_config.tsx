@@ -1,13 +1,15 @@
 "use client";
-import { WorkflowTool } from "@/app/lib/types";
-import { Accordion, AccordionItem, Button, Checkbox, Select, SelectItem, Switch } from "@nextui-org/react";
+import { WorkflowTool } from "../../../lib/types/workflow_types";
+import { Accordion, AccordionItem, Button, Checkbox, Select, SelectItem, Switch, RadioGroup, Radio } from "@heroui/react";
 import { z } from "zod";
-import { ActionButton, Pane } from "./pane";
-import { EditableField } from "@/app/lib/components/editable-field";
-import { Divider } from "@nextui-org/react";
-import { Label } from "@/app/lib/components/label";
+import { ActionButton, StructuredPanel } from "../../../lib/components/structured-panel";
+import { EditableField } from "../../../lib/components/editable-field";
+import { Divider } from "@heroui/react";
+import { Label } from "../../../lib/components/label";
 import { TrashIcon, XIcon } from "lucide-react";
 import { useState } from "react";
+import { Link as NextUILink } from "@heroui/react";
+import Link from "next/link";
 
 export function ParameterConfig({
     param,
@@ -29,7 +31,7 @@ export function ParameterConfig({
     handleDelete: (name: string) => void,
     handleRename: (oldName: string, newName: string) => void
 }) {
-    return <Pane
+    return <StructuredPanel
         title={param.name}
         actions={[
             <ActionButton
@@ -69,7 +71,7 @@ export function ParameterConfig({
                     }}
                 >
                     {['string', 'number', 'boolean', 'array', 'object'].map(type => (
-                        <SelectItem key={type} value={type}>
+                        <SelectItem key={type}>
                             {type}
                         </SelectItem>
                     ))}
@@ -104,7 +106,7 @@ export function ParameterConfig({
                 Required
             </Checkbox>
         </div>
-    </Pane>;
+    </StructuredPanel>;
 }
 
 export function ToolConfig({
@@ -181,13 +183,11 @@ export function ToolConfig({
     }
 
     return (
-        <Pane title={tool.name} actions={[
+        <StructuredPanel title={tool.name} actions={[
             <ActionButton
                 key="close"
                 onClick={handleClose}
-                icon={<svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M6 18 17.94 6M18 18 6.06 6" />
-                </svg>}
+                icon={<XIcon className="w-4 h-4" />}
             >
                 Close
             </ActionButton>
@@ -225,28 +225,83 @@ export function ToolConfig({
 
                 <Divider />
 
-                <Checkbox
-                    key="mockInPlayground"
-                    size="sm"
-                    isSelected={tool.mockInPlayground ?? false}
-                    onValueChange={(value) => handleUpdate({
-                        ...tool,
-                        mockInPlayground: value
-                    })}
-                >
-                    Mock tool in Playground
-                </Checkbox>
-                {tool.mockInPlayground && <Checkbox
-                    key="autoSubmitMockedResponse"
-                    size="sm"
-                    isSelected={tool.autoSubmitMockedResponse ?? false}
-                    onValueChange={(value) => handleUpdate({
-                        ...tool,
-                        autoSubmitMockedResponse: value
-                    })}
-                >
-                    Auto-submit mocked response
-                </Checkbox>}
+                <Label label="TOOL RESPONSES" />
+
+                <div className="ml-4 flex flex-col gap-2">
+                    <RadioGroup
+                        defaultValue="mock"
+                        value={tool.mockTool ? "mock" : "api"}
+                        onValueChange={(value) => handleUpdate({
+                            ...tool,
+                            mockTool: value === "mock",
+                            autoSubmitMockedResponse: value === "mock" ? true : undefined
+                        })}
+                        orientation="horizontal"
+                        classNames={{
+                            wrapper: "gap-8",
+                            label: "text-sm"
+                        }}
+                    >
+                        <Radio 
+                            value="mock" 
+                            size="sm"
+                            classNames={{
+                                base: "max-w-[50%]",
+                                label: "text-sm font-normal"
+                            }}
+                        >
+                            Mock tool responses
+                        </Radio>
+                        <Radio 
+                            value="api"
+                            size="sm"
+                            classNames={{
+                                base: "max-w-[50%]",
+                                label: "text-sm font-normal"
+                            }}
+                        >
+                            Connect tool to your API
+                        </Radio>
+                    </RadioGroup>
+
+                    {tool.mockTool && <>
+                        <div className="ml-0">
+                            <Checkbox
+                                key="autoSubmitMockedResponse"
+                                size="sm"
+                                classNames={{
+                                    label: "text-xs font-normal"
+                                }}
+                                isSelected={tool.autoSubmitMockedResponse ?? true}
+                                onValueChange={(value) => handleUpdate({
+                                    ...tool,
+                                    autoSubmitMockedResponse: value
+                                })}
+                            >
+                                Auto-submit mocked response in playground
+                            </Checkbox>
+                        </div>
+
+                        <Divider />
+
+                        <EditableField
+                            label="Mock instructions"
+                            value={tool.mockInstructions || ''}
+                            onChange={(value) => handleUpdate({
+                                ...tool,
+                                mockInstructions: value
+                            })}
+                            placeholder="Enter mock instructions..."
+                            multiline
+                        />
+                    </>}
+
+                    {!tool.mockTool && (
+                        <div className="ml-0 text-danger text-xs">
+                            Please configure your webhook in the <strong>Integrate</strong> page if you haven&apos;t already.
+                        </div>
+                    )}
+                </div>
 
                 <Divider />
 
@@ -276,7 +331,7 @@ export function ToolConfig({
                     startContent={<svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                         <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 12h14m-7 7V5" />
                     </svg>}
-                    onClick={() => {
+                    onPress={() => {
                         const newParamName = `param${Object.keys(tool.parameters?.properties || {}).length + 1}`;
                         const newProperties = {
                             ...(tool.parameters?.properties || {}),
@@ -299,6 +354,6 @@ export function ToolConfig({
                     Add Parameter
                 </Button>
             </div>
-        </Pane>
+        </StructuredPanel>
     );
 }

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jwtVerify } from "jose";
-import { projectsCollection } from "@/app/lib/mongodb";
+import { projectsCollection } from "../../../lib/mongodb";
 
 export const Session = z.object({
     userId: z.string(),

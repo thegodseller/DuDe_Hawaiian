@@ -1,4 +1,4 @@
-import { Spinner } from "@nextui-org/react";
+import { Spinner } from "@heroui/react";
 
 export default function Loading() {
   // Stack uses React Suspense, which will render this page while user data is being fetched.

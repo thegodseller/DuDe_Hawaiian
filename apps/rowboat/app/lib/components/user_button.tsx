@@ -1,6 +1,6 @@
 'use client';
 import { useUser } from '@auth0/nextjs-auth0/client';
-import { Avatar, Dropdown, DropdownItem, DropdownSection, DropdownTrigger, DropdownMenu } from '@nextui-org/react';
+import { Avatar, Dropdown, DropdownItem, DropdownSection, DropdownTrigger, DropdownMenu } from "@heroui/react";
 import { useRouter } from 'next/navigation';
 
 export function UserButton() {

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { apiKeysCollection, projectsCollection } from "@/app/lib/mongodb";
+import { apiKeysCollection, projectsCollection } from "../../lib/mongodb";
 
 export async function authCheck(projectId: string, req: NextRequest, handler: () => Promise<Response>): Promise<Response> {
     const authHeader = req.headers.get('Authorization');

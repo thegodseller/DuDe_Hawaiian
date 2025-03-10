@@ -1,16 +1,21 @@
 "use client";
-import { DataSource, Workflow, WithStringId } from "@/app/lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { Workflow } from "../../../lib/types/workflow_types";
+import { DataSource } from "../../../lib/types/datasource_types";
 import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { WorkflowEditor } from "./workflow_editor";
 import { WorkflowSelector } from "./workflow_selector";
-import { Spinner } from "@nextui-org/react";
-import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow, listSources } from "@/app/actions";
+import { Spinner } from "@heroui/react";
+import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow } from "../../../actions/workflow_actions";
+import { listDataSources } from "../../../actions/datasource_actions";
 
 export function App({
     projectId,
+    useRag,
 }: {
     projectId: string;
+    useRag: boolean;
 }) {
     const [selectorKey, setSelectorKey] = useState(0);
     const [workflow, setWorkflow] = useState<WithStringId<z.infer<typeof Workflow>> | null>(null);
@@ -23,7 +28,7 @@ export function App({
         setLoading(true);
         const workflow = await fetchWorkflow(projectId, workflowId);
         const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
-        const dataSources = await listSources(projectId);
+        const dataSources = await listDataSources(projectId);
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflowId);
         setWorkflow(workflow);
@@ -43,7 +48,7 @@ export function App({
         setLoading(true);
         const workflow = await createWorkflow(projectId);
         const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
-        const dataSources = await listSources(projectId);
+        const dataSources = await listDataSources(projectId);
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflow._id);
         setWorkflow(workflow);
@@ -56,7 +61,7 @@ export function App({
         setLoading(true);
         const workflow = await cloneWorkflow(projectId, workflowId);
         const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
-        const dataSources = await listSources(projectId);
+        const dataSources = await listDataSources(projectId);
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflow._id);
         setWorkflow(workflow);
@@ -102,6 +107,7 @@ export function App({
             publishedWorkflowId={publishedWorkflowId}
             handleShowSelector={handleShowSelector}
             handleCloneVersion={handleCloneVersion}
+            useRag={useRag}
         />}
     </>
 }

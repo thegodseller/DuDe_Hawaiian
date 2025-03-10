@@ -1,16 +1,17 @@
 'use client';
 
 import { Metadata } from "next";
-import { Spinner, Textarea, Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider } from "@nextui-org/react";
+import { Spinner, Textarea, Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider } from "@heroui/react";
 import { ReactNode, useEffect, useState, useCallback } from "react";
-import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret } from "@/app/actions";
-import { CopyButton } from "@/app/lib/components/copy-button";
-import { EditableField } from "@/app/lib/components/editable-field";
+import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret } from "../../../actions/project_actions";
+import { CopyButton } from "../../../lib/components/copy-button";
+import { EditableField } from "../../../lib/components/editable-field";
 import { EyeIcon, EyeOffIcon, CopyIcon, MoreVerticalIcon, PlusIcon, EllipsisVerticalIcon } from "lucide-react";
-import { WithStringId, ApiKey } from "@/app/lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { ApiKey } from "../../../lib/types/project_types";
 import { z } from "zod";
 import { RelativeTime } from "@primer/react";
-import { Label } from "@/app/lib/components/label";
+import { Label } from "../../../lib/components/label";
 
 export const metadata: Metadata = {
     title: "Project config",
@@ -23,8 +24,8 @@ export function Section({
     title: string;
     children: React.ReactNode;
 }) {
-    return <div className="w-full flex flex-col gap-4 border border-gray-300 p-4 rounded-md">
-        <h2 className="font-semibold pb-2 border-b border-gray-200">{title}</h2>
+    return <div className="w-full flex flex-col gap-4 border border-border p-4 rounded-md">
+        <h2 className="font-semibold pb-2 border-b border-border">{title}</h2>
         {children}
     </div>;
 }
@@ -222,7 +223,7 @@ export function ApiKeysSection({
                     API keys are used to authenticate requests to the Rowboat API.
                 </p>
                 <Button
-                    onClick={handleCreateKey}
+                    onPress={handleCreateKey}
                     size="sm"
                     startContent={<PlusIcon className="w-4 h-4" />}
                     variant="flat"
@@ -234,8 +235,8 @@ export function ApiKeysSection({
 
             <Divider />
             {loading && <Spinner size="sm" />}
-            {!loading && <div className="border rounded-lg text-sm">
-                <div className="flex items-center border-b p-4">
+            {!loading && <div className="border border-border rounded-lg text-sm">
+                <div className="flex items-center border-b border-border p-4">
                     <div className="flex-[3] font-normal">API Key</div>
                     <div className="flex-1 font-normal">Created</div>
                     <div className="flex-1 font-normal">Last Used</div>
@@ -252,7 +253,7 @@ export function ApiKeysSection({
                 </div>}
                 <div className="flex flex-col">
                     {keys.map((key) => (
-                        <div key={key._id} className="flex items-start border-b last:border-b-0 p-4">
+                        <div key={key._id} className="flex items-start border-b border-border last:border-b-0 p-4">
                             <div className="flex-[3] p-2">
                                 <ApiKeyDisplay apiKey={key.key} />
                             </div>
@@ -271,8 +272,9 @@ export function ApiKeysSection({
                                     </DropdownTrigger>
                                     <DropdownMenu>
                                         <DropdownItem
+                                            key='delete'
                                             className="text-destructive"
-                                            onClick={() => handleDeleteKey(key._id)}
+                                            onPress={() => handleDeleteKey(key._id)}
                                         >
                                             Delete
                                         </DropdownItem>
@@ -357,7 +359,7 @@ export function SecretSection({
                             size="sm"
                             variant="flat"
                             color="warning"
-                            onClick={handleRotateSecret}
+                            onPress={handleRotateSecret}
                             isDisabled={loading}
                         >
                             Rotate
@@ -425,8 +427,10 @@ export function WebhookUrlSection({
 
 export function ChatWidgetSection({
     projectId,
+    chatWidgetHost,
 }: {
     projectId: string;
+    chatWidgetHost: string;
 }) {
     const [loading, setLoading] = useState(false);
     const [chatClientId, setChatClientId] = useState<string | null>(null);
@@ -446,7 +450,7 @@ export function ChatWidgetSection({
     };
     (function(d) {
         var s = d.createElement('script');
-        s.src = 'https://chat.rowboatlabs.com/bootstrap.js';
+        s.src = '${chatWidgetHost}/api/bootstrap.js';
         s.async = true;
         d.getElementsByTagName('head')[0].appendChild(s);
     })(document);
@@ -565,11 +569,15 @@ export function DeleteProjectSection({
 
 export default function App({
     projectId,
+    useChatWidget,
+    chatWidgetHost,
 }: {
     projectId: string;
+    useChatWidget: boolean;
+    chatWidgetHost: string;
 }) {
     return <div className="flex flex-col h-full">
-        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-b-gray-100">
+        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-border">
             <div className="flex flex-col">
                 <h1 className="text-lg">Project config</h1>
             </div>
@@ -580,7 +588,7 @@ export default function App({
                 <SecretSection projectId={projectId} />
                 <ApiKeysSection projectId={projectId} />
                 <WebhookUrlSection projectId={projectId} />
-                {/* <ChatWidgetSection projectId={projectId} /> */}
+                {useChatWidget && <ChatWidgetSection projectId={projectId} chatWidgetHost={chatWidgetHost} />}
                 <DeleteProjectSection projectId={projectId} />
             </div>
         </div>

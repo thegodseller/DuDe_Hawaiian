@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Spinner, Textarea } from "@nextui-org/react";
+import { Button, Spinner, Textarea } from "@heroui/react";
 import { CornerDownLeftIcon } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { apiV1 } from "rowboat-shared";
@@ -59,8 +59,8 @@ export function ComposeBox({
             size="sm"
             isIconOnly
             disabled={disabled}
-            onClick={handleInput}
-            className="bg-gray-100"
+            onPress={handleInput}
+            className="bg-default-100"
         >
             <CornerDownLeftIcon size={16} />
         </Button>}

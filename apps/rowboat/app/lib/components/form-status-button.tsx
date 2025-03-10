@@ -1,7 +1,7 @@
 'use client';
 
 import { useFormStatus } from "react-dom";
-import { Button, ButtonProps } from "@nextui-org/react";
+import { Button, ButtonProps } from "@heroui/react";
 
 export function FormStatusButton({
     props

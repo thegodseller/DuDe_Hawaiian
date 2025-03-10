@@ -1,3 +1,4 @@
+@import './styles/quill-mentions.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -75,4 +76,25 @@ html, body {
   body {
     @apply bg-background text-foreground;
   }
+
+  .card-shadow {
+    @apply shadow-sm dark:shadow-none dark:border-border;
+  }
+
+  .hover-effect {
+    @apply hover:bg-accent/10 dark:hover:bg-accent/20 transition-colors;
+  }
+
+  .border-subtle {
+    @apply border-border dark:border-border/50;
+  }
+}
+
+* {
+  -webkit-transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out !important;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out !important;
+}
+
+* {
+  @apply transition-colors duration-200;
 }

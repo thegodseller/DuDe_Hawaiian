@@ -1,13 +1,14 @@
 'use client';
 
-import { Button, Link, Spinner } from "@nextui-org/react";
+import { Button, Link, Spinner } from "@heroui/react";
 import { ToggleSource } from "./toggle-source";
 import { SelfUpdatingSourceStatus } from "./self-updating-source-status";
-import { DataSourceIcon } from "@/app/lib/components/datasource-icon";
+import { DataSourceIcon } from "../../../lib/components/datasource-icon";
 import { useEffect, useState } from "react";
-import { DataSource, WithStringId } from "@/app/lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { DataSource } from "../../../lib/types/datasource_types";
 import { z } from "zod";
-import { listSources } from "@/app/actions";
+import { listDataSources } from "../../../actions/datasource_actions";
 
 export function SourcesList({
     projectId,
@@ -22,7 +23,7 @@ export function SourcesList({
 
         async function fetchSources() {
             setLoading(true);
-            const sources = await listSources(projectId);
+            const sources = await listDataSources(projectId);
             if (!ignore) {
                 setSources(sources);
                 setLoading(false);
@@ -36,7 +37,7 @@ export function SourcesList({
     }, [projectId]);
 
     return <div className="flex flex-col h-full">
-        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-b-gray-100">
+        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-border">
             <div className="flex flex-col">
                 <h1 className="text-lg">Data sources <sup>(beta)</sup></h1>
             </div>
@@ -81,20 +82,16 @@ export function SourcesList({
                                     </Link>
                                 </td>
                                 <td className="py-4">
-                                    {source.data.type == 'crawl' && <div className="flex gap-1 items-center">
-                                        <DataSourceIcon type="crawl" />
-                                        <div>Crawl URLs</div>
-                                    </div>}
                                     {source.data.type == 'urls' && <div className="flex gap-1 items-center">
                                         <DataSourceIcon type="urls" />
-                                        <div>Specify URLs</div>
+                                        <div>List URLs</div>
                                     </div>}
                                 </td>
                                 <td className="py-4">
                                     <SelfUpdatingSourceStatus sourceId={source._id} projectId={projectId} initialStatus={source.status} compact={true} />
                                 </td>
                                 <td className="py-4 text-right">
-                                    <ToggleSource projectId={projectId} sourceId={source._id} active={source.active} compact={true} />
+                                    <ToggleSource projectId={projectId} sourceId={source._id} active={source.active} compact={true} className="bg-default-100" />
                                 </td>
                             </tr>;
                         })}

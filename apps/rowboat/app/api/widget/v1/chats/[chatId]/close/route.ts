@@ -1,11 +1,7 @@
 import { NextRequest } from "next/server";
-import { apiV1 } from "rowboat-shared";
-import { db } from "@/app/lib/mongodb";
-import { z } from "zod";
+import { chatsCollection } from "../../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { authCheck } from "../../../utils";
-
-const chatsCollection = db.collection<z.infer<typeof apiV1.Chat>>("chats");
 
 export async function POST(
     request: NextRequest,

@@ -1,21 +1,25 @@
 'use client';
-import { Button, Spinner, Textarea } from "@nextui-org/react";
+import { Button, Spinner, Textarea } from "@heroui/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import z from "zod";
-import { GetInformationToolResult, WebpageCrawlResponse, Workflow, WorkflowTool } from "@/app/lib/types";
-import { executeClientTool, getInformationTool, scrapeWebpage, suggestToolResponse } from "@/app/actions";
-import MarkdownContent from "@/app/lib/components/markdown-content";
+import { Workflow } from "../../../lib/types/workflow_types";
+import { WorkflowTool } from "../../../lib/types/workflow_types";
+import { WebpageCrawlResponse } from "../../../lib/types/tool_types";
+import { GetInformationToolResult } from "../../../lib/types/tool_types";
+import { executeClientTool, getInformationTool, scrapeWebpage, suggestToolResponse } from "../../../actions/actions";
+import MarkdownContent from "../../../lib/components/markdown-content";
 import Link from "next/link";
 import { apiV1 } from "rowboat-shared";
-import { EditableField } from "@/app/lib/components/editable-field";
+import { EditableField } from "../../../lib/components/editable-field";
 import { MessageSquareIcon, EllipsisIcon, CircleCheckIcon, ChevronsDownIcon, ChevronsRightIcon, ChevronRightIcon, ChevronDownIcon, ExternalLinkIcon, XIcon } from "lucide-react";
+import { TestProfile } from "@/app/lib/types/testing_types";
 
 function UserMessage({ content }: { content: string }) {
     return <div className="self-end ml-[30%] flex flex-col">
-        <div className="text-right text-gray-500 text-xs mr-3">
+        <div className="text-right text-gray-500 dark:text-gray-400 text-xs mr-3">
             User
         </div>
-        <div className="bg-gray-100 px-3 py-1 rounded-lg rounded-br-none text-sm">
+        <div className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg rounded-br-none text-sm text-gray-900 dark:text-gray-100">
             <MarkdownContent content={content} />
         </div>
     </div>;
@@ -24,23 +28,22 @@ function UserMessage({ content }: { content: string }) {
 function InternalAssistantMessage({ content, sender, latency }: { content: string, sender: string | null | undefined, latency: number }) {
     const [expanded, setExpanded] = useState(false);
 
-    // show a message icon with a + symbol to expand and show the content
     return <div className="self-start mr-[30%]">
-        {!expanded && <button className="flex items-center text-gray-400 hover:text-gray-600 gap-1 group" onClick={() => setExpanded(true)}>
+        {!expanded && <button className="flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 gap-1 group" onClick={() => setExpanded(true)}>
             <MessageSquareIcon size={16} />
             <EllipsisIcon size={16} />
             <span className="hidden group-hover:block text-xs">Show debug message</span>
         </button>}
         {expanded && <div className="flex flex-col">
             <div className="flex gap-2 justify-between items-center">
-                <div className="text-gray-500 text-xs pl-3">
+                <div className="text-gray-500 dark:text-gray-400 text-xs pl-3">
                     {sender ?? 'Assistant'}
                 </div>
-                <button className="flex items-center gap-1 text-gray-400 hover:text-gray-600" onClick={() => setExpanded(false)}>
+                <button className="flex items-center gap-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" onClick={() => setExpanded(false)}>
                     <XIcon size={16} />
                 </button>
             </div>
-            <div className="border border-gray-300 border-dashed px-3 py-1 rounded-lg rounded-bl-none">
+            <div className="border border-gray-300 dark:border-gray-700 border-dashed px-3 py-1 rounded-lg rounded-bl-none text-gray-900 dark:text-gray-100">
                 <pre className="text-sm whitespace-pre-wrap">{content}</pre>
             </div>
         </div>}
@@ -50,22 +53,22 @@ function InternalAssistantMessage({ content, sender, latency }: { content: strin
 function AssistantMessage({ content, sender, latency }: { content: string, sender: string | null | undefined, latency: number }) {
     return <div className="self-start mr-[30%] flex flex-col">
         <div className="flex gap-2 justify-between items-center">
-            <div className="text-gray-500 text-xs pl-3">
+            <div className="text-gray-500 dark:text-gray-400 text-xs pl-3">
                 {sender ?? 'Assistant'}
             </div>
-            <div className="text-gray-400 text-xs pr-3">
+            <div className="text-gray-400 dark:text-gray-500 text-xs pr-3">
                 {Math.round(latency / 1000)}s
             </div>
         </div>
-        <div className="bg-gray-100 px-3 py-1 rounded-lg rounded-bl-none text-sm">
+        <div className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg rounded-bl-none text-sm text-gray-900 dark:text-gray-100">
             <MarkdownContent content={content} />
         </div>
     </div>;
 }
 
 function AssistantMessageLoading() {
-    return <div className="self-start mr-[30%] flex flex-col text-gray-500 items-start">
-        <div className="text-gray-500 text-xs ml-3">
+    return <div className="self-start mr-[30%] flex flex-col text-gray-500 dark:text-gray-400 items-start">
+        <div className="text-gray-500 dark:text-gray-400 text-xs ml-3">
             Assistant
         </div>
         <Spinner size="sm" className="mt-2 ml-3" />
@@ -74,10 +77,10 @@ function AssistantMessageLoading() {
 
 function UserMessageLoading() {
     return <div className="self-end ml-[30%] flex flex-col">
-        <div className="text-right text-gray-500 text-sm mr-3">
+        <div className="text-right text-gray-500 dark:text-gray-400 text-sm mr-3">
             User
         </div>
-        <div className="bg-gray-100 p-3 rounded-lg rounded-br-none animate-pulse w-20 text-gray-800">
+        <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-br-none animate-pulse w-20 text-gray-800 dark:text-gray-200">
             <Spinner size="sm" />
         </div>
     </div>;
@@ -91,6 +94,8 @@ function ToolCalls({
     messages,
     sender,
     workflow,
+    testProfile=null,
+    systemMessage,
 }: {
     toolCalls: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'];
     results: Record<string, z.infer<typeof apiV1.ToolMessage>>;
@@ -99,6 +104,8 @@ function ToolCalls({
     messages: z.infer<typeof apiV1.ChatMessage>[];
     sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
+    testProfile: z.infer<typeof TestProfile> | null;
+    systemMessage: string | undefined;
 }) {
     const resultsMap: Record<string, z.infer<typeof apiV1.ToolMessage>> = {};
 
@@ -121,6 +128,8 @@ function ToolCalls({
                 messages={messages}
                 sender={sender}
                 workflow={workflow}
+                testProfile={testProfile}
+                systemMessage={systemMessage}
             />
         })}
     </div>;
@@ -134,6 +143,8 @@ function ToolCall({
     messages,
     sender,
     workflow,
+    testProfile=null,
+    systemMessage,
 }: {
     toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
     result: z.infer<typeof apiV1.ToolMessage> | undefined;
@@ -142,6 +153,8 @@ function ToolCall({
     messages: z.infer<typeof apiV1.ChatMessage>[];
     sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
+    testProfile: z.infer<typeof TestProfile> | null;
+    systemMessage: string | undefined;
 }) {
     let matchingWorkflowTool: z.infer<typeof WorkflowTool> | undefined;
     for (const tool of workflow.tools) {
@@ -152,15 +165,6 @@ function ToolCall({
     }
 
     switch (toolCall.function.name) {
-        case 'retrieve_url_info':
-            return <RetrieveUrlInfoToolCall
-                toolCall={toolCall}
-                result={result}
-                handleResult={handleResult}
-                projectId={projectId}
-                messages={messages}
-                sender={sender}
-            />;
         case 'getArticleInfo':
             return <GetInformationToolCall
                 toolCall={toolCall}
@@ -182,24 +186,28 @@ function ToolCall({
                     sender={sender}
                 />;
             }
-            if (matchingWorkflowTool && !matchingWorkflowTool.mockInPlayground) {
-                return <ClientToolCall
+            if (!matchingWorkflowTool || 
+                matchingWorkflowTool.mockTool || 
+                (testProfile && testProfile.mockTools)) {
+                return <MockToolCall
                     toolCall={toolCall}
                     result={result}
                     handleResult={handleResult}
                     projectId={projectId}
                     messages={messages}
                     sender={sender}
+                    testProfile={testProfile}
+                    workflowTool={matchingWorkflowTool}
+                    systemMessage={systemMessage}
                 />;
             }
-            return <MockToolCall
+            return <ClientToolCall
                 toolCall={toolCall}
                 result={result}
                 handleResult={handleResult}
                 projectId={projectId}
                 messages={messages}
                 sender={sender}
-                autoSubmit={matchingWorkflowTool?.autoSubmitMockedResponse}
             />;
     }
 }
@@ -216,7 +224,7 @@ function ToolCallHeader({
             {!result && <Spinner size="sm" />}
             {result && <CircleCheckIcon size={16} />}
             <div className='font-semibold text-sm'>
-                Function Call: <span className='bg-gray-100 px-2 py-1 rounded-lg font-medium'>{toolCall.function.name}</span>
+                Function Call: <code className='bg-gray-100 dark:bg-neutral-800 px-2 py-0.5 rounded font-mono'>{toolCall.function.name}</code>
             </div>
         </div>
     </div>;
@@ -293,94 +301,16 @@ function GetInformationToolCall({
                     {typedResult && typedResult.results.length === 0 && <div>No matches found.</div>}
                     {typedResult && typedResult.results.length > 0 && <ul className="list-disc ml-6">
                         {typedResult.results.map((result, index) => {
-                            return <li key={'' + index}>
-                                <Link target="_blank" className="underline" href={result.url}>
-                                    {result.url}
-                                </Link>
+                            return <li key={'' + index} className="mb-2">
+                                <ExpandableContent
+                                    label={result.title || result.name}
+                                    content={result.content}
+                                    expanded={false}
+                                />
                             </li>
                         })}
-                    </ul>
-                    }
+                    </ul>}
                 </div>}
-            </div>
-        </div>
-    </div>;
-}
-
-function RetrieveUrlInfoToolCall({
-    toolCall,
-    result: availableResult,
-    handleResult,
-    projectId,
-    messages,
-    sender,
-}: {
-    toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
-    result: z.infer<typeof apiV1.ToolMessage> | undefined;
-    handleResult: (result: z.infer<typeof apiV1.ToolMessage>) => void;
-    projectId: string;
-    messages: z.infer<typeof apiV1.ChatMessage>[];
-    sender: string | null | undefined;
-}) {
-    const [result, setResult] = useState<z.infer<typeof apiV1.ToolMessage> | undefined>(availableResult);
-    const args = JSON.parse(toolCall.function.arguments) as { url: string };
-    let typedResult: z.infer<typeof WebpageCrawlResponse> | undefined;
-    if (result) {
-        typedResult = JSON.parse(result.content) as z.infer<typeof WebpageCrawlResponse>;
-    }
-
-    useEffect(() => {
-        if (result) {
-            return;
-        }
-        let ignore = false;
-
-        function process() {
-            // parse args
-
-            scrapeWebpage(args.url)
-                .then(page => {
-                    if (ignore) {
-                        return;
-                    }
-                    const result: z.infer<typeof apiV1.ToolMessage> = {
-                        role: 'tool',
-                        tool_call_id: toolCall.id,
-                        tool_name: toolCall.function.name,
-                        content: JSON.stringify(page),
-                    };
-                    setResult(result);
-                    handleResult(result);
-                });
-        }
-        process();
-
-        return () => {
-            ignore = true;
-        };
-    }, [result, toolCall.id, toolCall.function.name, projectId, args.url, handleResult]);
-
-    return <div className="flex flex-col gap-1">
-        {sender && <div className='text-gray-500 text-sm ml-3'>{sender}</div>}
-        <div className='border border-gray-300 p-2 rounded-lg rounded-bl-none flex flex-col gap-2 mr-[30%]'>
-            <ToolCallHeader toolCall={toolCall} result={result} />
-
-            <div className='mt-1 flex flex-col gap-2'>
-                <div className="flex gap-1">
-                    URL: <a className="inline-flex items-center gap-1" target="_blank" href={args.url}>
-                        <span className='underline'>
-                            {args.url}
-                        </span>
-                        <ExternalLinkIcon size={16} />
-                    </a>
-                </div>
-                {result && (
-                    <ExpandableContent
-                        label='Content'
-                        content={typedResult}
-                        expanded={false}
-                    />
-                )}
             </div>
         </div>
     </div>;
@@ -491,7 +421,9 @@ function MockToolCall({
     projectId,
     messages,
     sender,
-    autoSubmit = false,
+    testProfile=null,
+    workflowTool,
+    systemMessage,
 }: {
     toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
     result: z.infer<typeof apiV1.ToolMessage> | undefined;
@@ -499,7 +431,9 @@ function MockToolCall({
     projectId: string;
     messages: z.infer<typeof apiV1.ChatMessage>[];
     sender: string | null | undefined;
-    autoSubmit?: boolean;
+    testProfile: z.infer<typeof TestProfile> | null;
+    workflowTool: z.infer<typeof WorkflowTool> | undefined;
+    systemMessage: string | undefined;
 }) {
     const [result, setResult] = useState<z.infer<typeof apiV1.ToolMessage> | undefined>(availableResult);
     const [response, setResponse] = useState('');
@@ -535,7 +469,18 @@ function MockToolCall({
         async function process() {
             setGeneratingResponse(true);
 
-            const response = await suggestToolResponse(toolCall.id, projectId, messages);
+            const response = await suggestToolResponse(
+                toolCall.id,
+                projectId,
+                [{
+                    role: 'system',
+                    content: systemMessage || '',
+                    createdAt: new Date().toISOString(),
+                    version: 'v1',
+                    chatId: '',
+                }, ...messages],
+                testProfile?.mockPrompt || workflowTool?.mockInstructions || '',
+            );
             if (ignore) {
                 return;
             }
@@ -547,11 +492,11 @@ function MockToolCall({
         return () => {
             ignore = true;
         };
-    }, [result, response, toolCall.id, projectId, messages]);
+    }, [result, response, toolCall.id, projectId, messages, testProfile, systemMessage, workflowTool?.mockInstructions]);
 
     // auto submit if autoSubmitMockedResponse is true
     useEffect(() => {
-        if (!autoSubmit) {
+        if (!workflowTool?.autoSubmitMockedResponse) {
             return;
         }
         if (result) {
@@ -560,19 +505,25 @@ function MockToolCall({
         if (response) {
             handleSubmit();
         }
-    }, [autoSubmit, response, handleSubmit, result]);
+    }, [workflowTool?.autoSubmitMockedResponse, response, handleSubmit, result]);
 
     return <div className="flex flex-col gap-1">
-        {sender && <div className='text-gray-500 text-xs ml-3'>{sender}</div>}
-        <div className='border border-gray-300 p-2 pt-2 rounded-lg rounded-bl-none flex flex-col gap-2 mr-[30%]'>
-            <ToolCallHeader toolCall={toolCall} result={result} />
+        {sender && <div className='text-gray-500 dark:text-gray-400 text-xs ml-3'>{sender}</div>}
+        <div className='border border-gray-300 dark:border-gray-700 p-2 pt-2 rounded-lg rounded-bl-none flex flex-col gap-2 mr-[30%] bg-white dark:bg-gray-900'>
+            <div className="flex items-center gap-2">
+                {!result && <Spinner size="sm" />}
+                {result && <CircleCheckIcon size={16} className="text-gray-500 dark:text-gray-400" />}
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                    Function Call: <code className='bg-gray-100 dark:bg-neutral-800 px-2 py-0.5 rounded font-mono'>{toolCall.function.name}</code>
+                </span>
+            </div>
 
             <div className='flex flex-col gap-2'>
                 <ExpandableContent label='Params' content={toolCall.function.arguments} expanded={false} />
                 {result && <ExpandableContent label='Result' content={result.content} expanded={false} />}
             </div>
 
-            {!result && !autoSubmit && <div className='flex flex-col gap-2 mt-2'>
+            {!result && !workflowTool?.autoSubmitMockedResponse && <div className='flex flex-col gap-2 mt-2'>
                 <div>Response:</div>
                 <Textarea
                     maxRows={10}
@@ -586,7 +537,7 @@ function MockToolCall({
                 >
                 </Textarea>
                 <Button
-                    onClick={handleSubmit}
+                    onPress={handleSubmit}
                     disabled={generatingResponse}
                     isLoading={generatingResponse}
                     size="sm"
@@ -629,12 +580,12 @@ function ExpandableContent({
     }
 
     return <div className='flex flex-col gap-2'>
-        <div className='flex gap-1 items-start cursor-pointer text-gray-500' onClick={toggleExpanded}>
+        <div className='flex gap-1 items-start cursor-pointer text-gray-500 dark:text-gray-400' onClick={toggleExpanded}>
             {!isExpanded && <ChevronRightIcon size={16} />}
             {isExpanded && <ChevronDownIcon size={16} />}
             <div className='text-left break-all text-xs'>{label}</div>
         </div>
-        {isExpanded && <pre className='text-sm font-mono bg-gray-100 p-2 rounded break-all whitespace-pre-wrap overflow-x-auto'>
+        {isExpanded && <pre className='text-sm font-mono bg-gray-100 dark:bg-gray-800 p-2 rounded break-all whitespace-pre-wrap overflow-x-auto text-gray-900 dark:text-gray-100'>
             {formattedContent}
         </pre>}
     </div>;
@@ -650,20 +601,16 @@ function SystemMessage({
     locked: boolean
 }) {
     return (
-        <div className="border border-gray-300 p-2 rounded-lg flex flex-col gap-2">
+        <div className="border border-gray-300 dark:border-gray-700 p-2 rounded-lg flex flex-col gap-2 bg-white dark:bg-gray-900">
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">CONTEXT</div>
             <EditableField
                 light
-                label="System message"
                 value={content}
                 onChange={onChange}
                 multiline
                 markdown
                 locked={locked}
-                placeholder={`Use this space to simulate user information provided to the assistant at start of chat. Example:
-- userName: John Doe
-- email: john@gmail.com 
-                
-This is intended for testing only.`}
+                placeholder={`Provide context about the user (e.g. user ID, user name) to the assistant at the start of chat, for testing purposes.`}
             />
         </div>
     );
@@ -678,6 +625,7 @@ export function Messages({
     loadingAssistantResponse,
     loadingUserResponse,
     workflow,
+    testProfile=null,
     onSystemMessageChange,
 }: {
     projectId: string;
@@ -688,12 +636,11 @@ export function Messages({
     loadingAssistantResponse: boolean;
     loadingUserResponse: boolean;
     workflow: z.infer<typeof Workflow>;
+    testProfile: z.infer<typeof TestProfile> | null;
     onSystemMessageChange: (message: string) => void;
 }) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     let lastUserMessageTimestamp = 0;
-
-    const systemMessageLocked = messages.length > 0;
 
     // scroll to bottom on new messages
     useEffect(() => {
@@ -703,9 +650,9 @@ export function Messages({
     return <div className="grow pt-4 overflow-auto">
         <div className="max-w-[768px] mx-auto flex flex-col gap-8">
             <SystemMessage
-                content={systemMessage || ''}
+                content={testProfile?.context || systemMessage || ''}
                 onChange={onSystemMessageChange}
-                locked={systemMessageLocked}
+                locked={testProfile !== null || messages.length > 0}
             />
             {messages.map((message, index) => {
                 if (message.role === 'assistant') {
@@ -719,6 +666,8 @@ export function Messages({
                             messages={messages}
                             sender={message.agenticSender}
                             workflow={workflow}
+                            testProfile={testProfile}
+                            systemMessage={systemMessage}
                         />;
                     } else {
                         // the assistant message createdAt is an ISO string timestamp

@@ -1,15 +1,18 @@
 'use client';
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner } from "@nextui-org/react";
-import { useEffect, useState, useMemo } from "react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner } from "@heroui/react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { z } from "zod";
-import { PlaygroundChat, SimulationData, Workflow } from "@/app/lib/types";
-import { SimulateScenarioOption, SimulateURLOption } from "./simulation-options";
+import { PlaygroundChat } from "../../../lib/types/types";
+import { Workflow } from "../../../lib/types/workflow_types";
 import { Chat } from "./chat";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ActionButton, Pane } from "../workflow/pane";
 import { apiV1 } from "rowboat-shared";
 import { EllipsisVerticalIcon, MessageSquarePlusIcon, PlayIcon } from "lucide-react";
-
+import { getScenario } from "../../../actions/testing_actions";
+import clsx from "clsx";
+import { TestProfile, TestScenario } from "@/app/lib/types/testing_types";
+import { WithStringId } from "@/app/lib/types/types";
 function SimulateLabel() {
     return <span>Simulate<sup className="pl-1">beta</sup></span>;
 }
@@ -27,12 +30,8 @@ export function App({
     workflow: z.infer<typeof Workflow>;
     messageSubscriber?: (messages: z.infer<typeof apiV1.ChatMessage>[]) => void;
 }) {
-    const searchParams = useSearchParams();
-    const initialChatId = useMemo(() => searchParams.get('chatId'), [searchParams]);
-    const [existingChatId, setExistingChatId] = useState<string | null>(initialChatId);
-    const [loadingChat, setLoadingChat] = useState<boolean>(false);
-    const [viewSimulationMenu, setViewSimulationMenu] = useState<boolean>(false);
     const [counter, setCounter] = useState<number>(0);
+    const [testProfile, setTestProfile] = useState<z.infer<typeof TestProfile> | null>(null);
     const [chat, setChat] = useState<z.infer<typeof PlaygroundChat>>({
         projectId,
         createdAt: new Date().toISOString(),
@@ -41,12 +40,45 @@ export function App({
         systemMessage: defaultSystemMessage,
     });
 
-    function handleSimulateButtonClick() {
-        setViewSimulationMenu(true);
+    function handleTestProfileChange(profile: WithStringId<z.infer<typeof TestProfile>> | null) {
+        setTestProfile(profile);
+        setCounter(counter + 1);
     }
+
+    // const beginSimulation = useCallback((scenario: string) => {
+    //     setExistingChatId(null);
+    //     setLoadingChat(true);
+    //     setCounter(counter + 1);
+    //     setChat({
+    //         projectId,
+    //         createdAt: new Date().toISOString(),
+    //         messages: [],
+    //         simulated: true,
+    //         simulationScenario: scenario,
+    //         systemMessage: '',
+    //     });
+    // }, [counter, projectId]);
+
+    // useEffect(() => {
+    //     const scenarioId = localStorage.getItem('pendingScenarioId');
+    //     if (scenarioId && projectId) {
+    //         console.log('Scenario Effect triggered:', { scenarioId, projectId });
+    //         getScenario(projectId, scenarioId).then((scenario) => {
+    //             console.log('Scenario data received:', scenario);
+    //             beginSimulation(scenario.description);
+    //             localStorage.removeItem('pendingScenarioId');
+    //         }).catch(error => {
+    //             console.error('Error fetching scenario:', error);
+    //             localStorage.removeItem('pendingScenarioId');
+    //         });
+    //     }
+    // }, [projectId, beginSimulation]);
+
+    if (hidden) {
+        return <></>;
+    }
+
     function handleNewChatButtonClick() {
-        setExistingChatId(null);
-        setViewSimulationMenu(false);
         setCounter(counter + 1);
         setChat({
             projectId,
@@ -56,52 +88,32 @@ export function App({
             systemMessage: defaultSystemMessage,
         });
     }
-    function beginSimulation(data: z.infer<typeof SimulationData>) {
-        setExistingChatId(null);
-        setViewSimulationMenu(false);
-        setCounter(counter + 1);
-        setChat({
-            projectId,
-            createdAt: new Date().toISOString(),
-            messages: [],
-            simulated: true,
-            simulationData: data,
-        });
-    }
 
-    if (hidden) {
-        return <></>;
-    }
-
-    return <Pane title={viewSimulationMenu ? <SimulateLabel /> : "Chat"} actions={[
-        <ActionButton
-            key="new-chat"
-            icon={<MessageSquarePlusIcon size={16} />}
-            onClick={handleNewChatButtonClick}
+    return (
+        <Pane 
+            title="PLAYGROUND" 
+            tooltip="Test your agents and see their responses in this interactive chat interface"
+            actions={[
+                <ActionButton
+                    key="new-chat"
+                    icon={<MessageSquarePlusIcon size={16} />}
+                    onClick={handleNewChatButtonClick}
+                >
+                    New chat
+                </ActionButton>,
+            ]}
         >
-            New chat
-        </ActionButton>,
-        !viewSimulationMenu && <ActionButton
-            key="simulate"
-            icon={<PlayIcon size={16} />}
-            onClick={handleSimulateButtonClick}
-        >
-            Simulate
-        </ActionButton>,
-    ]}>
-        <div className="h-full overflow-auto">
-            {!viewSimulationMenu && loadingChat && <div className="flex justify-center items-center h-full">
-                <Spinner />
-            </div>}
-            {!viewSimulationMenu && !loadingChat && <Chat
-                key={existingChatId || 'chat-' + counter}
-                chat={chat}
-                initialChatId={existingChatId || null}
-                projectId={projectId}
-                workflow={workflow}
-                messageSubscriber={messageSubscriber}
-            />}
-            {viewSimulationMenu && <SimulateScenarioOption beginSimulation={beginSimulation} projectId={projectId} />}
-        </div>
-    </Pane>;
+            <div className="h-full overflow-auto">
+                <Chat
+                    key={`chat-${counter}`}
+                    chat={chat}
+                    projectId={projectId}
+                    workflow={workflow}
+                    testProfile={testProfile}
+                    messageSubscriber={messageSubscriber}
+                    onTestProfileChange={handleTestProfileChange}
+                />
+            </div>
+        </Pane>
+    );
 }

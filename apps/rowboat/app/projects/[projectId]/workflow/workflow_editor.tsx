@@ -1,28 +1,35 @@
 "use client";
-import { DataSource, Workflow, WorkflowAgent, WorkflowPrompt, WorkflowTool, WithStringId } from "@/app/lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { Workflow } from "../../../lib/types/workflow_types";
+import { WorkflowTool } from "../../../lib/types/workflow_types";
+import { WorkflowPrompt } from "../../../lib/types/workflow_types";
+import { WorkflowAgent } from "../../../lib/types/workflow_types";
+import { DataSource } from "../../../lib/types/datasource_types";
 import { useReducer, Reducer, useState, useCallback, useEffect, useRef } from "react";
 import { produce, applyPatches, enablePatches, produceWithPatches, Patch } from 'immer';
 import { AgentConfig } from "./agent_config";
 import { ToolConfig } from "./tool_config";
 import { App as ChatApp } from "../playground/app";
 import { z } from "zod";
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip } from "@nextui-org/react";
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip } from "@heroui/react";
 import { PromptConfig } from "./prompt_config";
-import { EditableField } from "@/app/lib/components/editable-field";
+import { EditableField } from "../../../lib/components/editable-field";
 import { RelativeTime } from "@primer/react";
 
 import {
     ResizableHandle,
     ResizablePanel,
     ResizablePanelGroup,
-} from "@/components/ui/resizable"
+} from "../../../../components/ui/resizable"
 import { Copilot } from "./copilot";
 import { apiV1 } from "rowboat-shared";
-import { publishWorkflow, renameWorkflow, saveWorkflow } from "@/app/actions";
+import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
 import { PublishedBadge } from "./published_badge";
-import { BackIcon, HamburgerIcon, WorkflowIcon } from "@/app/lib/components/icons";
-import { CopyIcon, Layers2Icon, RadioIcon, RedoIcon, UndoIcon } from "lucide-react";
+import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
+import { CopyIcon, Layers2Icon, RadioIcon, RedoIcon, Sparkles, UndoIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
+import { CopilotMessage } from "../../../lib/types/copilot_types";
+import { TestProfile } from "@/app/lib/types/testing_types";
 
 enablePatches();
 
@@ -162,7 +169,7 @@ function reducer(state: State, action: Action): State {
                 draft.currentIndex++;
                 draft.present.pendingChanges = true;
                 draft.present.chatKey++;
-             });
+            });
             break;
         }
         case "update_workflow_name": {
@@ -246,14 +253,11 @@ function reducer(state: State, action: Action): State {
                                 description: "",
                                 disabled: false,
                                 instructions: "",
-                                prompts: [],
-                                tools: [],
                                 model: "gpt-4o",
                                 locked: false,
                                 toggleAble: true,
                                 ragReturnType: "chunks",
                                 ragK: 3,
-                                connectedAgents: [],
                                 controlType: "retain",
                                 ...action.agent
                             });
@@ -281,7 +285,7 @@ function reducer(state: State, action: Action): State {
                                     type: "object",
                                     properties: {},
                                 },
-                                mockInPlayground: true,
+                                mockTool: true,
                                 autoSubmitMockedResponse: true,
                                 ...action.tool
                             });
@@ -323,10 +327,6 @@ function reducer(state: State, action: Action): State {
                             draft.workflow.agents = draft.workflow.agents.filter(
                                 (agent) => agent.name !== action.name
                             );
-                            draft.workflow.agents = draft.workflow.agents.map(agent => ({
-                                ...agent,
-                                connectedAgents: agent.connectedAgents.filter(connectedAgent => connectedAgent !== action.name)
-                            }));
                             draft.selection = null;
                             draft.pendingChanges = true;
                             draft.chatKey++;
@@ -338,10 +338,6 @@ function reducer(state: State, action: Action): State {
                             draft.workflow.tools = draft.workflow.tools.filter(
                                 (tool) => tool.name !== action.name
                             );
-                            draft.workflow.agents = draft.workflow.agents.map(agent => ({
-                                ...agent,
-                                tools: agent.tools.filter(toolName => toolName !== action.name)
-                            }));
                             draft.selection = null;
                             draft.pendingChanges = true;
                             draft.chatKey++;
@@ -353,10 +349,6 @@ function reducer(state: State, action: Action): State {
                             draft.workflow.prompts = draft.workflow.prompts.filter(
                                 (prompt) => prompt.name !== action.name
                             );
-                            draft.workflow.agents = draft.workflow.agents.map(agent => ({
-                                ...agent,
-                                prompts: agent.prompts.filter(promptName => promptName !== action.name)
-                            }));
                             draft.selection = null;
                             draft.pendingChanges = true;
                             draft.chatKey++;
@@ -365,26 +357,45 @@ function reducer(state: State, action: Action): State {
                             if (isLive) {
                                 break;
                             }
+
+                            // update agent data
                             draft.workflow.agents = draft.workflow.agents.map((agent) =>
                                 agent.name === action.name ? { ...agent, ...action.agent } : agent
                             );
-                            if (action.agent.name && draft.workflow.startAgent === action.name) {
-                                draft.workflow.startAgent = action.agent.name;
-                            }
+
+                            // if the agent is renamed
                             if (action.agent.name && action.agent.name !== action.name) {
+                                // update start agent pointer if this is the start agent
+                                if (action.agent.name && draft.workflow.startAgent === action.name) {
+                                    draft.workflow.startAgent = action.agent.name;
+                                }
+
+                                // update this agents references in other agents / prompts
                                 draft.workflow.agents = draft.workflow.agents.map(agent => ({
                                     ...agent,
-                                    connectedAgents: agent.connectedAgents.map(connectedAgent =>
-                                        connectedAgent === action.name ? action.agent.name! : connectedAgent
+                                    instructions: agent.instructions.replace(
+                                        `[@agent:${action.name}](#mention)`,
+                                        `[@agent:${action.agent.name}](#mention)`
                                     )
                                 }));
+                                draft.workflow.prompts = draft.workflow.prompts.map(prompt => ({
+                                    ...prompt,
+                                    prompt: prompt.prompt.replace(
+                                        `[@agent:${action.name}](#mention)`,
+                                        `[@agent:${action.agent.name}](#mention)`
+                                    )
+                                }));
+
+                                // update the selection pointer if this is the selected agent
+                                if (draft.selection?.type === "agent" && draft.selection.name === action.name) {
+                                    draft.selection = {
+                                        type: "agent",
+                                        name: action.agent.name
+                                    };
+                                }
                             }
-                            if (action.agent.name && draft.selection?.type === "agent" && draft.selection.name === action.name) {
-                                draft.selection = {
-                                    type: "agent",
-                                    name: action.agent.name
-                                };
-                            }
+
+                            // select this agent
                             draft.selection = {
                                 type: "agent",
                                 name: action.agent.name || action.name,
@@ -396,23 +407,40 @@ function reducer(state: State, action: Action): State {
                             if (isLive) {
                                 break;
                             }
+
+                            // update tool data
                             draft.workflow.tools = draft.workflow.tools.map((tool) =>
                                 tool.name === action.name ? { ...tool, ...action.tool } : tool
                             );
+
+                            // if the tool is renamed
                             if (action.tool.name && action.tool.name !== action.name) {
+                                // update this tools references in other agents / prompts
                                 draft.workflow.agents = draft.workflow.agents.map(agent => ({
                                     ...agent,
-                                    tools: agent.tools.map(toolName =>
-                                        toolName === action.name ? action.tool.name! : toolName
+                                    instructions: agent.instructions.replace(
+                                        `[@tool:${action.name}](#mention)`,
+                                        `[@tool:${action.tool.name}](#mention)`
                                     )
                                 }));
+                                draft.workflow.prompts = draft.workflow.prompts.map(prompt => ({
+                                    ...prompt,
+                                    prompt: prompt.prompt.replace(
+                                        `[@tool:${action.name}](#mention)`,
+                                        `[@tool:${action.tool.name}](#mention)`
+                                    )
+                                }));
+
+                                // if this is the selected tool, update the selection
+                                if (draft.selection?.type === "tool" && draft.selection.name === action.name) {
+                                    draft.selection = {
+                                        type: "tool",
+                                        name: action.tool.name
+                                    };
+                                }
                             }
-                            if (action.tool.name && draft.selection?.type === "tool" && draft.selection.name === action.name) {
-                                draft.selection = {
-                                    type: "tool",
-                                    name: action.tool.name
-                                };
-                            }
+
+                            // select this tool
                             draft.selection = {
                                 type: "tool",
                                 name: action.tool.name || action.name,
@@ -424,21 +452,40 @@ function reducer(state: State, action: Action): State {
                             if (isLive) {
                                 break;
                             }
+
+                            // update prompt data
                             draft.workflow.prompts = draft.workflow.prompts.map((prompt) =>
                                 prompt.name === action.name ? { ...prompt, ...action.prompt } : prompt
                             );
-                            draft.workflow.agents = draft.workflow.agents.map(agent => ({
-                                ...agent,
-                                prompts: agent.prompts.map(promptName =>
-                                    promptName === action.name ? action.prompt.name! : promptName
-                                )
-                            }));
-                            if (action.prompt.name && draft.selection?.type === "prompt" && draft.selection.name === action.name) {
-                                draft.selection = {
-                                    type: "prompt",
-                                    name: action.prompt.name
-                                };
+
+                            // if the prompt is renamed
+                            if (action.prompt.name && action.prompt.name !== action.name) {
+                                // update this prompts references in other agents / prompts
+                                draft.workflow.agents = draft.workflow.agents.map(agent => ({
+                                    ...agent,
+                                    instructions: agent.instructions.replace(
+                                        `[@prompt:${action.name}](#mention)`,
+                                        `[@prompt:${action.prompt.name}](#mention)`
+                                    )
+                                }));
+                                draft.workflow.prompts = draft.workflow.prompts.map(prompt => ({
+                                    ...prompt,
+                                    prompt: prompt.prompt.replace(
+                                        `[@prompt:${action.name}](#mention)`,
+                                        `[@prompt:${action.prompt.name}](#mention)`
+                                    )
+                                }));
+
+                                // if this is the selected prompt, update the selection
+                                if (draft.selection?.type === "prompt" && draft.selection.name === action.name) {
+                                    draft.selection = {
+                                        type: "prompt",
+                                        name: action.prompt.name
+                                    };
+                                }
                             }
+
+                            // select this prompt
                             draft.selection = {
                                 type: "prompt",
                                 name: action.prompt.name || action.name,
@@ -487,12 +534,14 @@ export function WorkflowEditor({
     publishedWorkflowId,
     handleShowSelector,
     handleCloneVersion,
+    useRag,
 }: {
     dataSources: WithStringId<z.infer<typeof DataSource>>[];
     workflow: WithStringId<z.infer<typeof Workflow>>;
     publishedWorkflowId: string | null;
     handleShowSelector: () => void;
     handleCloneVersion: (workflowId: string) => void;
+    useRag: boolean;
 }) {
     const [state, dispatch] = useReducer<Reducer<State, Action>>(reducer, {
         patches: [],
@@ -519,6 +568,13 @@ export function WorkflowEditor({
     const saving = useRef(false);
     const isLive = state.present.workflow._id == state.present.publishedWorkflowId;
     const [showCopySuccess, setShowCopySuccess] = useState(false);
+    const [showCopilot, setShowCopilot] = useState(false);
+    const [copilotWidth, setCopilotWidth] = useState(25);
+    const [copilotKey, setCopilotKey] = useState(0);
+    const [copilotMessages, setCopilotMessages] = useState<z.infer<typeof CopilotMessage>[]>([]);
+    const [loadingResponse, setLoadingResponse] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState("Thinking...");
+    const [responseError, setResponseError] = useState<string | null>(null);
 
     console.log(`workflow editor chat key: ${state.present.chatKey}`);
 
@@ -655,7 +711,7 @@ export function WorkflowEditor({
 
     return <div className="flex flex-col h-full relative">
         <div className="shrink-0 flex justify-between items-center pb-2">
-            <div className="flex items-center gap-1 border-1 border-gray-200 rounded-md px-2 text-gray-800">
+            <div className="workflow-version-selector flex items-center gap-1 px-2 text-gray-800 dark:text-gray-100">
                 <WorkflowIcon size={16} />
                 <EditableField
                     key={state.present.workflow._id}
@@ -663,6 +719,7 @@ export function WorkflowEditor({
                     onChange={handleRenameWorkflow}
                     placeholder="Name this version"
                     className="text-sm font-semibold"
+                    inline={true}
                 />
                 {state.present.publishing && <Spinner size="sm" />}
                 {isLive && <PublishedBadge />}
@@ -731,7 +788,7 @@ export function WorkflowEditor({
                     <Button
                         variant="bordered"
                         size="sm"
-                        onClick={() => handleCloneVersion(state.present.workflow._id)}
+                        onPress={() => handleCloneVersion(state.present.workflow._id)}
                     >
                         Clone this version
                     </Button>
@@ -747,7 +804,7 @@ export function WorkflowEditor({
                 </div>}
                 {!isLive && <>
                     <button
-                        className="p-1 text-gray-400 hover:text-black"
+                        className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
                         title="Undo"
                         disabled={state.currentIndex <= 0}
                         onClick={() => dispatch({ type: "undo" })}
@@ -755,12 +812,19 @@ export function WorkflowEditor({
                         <UndoIcon size={16} />
                     </button>
                     <button
-                        className="p-1 text-gray-400 hover:text-black"
+                        className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
                         title="Redo"
                         disabled={state.currentIndex >= state.patches.length}
                         onClick={() => dispatch({ type: "redo" })}
                     >
                         <RedoIcon size={16} />
+                    </button>
+                    <button
+                        className="p-1 text-blue-600 hover:text-blue-800 hover:cursor-pointer"
+                        title="Toggle Copilot"
+                        onClick={() => setShowCopilot(!showCopilot)}
+                    >
+                        <Sparkles size={16} />
                     </button>
                 </>}
             </div>
@@ -787,7 +851,11 @@ export function WorkflowEditor({
                 />
             </ResizablePanel>
             <ResizableHandle />
-            <ResizablePanel minSize={20} defaultSize={60} className="overflow-auto">
+            <ResizablePanel
+                minSize={20}
+                defaultSize={showCopilot ? 85 - copilotWidth : 85}
+                className="overflow-auto"
+            >
                 <ChatApp
                     key={'' + state.present.chatKey}
                     hidden={state.present.selection !== null}
@@ -797,6 +865,8 @@ export function WorkflowEditor({
                 />
                 {state.present.selection?.type === "agent" && <AgentConfig
                     key={state.present.selection.name}
+                    projectId={state.present.workflow.projectId}
+                    workflow={state.present.workflow}
                     agent={state.present.workflow.agents.find((agent) => agent.name === state.present.selection!.name)!}
                     usedAgentNames={new Set(state.present.workflow.agents.filter((agent) => agent.name !== state.present.selection!.name).map((agent) => agent.name))}
                     agents={state.present.workflow.agents}
@@ -805,6 +875,7 @@ export function WorkflowEditor({
                     dataSources={dataSources}
                     handleUpdate={handleUpdateAgent.bind(null, state.present.selection.name)}
                     handleClose={handleUnselectAgent}
+                    useRag={useRag}
                 />}
                 {state.present.selection?.type === "tool" && <ToolConfig
                     key={state.present.selection.name}
@@ -816,28 +887,53 @@ export function WorkflowEditor({
                 {state.present.selection?.type === "prompt" && <PromptConfig
                     key={state.present.selection.name}
                     prompt={state.present.workflow.prompts.find((prompt) => prompt.name === state.present.selection!.name)!}
+                    agents={state.present.workflow.agents}
+                    tools={state.present.workflow.tools}
+                    prompts={state.present.workflow.prompts}
                     usedPromptNames={new Set(state.present.workflow.prompts.filter((prompt) => prompt.name !== state.present.selection!.name).map((prompt) => prompt.name))}
                     handleUpdate={handleUpdatePrompt.bind(null, state.present.selection.name)}
                     handleClose={handleUnselectPrompt}
                 />}
             </ResizablePanel>
-            <ResizableHandle />
-            <ResizablePanel minSize={10} defaultSize={25}>
-                <Copilot
-                    projectId={state.present.workflow.projectId}
-                    workflow={state.present.workflow}
-                    dispatch={dispatch}
-                    chatContext={
-                        state.present.selection ? {
-                            type: state.present.selection.type,
-                            name: state.present.selection.name
-                        } : chatMessages.length > 0 ? {
-                            type: 'chat',
-                            messages: chatMessages
-                        } : undefined
-                    }
-                />
-            </ResizablePanel>
+            {showCopilot && <>
+                <ResizableHandle />
+                <ResizablePanel
+                    minSize={10}
+                    defaultSize={copilotWidth}
+                    onResize={(size) => setCopilotWidth(size)}
+                >
+                    <Copilot
+                        key={copilotKey}
+                        projectId={state.present.workflow.projectId}
+                        workflow={state.present.workflow}
+                        dispatch={dispatch}
+                        chatContext={
+                            state.present.selection ? {
+                                type: state.present.selection.type,
+                                name: state.present.selection.name
+                            } : chatMessages.length > 0 ? {
+                                type: 'chat',
+                                messages: chatMessages
+                            } : undefined
+                        }
+                        onNewChat={() => {
+                            setCopilotKey(prev => prev + 1);
+                            setCopilotMessages([]);
+                            setLoadingResponse(false);
+                            setLoadingMessage("Thinking...");
+                            setResponseError(null);
+                        }}
+                        messages={copilotMessages}
+                        setMessages={setCopilotMessages}
+                        loadingResponse={loadingResponse}
+                        setLoadingResponse={setLoadingResponse}
+                        loadingMessage={loadingMessage}
+                        setLoadingMessage={setLoadingMessage}
+                        responseError={responseError}
+                        setResponseError={setResponseError}
+                    />
+                </ResizablePanel>
+            </>}
         </ResizablePanelGroup>
     </div>;
 }

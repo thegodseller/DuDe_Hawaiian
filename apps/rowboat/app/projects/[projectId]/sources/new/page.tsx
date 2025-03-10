@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Form } from "./form";
 import { redirect } from "next/navigation";
+import { USE_RAG, USE_RAG_UPLOADS, USE_RAG_SCRAPING } from "../../../../lib/feature_flags";
 
 export const metadata: Metadata = {
     title: "Add data source"
@@ -11,18 +12,20 @@ export default async function Page({
 }: {
     params: { projectId: string }
 }) {
-    const useDataSources = process.env.USE_DATA_SOURCES === 'true';
-
-    if (!useDataSources) {
+    if (!USE_RAG) {
         redirect(`/projects/${params.projectId}`);
     }
 
     return <div className="flex flex-col h-full">
-        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-b-gray-100">
+        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-border">
             <div className="flex flex-col">
                 <h1 className="text-lg">Add data source</h1>
             </div>
         </div>
-        <Form projectId={params.projectId} />
+        <Form
+            projectId={params.projectId}
+            useRagUploads={USE_RAG_UPLOADS}
+            useRagScraping={USE_RAG_SCRAPING}
+        />
     </div>;
 }

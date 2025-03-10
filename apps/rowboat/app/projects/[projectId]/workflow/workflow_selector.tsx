@@ -1,12 +1,13 @@
 "use client";
-import { Workflow, WithStringId } from "@/app/lib/types";
+import { WithStringId } from "../../../lib/types/types";
+import { Workflow } from "../../../lib/types/workflow_types";
 import { z } from "zod";
 import { useEffect, useState, useCallback } from "react";
 import { PublishedBadge } from "./published_badge";
 import { RelativeTime } from "@primer/react";
-import { listWorkflows } from "@/app/actions";
-import { Button, Divider, Pagination } from "@nextui-org/react";
-import { WorkflowIcon } from "@/app/lib/components/icons";
+import { listWorkflows } from "../../../actions/workflow_actions";
+import { Button, Divider, Pagination } from "@heroui/react";
+import { WorkflowIcon } from "../../../lib/components/icons";
 import { PlusIcon } from "lucide-react";
 
 const pageSize = 5;
@@ -104,7 +105,7 @@ export function WorkflowSelector({
             <Button
                 color="primary"
                 startContent={<PlusIcon size={16} />}
-                onClick={handleCreateNewVersion}
+                onPress={handleCreateNewVersion}
             >
                 Create new version
             </Button>

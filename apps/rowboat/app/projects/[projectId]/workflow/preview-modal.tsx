@@ -1,8 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import clsx from "clsx";
-import MarkdownContent from "@/app/lib/components/markdown-content";
+import MarkdownContent from "../../../lib/components/markdown-content";
 import React, { PureComponent } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
+import { XIcon } from "lucide-react";
+import { Button } from "@heroui/react";
 
 // Create the context type
 export type PreviewModalContextType = {
@@ -10,13 +12,15 @@ export type PreviewModalContextType = {
         oldValue: string | undefined,
         newValue: string,
         markdown: boolean,
-        title: string
+        title: string,
+        message?: string,
+        onApply?: () => void
     ) => void;
 };
 
 // Create the context
-export const PreviewModalContext = createContext<PreviewModalContextType>({ 
-    showPreview: () => {} 
+export const PreviewModalContext = createContext<PreviewModalContextType>({
+    showPreview: () => { }
 });
 
 // Export the hook for easy usage
@@ -29,6 +33,8 @@ export function PreviewModalProvider({ children }: { children: React.ReactNode }
         newValue: string;
         markdown: boolean;
         title: string;
+        message?: string;
+        onApply?: () => void;
         isOpen: boolean;
     }>({
         newValue: '',
@@ -48,8 +54,16 @@ export function PreviewModalProvider({ children }: { children: React.ReactNode }
         return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
-    const showPreview = (oldValue: string | undefined, newValue: string, markdown: boolean, title: string) => {
-        setModalProps({ oldValue, newValue, markdown, title, isOpen: true });
+    // Update the showPreview function
+    const showPreview = (
+        oldValue: string | undefined,
+        newValue: string,
+        markdown: boolean,
+        title: string,
+        message?: string,
+        onApply?: () => void
+    ) => {
+        setModalProps({ oldValue, newValue, markdown, title, message, onApply, isOpen: true });
     };
 
     return (
@@ -71,12 +85,16 @@ function PreviewModal({
     newValue,
     markdown = false,
     title,
+    message,
+    onApply,
     onClose,
 }: {
     oldValue?: string | undefined;
     newValue: string;
     markdown?: boolean;
     title: string;
+    message?: string;
+    onApply?: () => void;
     onClose: () => void;
 }) {
     const buttonLabel = oldValue === undefined ? 'Preview' : 'Diff';
@@ -84,18 +102,30 @@ function PreviewModal({
     console.log(oldValue, newValue);
 
     return <div className="fixed left-0 top-0 w-full h-full bg-gray-500/50 backdrop-blur-sm flex justify-center items-center z-50">
-        <div className="bg-gray-100 rounded-md p-2 flex flex-col w-[90%] h-[90%] max-w-7xl max-h-[800px]">
-            <button className="self-end text-gray-500 hover:text-gray-700 flex items-center gap-1" 
+        <div className="bg-white rounded-md p-2 flex flex-col w-[90%] gap-4 h-[90%] max-w-7xl max-h-[800px]">
+            <button className="self-end text-gray-500 hover:text-gray-700 flex items-center gap-1"
                 onClick={onClose}
             >
-                <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M6 18 17.94 6M18 18 6.06 6" />
-                </svg>
-                <div className="text-sm">Close</div>
+                <XIcon className="w-4 h-4" />
             </button>
-            <div className="flex flex-col overflow-auto">
-                <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col gap-2">
                     <div className="text-md font-semibold">{title}</div>
+                    {message && <div className="text-sm text-gray-600">{message}</div>}
+                </div>
+                {onApply && <Button
+                    variant="solid"
+                    color="primary"
+                    onPress={() => {
+                        onApply();
+                        onClose();
+                    }}
+                >
+                    Apply changes
+                </Button>}
+            </div>
+            <div className="bg-gray-100 rounded-md p-2 flex flex-col overflow-auto">
+                <div className="flex items-center gap-2 justify-end">
                     <div className="flex items-center">
                         <button className={clsx("text-sm text-gray-500 hover:text-gray-700 px-2 py-1 rounded-t-md", {
                             'bg-white': view === 'preview',
