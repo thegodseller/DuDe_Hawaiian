@@ -69,6 +69,28 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     restart: unless-stopped
 
+  setup_qdrant:
+    build:
+      context: ./apps/rowboat
+      dockerfile: scripts.Dockerfile
+    command: ["npm", "run", "setupQdrant"]
+    profiles: [ "setup_qdrant" ]
+    environment:
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+    restart: no
+
+  delete_qdrant:
+    build:
+      context: ./apps/rowboat
+      dockerfile: scripts.Dockerfile
+    command: ["npm", "run", "deleteQdrant"]
+    profiles: [ "delete_qdrant" ]
+    environment:
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+    restart: no
+
   rag_files_worker:
     build:
       context: ./apps/rowboat
