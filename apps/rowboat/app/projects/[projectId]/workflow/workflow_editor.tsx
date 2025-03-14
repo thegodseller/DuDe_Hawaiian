@@ -795,6 +795,9 @@ export function WorkflowEditor({
                             if (key === 'clipboard') {
                                 handleCopyJSON();
                             }
+                            if (key === 'mcp') {
+                                setIsMcpImportModalOpen(true);
+                            }
                         }}
                     >
                         <DropdownItem
@@ -821,6 +824,12 @@ export function WorkflowEditor({
                             startContent={<CopyIcon size={16} />}
                         >
                             Copy as JSON
+                        </DropdownItem>
+                        <DropdownItem
+                            key="mcp"
+                            startContent={<ImportIcon className="w-4 h-4 text-blue-700" />}
+                        >
+                            MCP: Import tools
                         </DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
