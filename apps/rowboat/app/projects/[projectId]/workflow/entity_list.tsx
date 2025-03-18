@@ -123,7 +123,7 @@ export function EntityList({
                         onClick={() => onSelectTool(tool.name)}
                         selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
                         rightElement={<EntityDropdown name={tool.name} onDelete={onDeleteTool} />}
-                        icon={tool.isMcp ? <ImportIcon className="w-4 h-4 text-blue-700" /> : <></>}
+                        icon={tool.isMcp ? <ImportIcon className="w-4 h-4 text-blue-700" /> : undefined}
                     />
                 ))}
 
