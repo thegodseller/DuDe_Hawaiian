@@ -37,67 +37,49 @@ def require_api_key(f):
 @app.route("/chat", methods=["POST"])
 @require_api_key
 def chat():
-    print('='*200)
     logger.info('='*200)
+    logger.info(f"{'*'*50}Running server mode{'*'*50}")
     try:
         data = request.get_json()
-        print('Complete request:')
-        logger.info('Complete request')
-        print(data)
+        logger.info('Complete request:')
         logger.info(data)
-
-        print('-'*200)
         logger.info('-'*200)
 
         start_time = datetime.now()
         config = read_json_from_file("./configs/default_config.json")
 
+        logger.info('Beginning turn')
         resp_messages, resp_tokens_used, resp_state = run_turn(
             messages=data.get("messages", []),
             start_agent_name=data.get("startAgent", ""),
             agent_configs=data.get("agents", []),
             tool_configs=data.get("tools", []),
-            localize_history=config.get("localize_history", True),
-            return_diff_messages=config.get("return_diff_messages", True),
-            prompt_configs=data.get("prompts", []),
             start_turn_with_start_agent=config.get("start_turn_with_start_agent", False),
-            children_aware_of_parent=config.get("children_aware_of_parent", False),
-            parent_has_child_history=config.get("parent_has_child_history", True),
             state=data.get("state", {}),
-            additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL],
-            max_messages_per_turn=config.get("max_messages_per_turn", 2),
-            max_messages_per_error_escalation_turn=config.get("max_messages_per_error_escalation_turn", 2),
-            escalate_errors=config.get("escalate_errors", True),
-            max_overall_turns=config.get("max_overall_turns", 10)
+            additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL]
         )
 
-        print('-'*200)
         logger.info('-'*200)
-        
+        logger.info('Raw output:')
+        logger.info((resp_messages, resp_tokens_used, resp_state))
+
         out = {
             "messages": resp_messages,
             "tokens_used": resp_tokens_used,
             "state": resp_state,
         }
         
-        print("Output: ")
-        logger.info(f"Output: ")
+        logger.info("Output:")
         for k, v in out.items():
-            print(f"{k}: {v}")
-            print('*'*200)
             logger.info(f"{k}: {v}")
             logger.info('*'*200)
         
-        print("Processing time:")
-        print('='*200)
         logger.info('='*200)
-        print(f"Processing time: {datetime.now() - start_time}")
         logger.info(f"Processing time: {datetime.now() - start_time}")
         
         return jsonify(out)
 
     except Exception as e:
-        print(e)
         logger.error(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
