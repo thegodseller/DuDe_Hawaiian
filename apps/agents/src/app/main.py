@@ -85,4 +85,5 @@ def chat():
 
 if __name__ == "__main__":
     print("Starting Flask server...")
-    app.run(port=4040, debug=True)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=4040)
