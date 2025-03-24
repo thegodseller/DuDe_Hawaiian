@@ -1,7 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from datetime import datetime
 from functools import wraps
 import os
+import redis
+import uuid
+import json
+import time
 
 from src.graph.core import run_turn
 from src.graph.tools import RAG_TOOL, CLOSE_CHAT_TOOL
@@ -9,6 +13,7 @@ from src.graph.tools import RAG_TOOL, CLOSE_CHAT_TOOL
 from src.utils.common import common_logger, read_json_from_file
 logger = common_logger
 
+redis_client = redis.from_url(os.environ.get('REDIS_URL', 'redis://localhost:6379'))
 app = Flask(__name__)
  
 @app.route("/health", methods=["GET"])
@@ -82,6 +87,56 @@ def chat():
     except Exception as e:
         logger.error(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
+
+@app.route("/chat_stream_init", methods=["POST"])
+@require_api_key
+def chat_stream_init():
+    # create a uuid for the stream
+    stream_id = str(uuid.uuid4())
+
+    # store the the request data in redis with 10 minute TTL
+    # using the key name `stream_request_<stream_id>`
+    # set ttl to 10 minutes
+    redis_client.setex(f"stream_request_{stream_id}", 600, json.dumps(request.get_json()))
+
+    return jsonify({"stream_id": stream_id})
+
+@app.route("/chat_stream/<stream_id>", methods=["GET"])
+@require_api_key
+def chat_stream(stream_id):
+    # get the request data from redis
+    request_data = redis_client.get(f"stream_request_{stream_id}")
+    if not request_data:
+        return jsonify({"error": "Stream not found"}), 404
+
+    # invoke run_streamed() from agents-sdk
+
+    def generate():
+        # example of HTTP SSE event stream:
+        # https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
+        # --------------------------------
+        # id: <optional event id>
+        # event: <event name>
+        # data: {... event data ...}
+        #
+        # event: <event name>
+        # data: {... event data ...}
+        try:
+            yield "event: message\n"
+            yield "data: {\"role\": \"assistant\", \"content\": \"This is the first message!\"}\n\n" # double \n indicates end of message
+
+            time.sleep(2)
+
+            yield "event: message\n"
+            yield "data: {\"role\": \"assistant\", \"content\": \"This is the second message!\"}\n\n"
+
+            yield "event: done\n"
+            yield "data: {... state data ...}\n\n"
+        except Exception as e:
+            yield "event: error\n"
+            yield "data: {... error data ...}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream')
 
 if __name__ == "__main__":
     print("Starting Flask server...")

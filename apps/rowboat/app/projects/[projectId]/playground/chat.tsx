@@ -96,6 +96,7 @@ export function Chat({
             setFetchResponseError(null);
             const { agents, tools, prompts, startAgent } = convertWorkflowToAgenticAPI(workflow);
             const request: z.infer<typeof AgenticAPIChatRequest> = {
+                projectId,
                 messages: convertToAgenticAPIChatMessages([{
                     role: 'system',
                     content: systemMessage || '',
@@ -116,7 +117,7 @@ export function Chat({
             setLastAgenticResponse(null);
 
             try {
-                const response = await getAssistantResponse(projectId, request);
+                const response = await getAssistantResponse(request);
                 if (ignore) {
                     return;
                 }

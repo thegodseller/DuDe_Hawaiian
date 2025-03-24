@@ -95,6 +95,7 @@ export async function POST(
         let state: unknown = chat.agenticState ?? { last_agent_name: startAgent };
 
         const request: z.infer<typeof AgenticAPIChatRequest> = {
+            projectId: session.projectId,
             messages: convertToAgenticAPIChatMessages([systemMessage, ...messages, ...unsavedMessages]),
             state,
             agents,

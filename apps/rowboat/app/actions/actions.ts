@@ -66,17 +66,14 @@ export async function scrapeWebpage(url: string): Promise<z.infer<typeof Webpage
     };
 }
 
-export async function getAssistantResponse(
-    projectId: string,
-    request: z.infer<typeof AgenticAPIChatRequest>,
-): Promise<{
+export async function getAssistantResponse(request: z.infer<typeof AgenticAPIChatRequest>): Promise<{
     messages: z.infer<typeof apiV1.ChatMessage>[],
     state: unknown,
     rawRequest: unknown,
     rawResponse: unknown,
 }> {
-    await projectAuthCheck(projectId);
-    if (!await check_query_limit(projectId)) {
+    await projectAuthCheck(request.projectId);
+    if (!await check_query_limit(request.projectId)) {
         throw new QueryLimitError();
     }
 

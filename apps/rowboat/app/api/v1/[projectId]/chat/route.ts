@@ -88,6 +88,7 @@ export async function POST(
         // get assistant response
         const { agents, tools, prompts, startAgent } = convertWorkflowToAgenticAPI(workflow);
         const request: z.infer<typeof AgenticAPIChatRequest> = {
+            projectId,
             messages: convertFromApiToAgenticApiMessages(reqMessages),
             state: currentState,
             agents,

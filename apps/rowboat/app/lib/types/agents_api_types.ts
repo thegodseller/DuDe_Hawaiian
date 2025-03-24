@@ -47,6 +47,7 @@ export const AgenticAPITool = WorkflowTool
     })
 
 export const AgenticAPIChatRequest = z.object({
+    projectId: z.string(),
     messages: z.array(AgenticAPIChatMessage),
     state: z.unknown(),
     agents: z.array(AgenticAPIAgent),
