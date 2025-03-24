@@ -15,7 +15,7 @@ logger = common_logger
 
 redis_client = redis.from_url(os.environ.get('REDIS_URL', 'redis://localhost:6379'))
 app = Flask(__name__)
- 
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
@@ -61,7 +61,8 @@ def chat():
             tool_configs=data.get("tools", []),
             start_turn_with_start_agent=config.get("start_turn_with_start_agent", False),
             state=data.get("state", {}),
-            additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL]
+            additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL],
+            complete_request=data
         )
 
         logger.info('-'*200)
@@ -73,15 +74,15 @@ def chat():
             "tokens_used": resp_tokens_used,
             "state": resp_state,
         }
-        
+
         logger.info("Output:")
         for k, v in out.items():
             logger.info(f"{k}: {v}")
             logger.info('*'*200)
-        
+
         logger.info('='*200)
         logger.info(f"Processing time: {datetime.now() - start_time}")
-        
+
         return jsonify(out)
 
     except Exception as e:

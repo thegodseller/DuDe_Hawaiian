@@ -80,7 +80,7 @@ def create_final_response(response, turn_messages, tokens_used, all_agents):
 
 
 def run_turn(
-    messages, start_agent_name, agent_configs, tool_configs, start_turn_with_start_agent, state={}, additional_tool_configs=[]
+    messages, start_agent_name, agent_configs, tool_configs, start_turn_with_start_agent, state={}, additional_tool_configs=[], complete_request={}
 ):
     """
     Coordinates a single 'turn' of conversation or processing among agents.
@@ -129,7 +129,8 @@ def run_turn(
     print("Initializing agents")
     new_agents = get_agents(
         agent_configs=agent_configs,
-        tool_configs=tool_configs
+        tool_configs=tool_configs,
+        complete_request=complete_request
     )
     # Prepare escalation agent
     last_new_agent = get_agent_by_name(last_agent_name, new_agents)
