@@ -48,10 +48,6 @@ export function App({
         setCounter(counter + 1);
     }
 
-    if (hidden) {
-        return <></>;
-    }
-
     function handleNewChatButtonClick() {
         setCounter(counter + 1);
         setChat({
@@ -61,6 +57,10 @@ export function App({
             simulated: false,
             systemMessage: defaultSystemMessage,
         });
+    }
+
+    if (hidden) {
+        return <></>;
     }
 
     return (

@@ -1,5 +1,5 @@
 'use server';
-import { convertFromAgenticAPIChatMessages } from "../lib/types/agents_api_types";
+import { AgenticAPIInitStreamResponse, convertFromAgenticAPIChatMessages } from "../lib/types/agents_api_types";
 import { AgenticAPIChatRequest } from "../lib/types/agents_api_types";
 import { WebpageCrawlResponse } from "../lib/types/tool_types";
 import { webpagesCollection } from "../lib/mongodb";
@@ -7,7 +7,7 @@ import { z } from 'zod';
 import FirecrawlApp, { ScrapeResponse } from '@mendable/firecrawl-js';
 import { apiV1 } from "rowboat-shared";
 import { Claims, getSession } from "@auth0/nextjs-auth0";
-import { getAgenticApiResponse } from "../lib/utils";
+import { getAgenticApiResponse, getAgenticResponseStreamId } from "../lib/utils";
 import { check_query_limit } from "../lib/rate_limiting";
 import { QueryLimitError } from "../lib/client_utils";
 import { projectAuthCheck } from "./project_actions";
@@ -84,4 +84,14 @@ export async function getAssistantResponse(request: z.infer<typeof AgenticAPICha
         rawRequest: request,
         rawResponse: response.rawAPIResponse,
     };
+}
+
+export async function getAssistantResponseStreamId(request: z.infer<typeof AgenticAPIChatRequest>): Promise<z.infer<typeof AgenticAPIInitStreamResponse>> {
+    await projectAuthCheck(request.projectId);
+    if (!await check_query_limit(request.projectId)) {
+        throw new QueryLimitError();
+    }
+
+    const response = await getAgenticResponseStreamId(request);
+    return response;
 }

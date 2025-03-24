@@ -13,18 +13,16 @@ export default async function Page({
 }: {
     params: { projectId: string };
 }) {
+    console.log('->>> workflow page being rendered');
     const project = await projectsCollection.findOne({
         _id: params.projectId,
     });
     if (!project) {
         notFound();
     }
-    const toolWebhookUrl = project.webhookUrl ?? '';
 
     return <App
         projectId={params.projectId}
         useRag={USE_RAG}
-        mcpServerUrls={project.mcpServers ?? []}
-        toolWebhookUrl={toolWebhookUrl}
     />;
 }

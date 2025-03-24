@@ -1,10 +1,10 @@
 'use client';
-import { getAssistantResponse } from "../../../actions/actions";
-import { useEffect, useState } from "react";
+import { getAssistantResponseStreamId } from "../../../actions/actions";
+import { useEffect, useOptimistic, useState } from "react";
 import { Messages } from "./messages";
 import z from "zod";
 import { MCPServer, PlaygroundChat } from "../../../lib/types/types";
-import { convertToAgenticAPIChatMessages } from "../../../lib/types/agents_api_types";
+import { AgenticAPIChatMessage, convertFromAgenticAPIChatMessages, convertToAgenticAPIChatMessages } from "../../../lib/types/agents_api_types";
 import { convertWorkflowToAgenticAPI } from "../../../lib/types/agents_api_types";
 import { AgenticAPIChatRequest } from "../../../lib/types/agents_api_types";
 import { Workflow } from "../../../lib/types/workflow_types";
@@ -22,7 +22,7 @@ export function Chat({
     projectId,
     workflow,
     messageSubscriber,
-    testProfile=null,
+    testProfile = null,
     onTestProfileChange,
     systemMessage,
     onSystemMessageChange,
@@ -42,8 +42,6 @@ export function Chat({
 }) {
     const [messages, setMessages] = useState<z.infer<typeof apiV1.ChatMessage>[]>(chat.messages);
     const [loadingAssistantResponse, setLoadingAssistantResponse] = useState<boolean>(false);
-    const [loadingUserResponse, setLoadingUserResponse] = useState<boolean>(false);
-    const [simulationComplete, setSimulationComplete] = useState<boolean>(chat.simulationComplete || false);
     const [agenticState, setAgenticState] = useState<unknown>(chat.agenticState || {
         last_agent_name: workflow.startAgent,
     });
@@ -51,6 +49,12 @@ export function Chat({
     const [lastAgenticRequest, setLastAgenticRequest] = useState<unknown | null>(null);
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
     const [isProfileSelectorOpen, setIsProfileSelectorOpen] = useState(false);
+    const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof apiV1.ChatMessage>[]>(chat.messages);
+
+    // reset optimistic messages when messages change
+    useEffect(() => {
+        setOptimisticMessages(messages);
+    }, [messages]);
 
     // collect published tool call results
     const toolCallResults: Record<string, z.infer<typeof apiV1.ToolMessage>> = {};
@@ -59,6 +63,7 @@ export function Chat({
         .forEach((message) => {
             toolCallResults[message.tool_call_id] = message;
         });
+    console.log('toolCallResults', toolCallResults);
 
     function handleUserMessage(prompt: string) {
         const updatedMessages: z.infer<typeof apiV1.ChatMessage>[] = [...messages, {
@@ -87,9 +92,12 @@ export function Chat({
         }
     }, [messages, messageSubscriber]);
 
-    // get agent response
+    // get assistant response
     useEffect(() => {
+        console.log('stream useEffect called');
         let ignore = false;
+        let eventSource: EventSource | null = null;
+        let msgs: z.infer<typeof apiV1.ChatMessage>[] = [];
 
         async function process() {
             setLoadingAssistantResponse(true);
@@ -116,39 +124,76 @@ export function Chat({
             setLastAgenticRequest(null);
             setLastAgenticResponse(null);
 
+            let streamId: string | null = null;
             try {
-                const response = await getAssistantResponse(request);
+                const response = await getAssistantResponseStreamId(request);
                 if (ignore) {
                     return;
                 }
-                if (simulationComplete) {
-                    return;
-                }
-                setLastAgenticRequest(response.rawRequest);
-                setLastAgenticResponse(response.rawResponse);
-                setMessages([...messages, ...response.messages.map((message) => ({
-                    ...message,
-                    version: 'v1' as const,
-                    chatId: '',
-                    createdAt: new Date().toISOString(),
-                }))]);
-                setAgenticState(response.state);
+                streamId = response.streamId;
             } catch (err) {
                 if (!ignore) {
                     setFetchResponseError(`Failed to get assistant response: ${err instanceof Error ? err.message : 'Unknown error'}`);
-                }
-            } finally {
-                if (!ignore) {
                     setLoadingAssistantResponse(false);
                 }
             }
+
+            if (ignore || !streamId) {
+                console.log('almost there', ignore, streamId);
+                return;
+            }
+
+            // log the stream id
+            console.log('🔄 got assistant response', streamId);
+
+            // read from SSE stream
+            eventSource = new EventSource(`/api/v1/stream-response/${streamId}`);
+
+            eventSource.addEventListener("message", (event) => {
+                if (ignore) {
+                    return;
+                }
+
+                try {
+                    const data = JSON.parse(event.data);
+                    const msg = AgenticAPIChatMessage.parse(data);
+                    const parsedMsg = convertFromAgenticAPIChatMessages([msg])[0];
+                    console.log('🔄 got assistant response chunk', parsedMsg);
+                    msgs.push(parsedMsg);
+                    setOptimisticMessages(prev => [...prev, parsedMsg]);
+                } catch (err) {
+                    console.error('Failed to parse SSE message:', err);
+                    setFetchResponseError(`Failed to parse SSE message: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                    setOptimisticMessages(messages);
+                }
+            });
+
+            eventSource.addEventListener('done', (event) => {
+                if (eventSource) {
+                    eventSource.close();
+                }
+
+                console.log('🔄 got assistant response done', event.data);
+                const parsed: {state: unknown} = JSON.parse(event.data);
+                setAgenticState(parsed.state);
+                setMessages([...messages, ...msgs]);
+                setLoadingAssistantResponse(false);
+            });
+
+            eventSource.onerror = (error) => {
+                console.error('SSE Error:', error);
+                if (!ignore) {
+                    setLoadingAssistantResponse(false);
+                    setFetchResponseError('Stream connection failed');
+                    setOptimisticMessages(messages);
+                }
+            };
         }
 
-        // if last message is not from role user
-        // or tool, return
+        // if last message is not a user message, return
         if (messages.length > 0) {
             const last = messages[messages.length - 1];
-            if (last.role !== 'user' && last.role !== 'tool') {
+            if (last.role !== 'user') {
                 return;
             }
         }
@@ -162,8 +207,22 @@ export function Chat({
 
         return () => {
             ignore = true;
+            console.log('stream useEffect cleanup called');
+            if (eventSource) {
+                eventSource.close();
+            }
         };
-    }, [chat.simulated, messages, projectId, agenticState, workflow, fetchResponseError, systemMessage, simulationComplete, mcpServerUrls, toolWebhookUrl, testProfile]);
+    }, [
+        messages,
+        projectId,
+        agenticState,
+        workflow,
+        systemMessage,
+        mcpServerUrls,
+        toolWebhookUrl,
+        testProfile,
+        fetchResponseError,
+    ]);
 
     const handleCopyChat = () => {
         const jsonString = JSON.stringify({
@@ -202,10 +261,9 @@ export function Chat({
         />
         <Messages
             projectId={projectId}
-            messages={messages}
+            messages={optimisticMessages}
             toolCallResults={toolCallResults}
             loadingAssistantResponse={loadingAssistantResponse}
-            loadingUserResponse={loadingUserResponse}
             workflow={workflow}
             testProfile={testProfile}
             systemMessage={systemMessage}
@@ -226,26 +284,12 @@ export function Chat({
                     </Button>
                 </div>
             )}
-            {!chat.simulated && <div className="max-w-[768px] mx-auto">
+            <div className="max-w-[768px] mx-auto">
                 <ComposeBox
                     handleUserMessage={handleUserMessage}
                     messages={messages}
                 />
-            </div>}
-            {chat.simulated && !simulationComplete && <div className="p-2 bg-gray-50 border border-gray-200 flex items-center justify-center gap-2">
-                <Spinner size="sm" />
-                <div className="text-sm text-gray-500 animate-pulse">Simulating...</div>
-                <Button
-                    size="sm"
-                    color="danger"
-                    onPress={() => {
-                        setSimulationComplete(true);
-                    }}
-                >
-                    Stop
-                </Button>
-            </div>}
-            {chat.simulated && simulationComplete && <p className="text-center text-sm">Simulation complete.</p>}
+            </div>
         </div>
     </div>;
 }

@@ -71,17 +71,6 @@ function AssistantMessageLoading() {
     </div>;
 }
 
-function UserMessageLoading() {
-    return <div className="self-end ml-[30%] flex flex-col">
-        <div className="text-right text-gray-500 dark:text-gray-400 text-sm mr-3">
-            User
-        </div>
-        <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-br-none animate-pulse w-20 text-gray-800 dark:text-gray-200">
-            <Spinner size="sm" />
-        </div>
-    </div>;
-}
-
 function ToolCalls({
     toolCalls,
     results,
@@ -101,20 +90,14 @@ function ToolCalls({
     testProfile: z.infer<typeof TestProfile> | null;
     systemMessage: string | undefined;
 }) {
-    const resultsMap: Record<string, z.infer<typeof apiV1.ToolMessage>> = {};
-
     return <div className="flex flex-col gap-4">
         {toolCalls.map(toolCall => {
             return <ToolCall
                 key={toolCall.id}
                 toolCall={toolCall}
                 result={results[toolCall.id]}
-                projectId={projectId}
-                messages={messages}
                 sender={sender}
                 workflow={workflow}
-                testProfile={testProfile}
-                systemMessage={systemMessage}
             />
         })}
     </div>;
@@ -123,21 +106,13 @@ function ToolCalls({
 function ToolCall({
     toolCall,
     result,
-    projectId,
-    messages,
     sender,
     workflow,
-    testProfile = null,
-    systemMessage,
 }: {
     toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
     result: z.infer<typeof apiV1.ToolMessage> | undefined;
-    projectId: string;
-    messages: z.infer<typeof apiV1.ChatMessage>[];
     sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
-    testProfile: z.infer<typeof TestProfile> | null;
-    systemMessage: string | undefined;
 }) {
     let matchingWorkflowTool: z.infer<typeof WorkflowTool> | undefined;
     for (const tool of workflow.tools) {
@@ -158,24 +133,6 @@ function ToolCall({
         result={result}
         sender={sender}
     />;
-}
-
-function ToolCallHeader({
-    toolCall,
-    result,
-}: {
-    toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
-    result: z.infer<typeof apiV1.ToolMessage> | undefined;
-}) {
-    return <div className="flex flex-col gap-1">
-        <div className='shrink-0 flex gap-2 items-center'>
-            {!result && <Spinner size="sm" />}
-            {result && <CircleCheckIcon size={16} />}
-            <div className='font-semibold text-sm'>
-                Function Call: <code className='bg-gray-100 dark:bg-neutral-800 px-2 py-0.5 rounded font-mono'>{toolCall.function.name}</code>
-            </div>
-        </div>
-    </div>;
 }
 
 function TransferToAgentToolCall({
@@ -211,7 +168,15 @@ function ClientToolCall({
     return <div className="flex flex-col gap-1">
         {sender && <div className='text-gray-500 text-sm ml-3'>{sender}</div>}
         <div className='border border-gray-300 p-2 pt-2 rounded-lg rounded-bl-none flex flex-col gap-2 mr-[30%]'>
-            <ToolCallHeader toolCall={toolCall} result={availableResult} />
+            <div className="flex flex-col gap-1">
+                <div className='shrink-0 flex gap-2 items-center'>
+                    {!availableResult && <Spinner size="sm" />}
+                    {availableResult && <CircleCheckIcon size={16} />}
+                    <div className='font-semibold text-sm'>
+                        Function Call: <code className='bg-gray-100 dark:bg-neutral-800 px-2 py-0.5 rounded font-mono'>{toolCall.function.name}</code>
+                    </div>
+                </div>
+            </div>
 
             <div className='flex flex-col gap-2'>
                 <ExpandableContent label='Params' content={toolCall.function.arguments} expanded={false} />
@@ -292,7 +257,6 @@ export function Messages({
     messages,
     toolCallResults,
     loadingAssistantResponse,
-    loadingUserResponse,
     workflow,
     testProfile = null,
     systemMessage,
@@ -302,7 +266,6 @@ export function Messages({
     messages: z.infer<typeof apiV1.ChatMessage>[];
     toolCallResults: Record<string, z.infer<typeof apiV1.ToolMessage>>;
     loadingAssistantResponse: boolean;
-    loadingUserResponse: boolean;
     workflow: z.infer<typeof Workflow>;
     testProfile: z.infer<typeof TestProfile> | null;
     systemMessage: string | undefined;
@@ -314,7 +277,7 @@ export function Messages({
     // scroll to bottom on new messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-    }, [messages, loadingAssistantResponse, loadingUserResponse]);
+    }, [messages, loadingAssistantResponse]);
 
     return <div className="grow pt-4 overflow-auto">
         <div className="max-w-[768px] mx-auto flex flex-col gap-8">
@@ -368,7 +331,6 @@ export function Messages({
                 return <></>;
             })}
             {loadingAssistantResponse && <AssistantMessageLoading key="assistant-loading" />}
-            {loadingUserResponse && <UserMessageLoading key="user-loading" />}
             <div ref={messagesEndRef} />
         </div>
     </div>;

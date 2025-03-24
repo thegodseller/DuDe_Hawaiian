@@ -64,6 +64,10 @@ export const AgenticAPIChatResponse = z.object({
     state: z.unknown(),
 });
 
+export const AgenticAPIInitStreamResponse = z.object({
+    streamId: z.string(),
+});
+
 export function convertWorkflowToAgenticAPI(workflow: z.infer<typeof Workflow>): {
     agents: z.infer<typeof AgenticAPIAgent>[];
     tools: z.infer<typeof AgenticAPITool>[];

@@ -1,6 +1,7 @@
 from copy import deepcopy
 from datetime import datetime
-
+import json
+import uuid
 import logging
 from .helpers.access import (
     get_agent_by_name,
@@ -285,16 +286,45 @@ async def run_turn_streamed(
             # Update current agent when it changes
             elif event.type == "agent_updated_stream_event":
                 current_agent = event.new_agent
+                tool_call_id = str(uuid.uuid4())
+
+                # yield the transfer invocation
                 message = {
-                    'content': f"Agent changed to {current_agent.name}",
+                    'content': None,
                     'role': 'assistant',
                     'sender': current_agent.name,
-                    'tool_calls': None,
+                    'tool_calls': [{
+                        'function': {
+                            'name': 'transfer_to_agent',
+                            'arguments': json.dumps({
+                                'assistant': event.new_agent.name
+                            })
+                        },
+                        'id': tool_call_id,
+                        'type': 'function'
+                    }],
                     'tool_call_id': None,
+                    'tool_name': None,
                     'response_type': 'internal'
                 }
                 print("Yielding message: ", message)
                 yield ('message', message)
+
+                # yield the transfer result
+                message = {
+                    'content': json.dumps({
+                        'assistant': event.new_agent.name
+                    }),
+                    'role': 'tool',
+                    'sender': None,
+                    'tool_calls': None,
+                    'tool_call_id': tool_call_id,
+                    'tool_name': 'transfer_to_agent',
+                }
+                print("Yielding message: ", message)
+                yield ('message', message)
+ 
+                current_agent = event.new_agent
                 continue
             
             # Handle run items (tools, messages, etc)

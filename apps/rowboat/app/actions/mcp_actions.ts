@@ -6,6 +6,7 @@ import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { projectAuthCheck } from "./project_actions";
 import { projectsCollection } from "../lib/mongodb";
 import { Project } from "../lib/types/project_types";
+import { MCPServer } from "../lib/types/types";
 
 export async function fetchMcpTools(projectId: string): Promise<z.infer<typeof WorkflowTool>[]> {
     await projectAuthCheck(projectId);
@@ -71,4 +72,12 @@ export async function updateMcpServers(projectId: string, mcpServers: z.infer<ty
     await projectsCollection.updateOne({
         _id: projectId,
     }, { $set: { mcpServers } });
+}
+
+export async function listMcpServers(projectId: string): Promise<z.infer<typeof MCPServer>[]> {
+    await projectAuthCheck(projectId);
+    const project = await projectsCollection.findOne({
+        _id: projectId,
+    });
+    return project?.mcpServers ?? [];
 }
