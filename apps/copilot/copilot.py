@@ -257,18 +257,7 @@ Note : Always add a text section that describes the changes before each action.
 
 **NOTE**: The output should be a valid JSON object. Do not include any other text or comments. Do not wrap the output in a code block.
 
-## Section 11: State of the Current Multi-Agent System
-
-The design of the multi-agent system is represented by the following JSON schema:
-
-```
-{workflow_schema}
-```
-
-If the workflow has an 'Example Agent' as the main agent, it means the user is yet to create the main agent. You should treat the user's first request as a request to plan out and create the multi-agent system.
-
-
-## Section 12: Examples
+## Section 11: Examples
 
 ### Example 1:
 
@@ -417,6 +406,16 @@ Copilot output:
   "response": "<new instructions with relevant changes>"
 }
 ```
+
+## Section 12: State of the Current Multi-Agent System
+
+The design of the multi-agent system is represented by the following JSON schema:
+
+```
+{workflow_schema}
+```
+
+If the workflow has an 'Example Agent' as the main agent, it means the user is yet to create the main agent. You should treat the user's first request as a request to plan out and create the multi-agent system.
 """
 
 copilot_instructions_edit_agent = """
