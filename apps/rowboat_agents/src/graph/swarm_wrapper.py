@@ -184,6 +184,7 @@ def get_agents(agent_configs, tool_configs, complete_request):
     # Create Agent objects from config
     for agent_config in agent_configs:
         logger.debug(f"Processing config for agent: {agent_config['name']}")
+        print("="*100)
         print(f"Processing config for agent: {agent_config['name']}")
 
         # If hasRagSources, append the RAG tool to the agent's tools
@@ -199,7 +200,6 @@ def get_agents(agent_configs, tool_configs, complete_request):
         print(f"Agent {agent_config['name']} has {len(agent_config['tools'])} configured tools")
 
         new_tools = []
-        print(agent_config)
         rag_tool = get_rag_tool(agent_config, complete_request)
         if rag_tool:
             new_tools.append(rag_tool)
@@ -259,6 +259,8 @@ def get_agents(agent_configs, tool_configs, complete_request):
         # Look up the agent's children from the old agent and create a list called handoffs in new_agent with pointers to the children in new_agents
         new_agent.handoffs = [new_agents[new_agent_name_to_index[child]] for child in new_agent_to_children[new_agent.name]]
 
+    print("Returning created agents")
+    print("="*100)
     return new_agents
 
 
@@ -342,3 +344,48 @@ def run(
     logger.info(f"Completed Swarm run for agent: {agent.name}")
     print(f"Completed Swarm run for agent: {agent.name}")
     return response
+
+async def run_streamed(
+    agent,
+    messages,
+    external_tools=None,
+    tokens_used=None
+):
+    """
+    Wrapper function for initializing and running the Swarm client in streaming mode.
+    """
+    logger.info(f"Initializing Swarm streaming client for agent: {agent.name}")
+    print(f"Initializing Swarm streaming client for agent: {agent.name}")
+
+    # Initialize default parameters
+    if external_tools is None:
+        external_tools = []
+    if tokens_used is None:
+        tokens_used = {}
+
+    # Format messages to ensure they're compatible with the OpenAI API
+    formatted_messages = []
+    for msg in messages:
+        if isinstance(msg, dict) and "content" in msg:
+            formatted_msg = {
+                "role": msg.get("role", "user"),
+                "content": msg["content"]
+            }
+            formatted_messages.append(formatted_msg)
+        else:
+            formatted_messages.append({
+                "role": "user",
+                "content": str(msg)
+            })
+
+    logger.info("Beginning Swarm streaming run")
+    print("Beginning Swarm streaming run")
+    
+    try:
+        # Use the Runner.run_streamed method
+        stream_result = Runner.run_streamed(agent, formatted_messages)
+        return stream_result
+    except Exception as e:
+        logger.error(f"Error during streaming run: {str(e)}")
+        print(f"Error during streaming run: {str(e)}")
+        raise

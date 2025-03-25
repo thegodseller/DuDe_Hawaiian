@@ -1,6 +1,7 @@
 aiohttp==3.9.3
 annotated-types==0.7.0
 anyio==4.8.0
+asgiref
 beautifulsoup4==4.12.3
 blinker==1.9.0
 build==1.2.2.post1
@@ -25,6 +26,7 @@ gunicorn==23.0.0
 h11==0.14.0
 httpcore==1.0.7
 httpx==0.27.2
+hypercorn
 idna==3.10
 installer==0.7.0
 itsdangerous==2.2.0
@@ -40,12 +42,13 @@ markdownify==0.13.1
 MarkupSafe==3.0.2
 mcp
 more-itertools==10.6.0
+motor
 msgpack==1.1.0
 mypy-extensions==1.0.0
 nest-asyncio==1.6.0
 numpy==2.2.1
-openai==1.59.7
-openai-agents==0.0.4
+openai
+openai-agents
 openpyxl==3.1.5
 packaging==24.2
 pandas==2.2.3
@@ -62,7 +65,9 @@ python-dateutil==2.9.0.post0
 python-docx==1.1.2
 python-dotenv==1.0.1
 pytz==2024.2
+qdrant-client
 RapidFuzz==3.11.0
+redis==5.2.1
 requests==2.32.3
 requests-toolbelt==1.0.0
 setuptools==75.8.0

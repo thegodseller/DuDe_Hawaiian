@@ -1,4 +1,5 @@
 from copy import deepcopy
+from datetime import datetime
 
 import logging
 from .helpers.access import (
@@ -9,13 +10,13 @@ from .helpers.state import (
     construct_state_from_response
 )
 from .helpers.control import get_latest_assistant_msg, get_latest_non_assistant_messages, get_last_agent_name
-from .swarm_wrapper import run as swarm_run, create_response, get_agents
+from .swarm_wrapper import run as swarm_run, run_streamed as swarm_run_streamed, create_response, get_agents
 from src.utils.common import common_logger as logger
+import asyncio
 
 # Create a dedicated logger for swarm wrapper
 logger.setLevel(logging.INFO)
 print("Logger level set to INFO")
-
 
 def order_messages(messages):
     """
@@ -227,3 +228,140 @@ def run_turn(
         tokens_used=tokens_used,
         all_agents=new_agents
     )
+
+async def run_turn_streamed(
+    messages, 
+    start_agent_name, 
+    agent_configs, 
+    tool_configs, 
+    start_turn_with_start_agent, 
+    state={}, 
+    additional_tool_configs=[],
+    complete_request={}
+):
+    final_state = None  # Initialize outside try block
+    try:
+        # Initialize agents and get external tools
+        new_agents = get_agents(agent_configs=agent_configs, tool_configs=tool_configs, complete_request=complete_request)
+        last_agent_name = get_last_agent_name(
+            state=state,
+            agent_configs=agent_configs,
+            start_agent_name=start_agent_name,
+            msg_type="user",
+            latest_assistant_msg=None,
+            start_turn_with_start_agent=start_turn_with_start_agent
+        )
+        last_new_agent = get_agent_by_name(last_agent_name, new_agents)
+        external_tools = get_external_tools(tool_configs)
+        
+        current_agent = last_new_agent
+        tokens_used = {"total": 0, "prompt": 0, "completion": 0}
+
+        stream_result = await swarm_run_streamed(
+            agent=last_new_agent,
+            messages=messages,
+            external_tools=external_tools,
+            tokens_used=tokens_used
+        )
+
+        # Process streaming events
+        async for event in stream_result.stream_events():
+            # print('='*50)
+            # print("Received event: ", event)
+            # print('-'*50)
+            
+            # Handle raw response events and accumulate tokens
+            if event.type == "raw_response_event":
+                if hasattr(event.data, 'type') and event.data.type == "response.completed":
+                    if hasattr(event.data.response, 'usage'):
+                        tokens_used["total"] += event.data.response.usage.total_tokens
+                        tokens_used["prompt"] += event.data.response.usage.input_tokens
+                        tokens_used["completion"] += event.data.response.usage.output_tokens
+                        print('-'*50)
+                        print(f"Found usage information. Updated cumulative tokens: {tokens_used}")
+                        print('-'*50)
+                continue
+            
+            # Update current agent when it changes
+            elif event.type == "agent_updated_stream_event":
+                current_agent = event.new_agent
+                message = {
+                    'content': f"Agent changed to {current_agent.name}",
+                    'role': 'assistant',
+                    'sender': current_agent.name,
+                    'tool_calls': None,
+                    'tool_call_id': None,
+                    'response_type': 'internal'
+                }
+                print("Yielding message: ", message)
+                yield ('message', message)
+                continue
+            
+            # Handle run items (tools, messages, etc)
+            elif event.type == "run_item_stream_event":
+                if event.item.type == "tool_call_item":
+                    message = {
+                        'content': None,
+                        'role': 'assistant',
+                        'sender': current_agent.name if current_agent else None,
+                        'tool_calls': [{
+                            'function': {
+                                'name': event.item.raw_item.name,
+                                'arguments': event.item.raw_item.arguments
+                            },
+                            'id': event.item.raw_item.id,
+                            'type': 'function'
+                        }],
+                        'tool_call_id': None,
+                        'tool_name': None,
+                        'response_type': 'internal'
+                    }
+                    print("Yielding message: ", message)
+                    yield ('message', message)
+                
+                elif event.item.type == "tool_call_output_item":
+                    message = {
+                        'content': str(event.item.output),
+                        'role': 'tool',
+                        'sender': None,
+                        'tool_calls': None,
+                        'tool_call_id': event.item.raw_item['call_id'],
+                        'tool_name': event.item.raw_item.get('name', None),
+                        'response_type': 'internal'
+                    }
+                    print("Yielding message: ", message)
+                    yield ('message', message)
+                
+                elif event.item.type == "message_output_item":
+                    content = ""
+                    if hasattr(event.item.raw_item, 'content'):
+                        for content_item in event.item.raw_item.content:
+                            if hasattr(content_item, 'text'):
+                                content += content_item.text
+
+                    message = {
+                        'content': content,
+                        'role': 'assistant',
+                        'sender': current_agent.name,
+                        'tool_calls': None,
+                        'tool_call_id': None,
+                        'tool_name': None,
+                        'response_type': 'external'
+                    }
+                    print("Yielding message: ", message)
+                    yield ('message', message)
+
+            print(f"\n{'='*50}\n")
+
+        # After all events are processed, set final state
+        final_state = {
+            "last_agent_name": current_agent.name if current_agent else None,
+            "tokens": tokens_used
+        }
+        yield ('done', {'state': final_state})
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        print(f"Error in stream processing: {str(e)}")
+        yield ('error', {'error': str(e), 'state': final_state})  # Include final_state in error response
