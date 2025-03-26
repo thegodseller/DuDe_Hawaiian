@@ -267,9 +267,9 @@ async def run_turn_streamed(
 
         # Process streaming events
         async for event in stream_result.stream_events():
-            # print('='*50)
-            # print("Received event: ", event)
-            # print('-'*50)
+            print('='*50)
+            print("Received event: ", event)
+            print('-'*50)
             
             # Handle raw response events and accumulate tokens
             if event.type == "raw_response_event":
@@ -339,7 +339,7 @@ async def run_turn_streamed(
                                 'name': event.item.raw_item.name,
                                 'arguments': event.item.raw_item.arguments
                             },
-                            'id': event.item.raw_item.id,
+                            'id': event.item.raw_item.call_id,
                             'type': 'function'
                         }],
                         'tool_call_id': None,
