@@ -120,8 +120,6 @@ async def chat_stream_init():
     data = await request.get_json()
     redis_client.setex(f"stream_request_{stream_id}", 600, json.dumps(data))
 
-    print('* stream init'*200)
-
     return jsonify({"streamId": stream_id})
 
 def format_sse(data: dict, event: str = None) -> str:
@@ -157,11 +155,8 @@ async def chat_stream(stream_id):
         elif not msg.get("role"):
             msg["role"] = "user"
 
-    print('*'*200)
     print("Request:")
-    print('*'*200)
     pprint(request_data)
-    print('='*200)
 
     async def generate():
         try:
@@ -176,14 +171,10 @@ async def chat_stream(stream_id):
                 complete_request=request_data
             ):
                 if event_type == 'message':
-                    print('*'*200)
                     print("Yielding message:")
-                    print('*'*200)
                     yield format_sse(event_data, "message")
                 elif event_type == 'done':
-                    print('*'*200)
                     print("Yielding done:")
-                    print('*'*200)
                     yield format_sse(event_data, "done")
 
         except Exception as e:

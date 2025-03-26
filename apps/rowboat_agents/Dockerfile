@@ -20,9 +20,9 @@ RUN poetry install --no-interaction --no-ansi
 COPY . .
 
 # Set environment variables
-ENV FLASK_APP=src.app.main
+ENV QUART_APP=src.app.main
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
 # Command to run Flask development server
-CMD ["flask", "run", "--host=0.0.0.0", "--port=3001"]
+CMD ["quart", "run", "--host=0.0.0.0", "--port=3001"]

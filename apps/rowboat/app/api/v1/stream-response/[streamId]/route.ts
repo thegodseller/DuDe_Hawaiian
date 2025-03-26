@@ -6,7 +6,7 @@ export async function GET(request: Request, { params }: { params: { streamId: st
   // Fetch the upstream SSE stream.
   const upstreamResponse = await fetch(upstreamUrl, {
     headers: {
-      'Authorization': `Bearer ${process.env.AGENTS_API_KEY}`,
+      'Authorization': `Bearer ${process.env.AGENTS_API_KEY || 'test'}`,
     },
     cache: 'no-store',
   });
