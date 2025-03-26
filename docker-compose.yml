@@ -15,7 +15,7 @@ services:
       - AUTH0_ISSUER_BASE_URL=${AUTH0_ISSUER_BASE_URL}
       - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
       - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
-      - AGENTS_API_URL=http://agents:3001
+      - AGENTS_API_URL=http://rowboat_agents:3001
       - AGENTS_API_KEY=${AGENTS_API_KEY}
       - COPILOT_API_URL=http://copilot:3002
       - COPILOT_API_KEY=${COPILOT_API_KEY}
@@ -37,15 +37,16 @@ services:
       - MAX_PROJECTS_PER_USER=${MAX_PROJECTS_PER_USER}
     restart: unless-stopped
 
-  agents:
+  rowboat_agents:
     build:
-      context: ./apps/agents
+      context: ./apps/rowboat_agents
       dockerfile: Dockerfile
     ports:
       - "3001:3001"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - API_KEY=${AGENTS_API_KEY}
+      - REDIS_URL=redis://redis:6379
     restart: unless-stopped
 
   copilot:
