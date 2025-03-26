@@ -1,6 +1,9 @@
 import logging
 import json
 import aiohttp
+import jwt
+import hashlib
+
 # Import helper functions needed for get_agents
 from .helpers.access import (
     get_tool_config_by_name,
@@ -22,6 +25,11 @@ from mcp.client.sse import sse_client
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 from .tool_calling import call_rag_tool
+from pymongo import MongoClient
+import os
+MONGO_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/rowboat").strip()
+mongo_client = MongoClient(MONGO_URI)
+db = mongo_client["rowboat"]
 
 class NewResponse(BaseModel):
     messages: List[Dict]
@@ -56,7 +64,7 @@ async def mock_tool(tool_name: str, args: str, tool_config: str) -> str:
     response_content = generate_openai_output(messages, output_type='text', model="gpt-4o")
     return response_content
 
-async def call_webhook(tool_name: str, args: str, webhook_url: str) -> str:
+async def call_webhook(tool_name: str, args: str, webhook_url: str, signing_secret: str) -> str:
     """
     Calls the webhook with the given tool name and arguments.
 
@@ -78,9 +86,19 @@ async def call_webhook(tool_name: str, args: str, webhook_url: str) -> str:
     request_body = {
         "content": json.dumps(content_dict)
     }
+
+    # Prepare headers
+    headers = {}
+    if signing_secret:
+        content_str = request_body["content"]
+        body_hash = hashlib.sha256(content_str.encode('utf-8')).hexdigest()
+        payload = {"bodyHash": body_hash}
+        signature_jwt = jwt.encode(payload, signing_secret, algorithm="HS256")
+        headers["X-Signature-Jwt"] = signature_jwt
+
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(webhook_url, json=request_body) as response:
+            async with session.post(webhook_url, json=request_body, headers=headers) as response:
                 if response.status == 200:
                     response_json = await response.json()
                     return response_json.get("result", "")
@@ -132,8 +150,11 @@ async def catch_all(ctx: RunContextWrapper[Any], args: str, tool_name: str, tool
         mcp_server_url = next((server.get("url", "") for server in mcp_servers if server.get("name") == mcp_server_name), "")
         response_content = await call_mcp(tool_name, args, mcp_server_url)
     else:
+        collection = db["projects"]
+        doc = collection.find_one({"_id": complete_request.get("projectId", "")})
+        signing_secret = doc.get("secret", "")
         webhook_url = complete_request.get("toolWebhookUrl", "")
-        response_content = await call_webhook(tool_name, args, webhook_url)
+        response_content = await call_webhook(tool_name, args, webhook_url, signing_secret)
     return response_content
 
 
@@ -380,7 +401,7 @@ async def run_streamed(
 
     logger.info("Beginning Swarm streaming run")
     print("Beginning Swarm streaming run")
-    
+
     try:
         # Use the Runner.run_streamed method
         stream_result = Runner.run_streamed(agent, formatted_messages)
