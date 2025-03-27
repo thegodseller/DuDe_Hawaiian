@@ -11,7 +11,8 @@
     "setupQdrant": "tsx app/scripts/setup_qdrant.ts",
     "deleteQdrant": "tsx app/scripts/delete_qdrant.ts",
     "ragUrlsWorker": "tsx app/scripts/rag_urls_worker.ts",
-    "ragFilesWorker": "tsx app/scripts/rag_files_worker.ts"
+    "ragFilesWorker": "tsx app/scripts/rag_files_worker.ts",
+    "ragTextWorker": "tsx app/scripts/rag_text_worker.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.37",

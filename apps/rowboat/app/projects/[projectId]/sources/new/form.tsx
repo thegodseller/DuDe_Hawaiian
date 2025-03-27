@@ -60,6 +60,32 @@ export function Form({
         router.push(`/projects/${projectId}/sources/${source._id}`);
     }
 
+    async function createTextDataSource(formData: FormData) {
+        const source = await createDataSource({
+            projectId,
+            name: formData.get('name') as string,
+            data: {
+                type: 'text',
+            },
+            status: 'pending',
+        });
+
+        const content = formData.get('content') as string;
+        await addDocsToDataSource({
+            projectId,
+            sourceId: source._id,
+            docData: [{
+                name: 'text',
+                data: {
+                    type: 'text',
+                    content,
+                },
+            }],
+        });
+
+        router.push(`/projects/${projectId}/sources/${source._id}`);
+    }
+
     function handleSourceTypeChange(event: React.ChangeEvent<HTMLSelectElement>) {
         setSourceType(event.target.value);
     }
@@ -76,6 +102,12 @@ export function Form({
                 ]}
             >
                 <SelectItem
+                    key="text"
+                    startContent={<DataSourceIcon type="text" />}
+                >
+                    Text
+                </SelectItem>
+                <SelectItem
                     key="urls"
                     startContent={<DataSourceIcon type="urls" />}
                 >
@@ -87,7 +119,7 @@ export function Form({
                 >
                     Upload files
                 </SelectItem>
-             </Select>
+            </Select>
 
             {sourceType === "urls" && <form
                 action={createUrlsDataSource}
@@ -149,6 +181,39 @@ export function Form({
                 </div>
                 <div className="text-sm">
                     <p>You will be able to upload files in the next step</p>
+                </div>
+                <FormStatusButton
+                    props={{
+                        type: "submit",
+                        children: "Add data source",
+                        className: "self-start",
+                        startContent: <PlusIcon className="w-[24px] h-[24px]" />
+                    }}
+                />
+            </form>}
+
+            {sourceType === "text" && <form
+                action={createTextDataSource}
+                className="flex flex-col gap-4"
+            >
+                <Textarea
+                    required
+                    type="text"
+                    name="content"
+                    label="Text content"
+                    labelPlacement="outside"
+                    minRows={10}
+                    maxRows={30}
+                />
+                <div className="self-start">
+                    <Input
+                        required
+                        type="text"
+                        name="name"
+                        labelPlacement="outside"
+                        placeholder="e.g. Product documentation"
+                        variant="bordered"
+                    />
                 </div>
                 <FormStatusButton
                     props={{

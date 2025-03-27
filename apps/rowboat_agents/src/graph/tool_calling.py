@@ -15,7 +15,10 @@ data_sources_collection = db['sources']
 data_source_docs_collection = db['source_docs']
 
 
-qdrant_client = QdrantClient(url=os.environ.get("QDRANT_URL"))
+qdrant_client = QdrantClient(
+    url=os.environ.get("QDRANT_URL"),
+    api_key=os.environ.get("QDRANT_API_KEY") or None
+)
 # Initialize OpenAI client
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
@@ -65,7 +68,7 @@ async def call_rag_tool(
     # Create embedding for the query
     embed_result = await embed(model=embedding_model, value=query)
 
-    print(embed_result)
+    # print(embed_result)
     # Fetch all active data sources for this project
     sources = await data_sources_collection.find({
         "projectId": project_id,

@@ -49,6 +49,9 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - API_KEY=${AGENTS_API_KEY}
       - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=${MONGODB_CONNECTION_STRING}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
     restart: unless-stopped
 
   copilot:
@@ -132,6 +135,19 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - MONGODB_CONNECTION_STRING=${MONGODB_CONNECTION_STRING}
       - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+    restart: unless-stopped
+
+  rag_text_worker:
+    build:
+      context: ./apps/rowboat
+      dockerfile: scripts.Dockerfile
+    command: ["npm", "run", "ragTextWorker"]
+    profiles: [ "rag_text_worker" ]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MONGODB_CONNECTION_STRING=${MONGODB_CONNECTION_STRING}
       - QDRANT_URL=${QDRANT_URL}
       - QDRANT_API_KEY=${QDRANT_API_KEY}
     restart: unless-stopped
