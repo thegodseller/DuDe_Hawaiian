@@ -34,6 +34,10 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   }
 
   if (request.nextUrl.pathname.startsWith('/projects')) {
+    // Skip auth check if USE_AUTH is not enabled
+    if (process.env.USE_AUTH !== 'true') {
+      return NextResponse.next();
+    }
     return auth0MiddlewareHandler(request, event);
   }
 

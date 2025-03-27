@@ -11,10 +11,18 @@ import { getAgenticApiResponse, getAgenticResponseStreamId } from "../lib/utils"
 import { check_query_limit } from "../lib/rate_limiting";
 import { QueryLimitError } from "../lib/client_utils";
 import { projectAuthCheck } from "./project_actions";
+import { USE_AUTH } from "../lib/feature_flags";
 
 const crawler = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY || '' });
 
 export async function authCheck(): Promise<Claims> {
+    if (!USE_AUTH) {
+        return {
+            email: 'guestuser@rowboatlabs.com',
+            email_verified: true,
+            sub: 'guest_user',
+        };
+    }
     const { user } = await getSession() || {};
     if (!user) {
         throw new Error('User not authenticated');

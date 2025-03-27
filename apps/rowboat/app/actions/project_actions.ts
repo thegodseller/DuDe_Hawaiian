@@ -10,8 +10,12 @@ import { authCheck } from "./actions";
 import { WithStringId } from "../lib/types/types";
 import { ApiKey } from "../lib/types/project_types";
 import { Project } from "../lib/types/project_types";
+import { USE_AUTH } from "../lib/feature_flags";
 
 export async function projectAuthCheck(projectId: string) {
+    if (!USE_AUTH) {
+        return;
+    }
     const user = await authCheck();
     const membership = await projectMembersCollection.findOne({
         projectId,
