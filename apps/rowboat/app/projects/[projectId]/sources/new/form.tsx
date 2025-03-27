@@ -1,11 +1,14 @@
 'use client';
-import { Input, Select, SelectItem, Textarea } from "@heroui/react"
+import { Input, Select, SelectItem } from "@heroui/react"
+import { Textarea } from "@/components/ui/textarea"
 import { useState } from "react";
 import { createDataSource, addDocsToDataSource } from "../../../../actions/datasource_actions";
 import { FormStatusButton } from "../../../../lib/components/form-status-button";
 import { DataSourceIcon } from "../../../../lib/components/datasource-icon";
 import { PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Dropdown } from "@/components/ui/dropdown";
+import { Panel } from "@/components/common/panel-common";
 
 export function Form({
     projectId,
@@ -18,6 +21,24 @@ export function Form({
 }) {
     const [sourceType, setSourceType] = useState("");
     const router = useRouter();
+
+    const dropdownOptions = [
+        {
+            key: "text",
+            label: "Text",
+            startContent: <DataSourceIcon type="text" />
+        },
+        {
+            key: "urls",
+            label: "Scrape URLs",
+            startContent: <DataSourceIcon type="urls" />
+        },
+        {
+            key: "files",
+            label: "Upload files",
+            startContent: <DataSourceIcon type="files" />
+        }
+    ];
 
     async function createUrlsDataSource(formData: FormData) {
         const source = await createDataSource({
@@ -86,144 +107,181 @@ export function Form({
         router.push(`/projects/${projectId}/sources/${source._id}`);
     }
 
-    function handleSourceTypeChange(event: React.ChangeEvent<HTMLSelectElement>) {
-        setSourceType(event.target.value);
-    }
-
-    return <div className="grow overflow-auto py-4">
-        <div className="max-w-[768px] mx-auto flex flex-col gap-4">
-            <Select
-                label="Select type"
-                selectedKeys={[sourceType]}
-                onChange={handleSourceTypeChange}
-                disabledKeys={[
-                    ...(useRagUploads ? [] : ['files']),
-                    ...(useRagScraping ? [] : ['urls']),
-                ]}
-            >
-                <SelectItem
-                    key="text"
-                    startContent={<DataSourceIcon type="text" />}
-                >
-                    Text
-                </SelectItem>
-                <SelectItem
-                    key="urls"
-                    startContent={<DataSourceIcon type="urls" />}
-                >
-                    Scrape URLs
-                </SelectItem>
-                <SelectItem
-                    key="files"
-                    startContent={<DataSourceIcon type="files" />}
-                >
-                    Upload files
-                </SelectItem>
-            </Select>
-
-            {sourceType === "urls" && <form
-                action={createUrlsDataSource}
-                className="flex flex-col gap-4"
-            >
-                <Textarea
-                    required
-                    type="text"
-                    name="urls"
-                    label="Specify URLs (one per line)"
-                    minRows={5}
-                    maxRows={10}
-                    labelPlacement="outside"
-                    placeholder="https://example.com"
-                    variant="bordered"
-                />
-                <div className="self-start">
-                    <Input
-                        required
-                        type="text"
-                        name="name"
-                        label="Name this data source"
-                        labelPlacement="outside"
-                        placeholder="e.g. Help articles"
-                        variant="bordered"
+    return (
+        <Panel
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        NEW DATA SOURCE
+                    </div>
+                </div>
+            }
+        >
+            <div className="h-full overflow-auto px-4 py-4">
+                <div className="max-w-[768px] mx-auto flex flex-col gap-4">
+                    <Dropdown
+                        label="Select type"
+                        value={sourceType}
+                        onChange={setSourceType}
+                        options={dropdownOptions}
+                        disabledKeys={[
+                            ...(useRagUploads ? [] : ['files']),
+                            ...(useRagScraping ? [] : ['urls']),
+                        ]}
                     />
-                </div>
-                <div className="text-sm">
-                    <p>Note:</p>
-                    <ul className="list-disc ml-4">
-                        <li>Expect about 5-10 minutes to scrape 100 pages</li>
-                        <li>Only the first 100 (valid) URLs will be scraped</li>
-                    </ul>
-                </div>
-                <FormStatusButton
-                    props={{
-                        type: "submit",
-                        children: "Add data source",
-                        className: "self-start",
-                        startContent: <PlusIcon className="w-[24px] h-[24px]" />
-                    }}
-                />
-            </form>}
 
-            {sourceType === "files" && <form
-                action={createFilesDataSource}
-                className="flex flex-col gap-4"
-            >
-                <div className="self-start">
-                    <Input
-                        required
-                        type="text"
-                        name="name"
-                        label="Name this data source"
-                        labelPlacement="outside"
-                        placeholder="e.g. Documentation files"
-                        variant="bordered"
-                    />
-                </div>
-                <div className="text-sm">
-                    <p>You will be able to upload files in the next step</p>
-                </div>
-                <FormStatusButton
-                    props={{
-                        type: "submit",
-                        children: "Add data source",
-                        className: "self-start",
-                        startContent: <PlusIcon className="w-[24px] h-[24px]" />
-                    }}
-                />
-            </form>}
+                    {sourceType === "urls" && <form
+                        action={createUrlsDataSource}
+                        className="flex flex-col gap-4"
+                    >
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Specify URLs (one per line)
+                            </label>
+                            <Textarea
+                                required
+                                name="urls"
+                                placeholder="https://example.com"
+                                rows={5}
+                                className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Name
+                            </label>
+                            <Textarea
+                                required
+                                name="name"
+                                placeholder="e.g. Help articles"
+                                rows={1}
+                                className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                            />
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center gap-2 mb-2 text-gray-700 dark:text-gray-300">
+                                <svg 
+                                    className="w-5 h-5 text-blue-500" 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round" 
+                                        strokeWidth={2} 
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                                    />
+                                </svg>
+                                <span className="font-medium">Note</span>
+                            </div>
+                            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400 ml-7">
+                                <li className="flex items-start">
+                                    <span className="mr-2">•</span>
+                                    <span>Expect about 5-10 minutes to scrape 100 pages</span>
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="mr-2">•</span>
+                                    <span>Only the first 100 (valid) URLs will be scraped</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <FormStatusButton
+                            props={{
+                                type: "submit",
+                                children: "Add data source",
+                                className: "self-start",
+                                startContent: <PlusIcon className="w-4 h-4" />
+                            }}
+                        />
+                    </form>}
 
-            {sourceType === "text" && <form
-                action={createTextDataSource}
-                className="flex flex-col gap-4"
-            >
-                <Textarea
-                    required
-                    type="text"
-                    name="content"
-                    label="Text content"
-                    labelPlacement="outside"
-                    minRows={10}
-                    maxRows={30}
-                />
-                <div className="self-start">
-                    <Input
-                        required
-                        type="text"
-                        name="name"
-                        labelPlacement="outside"
-                        placeholder="e.g. Product documentation"
-                        variant="bordered"
-                    />
+                    {sourceType === "files" && <form
+                        action={createFilesDataSource}
+                        className="flex flex-col gap-4"
+                    >
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Name
+                            </label>
+                            <Textarea
+                                required
+                                name="name"
+                                placeholder="e.g. Documentation files"
+                                rows={1}
+                                className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                            />
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center gap-2 mb-2 text-gray-700 dark:text-gray-300">
+                                <svg 
+                                    className="w-5 h-5 text-blue-500" 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round" 
+                                        strokeWidth={2} 
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                                    />
+                                </svg>
+                                <span className="font-medium">Note</span>
+                            </div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400 ml-7">
+                                You will be able to upload files in the next step
+                            </div>
+                        </div>
+                        <FormStatusButton
+                            props={{
+                                type: "submit",
+                                children: "Add data source",
+                                className: "self-start",
+                                startContent: <PlusIcon className="w-[24px] h-[24px]" />
+                            }}
+                        />
+                    </form>}
+
+                    {sourceType === "text" && <form
+                        action={createTextDataSource}
+                        className="flex flex-col gap-4"
+                    >
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Content
+                            </label>
+                            <Textarea
+                                required
+                                name="content"
+                                placeholder="Enter your text content here"
+                                rows={10}
+                                className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Name
+                            </label>
+                            <Textarea
+                                required
+                                name="name"
+                                placeholder="e.g. Product documentation"
+                                rows={1}
+                                className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                            />
+                        </div>
+                        <FormStatusButton
+                            props={{
+                                type: "submit",
+                                children: "Add data source",
+                                className: "self-start",
+                                startContent: <PlusIcon className="w-[24px] h-[24px]" />
+                            }}
+                        />
+                    </form>}
                 </div>
-                <FormStatusButton
-                    props={{
-                        type: "submit",
-                        children: "Add data source",
-                        className: "self-start",
-                        startContent: <PlusIcon className="w-[24px] h-[24px]" />
-                    }}
-                />
-            </form>}
-        </div>
-    </div>;
+            </div>
+        </Panel>
+    );
 }

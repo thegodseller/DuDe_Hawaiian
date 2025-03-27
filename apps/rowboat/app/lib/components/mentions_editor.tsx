@@ -5,7 +5,7 @@ import { Mention, MentionBlot, MentionBlotData } from "quill-mention";
 import "quill/dist/quill.snow.css";
 import "./mentions-editor.css";
 import { CopyIcon } from 'lucide-react';
-import { CopyButton } from './copy-button';
+import { CopyButton } from '../../../components/common/copy-button';
 
 export type Match = {
     id: string;

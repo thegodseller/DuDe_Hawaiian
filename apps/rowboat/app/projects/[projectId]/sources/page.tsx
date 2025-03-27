@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { SourcesList } from "./sources-list";
+import { SourcesList } from "./components/sources-list";
 
 export const metadata: Metadata = {
     title: "Data sources",
