@@ -322,7 +322,7 @@ export function App({
       chat,
       messages: allMessages,
     };
-  }, [sessionId]);
+  }, [sessionId, apiUrl]);
 
   async function resetState() {
     setChatId(null);
