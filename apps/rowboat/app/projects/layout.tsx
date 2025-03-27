@@ -4,6 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { UserButton } from "../lib/components/user_button";
 import { ThemeToggle } from "../lib/components/theme-toggle";
+import { USE_AUTH } from "../lib/feature_flags";
+
+export const dynamic = 'force-dynamic';
 
 export default function Layout({
     children,
@@ -30,7 +33,7 @@ export default function Layout({
             </div>
             <div className="flex items-center gap-2">
                 <ThemeToggle />
-                <UserButton />
+                {USE_AUTH && <UserButton />}
             </div>
         </header>
         <main className="grow overflow-auto">
