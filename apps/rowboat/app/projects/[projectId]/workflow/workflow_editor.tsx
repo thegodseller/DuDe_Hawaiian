@@ -28,9 +28,7 @@ import { PublishedBadge } from "./published_badge";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
 import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
-import { CopilotMessage } from "../../../lib/types/copilot_types";
 import { McpImportTools } from "./mcp_imports";
-import { useSearchParams } from 'next/navigation';
 
 enablePatches();
 
@@ -598,29 +596,18 @@ export function WorkflowEditor({
     const [showCopySuccess, setShowCopySuccess] = useState(false);
     const [showCopilot, setShowCopilot] = useState(false);
     const [copilotWidth, setCopilotWidth] = useState(25);
-    const [copilotKey, setCopilotKey] = useState(0);
-    const [copilotMessages, setCopilotMessages] = useState<z.infer<typeof CopilotMessage>[]>([]);
-    const [loadingResponse, setLoadingResponse] = useState(false);
-    const [loadingMessage, setLoadingMessage] = useState("Thinking...");
-    const [responseError, setResponseError] = useState<string | null>(null);
-    const searchParams = useSearchParams();
     const [isMcpImportModalOpen, setIsMcpImportModalOpen] = useState(false);
 
     console.log(`workflow editor chat key: ${state.present.chatKey}`);
 
     // Auto-show copilot and increment key when prompt is present
     useEffect(() => {
-        const prompt = searchParams.get('prompt');
+        const prompt = localStorage.getItem(`project_prompt_${state.present.workflow.projectId}`);
+        console.log('init project prompt', prompt);
         if (prompt) {
             setShowCopilot(true);
-            setCopilotKey(prev => prev + 1); // Force copilot to reset
-            
-            // Clean up the URL
-            const url = new URL(window.location.href);
-            url.searchParams.delete('prompt');
-            window.history.replaceState({}, '', url);
         }
-    }, [searchParams]);
+    }, [state.present.workflow.projectId]);
 
     function handleSelectAgent(name: string) {
         dispatch({ type: "select_agent", name });
@@ -958,7 +945,6 @@ export function WorkflowEditor({
                     onResize={(size) => setCopilotWidth(size)}
                 >
                     <Copilot
-                        key={copilotKey}
                         projectId={state.present.workflow.projectId}
                         workflow={state.present.workflow}
                         dispatch={dispatch}
@@ -971,21 +957,6 @@ export function WorkflowEditor({
                                 messages: chatMessages
                             } : undefined
                         }
-                        onNewChat={() => {
-                            setCopilotKey(prev => prev + 1);
-                            setCopilotMessages([]);
-                            setLoadingResponse(false);
-                            setLoadingMessage("Thinking...");
-                            setResponseError(null);
-                        }}
-                        messages={copilotMessages}
-                        setMessages={setCopilotMessages}
-                        loadingResponse={loadingResponse}
-                        setLoadingResponse={setLoadingResponse}
-                        loadingMessage={loadingMessage}
-                        setLoadingMessage={setLoadingMessage}
-                        responseError={responseError}
-                        setResponseError={setResponseError}
                     />
                 </ResizablePanel>
             </>}

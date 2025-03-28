@@ -206,14 +206,9 @@ export default function App() {
                     throw new Error('Project creation failed - no project ID returned');
                 }
 
-                const params = new URLSearchParams({
-                    prompt: promptText,
-                    autostart: 'true'
-                });
-                const url = `/projects/${response.id}/workflow?${params.toString()}`;
-                
-                console.log('Navigating to:', url);
-                window.location.href = url;
+                // write prompt to local storage
+                localStorage.setItem(`project_prompt_${response.id}`, promptText);
+                router.push(`/projects/${response.id}/workflow`);
             } catch (error) {
                 console.error('Error creating project:', error);
             }
