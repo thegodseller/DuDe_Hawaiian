@@ -204,33 +204,38 @@ def handle_call(call_sid, workflow_id, project_id=None):
         # Create TwiML response
         response = VoiceResponse()
 
-        # Check if this is a new call
+# Check if this is a new call (no turns yet)
         if call_state.get('turn_count', 0) == 0:
-            # Initial greeting for new calls
-            greeting = "Hello! I'm your RowBoat assistant. How can I help you today?"
-            logger.info(f"New call, preparing greeting: {greeting}")
+            logger.info("First turn: generating AI greeting using an empty user input...")
 
+            # Generate greeting by calling process_conversation_turn with empty user input
             try:
-                # Use streaming audio endpoint instead of generating files
-                # Include a unique ID to prevent caching
-                unique_id = str(uuid.uuid4())
-                # Use a relative URL - Twilio will use the same host as the webhook
-                audio_url = f"/stream-audio/{call_sid}/greeting/{unique_id}"
-                logger.info(f"Streaming greeting from relative URL: {audio_url}")
-
-                # Play the greeting via streaming
-                response.play(audio_url)
+                ai_greeting, updated_messages, updated_state = process_conversation_turn(
+                    user_input="",  # empty to signal "give me your greeting"
+                    workflow_id=call_state['workflow_id'],
+                    system_prompt=call_state['system_prompt'],
+                    previous_messages=[],
+                    previous_state=None,
+                    project_id=call_state.get('project_id')
+                )
             except Exception as e:
-                logger.error(f"Error with audio streaming for greeting: {str(e)}")
-                import traceback
-                logger.error(traceback.format_exc())
-                # Fallback to Twilio TTS
-                response.say(greeting, voice='alice')
+                logger.error(f"Error generating AI greeting: {str(e)}")
+                ai_greeting = "Hello, I encountered an issue creating a greeting. How can I help you?"
 
-            # Update call state
+                # Fallback: no changes to updated_messages/updated_state
+                updated_messages = []
+                updated_state = None
+
+            # Update call_state with AI greeting
+            call_state['messages'] = updated_messages
+            call_state['state'] = updated_state
+            call_state['conversation_history'].append({
+                'user': "",  # empty user
+                'assistant': ai_greeting
+            })
             call_state['turn_count'] = 1
 
-            # Save to MongoDB (primary source of truth)
+            # Save changes to MongoDB
             try:
                 save_call_state(call_sid, call_state)
                 logger.info(f"Saved greeting state to MongoDB for {call_sid}")
@@ -238,24 +243,24 @@ def handle_call(call_sid, workflow_id, project_id=None):
                 logger.error(f"Error saving greeting state to MongoDB: {str(e)}")
                 raise RuntimeError(f"Failed to save greeting state to MongoDB: {str(e)}")
 
-            # Update local memory cache
             active_calls[call_sid] = call_state
 
-            # Instead of using both Gather and Record which compete for input,
-            # just use Gather for speech recognition, and rely on its SpeechResult
-            # This is more reliable than trying to use Record and Deepgram
+            # Play the greeting via streaming audio
+            unique_id = str(uuid.uuid4())
+            audio_url = f"/stream-audio/{call_sid}/greeting/{unique_id}"
+            logger.info(f"Will stream greeting from {audio_url}")
+            response.play(audio_url)
+
+            # Gather user input next
             gather = Gather(
                 input='speech',
                 action=f'/process_speech?call_sid={call_sid}',
                 speech_timeout='auto',
                 language='en-US',
-                enhanced=True,  # Enable enhanced speech recognition
-                speechModel='phone_call'  # Optimize for phone calls
+                enhanced=True,
+                speechModel='phone_call'
             )
             response.append(gather)
-
-            # If no input detected, redirect to twiml endpoint
-            # Call state will be retrieved from MongoDB
             response.redirect('/twiml')
 
         logger.info(f"Returning response: {str(response)}")
@@ -492,10 +497,7 @@ def stream_audio(call_sid, text_type, unique_id):
         # Determine what text to synthesize
         text_to_speak = ""
 
-        if text_type == "greeting":
-            # Use default greeting
-            text_to_speak = "Hello! I'm your RowBoat assistant. How can I help you today?"
-        elif text_type == "response":
+        if text_type == "greeting" or text_type == "response":
             # Get the text from call state (try MongoDB first, then memory)
             call_state = None
 

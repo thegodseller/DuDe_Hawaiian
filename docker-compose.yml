@@ -184,7 +184,7 @@ services:
       context: ./apps/twilio_handler
       dockerfile: Dockerfile
     ports:
-      - "3009:3009"
+      - "4010:4010"
     environment:
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
       - ROWBOAT_API_HOST=http://rowboat:3000

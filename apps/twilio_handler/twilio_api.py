@@ -55,8 +55,9 @@ def process_conversation_turn(
         if not messages or not any(msg.role == 'system' for msg in messages):
             messages.append(SystemMessage(role='system', content=system_prompt))
 
-        # Add the user's new message
-        messages.append(UserMessage(role='user', content=user_input))
+        # Add the user's new
+        if user_input:
+            messages.append(UserMessage(role='user', content=user_input))
 
         # Process the conversation using the stateless API
         logger.info(f"Sending to RowBoat API with {len(messages)} messages")
@@ -83,20 +84,6 @@ def process_conversation_turn(
 
         # Update messages list with the new responses
         final_messages = messages + response_messages
-
-        # dump_data = {
-        #     'messages': [msg.model_dump() for msg in messages],
-        #     'response_messages': [msg.model_dump() for msg in response_messages],
-        #     'state': new_state
-        # }
-        # # Write messages to a debug file for inspection
-        # fname = f'debug_dump_{time.time()}.json'
-        # try:
-        #     with open(fname, 'w') as f:
-        #         json.dump(dump_data, f, indent=2)
-        #     logger.info(f"Wrote debug info to {fname}")
-        # except Exception as e:
-        #     logger.error(f"Failed to write message debug file: {str(e)}")
 
 
         logger.info(f"Got response from RowBoat API: {assistant_response[:100]}...")
