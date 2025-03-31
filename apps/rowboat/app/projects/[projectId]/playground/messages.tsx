@@ -52,9 +52,9 @@ function AssistantMessage({ content, sender, latency }: { content: string, sende
             <div className="text-gray-500 dark:text-gray-400 text-xs pl-3">
                 {sender ?? 'Assistant'}
             </div>
-            <div className="text-gray-400 dark:text-gray-500 text-xs pr-3">
+            {latency > 0 && <div className="text-gray-400 dark:text-gray-500 text-xs pr-3">
                 {Math.round(latency / 1000)}s
-            </div>
+            </div>}
         </div>
         <div className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg rounded-bl-none text-sm text-gray-900 dark:text-gray-100">
             <MarkdownContent content={content} />
@@ -273,6 +273,7 @@ export function Messages({
 }) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     let lastUserMessageTimestamp = 0;
+    let userMessageSeen = false;
 
     // scroll to bottom on new messages
     useEffect(() => {
@@ -302,7 +303,11 @@ export function Messages({
                         />;
                     } else {
                         // the assistant message createdAt is an ISO string timestamp
-                        const latency = new Date(message.createdAt).getTime() - lastUserMessageTimestamp;
+                        let latency = new Date(message.createdAt).getTime() - lastUserMessageTimestamp;
+                        // if this is the first message, set the latency to 0
+                        if (!userMessageSeen) {
+                            latency = 0;
+                        }
                         if (message.agenticResponseType === 'internal') {
                             return (
                                 <InternalAssistantMessage
@@ -326,6 +331,7 @@ export function Messages({
                 }
                 if (message.role === 'user' && typeof message.content === 'string') {
                     lastUserMessageTimestamp = new Date(message.createdAt).getTime();
+                    userMessageSeen = true;
                     return <UserMessage key={index} content={message.content} />;
                 }
                 return <></>;
