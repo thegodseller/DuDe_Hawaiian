@@ -37,7 +37,7 @@ You are an helpful customer support assistant
 
 ❌ Don'ts:
 - don't ask user any other detail than email`,
-                model: "gpt-4o-mini",
+                model: "gpt-4o",
                 toggleAble: true,
                 ragReturnType: "chunks",
                 ragK: 3,
@@ -48,7 +48,7 @@ You are an helpful customer support assistant
                 type: "post_process",
                 description: "",
                 instructions: "Ensure that the agent response is terse and to the point.",
-                model: "gpt-4o-mini",
+                model: "gpt-4o",
                 toggleAble: true,
                 locked: true,
                 global: true,
@@ -61,7 +61,7 @@ You are an helpful customer support assistant
                 type: "escalation",
                 description: "",
                 instructions: "Get the user's contact information and let them know that their request has been escalated.",
-                model: "gpt-4o-mini",
+                model: "gpt-4o",
                 locked: true,
                 toggleAble: false,
                 ragReturnType: "chunks",
