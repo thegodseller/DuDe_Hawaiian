@@ -13,7 +13,7 @@ from .helpers.instructions import (
     add_rag_instructions_to_agent
 )
 
-from agents import Agent as NewAgent, Runner, FunctionTool, RunContextWrapper
+from agents import Agent as NewAgent, Runner, FunctionTool, RunContextWrapper, ModelSettings
 # Add import for OpenAI functionality
 from src.utils.common import common_logger as logger, generate_openai_output
 from typing import Any
@@ -261,8 +261,10 @@ def get_agents(agent_configs, tool_configs, complete_request):
                 instructions=agent_config["instructions"],
                 handoff_description=agent_config["description"],
                 tools=new_tools,
-                model=agent_config["model"]
+                model=agent_config["model"],
+                model_settings=ModelSettings(temperature=0.0)
             )
+
             new_agent_to_children[agent_config["name"]] = agent_config.get("connectedAgents", [])
             new_agent_name_to_index[agent_config["name"]] = len(new_agents)
             new_agents.append(new_agent)
