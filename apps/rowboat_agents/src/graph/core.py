@@ -285,7 +285,9 @@ async def run_turn_streamed(
 
             # Update current agent when it changes
             elif event.type == "agent_updated_stream_event":
-                current_agent = event.new_agent
+                if current_agent.name == event.new_agent.name:
+                    continue
+
                 tool_call_id = str(uuid.uuid4())
 
                 # yield the transfer invocation
@@ -329,6 +331,7 @@ async def run_turn_streamed(
 
             # Handle run items (tools, messages, etc)
             elif event.type == "run_item_stream_event":
+                current_agent = event.item.agent
                 if event.item.type == "tool_call_item":
                     message = {
                         'content': None,
