@@ -179,14 +179,14 @@ services:
     ports:
       - "8000:8000"
 
-  twilio_handler:
-    build:
-      context: ./apps/twilio_handler
-      dockerfile: Dockerfile
-    ports:
-      - "4010:4010"
-    environment:
-      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
-      - ROWBOAT_API_HOST=http://rowboat:3000
-      - MONGODB_URI=${MONGODB_CONNECTION_STRING}
-    restart: unless-stopped
+  # twilio_handler:
+  #   build:
+  #     context: ./apps/twilio_handler
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "4010:4010"
+  #   environment:
+  #     - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+  #     - ROWBOAT_API_HOST=http://rowboat:3000
+  #     - MONGODB_URI=${MONGODB_CONNECTION_STRING}
+  #   restart: unless-stopped
