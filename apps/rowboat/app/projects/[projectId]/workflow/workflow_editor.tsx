@@ -1,5 +1,5 @@
 "use client";
-import { WithStringId } from "../../../lib/types/types";
+import { MCPServer, WithStringId } from "../../../lib/types/types";
 import { Workflow } from "../../../lib/types/workflow_types";
 import { WorkflowTool } from "../../../lib/types/workflow_types";
 import { WorkflowPrompt } from "../../../lib/types/workflow_types";
@@ -26,10 +26,9 @@ import { apiV1 } from "rowboat-shared";
 import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
 import { PublishedBadge } from "./published_badge";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
-import { CopyIcon, Layers2Icon, RadioIcon, RedoIcon, Sparkles, UndoIcon } from "lucide-react";
+import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
-import { CopilotMessage } from "../../../lib/types/copilot_types";
-import { TestProfile } from "@/app/lib/types/testing_types";
+import { McpImportTools } from "./mcp_imports";
 
 enablePatches();
 
@@ -132,6 +131,9 @@ export type Action = {
 } | {
     type: "restore_state";
     state: StateItem;
+} | {
+    type: "import_mcp_tools";
+    tools: z.infer<typeof WorkflowTool>[];
 };
 
 function reducer(state: State, action: Action): State {
@@ -273,10 +275,10 @@ function reducer(state: State, action: Action): State {
                             if (isLive) {
                                 break;
                             }
-                            let newToolName = "New tool";
+                            let newToolName = "new_tool";
                             if (draft.workflow?.tools.some((tool) => tool.name === newToolName)) {
-                                newToolName = `New tool ${draft.workflow.tools.filter((tool) =>
-                                    tool.name.startsWith("New tool")).length + 1}`;
+                                newToolName = `new_tool_${draft.workflow.tools.filter((tool) =>
+                                    tool.name.startsWith("new_tool")).length + 1}`;
                             }
                             draft.workflow?.tools.push({
                                 name: newToolName,
@@ -509,6 +511,26 @@ function reducer(state: State, action: Action): State {
                             draft.workflow.startAgent = action.name;
                             draft.chatKey++;
                             break;
+                        case "import_mcp_tools":
+                            if (isLive) {
+                                break;
+                            }
+                            // Process each tool one by one
+                            action.tools.forEach(newTool => {
+                                const existingToolIndex = draft.workflow.tools.findIndex(
+                                    tool => tool.name === newTool.name
+                                );
+                                
+                                if (existingToolIndex !== -1) {
+                                    // Replace existing tool
+                                    draft.workflow.tools[existingToolIndex] = newTool;
+                                } else {
+                                    // Add new tool
+                                    draft.workflow.tools.push(newTool);
+                                }
+                            });
+                            draft.chatKey++;
+                            break;
                     }
                 }
             );
@@ -535,6 +557,8 @@ export function WorkflowEditor({
     handleShowSelector,
     handleCloneVersion,
     useRag,
+    mcpServerUrls,
+    toolWebhookUrl,
 }: {
     dataSources: WithStringId<z.infer<typeof DataSource>>[];
     workflow: WithStringId<z.infer<typeof Workflow>>;
@@ -542,6 +566,8 @@ export function WorkflowEditor({
     handleShowSelector: () => void;
     handleCloneVersion: (workflowId: string) => void;
     useRag: boolean;
+    mcpServerUrls: Array<z.infer<typeof MCPServer>>;
+    toolWebhookUrl: string;
 }) {
     const [state, dispatch] = useReducer<Reducer<State, Action>>(reducer, {
         patches: [],
@@ -570,13 +596,18 @@ export function WorkflowEditor({
     const [showCopySuccess, setShowCopySuccess] = useState(false);
     const [showCopilot, setShowCopilot] = useState(false);
     const [copilotWidth, setCopilotWidth] = useState(25);
-    const [copilotKey, setCopilotKey] = useState(0);
-    const [copilotMessages, setCopilotMessages] = useState<z.infer<typeof CopilotMessage>[]>([]);
-    const [loadingResponse, setLoadingResponse] = useState(false);
-    const [loadingMessage, setLoadingMessage] = useState("Thinking...");
-    const [responseError, setResponseError] = useState<string | null>(null);
+    const [isMcpImportModalOpen, setIsMcpImportModalOpen] = useState(false);
 
     console.log(`workflow editor chat key: ${state.present.chatKey}`);
+
+    // Auto-show copilot and increment key when prompt is present
+    useEffect(() => {
+        const prompt = localStorage.getItem(`project_prompt_${state.present.workflow.projectId}`);
+        console.log('init project prompt', prompt);
+        if (prompt) {
+            setShowCopilot(true);
+        }
+    }, [state.present.workflow.projectId]);
 
     function handleSelectAgent(name: string) {
         dispatch({ type: "select_agent", name });
@@ -674,6 +705,10 @@ export function WorkflowEditor({
         }, 1500);
     }
 
+    function triggerMcpImport() {
+        setIsMcpImportModalOpen(true);
+    }
+
     const processQueue = useCallback(async (state: State, dispatch: React.Dispatch<Action>) => {
         if (saving.current || saveQueue.current.length === 0) return;
 
@@ -696,6 +731,10 @@ export function WorkflowEditor({
             }
         }
     }, [isLive]);
+
+    function handleImportMcpTools(tools: z.infer<typeof WorkflowTool>[]) {
+        dispatch({ type: "import_mcp_tools", tools });
+    }
 
     useEffect(() => {
         if (state.present.pendingChanges && state.present.workflow) {
@@ -732,7 +771,7 @@ export function WorkflowEditor({
                     <DropdownMenu
                         disabledKeys={[
                             ...(state.present.pendingChanges ? ['switch', 'clone'] : []),
-                            ...(isLive ? ['publish'] : []),
+                            ...(isLive ? ['publish', 'mcp'] : []),
                         ]}
                         onAction={(key) => {
                             if (key === 'switch') {
@@ -848,6 +887,7 @@ export function WorkflowEditor({
                     onDeleteAgent={handleDeleteAgent}
                     onDeleteTool={handleDeleteTool}
                     onDeletePrompt={handleDeletePrompt}
+                    triggerMcpImport={triggerMcpImport}
                 />
             </ResizablePanel>
             <ResizableHandle />
@@ -862,6 +902,8 @@ export function WorkflowEditor({
                     projectId={state.present.workflow.projectId}
                     workflow={state.present.workflow}
                     messageSubscriber={updateChatMessages}
+                    mcpServerUrls={mcpServerUrls}
+                    toolWebhookUrl={toolWebhookUrl}
                 />
                 {state.present.selection?.type === "agent" && <AgentConfig
                     key={state.present.selection.name}
@@ -903,7 +945,6 @@ export function WorkflowEditor({
                     onResize={(size) => setCopilotWidth(size)}
                 >
                     <Copilot
-                        key={copilotKey}
                         projectId={state.present.workflow.projectId}
                         workflow={state.present.workflow}
                         dispatch={dispatch}
@@ -916,24 +957,15 @@ export function WorkflowEditor({
                                 messages: chatMessages
                             } : undefined
                         }
-                        onNewChat={() => {
-                            setCopilotKey(prev => prev + 1);
-                            setCopilotMessages([]);
-                            setLoadingResponse(false);
-                            setLoadingMessage("Thinking...");
-                            setResponseError(null);
-                        }}
-                        messages={copilotMessages}
-                        setMessages={setCopilotMessages}
-                        loadingResponse={loadingResponse}
-                        setLoadingResponse={setLoadingResponse}
-                        loadingMessage={loadingMessage}
-                        setLoadingMessage={setLoadingMessage}
-                        responseError={responseError}
-                        setResponseError={setResponseError}
                     />
                 </ResizablePanel>
             </>}
         </ResizablePanelGroup>
+        <McpImportTools
+            projectId={state.present.workflow.projectId}
+            isOpen={isMcpImportModalOpen}
+            onOpenChange={setIsMcpImportModalOpen}
+            onImport={handleImportMcpTools}
+        />
     </div>;
 }

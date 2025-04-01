@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 export const DataSource = z.object({
     name: z.string(),
     projectId: z.string(),
@@ -23,8 +24,13 @@ export const DataSource = z.object({
         z.object({
             type: z.literal('files'),
         }),
+        z.object({
+            type: z.literal('text'),
+        })
     ]),
-});export const DataSourceDoc = z.object({
+});
+
+export const DataSourceDoc = z.object({
     sourceId: z.string(),
     name: z.string(),
     version: z.number(),
@@ -50,8 +56,13 @@ export const DataSource = z.object({
             mimeType: z.string(),
             s3Key: z.string(),
         }),
+        z.object({
+            type: z.literal('text'),
+            content: z.string(),
+        }),
     ]),
 });
+
 export const EmbeddingDoc = z.object({
     content: z.string(),
     sourceId: z.string(),
@@ -75,4 +86,3 @@ export const EmbeddingRecord = z.object({
         name: z.string(),
     }),
 });
-

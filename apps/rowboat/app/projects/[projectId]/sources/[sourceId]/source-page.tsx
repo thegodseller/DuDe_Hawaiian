@@ -13,6 +13,7 @@ import { TableLabel, TableValue } from "./shared";
 import { ScrapeSource } from "./scrape-source";
 import { FilesSource } from "./files-source";
 import { getDataSource } from "../../../../actions/datasource_actions";
+import { TextSource } from "./text-source";
 
 export function SourcePage({
     sourceId,
@@ -118,6 +119,10 @@ export function SourcePage({
                                         <DataSourceIcon type="files" />
                                         <div>File upload</div>
                                     </div>}
+                                    {source.data.type === 'text' && <div className="flex gap-1 items-center">
+                                        <DataSourceIcon type="text" />
+                                        <div>Text</div>
+                                    </div>}
                                 </TableValue>
                             </tr>
                             <tr>
@@ -131,6 +136,7 @@ export function SourcePage({
                 </PageSection>
                 {source.data.type === 'urls' && <ScrapeSource projectId={projectId} dataSource={source} handleReload={handleReload} />}
                 {source.data.type === 'files' && <FilesSource projectId={projectId} dataSource={source} handleReload={handleReload} />}
+                {source.data.type === 'text' && <TextSource projectId={projectId} dataSource={source} handleReload={handleReload} />}
 
                 <PageSection title="Danger zone">
                     <div className="flex flex-col gap-2 items-start">

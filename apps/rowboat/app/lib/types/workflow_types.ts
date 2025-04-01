@@ -27,6 +27,7 @@ export const WorkflowPrompt = z.object({
     type: z.union([
         z.literal('base_prompt'),
         z.literal('style_prompt'),
+        z.literal('greeting'),
     ]),
     prompt: z.string(),
 });
@@ -44,6 +45,8 @@ export const WorkflowTool = z.object({
         })),
         required: z.array(z.string()).optional(),
     }),
+    isMcp: z.boolean().default(false).optional(),
+    mcpServerName: z.string().optional(),
 });
 export const Workflow = z.object({
     name: z.string().optional(),

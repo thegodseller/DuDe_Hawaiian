@@ -15,14 +15,15 @@ import clsx from "clsx";
 import { Action as WorkflowDispatch } from "./workflow_editor";
 import MarkdownContent from "../../../lib/components/markdown-content";
 import { CopyAsJsonButton } from "../playground/copy-as-json-button";
-import { CornerDownLeftIcon, SendIcon } from "lucide-react";
+import { CornerDownLeftIcon, PlusIcon, SendIcon } from "lucide-react";
+import { useSearchParams } from 'next/navigation';
 
 
 const CopilotContext = createContext<{
     workflow: z.infer<typeof Workflow> | null;
     handleApplyChange: (messageIndex: number, actionIndex: number, field?: string) => void;
     appliedChanges: Record<string, boolean>;
-}>({ workflow: null, handleApplyChange: () => {}, appliedChanges: {} });
+}>({ workflow: null, handleApplyChange: () => { }, appliedChanges: {} });
 
 export function getAppliedChangeKey(messageIndex: number, actionIndex: number, field: string) {
     return `${messageIndex}-${actionIndex}-${field}`;
@@ -173,34 +174,34 @@ function App({
     projectId,
     workflow,
     dispatch,
-    chatContext=undefined,
-    messages,
-    setMessages,
-    loadingResponse,
-    setLoadingResponse,
-    loadingMessage,
-    setLoadingMessage,
-    responseError,
-    setResponseError,
+    chatContext = undefined,
 }: {
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     dispatch: (action: WorkflowDispatch) => void;
     chatContext?: z.infer<typeof CopilotChatContext>;
-    messages: z.infer<typeof CopilotMessage>[];
-    setMessages: (messages: z.infer<typeof CopilotMessage>[]) => void;
-    loadingResponse: boolean;
-    setLoadingResponse: (loading: boolean) => void;
-    loadingMessage: string;
-    setLoadingMessage: (message: string) => void;
-    responseError: string | null;
-    setResponseError: (error: string | null) => void;
 }) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [messages, setMessages] = useState<z.infer<typeof CopilotMessage>[]>([]);
+    const [loadingResponse, setLoadingResponse] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState("Thinking");
+    const [responseError, setResponseError] = useState<string | null>(null);
     const [appliedChanges, setAppliedChanges] = useState<Record<string, boolean>>({});
     const [discardContext, setDiscardContext] = useState(false);
     const [lastRequest, setLastRequest] = useState<unknown | null>(null);
     const [lastResponse, setLastResponse] = useState<unknown | null>(null);
+
+    // Check for initial prompt in local storage and send it
+    useEffect(() => {
+        const prompt = localStorage.getItem(`project_prompt_${projectId}`);
+        if (prompt && messages.length === 0) {
+            localStorage.removeItem(`project_prompt_${projectId}`);
+            setMessages([{
+                role: 'user',
+                content: prompt
+            }]);
+        }
+    }, [projectId, messages.length, setMessages]);
 
     // First useEffect for loading messages
     useEffect(() => {
@@ -480,8 +481,8 @@ function App({
                             {effectiveContext.type === 'tool' && `Tool: ${effectiveContext.name}`}
                             {effectiveContext.type === 'prompt' && `Prompt: ${effectiveContext.name}`}
                         </div>
-                        <button 
-                            className="text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300" 
+                        <button
+                            className="text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
                             onClick={() => setDiscardContext(true)}
                         >
                             <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -502,65 +503,42 @@ function App({
 export function Copilot({
     projectId,
     workflow,
-    chatContext=undefined,
+    chatContext = undefined,
     dispatch,
-    onNewChat,
-    messages,
-    setMessages,
-    loadingResponse,
-    setLoadingResponse,
-    loadingMessage,
-    setLoadingMessage,
-    responseError,
-    setResponseError,
 }: {
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     chatContext?: z.infer<typeof CopilotChatContext>;
     dispatch: (action: WorkflowDispatch) => void;
-    onNewChat: () => void;
-    messages: z.infer<typeof CopilotMessage>[];
-    setMessages: (messages: z.infer<typeof CopilotMessage>[]) => void;
-    loadingResponse: boolean;
-    setLoadingResponse: (loading: boolean) => void;
-    loadingMessage: string;
-    setLoadingMessage: (message: string) => void;
-    responseError: string | null;
-    setResponseError: (error: string | null) => void;
 }) {
+    const [copilotKey, setCopilotKey] = useState(0);
+
+    function handleNewChat() {
+        setCopilotKey(prev => prev + 1);
+    }
+
     return (
-        <StructuredPanel 
-            fancy 
-            title="COPILOT" 
+        <StructuredPanel
+            fancy
+            title="COPILOT"
             tooltip="Get AI assistance for creating and improving your multi-agent system"
             actions={[
                 <ActionButton
                     key="ask"
                     primary
-                    icon={
-                        <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14m-7 7V5" />
-                        </svg>
-                    }
-                    onClick={onNewChat}
+                    icon={<PlusIcon className="w-4 h-4" />}
+                    onClick={handleNewChat}
                 >
                     New
                 </ActionButton>
             ]}
         >
             <App
+                key={copilotKey}
                 projectId={projectId}
                 workflow={workflow}
                 dispatch={dispatch}
                 chatContext={chatContext}
-                messages={messages}
-                setMessages={setMessages}
-                loadingResponse={loadingResponse}
-                setLoadingResponse={setLoadingResponse}
-                loadingMessage={loadingMessage}
-                setLoadingMessage={setLoadingMessage}
-                responseError={responseError}
-                setResponseError={setResponseError}
             />
         </StructuredPanel>
     );

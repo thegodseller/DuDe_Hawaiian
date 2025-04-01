@@ -1,5 +1,5 @@
 "use client";
-import { WithStringId } from "../../../lib/types/types";
+import { MCPServer, WithStringId } from "../../../lib/types/types";
 import { Workflow } from "../../../lib/types/workflow_types";
 import { DataSource } from "../../../lib/types/datasource_types";
 import { z } from "zod";
@@ -9,6 +9,8 @@ import { WorkflowSelector } from "./workflow_selector";
 import { Spinner } from "@heroui/react";
 import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow } from "../../../actions/workflow_actions";
 import { listDataSources } from "../../../actions/datasource_actions";
+import { listMcpServers } from "@/app/actions/mcp_actions";
+import { getProjectConfig } from "@/app/actions/project_actions";
 
 export function App({
     projectId,
@@ -23,17 +25,23 @@ export function App({
     const [dataSources, setDataSources] = useState<WithStringId<z.infer<typeof DataSource>>[] | null>(null);
     const [loading, setLoading] = useState(false);
     const [autoSelectIfOnlyOneWorkflow, setAutoSelectIfOnlyOneWorkflow] = useState(true);
+    const [mcpServerUrls, setMcpServerUrls] = useState<Array<z.infer<typeof MCPServer>>>([]);
+    const [toolWebhookUrl, setToolWebhookUrl] = useState<string>('');
 
     const handleSelect = useCallback(async (workflowId: string) => {
         setLoading(true);
         const workflow = await fetchWorkflow(projectId, workflowId);
         const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
         const dataSources = await listDataSources(projectId);
+        const mcpServers = await listMcpServers(projectId);
+        const projectConfig = await getProjectConfig(projectId);
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflowId);
         setWorkflow(workflow);
         setPublishedWorkflowId(publishedWorkflowId);
         setDataSources(dataSources);
+        setMcpServerUrls(mcpServers);
+        setToolWebhookUrl(projectConfig.webhookUrl ?? '');
         setLoading(false);
     }, [projectId]);
 
@@ -108,6 +116,8 @@ export function App({
             handleShowSelector={handleShowSelector}
             handleCloneVersion={handleCloneVersion}
             useRag={useRag}
+            mcpServerUrls={mcpServerUrls}
+            toolWebhookUrl={toolWebhookUrl}
         />}
     </>
 }

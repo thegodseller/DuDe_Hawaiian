@@ -1,10 +1,10 @@
-import { FileIcon, FilesIcon, GlobeIcon } from "lucide-react";
+import { FileIcon, FilesIcon, FileTextIcon, GlobeIcon } from "lucide-react";
 
 export function DataSourceIcon({
     type = undefined,
     size = "sm",
 }: {
-    type?: "crawl" | "urls" | "files" | undefined;
+    type?: "crawl" | "urls" | "files" | "text" | undefined;
     size?: "sm" | "md";
 }) {
     const sizeClass = size === "sm" ? "w-4 h-4" : "w-6 h-6";
@@ -13,5 +13,6 @@ export function DataSourceIcon({
         {type == "crawl" && <GlobeIcon className={sizeClass} />}
         {type == "urls" && <GlobeIcon className={sizeClass} />}
         {type == "files" && <FilesIcon className={sizeClass} />}
+        {type == "text" && <FileTextIcon className={sizeClass} />}
     </>;
 }

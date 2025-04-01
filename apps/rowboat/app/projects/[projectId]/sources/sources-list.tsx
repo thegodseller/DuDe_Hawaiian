@@ -86,6 +86,14 @@ export function SourcesList({
                                         <DataSourceIcon type="urls" />
                                         <div>List URLs</div>
                                     </div>}
+                                    {source.data.type == 'text' && <div className="flex gap-1 items-center">
+                                        <DataSourceIcon type="text" />
+                                        <div>Text</div>
+                                    </div>}
+                                    {source.data.type == 'files' && <div className="flex gap-1 items-center">
+                                        <DataSourceIcon type="files" />
+                                        <div>Files</div>
+                                    </div>}
                                 </td>
                                 <td className="py-4">
                                     <SelfUpdatingSourceStatus sourceId={source._id} projectId={projectId} initialStatus={source.status} compact={true} />

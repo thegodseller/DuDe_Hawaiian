@@ -1,89 +1,8 @@
-import { convertFromAgenticAPIChatMessages } from "./types/agents_api_types";
-import { ClientToolCallRequest } from "./types/tool_types";
-import { ClientToolCallJwt, GetInformationToolResult } from "./types/tool_types";
-import { ClientToolCallRequestBody } from "./types/tool_types";
-import { AgenticAPIChatResponse } from "./types/agents_api_types";
-import { AgenticAPIChatRequest } from "./types/agents_api_types";
-import { Workflow, WorkflowAgent } from "./types/workflow_types";
-import { AgenticAPIChatMessage } from "./types/agents_api_types";
+import { AgenticAPIChatResponse, AgenticAPIChatRequest, AgenticAPIChatMessage, AgenticAPIInitStreamResponse } from "./types/agents_api_types";
 import { z } from "zod";
-import { dataSourceDocsCollection, dataSourcesCollection, projectsCollection } from "./mongodb";
-import { apiV1 } from "rowboat-shared";
-import { SignJWT } from "jose";
-import crypto from "crypto";
-import { ObjectId } from "mongodb";
-import { embeddingModel } from "./embedding";
-import { embed, generateObject } from "ai";
-import { qdrantClient } from "./qdrant";
-import { EmbeddingRecord } from "./types/datasource_types";
+import { generateObject } from "ai";
 import { ApiMessage } from "./types/types";
 import { openai } from "@ai-sdk/openai";
-import { TestProfile } from "./types/testing_types";
-
-export async function callClientToolWebhook(
-    toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number],
-    messages: z.infer<typeof ApiMessage>[],
-    projectId: string,
-): Promise<unknown> {
-    const project = await projectsCollection.findOne({
-        "_id": projectId,
-    });
-    if (!project) {
-        throw new Error('Project not found');
-    }
-
-    if (!project.webhookUrl) {
-        throw new Error('Webhook URL not found');
-    }
-
-    // prepare request body
-    const content = JSON.stringify({
-        toolCall,
-        messages,
-    } as z.infer<typeof ClientToolCallRequestBody>);
-    const requestId = crypto.randomUUID();
-    const bodyHash = crypto
-        .createHash('sha256')
-        .update(content, 'utf8')
-        .digest('hex');
-
-    // sign request
-    const jwt = await new SignJWT({
-        requestId,
-        projectId,
-        bodyHash,
-    } as z.infer<typeof ClientToolCallJwt>)
-        .setProtectedHeader({
-            alg: 'HS256',
-            typ: 'JWT',
-        })
-        .setIssuer('rowboat')
-        .setAudience(project.webhookUrl)
-        .setSubject(`tool-call-${toolCall.id}`)
-        .setJti(requestId)
-        .setIssuedAt()
-        .setExpirationTime("5 minutes")
-        .sign(new TextEncoder().encode(project.secret));
-
-    // make request
-    const request: z.infer<typeof ClientToolCallRequest> = {
-        requestId,
-        content,
-    };
-    const response = await fetch(project.webhookUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-signature-jwt': jwt,
-        },
-        body: JSON.stringify(request),
-    });
-    if (!response.ok) {
-        throw new Error(`Failed to call webhook: ${response.status}: ${response.statusText}`);
-    }
-    const responseBody = await response.json();
-    return responseBody;
-}
 
 export async function getAgenticApiResponse(
     request: z.infer<typeof AgenticAPIChatRequest>,
@@ -93,7 +12,7 @@ export async function getAgenticApiResponse(
     rawAPIResponse: unknown,
 }> {
     // call agentic api
-    console.log(`agentic request`, JSON.stringify(request, null, 2));
+    console.log(`sending agentic api request`, JSON.stringify(request));
     const response = await fetch(process.env.AGENTS_API_URL + '/chat', {
         method: 'POST',
         body: JSON.stringify(request),
@@ -107,6 +26,7 @@ export async function getAgenticApiResponse(
         throw new Error(`Failed to call agentic api: ${response.statusText}`);
     }
     const responseJson = await response.json();
+    console.log(`received agentic api response`, JSON.stringify(responseJson));
     const result: z.infer<typeof AgenticAPIChatResponse> = responseJson;
     return {
         messages: result.messages,
@@ -115,85 +35,29 @@ export async function getAgenticApiResponse(
     };
 }
 
-export async function runRAGToolCall(
-    projectId: string,
-    query: string,
-    sourceIds: string[],
-    returnType: z.infer<typeof WorkflowAgent>['ragReturnType'],
-    k: number,
-): Promise<z.infer<typeof GetInformationToolResult>> {
-    // create embedding for question
-    const embedResult = await embed({
-        model: embeddingModel,
-        value: query,
-    });
-
-    // fetch all data sources for this project
-    const sources = await dataSourcesCollection.find({
-        projectId: projectId,
-        active: true,
-    }).toArray();
-    const validSourceIds = sources
-        .filter(s => sourceIds.includes(s._id.toString())) // id should be in sourceIds
-        .filter(s => s.active) // should be active
-        .map(s => s._id.toString());
-
-    // if no sources found, return empty response
-    if (validSourceIds.length === 0) {
-        return {
-            results: [],
-        };
-    }
-
-    // perform qdrant vector search
-    const qdrantResults = await qdrantClient.query("embeddings", {
-        query: embedResult.embedding,
-        filter: {
-            must: [
-                { key: "projectId", match: { value: projectId } },
-                { key: "sourceId", match: { any: validSourceIds } },
-            ],
+export async function getAgenticResponseStreamId(
+    request: z.infer<typeof AgenticAPIChatRequest>,
+): Promise<z.infer<typeof AgenticAPIInitStreamResponse>> {
+    // call agentic api
+    console.log(`sending agentic api init stream request`, JSON.stringify(request));
+    const response = await fetch(process.env.AGENTS_API_URL + '/chat_stream_init', {
+        method: 'POST',
+        body: JSON.stringify(request),
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.AGENTS_API_KEY || 'test'}`,
         },
-        limit: k,
-        with_payload: true,
     });
-
-    // if return type is chunks, return the chunks
-    let results = qdrantResults.points.map((point) => {
-        const { title, name, content, docId, sourceId } = point.payload as z.infer<typeof EmbeddingRecord>['payload'];
-        return {
-            title,
-            name,
-            content,
-            docId,
-            sourceId,
-        };
-    });
-
-    if (returnType === 'chunks') {
-        return {
-            results,
-        };
+    if (!response.ok) {
+        console.error('Failed to call agentic init stream api', response);
+        throw new Error(`Failed to call agentic init stream api: ${response.statusText}`);
     }
-
-    // otherwise, fetch the doc contents from mongodb
-    const docs = await dataSourceDocsCollection.find({
-        _id: { $in: results.map(r => new ObjectId(r.docId)) },
-    }).toArray();
-
-    // map the results to the docs
-    results = results.map(r => {
-        const doc = docs.find(d => d._id.toString() === r.docId);
-        return {
-            ...r,
-            content: doc?.content || '',
-        };
-    });
-
-    return {
-        results,
-    };
+    const responseJson = await response.json();
+    console.log(`received agentic api init stream response`, JSON.stringify(responseJson));
+    const result: z.infer<typeof AgenticAPIInitStreamResponse> = responseJson;
+    return result;
 }
+
 // create a PrefixLogger class that wraps console.log with a prefix
 // and allows chaining with a parent logger
 export class PrefixLogger {

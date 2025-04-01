@@ -10,12 +10,13 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - MONGODB_CONNECTION_STRING=${MONGODB_CONNECTION_STRING}
+      - USE_AUTH=${USE_AUTH}
       - AUTH0_SECRET=${AUTH0_SECRET}
       - AUTH0_BASE_URL=${AUTH0_BASE_URL}
       - AUTH0_ISSUER_BASE_URL=${AUTH0_ISSUER_BASE_URL}
       - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
       - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
-      - AGENTS_API_URL=http://agents:3001
+      - AGENTS_API_URL=http://rowboat_agents:3001
       - AGENTS_API_KEY=${AGENTS_API_KEY}
       - COPILOT_API_URL=http://copilot:3002
       - COPILOT_API_KEY=${COPILOT_API_KEY}
@@ -35,17 +36,22 @@ services:
       - CHAT_WIDGET_SESSION_JWT_SECRET=${CHAT_WIDGET_SESSION_JWT_SECRET}
       - MAX_QUERIES_PER_MINUTE=${MAX_QUERIES_PER_MINUTE}
       - MAX_PROJECTS_PER_USER=${MAX_PROJECTS_PER_USER}
+      - VOICE_API_URL=${VOICE_API_URL}
     restart: unless-stopped
 
-  agents:
+  rowboat_agents:
     build:
-      context: ./apps/agents
+      context: ./apps/rowboat_agents
       dockerfile: Dockerfile
     ports:
       - "3001:3001"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - API_KEY=${AGENTS_API_KEY}
+      - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=${MONGODB_CONNECTION_STRING}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
     restart: unless-stopped
 
   copilot:
@@ -57,6 +63,16 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - API_KEY=${COPILOT_API_KEY}
+    restart: unless-stopped
+
+  tools_webhook:
+    build:
+      context: ./apps/tools_webhook
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3005"
+    environment:
+      - SIGNING_SECRET=${SIGNING_SECRET}
     restart: unless-stopped
 
   simulation_runner:
@@ -123,15 +139,17 @@ services:
       - QDRANT_API_KEY=${QDRANT_API_KEY}
     restart: unless-stopped
 
-  tools_webhook:
+  rag_text_worker:
     build:
-      context: ./apps/tools_webhook
-      dockerfile: Dockerfile
-    profiles: [ "tools_webhook" ]
-    ports:
-      - "3005:3005"
+      context: ./apps/rowboat
+      dockerfile: scripts.Dockerfile
+    command: ["npm", "run", "ragTextWorker"]
+    profiles: [ "rag_text_worker" ]
     environment:
-      - SIGNING_SECRET=${SIGNING_SECRET}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MONGODB_CONNECTION_STRING=${MONGODB_CONNECTION_STRING}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
     restart: unless-stopped
 
   chat_widget:
@@ -160,4 +178,15 @@ services:
     profiles: [ "docs" ]
     ports:
       - "8000:8000"
-    restart: unless-stopped
+
+  # twilio_handler:
+  #   build:
+  #     context: ./apps/twilio_handler
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "4010:4010"
+  #   environment:
+  #     - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+  #     - ROWBOAT_API_HOST=http://rowboat:3000
+  #     - MONGODB_URI=${MONGODB_CONNECTION_STRING}
+  #   restart: unless-stopped

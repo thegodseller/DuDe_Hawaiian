@@ -10,8 +10,12 @@ import { authCheck } from "./actions";
 import { WithStringId } from "../lib/types/types";
 import { ApiKey } from "../lib/types/project_types";
 import { Project } from "../lib/types/project_types";
+import { USE_AUTH } from "../lib/feature_flags";
 
 export async function projectAuthCheck(projectId: string) {
+    if (!USE_AUTH) {
+        return;
+    }
     const user = await authCheck();
     const membership = await projectMembersCollection.findOne({
         projectId,
@@ -21,11 +25,9 @@ export async function projectAuthCheck(projectId: string) {
         throw new Error('User not a member of project');
     }
 }
-export async function createProject(formData: FormData) {
-    const user = await authCheck();
 
-    // ensure that projects created by this user is less than
-    // configured limit
+async function createBaseProject(name: string, user: any) {
+    // Check project limits
     const projectsLimit = Number(process.env.MAX_PROJECTS_PER_USER) || 0;
     if (projectsLimit > 0) {
         const count = await projectsCollection.countDocuments({
@@ -36,16 +38,14 @@ export async function createProject(formData: FormData) {
         }
     }
 
-    const name = formData.get('name') as string;
-    const templateKey = formData.get('template') as string;
     const projectId = crypto.randomUUID();
     const chatClientId = crypto.randomBytes(16).toString('base64url');
     const secret = crypto.randomBytes(32).toString('hex');
 
-    // create project
+    // Create project
     await projectsCollection.insertOne({
         _id: projectId,
-        name: name,
+        name,
         createdAt: (new Date()).toISOString(),
         lastUpdatedAt: (new Date()).toISOString(),
         createdByUserId: user.sub,
@@ -55,7 +55,28 @@ export async function createProject(formData: FormData) {
         testRunCounter: 0,
     });
 
-    // add first workflow version
+    // Add user to project
+    await projectMembersCollection.insertOne({
+        userId: user.sub,
+        projectId: projectId,
+        createdAt: (new Date()).toISOString(),
+        lastUpdatedAt: (new Date()).toISOString(),
+    });
+
+    // Add first api key
+    await createApiKey(projectId);
+
+    return projectId;
+}
+
+export async function createProject(formData: FormData) {
+    const user = await authCheck();
+    const name = formData.get('name') as string;
+    const templateKey = formData.get('template') as string;
+    
+    const projectId = await createBaseProject(name, user);
+
+    // Add first workflow version with specified template
     const { agents, prompts, tools, startAgent } = templates[templateKey];
     await agentWorkflowsCollection.insertOne({
         projectId,
@@ -67,17 +88,6 @@ export async function createProject(formData: FormData) {
         lastUpdatedAt: (new Date()).toISOString(),
         name: `Version 1`,
     });
-
-    // add user to project
-    await projectMembersCollection.insertOne({
-        userId: user.sub,
-        projectId: projectId,
-        createdAt: (new Date()).toISOString(),
-        lastUpdatedAt: (new Date()).toISOString(),
-    });
-
-    // add first api key
-    await createApiKey(projectId);
 
     redirect(`/projects/${projectId}/workflow`);
 }
@@ -211,4 +221,26 @@ export async function deleteProject(projectId: string) {
     });
 
     redirect('/projects');
+}
+
+export async function createProjectFromPrompt(formData: FormData) {
+    const user = await authCheck();
+    const name = formData.get('name') as string;
+    
+    const projectId = await createBaseProject(name, user);
+
+    // Add first workflow version with default template
+    const { agents, prompts, tools, startAgent } = templates['default'];
+    await agentWorkflowsCollection.insertOne({
+        projectId,
+        agents,
+        prompts,
+        tools,
+        startAgent,
+        createdAt: (new Date()).toISOString(),
+        lastUpdatedAt: (new Date()).toISOString(),
+        name: `Version 1`,
+    });
+
+    return { id: projectId };
 }

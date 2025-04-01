@@ -37,7 +37,7 @@ You are an helpful customer support assistant
 
 ❌ Don'ts:
 - don't ask user any other detail than email`,
-                model: "gpt-4o-mini",
+                model: "gpt-4o",
                 toggleAble: true,
                 ragReturnType: "chunks",
                 ragK: 3,
@@ -48,7 +48,7 @@ You are an helpful customer support assistant
                 type: "post_process",
                 description: "",
                 instructions: "Ensure that the agent response is terse and to the point.",
-                model: "gpt-4o-mini",
+                model: "gpt-4o",
                 toggleAble: true,
                 locked: true,
                 global: true,
@@ -61,7 +61,7 @@ You are an helpful customer support assistant
                 type: "escalation",
                 description: "",
                 instructions: "Get the user's contact information and let them know that their request has been escalated.",
-                model: "gpt-4o-mini",
+                model: "gpt-4o",
                 locked: true,
                 toggleAble: false,
                 ragReturnType: "chunks",
@@ -75,6 +75,11 @@ You are an helpful customer support assistant
                 type: "style_prompt",
                 prompt: "You should be empathetic and helpful.",
             },
+            {
+                name: "Greeting",
+                type: "greeting",
+                prompt: "Hello! How can I help you?"
+            }
         ],
         tools: [],
     },
@@ -131,6 +136,11 @@ You are an helpful customer support assistant
                 "name": "Style prompt",
                 "type": "style_prompt",
                 "prompt": "You should be empathetic and helpful."
+            },
+            {
+                "name": "Greeting",
+                "type": "greeting",
+                "prompt": "Hello! How can I help you?"
             }
         ],
         "tools": [
@@ -260,6 +270,11 @@ You are an helpful customer support assistant
                 "prompt": "---\n\nmake this more friendly. Keep it to 5-7 sentences. Use these as example references:\n\n---"
             },
             {
+                "name": "Greeting",
+                "type": "greeting",
+                "prompt": "Hello! How can I help you?"
+            },
+            {
                 "name": "structured_output",
                 "type": "base_prompt",
                 "prompt": "Provide your output in the following structured JSON format:\n```\n{\n  \"steps_completed\": <number of steps completed, e.g., 1, 2, etc.>,\n  \"current_step\": <current step number, e.g., 1>,\n  \"reasoning\": \"<reasoning behind the response>\",\n  \"error_count\": <number of errors encountered>,\n  \"response_to_user\": \"<response to the user, ensure any detailed information such as tables or lists is included within this field>\"\n}\n```\nAlways ensure that all pertinent details, including tables or structured lists, are contained within the response_to_user field to maintain clarity and a comprehensive response for the user."
@@ -332,4 +347,12 @@ You are an helpful customer support assistant
             }
         ],
     }
+}
+
+export const starting_copilot_prompts: { [key: string]: string } = {
+    "Credit Card Assistant": "Create a credit card assistant that helps users with credit card related queries like card recommendations, benefits, rewards, application process, and general credit card advice. Provide accurate and helpful information while maintaining a professional and friendly tone.",
+    
+    "Scheduling Assistant": "Create an appointment scheduling assistant that helps users schedule, modify, and manage their appointments efficiently. Help with finding available time slots, sending reminders, rescheduling appointments, and answering questions about scheduling policies and procedures. Maintain a professional and organized approach.",
+    
+    "Banking Assistant": "Create a banking assistant focused on helping customers with their banking needs. Help with account inquiries, banking products and services, transaction information, and general banking guidance. Prioritize accuracy and security while providing clear and helpful responses to banking-related questions."
 }
