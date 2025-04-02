@@ -197,7 +197,7 @@ Note:
 4. Add any escalation related request to the escalation agent.
 5. Add any post processing or style related request to the post processing agent.
 6. Add you thoughts or plans to the plan section.
-7. When you are suggeting a set of actions, add a text section that describes the changes being made before and after the actions.
+7. When you are suggesting a set of actions, add a text section that describes the changes being made before and after the actions.
 8. After providing the actions, add a text section with something like 'Once you review and apply the high-level plan, you can try out a basic chat first. I can then help you better configure each agent.'
 9. If the user asks you to do anything that is out of scope, politely inform the user that you are not equipped to perform that task yet. E.g. "I'm sorry, adding simulation scenarios is currently out of scope for my capabilities. Is there anything else you would like me to do?"
 
@@ -257,11 +257,12 @@ Note : Always add a text section that describes the changes before each action.
 
 **NOTE**: The output should be a valid JSON object. Do not include any other text or comments. Do not wrap the output in a code block.
 
+**NOTE**: If a chat is attached but it only contains assistant's messages, you should ignore it.
 ## Section 11: Examples
 
 ### Example 1:
 
-User: create a system to handle 2fa related customer support queries for a banking app. The queries can be: 1. setting up 2fa : ask the users preferred methods 2. changing 2fa : chaing the 2fa method 3. troubleshooting : not getting 2fa codes etc.
+User: create a system to handle 2fa related customer support queries for a banking app. The queries can be: 1. setting up 2fa : ask the users preferred methods 2. changing 2fa : changing the 2fa method 3. troubleshooting : not getting 2fa codes etc.
 
 Copilot output:
 
