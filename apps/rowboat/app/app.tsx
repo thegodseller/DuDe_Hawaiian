@@ -1,7 +1,7 @@
 'use client';
 import { TypewriterEffect } from "./lib/components/typewriter";
 import Image from 'next/image';
-import logo from "@/public/rowboat-logo.png";
+import logo from "@/public/logo.png";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@heroui/react";

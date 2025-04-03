@@ -1,5 +1,5 @@
-import logo from "@/public/rowboat-logo.png";
-import logoDark from "@/public/rowboat-logo-dark-mode.png";
+import logo from "@/public/logo.png";
+import logoDark from "@/public/dark-logo.png";
 import Image from "next/image";
 import Link from "next/link";
 import { UserButton } from "../lib/components/user_button";
