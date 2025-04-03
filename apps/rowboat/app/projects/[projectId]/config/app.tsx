@@ -5,7 +5,7 @@ import { Spinner, Textarea, Button, Dropdown, DropdownMenu, DropdownItem, Dropdo
 import { ReactNode, useEffect, useState, useCallback, useMemo } from "react";
 import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret } from "../../../actions/project_actions";
 import { updateMcpServers } from "../../../actions/mcp_actions";
-import { CopyButton } from "../../../lib/components/copy-button";
+import { CopyButton } from "../../../../components/common/copy-button";
 import { EditableField } from "../../../lib/components/editable-field";
 import { EyeIcon, EyeOffIcon, CopyIcon, MoreVerticalIcon, PlusIcon, EllipsisVerticalIcon, CheckCircleIcon, XCircleIcon } from "lucide-react";
 import { WithStringId } from "../../../lib/types/types";
@@ -21,7 +21,12 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
 } from "../../../../components/ui/resizable"
-import { VoiceSection } from './voice';
+import { VoiceSection } from './components/voice';
+import { ProjectSection } from './components/project';
+import { ToolsSection } from './components/tools';
+import { Panel } from "@/components/common/panel-common";
+import { Settings, Wrench, Phone } from "lucide-react";
+import { clsx } from "clsx";
 
 export const metadata: Metadata = {
     title: "Project config",
@@ -791,19 +796,46 @@ function NavigationMenu({
     selected: string;
     onSelect: (page: string) => void;
 }) {
-    const items = ['Project', 'Tools', 'Voice'];
+    const items = [
+        { id: 'Project', icon: <Settings className="w-4 h-4" /> },
+        { id: 'Tools', icon: <Wrench className="w-4 h-4" /> },
+        { id: 'Voice', icon: <Phone className="w-4 h-4" /> }
+    ];
     
     return (
-        <StructuredPanel title="SETTINGS">
-            {items.map((item) => (
-                <ListItem
-                    key={item}
-                    name={item}
-                    isSelected={selected === item}
-                    onClick={() => onSelect(item)}
-                />
-            ))}
-        </StructuredPanel>
+        <Panel
+            variant="projects"
+            title={
+                <div className="font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                </div>
+            }
+        >
+            <div className="flex flex-col">
+                <div className="space-y-1 pb-2">
+                    {items.map((item) => (
+                        <div
+                            key={item.id}
+                            className="group flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                        >
+                            <button
+                                className={clsx(
+                                    "flex-1 flex items-center gap-2 text-sm text-left",
+                                    selected === item.id 
+                                        ? "text-zinc-900 dark:text-zinc-100" 
+                                        : "text-zinc-600 dark:text-zinc-400"
+                                )}
+                                onClick={() => onSelect(item.id)}
+                            >
+                                {item.icon}
+                                {item.id}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </Panel>
     );
 }
 
@@ -822,26 +854,60 @@ export function ConfigApp({
         switch (selectedPage) {
             case 'Project':
                 return (
-                    <div className="h-full overflow-auto p-6 space-y-6">
-                        <BasicSettingsSection projectId={projectId} />
-                        <SecretSection projectId={projectId} />
-                        <McpServersSection projectId={projectId} />
-                        <WebhookUrlSection projectId={projectId} />
-                        <ApiKeysSection projectId={projectId} />
-                        {useChatWidget && <ChatWidgetSection projectId={projectId} chatWidgetHost={chatWidgetHost} />}
-                        <DeleteProjectSection projectId={projectId} />
+                    <div className="h-full overflow-auto p-6">
+                        <Panel
+                            variant="projects"
+                            title={
+                                <div className="font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                                    <Settings className="w-4 h-4" />
+                                    <span>Project Settings</span>
+                                </div>
+                            }
+                        >
+                            <div className="space-y-6">
+                                <ProjectSection 
+                                    projectId={projectId} 
+                                    useChatWidget={useChatWidget} 
+                                    chatWidgetHost={chatWidgetHost} 
+                                />
+                            </div>
+                        </Panel>
                     </div>
                 );
             case 'Tools':
                 return (
                     <div className="h-full overflow-auto p-6">
-                        <WebhookUrlSection projectId={projectId} />
+                        <Panel
+                            variant="projects"
+                            title={
+                                <div className="font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                                    <Wrench className="w-4 h-4" />
+                                    <span>Tools Configuration</span>
+                                </div>
+                            }
+                        >
+                            <div className="space-y-6">
+                                <ToolsSection projectId={projectId} />
+                            </div>
+                        </Panel>
                     </div>
                 );
             case 'Voice':
                 return (
                     <div className="h-full overflow-auto p-6">
-                        <VoiceSection projectId={projectId} />
+                        <Panel
+                            variant="projects"
+                            title={
+                                <div className="font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                                    <Phone className="w-4 h-4" />
+                                    <span>Voice Configuration</span>
+                                </div>
+                            }
+                        >
+                            <div className="space-y-6">
+                                <VoiceSection projectId={projectId} />
+                            </div>
+                        </Panel>
                     </div>
                 );
             default:
@@ -851,13 +917,13 @@ export function ConfigApp({
 
     return (
         <ResizablePanelGroup direction="horizontal" className="h-screen gap-1">
-            <ResizablePanel minSize={10} defaultSize={15}>
+            <ResizablePanel minSize={10} defaultSize={15} className="p-6">
                 <NavigationMenu 
                     selected={selectedPage}
                     onSelect={setSelectedPage}
                 />
             </ResizablePanel>
-            <ResizableHandle />
+            <ResizableHandle className="w-[3px] bg-transparent" />
             <ResizablePanel minSize={20} defaultSize={85}>
                 {renderContent()}
             </ResizablePanel>

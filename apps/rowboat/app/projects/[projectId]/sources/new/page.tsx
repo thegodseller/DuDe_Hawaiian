@@ -16,16 +16,11 @@ export default async function Page({
         redirect(`/projects/${params.projectId}`);
     }
 
-    return <div className="flex flex-col h-full">
-        <div className="shrink-0 flex justify-between items-center pb-4 border-b border-border">
-            <div className="flex flex-col">
-                <h1 className="text-lg">Add data source</h1>
-            </div>
-        </div>
+    return (
         <Form
             projectId={params.projectId}
             useRagUploads={USE_RAG_UPLOADS}
             useRagScraping={USE_RAG_SCRAPING}
         />
-    </div>;
+    );
 }

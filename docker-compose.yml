@@ -89,7 +89,7 @@ services:
     build:
       context: ./apps/rowboat
       dockerfile: scripts.Dockerfile
-    command: ["npm", "run", "setupQdrant"]
+    command: ["sh", "-c", "npm run setupQdrant && echo 'index created successfully'"]
     profiles: [ "setup_qdrant" ]
     environment:
       - QDRANT_URL=${QDRANT_URL}
@@ -100,7 +100,7 @@ services:
     build:
       context: ./apps/rowboat
       dockerfile: scripts.Dockerfile
-    command: ["npm", "run", "deleteQdrant"]
+    command: ["sh", "-c", "npm run deleteQdrant && echo 'index deleted successfully'"]
     profiles: [ "delete_qdrant" ]
     environment:
       - QDRANT_URL=${QDRANT_URL}

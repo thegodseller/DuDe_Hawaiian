@@ -1,18 +1,18 @@
 "use client";
+import React, { useReducer, Reducer, useState, useCallback, useEffect, useRef } from "react";
 import { MCPServer, WithStringId } from "../../../lib/types/types";
 import { Workflow } from "../../../lib/types/workflow_types";
 import { WorkflowTool } from "../../../lib/types/workflow_types";
 import { WorkflowPrompt } from "../../../lib/types/workflow_types";
 import { WorkflowAgent } from "../../../lib/types/workflow_types";
 import { DataSource } from "../../../lib/types/datasource_types";
-import { useReducer, Reducer, useState, useCallback, useEffect, useRef } from "react";
 import { produce, applyPatches, enablePatches, produceWithPatches, Patch } from 'immer';
-import { AgentConfig } from "./agent_config";
-import { ToolConfig } from "./tool_config";
+import { AgentConfig } from "../entities/agent_config";
+import { ToolConfig } from "../entities/tool_config";
 import { App as ChatApp } from "../playground/app";
 import { z } from "zod";
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip } from "@heroui/react";
-import { PromptConfig } from "./prompt_config";
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger, Spinner } from "@heroui/react";
+import { PromptConfig } from "../entities/prompt_config";
 import { EditableField } from "../../../lib/components/editable-field";
 import { RelativeTime } from "@primer/react";
 
@@ -20,8 +20,8 @@ import {
     ResizableHandle,
     ResizablePanel,
     ResizablePanelGroup,
-} from "../../../../components/ui/resizable"
-import { Copilot } from "./copilot";
+} from "@/components/ui/resizable"
+import { Copilot } from "../copilot/app";
 import { apiV1 } from "rowboat-shared";
 import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
 import { PublishedBadge } from "./published_badge";
@@ -31,6 +31,12 @@ import { EntityList } from "./entity_list";
 import { McpImportTools } from "./mcp_imports";
 
 enablePatches();
+
+const PANEL_RATIOS = {
+    entityList: 25,    // Left panel
+    chatApp: 50,       // Middle panel
+    copilot: 25        // Right panel
+} as const;
 
 interface StateItem {
     workflow: WithStringId<z.infer<typeof Workflow>>;
@@ -595,7 +601,7 @@ export function WorkflowEditor({
     const isLive = state.present.workflow._id == state.present.publishedWorkflowId;
     const [showCopySuccess, setShowCopySuccess] = useState(false);
     const [showCopilot, setShowCopilot] = useState(false);
-    const [copilotWidth, setCopilotWidth] = useState(25);
+    const [copilotWidth, setCopilotWidth] = useState<number>(PANEL_RATIOS.copilot);
     const [isMcpImportModalOpen, setIsMcpImportModalOpen] = useState(false);
 
     console.log(`workflow editor chat key: ${state.present.chatKey}`);
@@ -788,31 +794,47 @@ export function WorkflowEditor({
                             }
                         }}
                     >
-                        <DropdownItem
-                            key="switch"
-                            startContent={<BackIcon size={16} />}
-                        >
-                            Switch version
-                        </DropdownItem>
-                        <DropdownItem
-                            key="clone"
-                            startContent={<Layers2Icon size={16} />}
-                        >
-                            Clone this version
-                        </DropdownItem>
-                        <DropdownItem
-                            key="publish"
-                            color="danger"
-                            startContent={<RadioIcon size={16} />}
-                        >
-                            Deploy to Production
-                        </DropdownItem>
-                        <DropdownItem
-                            key="clipboard"
-                            startContent={<CopyIcon size={16} />}
-                        >
-                            Copy as JSON
-                        </DropdownItem>
+                        <DropdownSection>
+                            <DropdownItem
+                                key="switch"
+                                startContent={<div className="text-gray-500"><BackIcon size={16} /></div>}
+                                className="gap-x-2"
+                            >
+                                View versions
+                            </DropdownItem>
+                        </DropdownSection>
+                        
+                        <div className="border-t border-gray-200 dark:border-gray-700" />
+                        
+                        <DropdownSection>
+                            <DropdownItem
+                                key="clone"
+                                startContent={<div className="text-gray-500"><Layers2Icon size={16} /></div>}
+                                className="gap-x-2"
+                            >
+                                Clone this version
+                            </DropdownItem>
+                            
+                            <DropdownItem
+                                key="publish"
+                                startContent={<div className="text-indigo-500"><RadioIcon size={16} /></div>}
+                                className="gap-x-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                            >
+                                Make version live
+                            </DropdownItem>
+                        </DropdownSection>
+                        
+                        <div className="border-t border-gray-200 dark:border-gray-700" />
+                        
+                        <DropdownSection>
+                            <DropdownItem
+                                key="clipboard"
+                                startContent={<div className="text-gray-500"><CopyIcon size={16} /></div>}
+                                className="gap-x-2"
+                            >
+                                Export as JSON
+                            </DropdownItem>
+                        </DropdownSection>
                     </DropdownMenu>
                 </Dropdown>
             </div>
@@ -869,7 +891,7 @@ export function WorkflowEditor({
             </div>
         </div>
         <ResizablePanelGroup direction="horizontal" className="grow flex overflow-auto gap-1">
-            <ResizablePanel minSize={10} defaultSize={15}>
+            <ResizablePanel minSize={10} defaultSize={PANEL_RATIOS.entityList}>
                 <EntityList
                     agents={state.present.workflow.agents}
                     tools={state.present.workflow.tools}
@@ -890,10 +912,10 @@ export function WorkflowEditor({
                     triggerMcpImport={triggerMcpImport}
                 />
             </ResizablePanel>
-            <ResizableHandle />
+            <ResizableHandle className="w-[3px] bg-transparent" />
             <ResizablePanel
                 minSize={20}
-                defaultSize={showCopilot ? 85 - copilotWidth : 85}
+                defaultSize={showCopilot ? PANEL_RATIOS.chatApp : PANEL_RATIOS.chatApp + PANEL_RATIOS.copilot}
                 className="overflow-auto"
             >
                 <ChatApp
@@ -937,29 +959,31 @@ export function WorkflowEditor({
                     handleClose={handleUnselectPrompt}
                 />}
             </ResizablePanel>
-            {showCopilot && <>
-                <ResizableHandle />
-                <ResizablePanel
-                    minSize={10}
-                    defaultSize={copilotWidth}
-                    onResize={(size) => setCopilotWidth(size)}
-                >
-                    <Copilot
-                        projectId={state.present.workflow.projectId}
-                        workflow={state.present.workflow}
-                        dispatch={dispatch}
-                        chatContext={
-                            state.present.selection ? {
-                                type: state.present.selection.type,
-                                name: state.present.selection.name
-                            } : chatMessages.length > 0 ? {
-                                type: 'chat',
-                                messages: chatMessages
-                            } : undefined
-                        }
-                    />
-                </ResizablePanel>
-            </>}
+            {showCopilot && (
+                <>
+                    <ResizableHandle className="w-[3px] bg-transparent" />
+                    <ResizablePanel
+                        minSize={10}
+                        defaultSize={PANEL_RATIOS.copilot}
+                        onResize={(size) => setCopilotWidth(size)}
+                    >
+                        <Copilot
+                            projectId={state.present.workflow.projectId}
+                            workflow={state.present.workflow}
+                            dispatch={dispatch}
+                            chatContext={
+                                state.present.selection ? {
+                                    type: state.present.selection.type,
+                                    name: state.present.selection.name
+                                } : chatMessages.length > 0 ? {
+                                    type: 'chat',
+                                    messages: chatMessages
+                                } : undefined
+                            }
+                        />
+                    </ResizablePanel>
+                </>
+            )}
         </ResizablePanelGroup>
         <McpImportTools
             projectId={state.present.workflow.projectId}

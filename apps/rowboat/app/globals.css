@@ -7,6 +7,32 @@
   .text-balance {
     text-wrap: balance;
   }
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #E4E4E7 transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #E4E4E7;
+    border-radius: 3px;
+  }
+
+  /* Dark mode */
+  .dark .custom-scrollbar {
+    scrollbar-color: #3F3F46 transparent;
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #3F3F46;
+  }
 }
 
 html, body {
@@ -67,6 +93,27 @@ html, body {
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+  /* Define a card class that will be used for all card-like components */
+  .card {
+    @apply rounded-xl border p-4
+    border-[#E5E7EB] dark:border-[#2E2E30]
+    bg-white dark:bg-[#1C1C1E]
+    shadow-[0_2px_8px_rgba(0,0,0,0.04)]
+    transition-all duration-200 ease-in-out;
+  }
+
+  .card:hover {
+    @apply shadow-[0_4px_12px_rgba(0,0,0,0.06)]
+    transform translate-y-[-1px];
+  }
+
+  /* Update input styles */
+  input, textarea, select {
+    @apply rounded-lg border-[#E5E7EB] dark:border-[#2E2E30]
+    bg-[#F3F4F6] dark:bg-[#2A2A2D]
+    focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50
+    transition-all duration-200;
+  }
 }
 
 @layer base {
@@ -88,6 +135,20 @@ html, body {
   .border-subtle {
     @apply border-border dark:border-border/50;
   }
+
+  /* Apply rounded corners to common interactive elements by default */
+  button,
+  input,
+  textarea,
+  select,
+  [role="button"],
+  .card,
+  .input,
+  .select,
+  .textarea,
+  .button {
+    @apply !rounded-lg;
+  }
 }
 
 * {
@@ -98,3 +159,26 @@ html, body {
 * {
   @apply transition-colors duration-200;
 }
+
+/* Add Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+/* Set base font */
+html {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@keyframes slideUpAndFade {
+  from {
+      opacity: 0;
+      transform: translateY(10px);
+  }
+  to {
+      opacity: 1;
+      transform: translateY(0);
+  }
+}
+
+.animate-slideUpAndFade {
+  animation: slideUpAndFade 0.2s ease-out forwards;
+} 
