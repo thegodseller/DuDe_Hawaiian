@@ -64,13 +64,13 @@ export default function Sidebar({ projectId, useRag, useAuth, collapsed = false,
     },
     ...(useRag ? [{
       href: 'sources',
-      label: 'Connect',
+      label: 'RAG',
       icon: DatabaseIcon,
       requiresProject: true
     }] : []),
     {
       href: 'config',
-      label: 'Integrate',
+      label: 'Settings',
       icon: SettingsIcon,
       requiresProject: true
     }
