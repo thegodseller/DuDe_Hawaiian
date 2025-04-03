@@ -36,8 +36,13 @@ export function ComposeBox({
         if (!prompt) {
             return;
         }
+        
+        // Clear input before calling handleUserMessage
         setInput('');
-
+        if (inputRef.current) {
+            inputRef.current.value = '';
+        }
+        
         handleUserMessage(prompt);
     }
 
@@ -49,8 +54,11 @@ export function ComposeBox({
     }
     // focus on the input field
     useEffect(() => {
-        inputRef.current?.focus();
-    }, [messages]);
+        if (inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.value = input; // Ensure sync with state
+        }
+    }, [messages, input]);
 
     return (
         <div className="relative group">
