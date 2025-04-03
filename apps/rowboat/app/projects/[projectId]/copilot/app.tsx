@@ -68,9 +68,12 @@ const App = forwardRef(function App({
     function handleUserMessage(prompt: string) {
         setMessages([...messages, {
             role: 'user',
-            content: prompt,
+            content: prompt
         }]);
         setResponseError(null);
+        // Set loading immediately after adding user message
+        // This ensures ComposeBox clears and disables right away
+        setLoadingResponse(true);
     }
 
     const handleApplyChange = useCallback((
