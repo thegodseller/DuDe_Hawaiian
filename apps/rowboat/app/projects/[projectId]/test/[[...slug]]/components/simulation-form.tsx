@@ -1,4 +1,4 @@
-import { FormStatusButton } from "@/app/lib/components/form-status-button";
+import { FormStatusButton } from "@/app/lib/components/form-status-button-old";
 import { Button, Input, Textarea } from "@heroui/react";
 import { TestProfile, TestScenario } from "@/app/lib/types/testing_types";
 import { WithStringId } from "@/app/lib/types/types";
