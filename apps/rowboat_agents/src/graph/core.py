@@ -1,3 +1,4 @@
+import traceback
 from copy import deepcopy
 from datetime import datetime
 import json
@@ -394,7 +395,6 @@ async def run_turn_streamed(
         yield ('done', {'state': final_state})
 
     except Exception as e:
-        import traceback
         print(traceback.format_exc())
         print(f"Error in stream processing: {str(e)}")
         yield ('error', {'error': str(e), 'state': final_state})  # Include final_state in error response

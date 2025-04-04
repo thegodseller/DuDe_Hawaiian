@@ -1,3 +1,4 @@
+import traceback
 from quart import Quart, request, jsonify, Response
 from datetime import datetime
 from functools import wraps
@@ -18,6 +19,7 @@ from pprint import pprint
 logger = common_logger
 redis_client = redis.from_url(os.environ.get('REDIS_URL', 'redis://localhost:6379'))
 app = Quart(__name__)
+config = read_json_from_file("./configs/default_config.json")
 
 # filter out agent transfer messages using a function
 def is_agent_transfer_message(msg):
@@ -64,7 +66,7 @@ async def chat():
     logger.info(f"{'*'*100}Running server mode{'*'*100}")
     try:
         request_data = await request.get_json()
-        config = read_json_from_file("./configs/default_config.json")
+        print("Request:", json.dumps(request_data))
 
         # filter out agent transfer messages
         input_messages = [msg for msg in request_data["messages"] if not is_agent_transfer_message(msg)]
@@ -82,11 +84,12 @@ async def chat():
             elif not msg.get("role"):
                 msg["role"] = "user"
 
-        print("Request:")
-        pprint(request_data)
-
         data = request_data
-        resp_messages, resp_tokens_used, resp_state = await run_turn(
+        messages = []
+        final_state = {}
+        # tokens_used = 0
+
+        async for event_type, event_data in run_turn_streamed(
             messages=input_messages,
             start_agent_name=data.get("startAgent", ""),
             agent_configs=data.get("agents", []),
@@ -95,16 +98,16 @@ async def chat():
             state=data.get("state", {}),
             additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL],
             complete_request=data
-        )
-
-        logger.info('-'*100)
-        logger.info('Raw output:')
-        logger.info((resp_messages, resp_tokens_used, resp_state))
+        ):
+            if event_type == 'message':
+                messages.append(event_data)
+            elif event_type == 'done':
+                final_state = event_data['state']
+                # tokens_used = event_data["tokens_used"]
 
         out = {
-            "messages": resp_messages,
-            "tokens_used": resp_tokens_used,
-            "state": resp_state,
+            "messages": messages,
+            "state": final_state,
         }
 
         logger.info("Output:")
@@ -115,7 +118,8 @@ async def chat():
         return jsonify(out)
 
     except Exception as e:
-        logger.error(f"Error: {e}")
+        print(traceback.format_exc())
+        logger.error(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/chat_stream_init", methods=["POST"])
@@ -144,8 +148,8 @@ async def chat_stream(stream_id):
     if not request_data:
         return jsonify({"error": "Stream not found"}), 404
 
+    print("Request:", request_data.decode('utf-8'))
     request_data = json.loads(request_data)
-    config = read_json_from_file("./configs/default_config.json")
 
     # filter out agent transfer messages
     input_messages = [msg for msg in request_data["messages"] if not is_agent_transfer_message(msg)]
@@ -162,9 +166,6 @@ async def chat_stream(stream_id):
             msg["role"] = "developer"
         elif not msg.get("role"):
             msg["role"] = "user"
-
-    print("Request:")
-    pprint(request_data)
 
     async def generate():
         try:

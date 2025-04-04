@@ -55,8 +55,8 @@ export const AgenticAPIChatRequest = z.object({
     prompts: z.array(WorkflowPrompt),
     startAgent: z.string(),
     testProfile: TestProfile.optional(),
-    mcpServers: z.array(MCPServer).optional(),
-    toolWebhookUrl: z.string().optional(),
+    mcpServers: z.array(MCPServer),
+    toolWebhookUrl: z.string(),
 });
 
 export const AgenticAPIChatResponse = z.object({
