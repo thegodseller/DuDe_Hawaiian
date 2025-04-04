@@ -14,7 +14,7 @@ type FlexibleMessage = {
     // Add any other optional fields that might be needed
 };
 
-export function ComposeBox({
+export function ComposeBoxCopilot({
     minRows=3,
     disabled=false,
     loading=false,
@@ -32,22 +32,12 @@ export function ComposeBox({
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     function handleInput() {
-        console.log('handleInput called');
         const prompt = input.trim();
         if (!prompt) {
-            console.log('Prompt is empty, returning');
             return;
         }
-        
-        console.log('Clearing input');
         setInput('');
-        if (inputRef.current) {
-            inputRef.current.value = '';
-        }
-        
-        console.log('Calling handleUserMessage with prompt:', prompt);
         handleUserMessage(prompt);
-        console.log('handleInput completed');
     }
 
     function handleInputKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -56,17 +46,13 @@ export function ComposeBox({
             handleInput();
         }
     }
-    // focus on the input field
-    useEffect(() => {
-        if (inputRef.current) {
-            inputRef.current.focus();
-            inputRef.current.value = input; // Ensure sync with state
-        }
-    }, [messages, input]);
 
+    // focus on the input field only when there is at least one message
     useEffect(() => {
-        console.log('Input state changed to:', input);
-    }, [input]);
+        if (messages.length > 0) {
+            inputRef.current?.focus();
+        }
+    }, [messages]);
 
     return (
         <div className="relative group">
