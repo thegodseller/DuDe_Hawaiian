@@ -96,8 +96,8 @@ export async function POST(
             prompts,
             startAgent,
             testProfile: testProfile ?? undefined,
-            mcpServers: project.mcpServers ?? undefined,
-            toolWebhookUrl: project.webhookUrl ?? undefined,
+            mcpServers: project.mcpServers ?? [],
+            toolWebhookUrl: project.webhookUrl ?? '',
         };
 
         const { messages: agenticMessages, state } = await getAgenticApiResponse(request);

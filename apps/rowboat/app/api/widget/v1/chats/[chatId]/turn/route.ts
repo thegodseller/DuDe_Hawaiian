@@ -102,8 +102,8 @@ export async function POST(
             tools,
             prompts,
             startAgent,
-            mcpServers: projectSettings.mcpServers ?? undefined,
-            toolWebhookUrl: projectSettings.webhookUrl ?? undefined,
+            mcpServers: projectSettings.mcpServers ?? [],
+            toolWebhookUrl: projectSettings.webhookUrl ?? '',
             testProfile: undefined,
         };
         logger.log(`Sending agentic request`);
