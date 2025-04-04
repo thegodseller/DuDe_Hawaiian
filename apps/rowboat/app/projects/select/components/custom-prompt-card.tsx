@@ -9,13 +9,15 @@ interface CustomPromptCardProps {
     onSelect: () => void;
     customPrompt: string;
     onCustomPromptChange: (value: string) => void;
+    placeholder?: string;
 }
 
 export function CustomPromptCard({
     selected,
     onSelect,
     customPrompt,
-    onCustomPromptChange
+    onCustomPromptChange,
+    placeholder
 }: CustomPromptCardProps) {
     const DEFAULT_PROMPT = "Create a customer support assistant with one example agent";
 
@@ -55,7 +57,7 @@ export function CustomPromptCard({
                         tokens.colors.light.text.primary,
                         tokens.colors.dark.text.primary
                     )}>
-                        Custom Prompt
+                        Prompt
                     </h3>
                     <div
                         onClick={(e) => e.stopPropagation()}
@@ -65,6 +67,7 @@ export function CustomPromptCard({
                             <Textarea
                                 value={customPrompt}
                                 onChange={(e) => onCustomPromptChange(e.target.value)}
+                                placeholder={placeholder}
                                 className={clsx(
                                     "w-full min-h-[100px]",
                                     "resize-none",

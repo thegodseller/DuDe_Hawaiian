@@ -4,12 +4,12 @@ import { useRef, useState, createContext, useContext, useCallback, forwardRef, u
 import { CopilotChatContext } from "../../../lib/types/copilot_types";
 import { CopilotMessage } from "../../../lib/types/copilot_types";
 import { CopilotAssistantMessageActionPart } from "../../../lib/types/copilot_types";
-import { Workflow } from "../../../lib/types/workflow_types";
+import { Workflow } from "@/app/lib/types/workflow_types";
 import { z } from "zod";
 import { getCopilotResponse } from "@/app/actions/copilot_actions";
 import { Action as WorkflowDispatch } from "../workflow/workflow_editor";
 import { Panel } from "@/components/common/panel-common";
-import { ComposeBox } from "@/components/common/compose-box";
+import { ComposeBoxCopilot } from "@/components/common/compose-box-copilot";
 import { Messages } from "./components/messages";
 import { CopyIcon, CheckIcon, PlusIcon, XIcon } from "lucide-react";
 
@@ -23,19 +23,21 @@ export function getAppliedChangeKey(messageIndex: number, actionIndex: number, f
     return `${messageIndex}-${actionIndex}-${field}`;
 }
 
-const App = forwardRef(function App({
+interface AppProps {
+    projectId: string;
+    workflow: z.infer<typeof Workflow>;
+    dispatch: (action: any) => void;
+    chatContext?: any;
+    onCopyJson?: (data: { messages: any[], lastRequest: any, lastResponse: any }) => void;
+}
+
+const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
     projectId,
     workflow,
     dispatch,
     chatContext = undefined,
     onCopyJson,
-}: {
-    projectId: string;
-    workflow: z.infer<typeof Workflow>;
-    dispatch: (action: WorkflowDispatch) => void;
-    chatContext?: z.infer<typeof CopilotChatContext>;
-    onCopyJson: (data: { messages: any[], lastRequest: any, lastResponse: any }) => void;
-}, ref: Ref<{ handleCopyChat: () => void }>) {
+}, ref) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [messages, setMessages] = useState<z.infer<typeof CopilotMessage>[]>([]);
     const [loadingResponse, setLoadingResponse] = useState(false);
@@ -55,7 +57,7 @@ const App = forwardRef(function App({
                 content: prompt
             }]);
         }
-    }, [projectId, messages.length, setMessages]);
+    }, [projectId, messages.length]);
 
     // Reset discardContext when chatContext changes
     useEffect(() => {
@@ -66,14 +68,11 @@ const App = forwardRef(function App({
     const effectiveContext = discardContext ? null : chatContext;
 
     function handleUserMessage(prompt: string) {
-        setMessages([...messages, {
+        setMessages(currentMessages => [...currentMessages, {
             role: 'user',
             content: prompt
         }]);
         setResponseError(null);
-        // Set loading immediately after adding user message
-        // This ensures ComposeBox clears and disables right away
-        setLoadingResponse(true);
     }
 
     const handleApplyChange = useCallback((
@@ -176,30 +175,31 @@ const App = forwardRef(function App({
         }
     }, [dispatch, appliedChanges, messages]);
 
-    // Second useEffect for copilot response
+    // Effect for handling copilot responses
     useEffect(() => {
         let ignore = false;
 
         async function process() {
+            if (!messages.length) return;
+            
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage.role !== 'user') return;
+            
             setLoadingResponse(true);
-            setResponseError(null);
 
             try {
-                setLastRequest(null);
-                setLastResponse(null);
-
                 const response = await getCopilotResponse(
                     projectId,
                     messages,
                     workflow,
                     effectiveContext || null,
                 );
-                if (ignore) {
-                    return;
-                }
+                
+                if (ignore) return;
+                
                 setLastRequest(response.rawRequest);
                 setLastResponse(response.rawResponse);
-                setMessages([...messages, response.message]);
+                setMessages(currentMessages => [...currentMessages, response.message]);
             } catch (err) {
                 if (!ignore) {
                     setResponseError(`Failed to get copilot response: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -211,43 +211,26 @@ const App = forwardRef(function App({
             }
         }
 
-        // if no messages, return
-        if (messages.length === 0) {
-            return;
-        }
-
-        // if last message is not from role user
-        // or tool, return
-        const last = messages[messages.length - 1];
-        if (responseError) {
-            return;
-        }
-        if (last.role !== 'user') {
-            return;
-        }
-
         process();
 
         return () => {
             ignore = true;
         };
-    }, [
-        messages,
-        projectId,
-        responseError,
-        workflow,
-        effectiveContext,
-        setLoadingResponse,
-        setMessages,
-        setResponseError
-    ]);
+    }, [messages, projectId, workflow, effectiveContext]);
+
+    // Scroll to bottom on new messages
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, loadingResponse]);
 
     const handleCopyChat = useCallback(() => {
-        onCopyJson({
-            messages,
-            lastRequest,
-            lastResponse,
-        });
+        if (onCopyJson) {
+            onCopyJson({
+                messages,
+                lastRequest,
+                lastResponse,
+            });
+        }
     }, [messages, lastRequest, lastResponse, onCopyJson]);
 
     useImperativeHandle(ref, () => ({
@@ -295,9 +278,9 @@ const App = forwardRef(function App({
                             </button>
                         </div>
                     </div>}
-                    <ComposeBox
+                    <ComposeBoxCopilot
                         handleUserMessage={handleUserMessage}
-                        messages={messages as any[]}
+                        messages={messages}
                         loading={loadingResponse}
                         disabled={loadingResponse}
                     />
@@ -386,3 +369,4 @@ export function Copilot({
         </Panel>
     );
 }
+

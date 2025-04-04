@@ -526,7 +526,7 @@ function reducer(state: State, action: Action): State {
                                 const existingToolIndex = draft.workflow.tools.findIndex(
                                     tool => tool.name === newTool.name
                                 );
-                                
+
                                 if (existingToolIndex !== -1) {
                                     // Replace existing tool
                                     draft.workflow.tools[existingToolIndex] = newTool;
@@ -803,9 +803,7 @@ export function WorkflowEditor({
                                 View versions
                             </DropdownItem>
                         </DropdownSection>
-                        
-                        <div className="border-t border-gray-200 dark:border-gray-700" />
-                        
+
                         <DropdownSection>
                             <DropdownItem
                                 key="clone"
@@ -814,7 +812,7 @@ export function WorkflowEditor({
                             >
                                 Clone this version
                             </DropdownItem>
-                            
+
                             <DropdownItem
                                 key="publish"
                                 startContent={<div className="text-indigo-500"><RadioIcon size={16} /></div>}
@@ -823,9 +821,7 @@ export function WorkflowEditor({
                                 Make version live
                             </DropdownItem>
                         </DropdownSection>
-                        
-                        <div className="border-t border-gray-200 dark:border-gray-700" />
-                        
+
                         <DropdownSection>
                             <DropdownItem
                                 key="clipboard"

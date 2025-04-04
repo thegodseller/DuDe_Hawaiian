@@ -71,8 +71,8 @@ function AssistantMessage({
     return (
         <div className="w-full">
             <div className="px-4 py-2.5 text-sm leading-relaxed text-gray-700 dark:text-gray-200">
-                <div className="flex flex-col gap-2">
-                    <div className="text-left">
+                <div className="flex flex-col gap-4">
+                    <div className="text-left flex flex-col gap-4">
                         {content.response.map((part, actionIndex) => {
                             if (part.type === "text") {
                                 return <MarkdownContent key={actionIndex} content={part.content} />;
@@ -152,17 +152,19 @@ export function Messages({
 
     return (
         <div className="h-full">
-            <div className="flex flex-col space-y-4 px-4 pt-4">
-                <div className="flex flex-col space-y-4">
-                    {messages.map((message, index) => (
-                        <div key={index}>
-                            {renderMessage(message, index)}
-                        </div>
-                    ))}
-                    {loadingResponse && <AssistantMessageLoading />}
-                </div>
-                <div ref={messagesEndRef} />
+            <div className="flex flex-col [&>*]:mb-4">
+                {messages.map((message, index) => (
+                    <div key={index} className="mb-4">
+                        {renderMessage(message, index)}
+                    </div>
+                ))}
+                {loadingResponse && (
+                    <div className="animate-pulse">
+                        <AssistantMessageLoading />
+                    </div>
+                )}
             </div>
+            <div ref={messagesEndRef} />
         </div>
     );
 }
