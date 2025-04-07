@@ -11,6 +11,7 @@ import { TestProfile } from "@/app/lib/types/testing_types";
 import { WithStringId } from "@/app/lib/types/types";
 import { ProfileSelector } from "@/app/projects/[projectId]/test/[[...slug]]/components/selectors/profile-selector";
 import { CheckIcon, CopyIcon, PlusIcon, UserIcon } from "lucide-react";
+import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
 
 const defaultSystemMessage = '';
 
@@ -103,15 +104,17 @@ export function App({
                 }
                 rightActions={
                     <div className="flex items-center gap-3">
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setIsProfileSelectorOpen(true)}
-                            showHoverContent={true}
-                            hoverContent={testProfile?.name || 'Select test profile'}
-                        >
-                            <UserIcon className="w-4 h-4" />
-                        </Button>
+                        {USE_TESTING_FEATURE && (
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setIsProfileSelectorOpen(true)}
+                                showHoverContent={true}
+                                hoverContent={testProfile?.name || 'Select test profile'}
+                            >
+                                <UserIcon className="w-4 h-4" />
+                            </Button>
+                        )}
                         <Button
                             variant="secondary"
                             size="sm"
@@ -128,13 +131,15 @@ export function App({
                     </div>
                 }
             >
-                <ProfileSelector
-                    projectId={projectId}
-                    isOpen={isProfileSelectorOpen}
-                    onOpenChange={setIsProfileSelectorOpen}
-                    onSelect={handleTestProfileChange}
-                    selectedProfileId={testProfile?._id}
-                />
+                {USE_TESTING_FEATURE && (
+                    <ProfileSelector
+                        projectId={projectId}
+                        isOpen={isProfileSelectorOpen}
+                        onOpenChange={setIsProfileSelectorOpen}
+                        onSelect={handleTestProfileChange}
+                        selectedProfileId={testProfile?._id}
+                    />
+                )}
                 <div className="h-full overflow-auto px-4 py-4">
                     <Chat
                         key={`chat-${counter}`}

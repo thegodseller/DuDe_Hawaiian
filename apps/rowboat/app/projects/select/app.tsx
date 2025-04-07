@@ -14,11 +14,18 @@ import { SearchProjects } from "./components/search-projects";
 import { CustomPromptCard } from "./components/custom-prompt-card";
 import { Submit } from "./components/submit-button";
 import { PageHeading } from "@/components/ui/page-heading";
+import { USE_MULTIPLE_PROJECTS } from "@/app/lib/feature_flags";
 
 const sectionHeaderStyles = clsx(
     "text-sm font-medium",
     "text-gray-900 dark:text-gray-100"
 );
+
+const largeSectionHeaderStyles = clsx(
+    "text-lg font-medium",
+    "text-gray-900 dark:text-gray-100"
+);
+
 const textareaStyles = clsx(
     "w-full",
     "rounded-lg p-3",
@@ -34,12 +41,12 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(true);
     
     const [selectedCard, setSelectedCard] = useState<'custom' | any>('custom');
-    const [customPrompt, setCustomPrompt] = useState("Create a customer support assistant with one example agent");
+    const [customPrompt, setCustomPrompt] = useState("");
     const [name, setName] = useState("");
     const [defaultName, setDefaultName] = useState('Assistant 1');
     const [isExamplesExpanded, setIsExamplesExpanded] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] = useState<string>('blank');
-    const [showCustomPrompt, setShowCustomPrompt] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState<string>('custom');
+    const [showCustomPrompt, setShowCustomPrompt] = useState(true);
     const [promptError, setPromptError] = useState<string | null>(null);
     const [hasEditedPrompt, setHasEditedPrompt] = useState(false);
 
@@ -88,7 +95,7 @@ export default function App() {
         setSelectedCard(card);
         
         if (card === 'custom') {
-            setCustomPrompt("Create a customer support assistant with one example agent");
+            setCustomPrompt("");
         } else {
             setCustomPrompt(card.prompt || card.description);
         }
@@ -178,64 +185,121 @@ export default function App() {
                 "flex-1 px-12 pt-4 pb-32"
             )}>
                 <PageHeading 
-                    title="Projects"
-                    description="Select an existing project or create a new one"
+                    title={USE_MULTIPLE_PROJECTS ? "Projects" : "Let's get started"}
+                    description={USE_MULTIPLE_PROJECTS 
+                        ? "Select an existing project or create a new one"
+                        : "Create a multi-agent assistant in minutes"
+                    }
                 />
 
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr,2fr] gap-8 mt-8">
+                <div className={clsx(
+                    USE_MULTIPLE_PROJECTS 
+                        ? "grid grid-cols-1 lg:grid-cols-[1fr,2fr] gap-8 mt-8"
+                        : "mt-8 -mx-12"
+                )}>
                     {/* Left side: Project Selection */}
-                    <div className="overflow-auto">
-                        <SearchProjects
-                            projects={projects}
-                            isLoading={isLoading}
-                            heading="Select an existing project"
-                            subheading="Choose from your projects"
-                            className="h-full"
-                        />
-                    </div>
+                    {USE_MULTIPLE_PROJECTS && (
+                        <div className="overflow-auto">
+                            <SearchProjects
+                                projects={projects}
+                                isLoading={isLoading}
+                                heading="Select an existing project"
+                                subheading="Choose from your projects"
+                                className="h-full"
+                            />
+                        </div>
+                    )}
 
                     {/* Right side: Project Creation */}
-                    <div className="overflow-auto">
-                        <section className="card h-full">
-                            <div className="px-4 pt-4">
-                                <SectionHeading subheading="Set up a new AI assistant">
-                                    Create a new project
-                                </SectionHeading>
-                            </div>
+                    <div className={clsx(
+                        "overflow-auto",
+                        !USE_MULTIPLE_PROJECTS && "max-w-none px-12 py-12"
+                    )}>
+                        <section className={clsx(
+                            "card h-full",
+                            !USE_MULTIPLE_PROJECTS && "px-24",
+                            USE_MULTIPLE_PROJECTS && "px-8"
+                        )}>
+                            {USE_MULTIPLE_PROJECTS && (
+                                <div className="pt-12">
+                                    <SectionHeading subheading="Set up a new AI assistant">
+                                        Create a new project
+                                    </SectionHeading>
+                                </div>
+                            )}
                             
                             <form
                                 id="create-project-form"
                                 action={handleSubmit}
                                 onKeyDown={handleKeyDown}
-                                className="px-4 pt-4 pb-8 space-y-8"
+                                className="pt-12 pb-16 space-y-12"
                             >
                                 {/* Name Section */}
-                                <div className="space-y-4">
-                                    <div className="flex flex-col gap-2">
-                                        <label className={sectionHeaderStyles}>
-                                            Name
-                                        </label>
-                                        <Textarea
-                                            required
-                                            name="name"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            className={clsx(
-                                                textareaStyles,
-                                                "min-h-[60px]",
-                                                "text-base",
-                                                "text-gray-900 dark:text-gray-100"
-                                            )}
-                                            placeholder={defaultName}
-                                        />
+                                {USE_MULTIPLE_PROJECTS && (
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col gap-4">
+                                            <label className={largeSectionHeaderStyles}>
+                                                Name
+                                            </label>
+                                            <Textarea
+                                                required
+                                                name="name"
+                                                value={name}
+                                                onChange={(e) => setName(e.target.value)}
+                                                className={clsx(
+                                                    textareaStyles,
+                                                    "min-h-[60px]",
+                                                    "text-base",
+                                                    "text-gray-900 dark:text-gray-100"
+                                                )}
+                                                placeholder={defaultName}
+                                            />
+                                        </div>
                                     </div>
-                                </div>
+                                )}
+
+                                {/* Custom Prompt Section - Only show when needed */}
+                                {showCustomPrompt && (
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col gap-4">
+                                            <label className={largeSectionHeaderStyles}>
+                                                {selectedTemplate === 'custom' ? 'What do you want to build?' : 'Customize the description'}
+                                            </label>
+                                            <div className="space-y-2">
+                                                <Textarea
+                                                    value={customPrompt}
+                                                    onChange={(e) => {
+                                                        setCustomPrompt(e.target.value);
+                                                        setPromptError(null);
+                                                    }}
+                                                    placeholder="Example: Create a customer support assistant that can handle product inquiries and returns"
+                                                    className={clsx(
+                                                        textareaStyles,
+                                                        "text-base",
+                                                        "text-gray-900 dark:text-gray-100",
+                                                        promptError && "border-red-500 focus:ring-red-500/20"
+                                                    )}
+                                                    style={{ minHeight: "120px" }}
+                                                    autoFocus
+                                                    autoResize
+                                                    required
+                                                />
+                                                {promptError && (
+                                                    <p className="text-sm text-red-500">
+                                                        {promptError}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
 
                                 {/* Template Selection Section */}
                                 <div className="space-y-4">
-                                    <div className="flex flex-col gap-2">
-                                        <label className={sectionHeaderStyles}>
-                                            Choose how to start
+                                    <div className="flex flex-col gap-4">
+                                        <label className={largeSectionHeaderStyles}>
+                                            How do you want to start?
                                         </label>
                                         <select
                                             value={selectedTemplate}
@@ -259,9 +323,9 @@ export default function App() {
                                                 "dark:bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]"
                                             )}
                                         >
-                                            <option value="blank">Start with a blank template</option>
-                                            <option value="custom">Write your own starting prompt</option>
-                                            <optgroup label="Example Prompts">
+                                            <option value="custom">Tell us what you want to build</option>
+                                            <option value="blank">I'll provide a description later</option>
+                                            <optgroup label="Customizable Examples">
                                                 {starting_copilot_prompts && 
                                                     Object.entries(starting_copilot_prompts)
                                                         .filter(([name]) => name !== 'Blank Template')
@@ -276,41 +340,7 @@ export default function App() {
                                     </div>
                                 </div>
 
-                                {/* Custom Prompt Section - Only show when needed */}
-                                {showCustomPrompt && (
-                                    <div className="space-y-4">
-                                        <div className="flex flex-col gap-2">
-                                            <label className={sectionHeaderStyles}>
-                                                {selectedTemplate === 'custom' ? 'Write your prompt' : 'Customize the prompt'}
-                                            </label>
-                                            <div className="space-y-2">
-                                                <Textarea
-                                                    value={customPrompt}
-                                                    onChange={(e) => {
-                                                        setCustomPrompt(e.target.value);
-                                                        setPromptError(null);
-                                                    }}
-                                                    placeholder="Example: Create a customer support assistant that can handle product inquiries and returns"
-                                                    className={clsx(
-                                                        textareaStyles,
-                                                        "min-h-[100px]",
-                                                        "text-base",
-                                                        "text-gray-900 dark:text-gray-100",
-                                                        promptError && "border-red-500 focus:ring-red-500/20"
-                                                    )}
-                                                    autoResize
-                                                    required
-                                                />
-                                                {promptError && (
-                                                    <p className="text-sm text-red-500">
-                                                        {promptError}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
+                                
                                 {/* Submit Button */}
                                 <div className="pt-6 w-full">
                                     <Submit />
