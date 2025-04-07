@@ -27,6 +27,7 @@ import { ToolsSection } from './components/tools';
 import { Panel } from "@/components/common/panel-common";
 import { Settings, Wrench, Phone } from "lucide-react";
 import { clsx } from "clsx";
+import { USE_VOICE_FEATURE } from "@/app/lib/feature_flags";
 
 export const metadata: Metadata = {
     title: "Project config",
@@ -799,7 +800,7 @@ function NavigationMenu({
     const items = [
         { id: 'Project', icon: <Settings className="w-4 h-4" /> },
         { id: 'Tools', icon: <Wrench className="w-4 h-4" /> },
-        { id: 'Voice', icon: <Phone className="w-4 h-4" /> }
+        ...(USE_VOICE_FEATURE ? [{ id: 'Voice', icon: <Phone className="w-4 h-4" /> }] : [])
     ];
     
     return (
