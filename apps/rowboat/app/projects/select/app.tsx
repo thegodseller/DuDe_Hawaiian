@@ -324,7 +324,7 @@ export default function App() {
                                             )}
                                         >
                                             <option value="custom">Tell us what you want to build</option>
-                                            <option value="blank">I'll provide a description later</option>
+                                            <option value="blank">I&apos;ll provide a description later</option>
                                             <optgroup label="Customizable Examples">
                                                 {starting_copilot_prompts && 
                                                     Object.entries(starting_copilot_prompts)
