@@ -131,15 +131,13 @@ export function App({
                     </div>
                 }
             >
-                {USE_TESTING_FEATURE && (
-                    <ProfileSelector
-                        projectId={projectId}
-                        isOpen={isProfileSelectorOpen}
-                        onOpenChange={setIsProfileSelectorOpen}
-                        onSelect={handleTestProfileChange}
-                        selectedProfileId={testProfile?._id}
-                    />
-                )}
+                <ProfileSelector
+                    projectId={projectId}
+                    isOpen={isProfileSelectorOpen}
+                    onOpenChange={setIsProfileSelectorOpen}
+                    onSelect={handleTestProfileChange}
+                    selectedProfileId={testProfile?._id}
+                />
                 <div className="h-full overflow-auto px-4 py-4">
                     <Chat
                         key={`chat-${counter}`}
