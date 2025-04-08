@@ -236,12 +236,11 @@ def get_agents(agent_configs, tool_configs, complete_request):
                     "type": "function",
                     "function": tool_config
                 })
-                #TODO: Remove this once we have a way to handle the additionalProperties
-                tool_config['parameters']['additionalProperties'] = False
                 tool = FunctionTool(
                     name=tool_name,
                     description=tool_config["description"],
                     params_json_schema=tool_config["parameters"],
+                    strict_json_schema=False,
                     on_invoke_tool=lambda ctx, args, _tool_name=tool_name, _tool_config=tool_config, _complete_request=complete_request:
                         catch_all(ctx, args, _tool_name, _tool_config, _complete_request)
                 )
