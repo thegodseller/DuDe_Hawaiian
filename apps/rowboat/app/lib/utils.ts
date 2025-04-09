@@ -3,6 +3,7 @@ import { z } from "zod";
 import { generateObject } from "ai";
 import { ApiMessage } from "./types/types";
 import { openai } from "@ai-sdk/openai";
+import { redisClient } from "./redis";
 
 export async function getAgenticApiResponse(
     request: z.infer<typeof AgenticAPIChatRequest>,
@@ -38,24 +39,20 @@ export async function getAgenticApiResponse(
 export async function getAgenticResponseStreamId(
     request: z.infer<typeof AgenticAPIChatRequest>,
 ): Promise<z.infer<typeof AgenticAPIInitStreamResponse>> {
-    // call agentic api
-    console.log(`sending agentic api init stream request`, JSON.stringify(request));
-    const response = await fetch(process.env.AGENTS_API_URL + '/chat_stream_init', {
-        method: 'POST',
-        body: JSON.stringify(request),
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.AGENTS_API_KEY || 'test'}`,
-        },
+    // serialize the request
+    const payload = JSON.stringify(request);
+
+    // create a uuid for the stream
+    const streamId = crypto.randomUUID();
+
+    // store payload in redis
+    await redisClient.set(`chat-stream-${streamId}`, payload, {
+        EX: 60 * 10, // expire in 10 minutes
     });
-    if (!response.ok) {
-        console.error('Failed to call agentic init stream api', response);
-        throw new Error(`Failed to call agentic init stream api: ${response.statusText}`);
-    }
-    const responseJson = await response.json();
-    console.log(`received agentic api init stream response`, JSON.stringify(responseJson));
-    const result: z.infer<typeof AgenticAPIInitStreamResponse> = responseJson;
-    return result;
+
+    return {
+        streamId,
+    };
 }
 
 // create a PrefixLogger class that wraps console.log with a prefix

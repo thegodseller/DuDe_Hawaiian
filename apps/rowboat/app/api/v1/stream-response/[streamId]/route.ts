@@ -1,11 +1,18 @@
+import { redisClient } from "@/app/lib/redis";
+
 export async function GET(request: Request, { params }: { params: { streamId: string } }) {
-  // Replace with your actual upstream SSE endpoint.
-  const upstreamUrl = `${process.env.AGENTS_API_URL}/chat_stream/${params.streamId}`;
-  console.log('upstreamUrl', upstreamUrl);
-  
+  // get the payload from redis
+  const payload = await redisClient.get(`chat-stream-${params.streamId}`);
+  if (!payload) {
+    return new Response("Stream not found", { status: 404 });
+  }
+
   // Fetch the upstream SSE stream.
-  const upstreamResponse = await fetch(upstreamUrl, {
+  const upstreamResponse = await fetch(`${process.env.AGENTS_API_URL}/chat_stream`, {
+    method: 'POST',
+    body: payload,
     headers: {
+      'Content-Type': 'application/json',
       'Authorization': `Bearer ${process.env.AGENTS_API_KEY || 'test'}`,
     },
     cache: 'no-store',
