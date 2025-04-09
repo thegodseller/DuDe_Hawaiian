@@ -3,8 +3,6 @@ from quart import Quart, request, jsonify, Response
 from datetime import datetime
 from functools import wraps
 import os
-import redis
-import uuid
 import json
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
@@ -17,7 +15,6 @@ from src.utils.common import common_logger, read_json_from_file
 from pprint import pprint
 
 logger = common_logger
-redis_client = redis.from_url(os.environ.get('REDIS_URL', 'redis://localhost:6379'))
 app = Quart(__name__)
 config = read_json_from_file("./configs/default_config.json")
 
@@ -122,31 +119,17 @@ async def chat():
         logger.error(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-@app.route("/chat_stream_init", methods=["POST"])
-@require_api_key
-async def chat_stream_init():
-    # create a uuid for the stream
-    stream_id = str(uuid.uuid4())
-
-    # store the request data in redis with 10 minute TTL
-    data = await request.get_json()
-    redis_client.setex(f"stream_request_{stream_id}", 600, json.dumps(data))
-
-    return jsonify({"streamId": stream_id})
-
 def format_sse(data: dict, event: str = None) -> str:
     msg = f"data: {json.dumps(data)}\n\n"
     if event is not None:
         msg = f"event: {event}\n{msg}"
     return msg
 
-@app.route("/chat_stream/<stream_id>", methods=["GET"])
+@app.route("/chat_stream", methods=["POST"])
 @require_api_key
-async def chat_stream(stream_id):
-    # get the request data from redis
-    request_data = redis_client.get(f"stream_request_{stream_id}")
-    if not request_data:
-        return jsonify({"error": "Stream not found"}), 404
+async def chat_stream():
+    # get the request data from the request
+    request_data = await request.get_data()
 
     print("Request:", request_data.decode('utf-8'))
     request_data = json.loads(request_data)

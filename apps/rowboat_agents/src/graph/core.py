@@ -65,7 +65,7 @@ def create_final_response(response, turn_messages, tokens_used, all_agents):
 
     # Ensure tokens_used is a valid dictionary
     if not isinstance(tokens_used, dict):
-        tokens_used = {"total": 100, "prompt": 50, "completion": 50}  # Default values if not a dictionary
+        tokens_used = {"total": 0, "prompt": 0, "completion": 0}  # Default values if not a dictionary
 
     # Ensure response has a tokens_used attribute that's a dictionary
     if not hasattr(response, 'tokens_used') or not isinstance(response.tokens_used, dict):
@@ -187,8 +187,8 @@ async def run_turn(
     logger.info("Converted message added to response messages")
     print("Converted message added to response messages")
 
-    # Use a dictionary for tokens_used instead of a hard-coded integer
-    tokens_used = {"total": 100, "prompt": 50, "completion": 50}  # Dummy values as placeholders
+    # Use a dictionary for tokens_used
+    tokens_used = {"total": 0, "prompt": 0, "completion": 0}  # Default values as placeholders
 
     # Ensure turn_messages can be extended with response.messages
     if hasattr(response, 'messages') and isinstance(response.messages, list):
@@ -208,7 +208,7 @@ async def run_turn(
 
         # Ensure tokens_used remains a proper dictionary
         if not isinstance(tokens_used, dict):
-            tokens_used = {"total": 100, "prompt": 50, "completion": 50}  # Default values if not a dictionary
+            tokens_used = {"total": 0, "prompt": 0, "completion": 0}  # Default values if not a dictionary
 
         response = create_response(
             messages=[duplicate_msg],

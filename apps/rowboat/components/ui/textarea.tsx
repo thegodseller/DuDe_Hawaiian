@@ -35,6 +35,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({
   const [validationError, setValidationError] = useState<string | undefined>();
   const [isEditing, setIsEditing] = useState(false);
 
+  // update local value when prop value changes
+  useEffect(() => {
+    setLocalValue(propValue as string);
+  }, [propValue]);
+
   // Sync local state with prop value when not editing
   useEffect(() => {
     if (!isEditing) {

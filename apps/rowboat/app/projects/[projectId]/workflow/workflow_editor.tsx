@@ -535,6 +535,7 @@ function reducer(state: State, action: Action): State {
                                     draft.workflow.tools.push(newTool);
                                 }
                             });
+                            draft.pendingChanges = true;
                             draft.chatKey++;
                             break;
                     }

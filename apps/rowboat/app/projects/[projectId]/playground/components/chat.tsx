@@ -14,6 +14,7 @@ import { apiV1 } from "rowboat-shared";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { WithStringId } from "@/app/lib/types/types";
 import { ProfileContextBox } from "./profile-context-box";
+import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
 
 export function Chat({
     chat,
@@ -225,11 +226,13 @@ export function Chat({
 
     return <div className="relative max-w-3xl mx-auto h-full flex flex-col">
         <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pt-4 pb-4">
-            <ProfileContextBox
-                content={testProfile?.context || systemMessage || ''}
-                onChange={onSystemMessageChange}
-                locked={testProfile !== null}
-            />
+            {USE_TESTING_FEATURE && (
+                <ProfileContextBox
+                    content={testProfile?.context || systemMessage || ''}
+                    onChange={onSystemMessageChange}
+                    locked={testProfile !== null}
+                />
+            )}
         </div>
         
         <div className="flex-1 overflow-auto pr-1 
