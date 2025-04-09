@@ -254,10 +254,13 @@ def get_agents(agent_configs, tool_configs, complete_request):
         # Create the agent object
         logger.debug(f"Creating Agent object for {agent_config['name']}")
         print(f"Creating Agent object for {agent_config['name']}")
+
+        # add the name and description to the agent instructions
+        agent_instructions = f"## Your Name\n{agent_config['name']}\n\n## Description\n{agent_config['description']}\n\n## Instructions\n{agent_config['instructions']}"
         try:
             new_agent = NewAgent(
                 name=agent_config["name"],
-                instructions=agent_config["instructions"],
+                instructions=agent_instructions,
                 handoff_description=agent_config["description"],
                 tools=new_tools,
                 model=agent_config["model"],
