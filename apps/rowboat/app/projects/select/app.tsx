@@ -15,6 +15,8 @@ import { CustomPromptCard } from "./components/custom-prompt-card";
 import { Submit } from "./components/submit-button";
 import { PageHeading } from "@/components/ui/page-heading";
 import { USE_MULTIPLE_PROJECTS } from "@/app/lib/feature_flags";
+import { FolderOpenIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Button } from "@/components/ui/button";
 
 const sectionHeaderStyles = clsx(
     "text-sm font-medium",
@@ -39,6 +41,7 @@ const textareaStyles = clsx(
 export default function App() {
     const [projects, setProjects] = useState<z.infer<typeof Project>[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isProjectPaneOpen, setIsProjectPaneOpen] = useState(false);
     
     const [selectedCard, setSelectedCard] = useState<'custom' | any>('custom');
     const [customPrompt, setCustomPrompt] = useState("");
@@ -198,7 +201,7 @@ export default function App() {
                         : "mt-8 -mx-12"
                 )}>
                     {/* Left side: Project Selection */}
-                    {USE_MULTIPLE_PROJECTS && (
+                    {USE_MULTIPLE_PROJECTS && isProjectPaneOpen && (
                         <div className="overflow-auto">
                             <SearchProjects
                                 projects={projects}
@@ -206,6 +209,7 @@ export default function App() {
                                 heading="Select an existing project"
                                 subheading="Choose from your projects"
                                 className="h-full"
+                                onClose={() => setIsProjectPaneOpen(false)}
                             />
                         </div>
                     )}
@@ -213,7 +217,8 @@ export default function App() {
                     {/* Right side: Project Creation */}
                     <div className={clsx(
                         "overflow-auto",
-                        !USE_MULTIPLE_PROJECTS && "max-w-none px-12 py-12"
+                        !USE_MULTIPLE_PROJECTS && "max-w-none px-12 py-12",
+                        USE_MULTIPLE_PROJECTS && !isProjectPaneOpen && "col-span-full"
                     )}>
                         <section className={clsx(
                             "card h-full",
@@ -221,10 +226,20 @@ export default function App() {
                             USE_MULTIPLE_PROJECTS && "px-8"
                         )}>
                             {USE_MULTIPLE_PROJECTS && (
-                                <div className="pt-12">
+                                <div className="pt-12 flex justify-between items-center">
                                     <SectionHeading subheading="Set up a new AI assistant">
                                         Create a new project
                                     </SectionHeading>
+                                    {!isProjectPaneOpen && (
+                                        <Button
+                                            onClick={() => setIsProjectPaneOpen(true)}
+                                            variant="primary"
+                                            size="md"
+                                            startContent={<FolderOpenIcon className="w-4 h-4" />}
+                                        >
+                                            View Projects
+                                        </Button>
+                                    )}
                                 </div>
                             )}
                             
