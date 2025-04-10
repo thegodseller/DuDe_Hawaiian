@@ -69,6 +69,9 @@ const TabType = {
 
 type TabState = typeof TabType[keyof typeof TabType];
 
+// Add a type guard to help TypeScript understand the comparison
+const isNotBlankTemplate = (tab: TabState): boolean => tab !== 'blank';
+
 const tabStyles = clsx(
     "px-4 py-2 text-sm font-medium",
     "rounded-lg",
@@ -494,7 +497,7 @@ export default function App() {
                                                     style={{ minHeight: "120px" }}
                                                     autoFocus
                                                     autoResize
-                                                    required={selectedTab !== TabType.Blank}
+                                                    required={isNotBlankTemplate(selectedTab)}
                                                 />
                                                 {promptError && (
                                                     <p className="text-sm text-red-500">
@@ -510,7 +513,7 @@ export default function App() {
                                     <div className="space-y-4">
                                         <div className="flex flex-col gap-4">
                                             <p className="text-gray-600 dark:text-gray-400 text-sm">
-                                                👇 Click "Create assistant" below to get started
+                                                👇 Click &ldquo;Create assistant&rdquo; below to get started
                                             </p>
                                         </div>
                                     </div>
