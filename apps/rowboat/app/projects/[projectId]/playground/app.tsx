@@ -1,5 +1,5 @@
 'use client';
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { z } from "zod";
 import { MCPServer, PlaygroundChat } from "@/app/lib/types/types";
 import { Workflow } from "@/app/lib/types/workflow_types";
@@ -30,7 +30,6 @@ export function App({
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
     toolWebhookUrl: string;
 }) {
-    const [counter, setCounter] = useState<number>(0);
     const [testProfile, setTestProfile] = useState<WithStringId<z.infer<typeof TestProfile>> | null>(null);
     const [systemMessage, setSystemMessage] = useState<string>(defaultSystemMessage);
     const [chat, setChat] = useState<z.infer<typeof PlaygroundChat>>({
@@ -42,19 +41,17 @@ export function App({
     });
     const [isProfileSelectorOpen, setIsProfileSelectorOpen] = useState(false);
     const [showCopySuccess, setShowCopySuccess] = useState(false);
+    const getCopyContentRef = useRef<(() => string) | null>(null);
 
     function handleSystemMessageChange(message: string) {
         setSystemMessage(message);
-        setCounter(counter + 1);
     }
 
     function handleTestProfileChange(profile: WithStringId<z.infer<typeof TestProfile>> | null) {
         setTestProfile(profile);
-        setCounter(counter + 1);
     }
 
     function handleNewChatButtonClick() {
-        setCounter(counter + 1);
         setChat({
             projectId,
             createdAt: new Date().toISOString(),
@@ -62,21 +59,23 @@ export function App({
             simulated: false,
             systemMessage: defaultSystemMessage,
         });
+        setSystemMessage(defaultSystemMessage);
     }
 
-    const handleCopyJson = () => {
-        const jsonString = JSON.stringify({
-            messages: [{
-                role: 'system',
-                content: systemMessage,
-            }, ...chat.messages],
-        }, null, 2);
-        navigator.clipboard.writeText(jsonString);
-        setShowCopySuccess(true);
-        setTimeout(() => {
-            setShowCopySuccess(false);
-        }, 2000);
-    };
+    const handleCopyJson = useCallback(() => {
+        if (getCopyContentRef.current) {
+            try {
+                const data = getCopyContentRef.current();
+                navigator.clipboard.writeText(data);
+                setShowCopySuccess(true);
+                setTimeout(() => {
+                    setShowCopySuccess(false);
+                }, 2000);
+            } catch (error) {
+                console.error('Error copying:', error);
+            }
+        }
+    }, []);
 
     if (hidden) {
         return <></>;
@@ -140,7 +139,6 @@ export function App({
                 />
                 <div className="h-full overflow-auto px-4 py-4">
                     <Chat
-                        key={`chat-${counter}`}
                         chat={chat}
                         projectId={projectId}
                         workflow={workflow}
@@ -151,6 +149,7 @@ export function App({
                         onSystemMessageChange={handleSystemMessageChange}
                         mcpServerUrls={mcpServerUrls}
                         toolWebhookUrl={toolWebhookUrl}
+                        onCopyClick={(fn) => { getCopyContentRef.current = fn; }}
                     />
                 </div>
             </Panel>
