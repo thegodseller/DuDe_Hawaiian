@@ -27,11 +27,9 @@ export function SearchProjects({
         <div className={clsx("card", className)}>
             <div className="px-4 pt-4 pb-6 flex-none">
                 <div className="flex justify-between items-center">
-                    <SectionHeading
-                        subheading={subheading}
-                    >
+                    <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                         {heading}
-                    </SectionHeading>
+                    </h1>
                     {onClose && (
                         <button
                             onClick={onClose}
@@ -41,6 +39,11 @@ export function SearchProjects({
                         </button>
                     )}
                 </div>
+                {subheading && (
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {subheading}
+                    </p>
+                )}
             </div>
             <HorizontalDivider />
             <div className="flex-1 overflow-hidden">
