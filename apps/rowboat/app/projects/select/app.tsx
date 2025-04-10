@@ -1,7 +1,7 @@
 'use client';
 
 import { Project } from "../../lib/types/project_types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { z } from "zod";
 import { listProjects, createProject, createProjectFromPrompt } from "../../actions/project_actions";
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,76 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { USE_MULTIPLE_PROJECTS } from "@/app/lib/feature_flags";
 import { FolderOpenIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
+
+// Add glow animation styles
+const glowStyles = `
+    @keyframes glow {
+        0% {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 0 8px 1px rgba(99, 102, 241, 0.2);
+        }
+        50% {
+            border-color: rgba(99, 102, 241, 0.6);
+            box-shadow: 0 0 12px 2px rgba(99, 102, 241, 0.4);
+        }
+        100% {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 0 8px 1px rgba(99, 102, 241, 0.2);
+        }
+    }
+
+    @keyframes glow-dark {
+        0% {
+            border-color: rgba(129, 140, 248, 0.3);
+            box-shadow: 0 0 8px 1px rgba(129, 140, 248, 0.2);
+        }
+        50% {
+            border-color: rgba(129, 140, 248, 0.6);
+            box-shadow: 0 0 12px 2px rgba(129, 140, 248, 0.4);
+        }
+        100% {
+            border-color: rgba(129, 140, 248, 0.3);
+            box-shadow: 0 0 8px 1px rgba(129, 140, 248, 0.2);
+        }
+    }
+
+    .animate-glow {
+        animation: glow 2s ease-in-out infinite;
+        border-width: 2px;
+    }
+
+    .dark .animate-glow {
+        animation: glow-dark 2s ease-in-out infinite;
+        border-width: 2px;
+    }
+`;
+
+const TabType = {
+    Describe: 'describe',
+    Blank: 'blank',
+    Example: 'example'
+} as const;
+
+type TabState = typeof TabType[keyof typeof TabType];
+
+const tabStyles = clsx(
+    "px-4 py-2 text-sm font-medium",
+    "rounded-lg",
+    "focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20",
+    "transition-colors duration-150"
+);
+
+const activeTabStyles = clsx(
+    "bg-white dark:bg-gray-800",
+    "text-gray-900 dark:text-gray-100",
+    "shadow-sm",
+    "border border-gray-200 dark:border-gray-700"
+);
+
+const inactiveTabStyles = clsx(
+    "text-gray-600 dark:text-gray-400",
+    "hover:bg-gray-50 dark:hover:bg-gray-750"
+);
 
 const sectionHeaderStyles = clsx(
     "text-sm font-medium",
@@ -35,7 +105,30 @@ const textareaStyles = clsx(
     "bg-white dark:bg-gray-800",
     "hover:bg-gray-50 dark:hover:bg-gray-750",
     "focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20",
-    "placeholder:text-gray-400 dark:placeholder:text-gray-500"
+    "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+    "transition-all duration-200"
+);
+
+const emptyTextareaStyles = clsx(
+    "animate-glow",
+    "border-indigo-500/40 dark:border-indigo-400/40",
+    "shadow-[0_0_8px_1px_rgba(99,102,241,0.2)] dark:shadow-[0_0_8px_1px_rgba(129,140,248,0.2)]"
+);
+
+const tabButtonStyles = clsx(
+    "border border-gray-200 dark:border-gray-700" // Border for all states
+);
+
+const selectedTabStyles = clsx(
+    tabButtonStyles,
+    "text-gray-900 dark:text-gray-100",
+    "text-base" // Normal font size for selected tab
+);
+
+const unselectedTabStyles = clsx(
+    tabButtonStyles,
+    "text-gray-900 dark:text-gray-100",
+    "text-sm" // Smaller font size for unselected tabs
 );
 
 export default function App() {
@@ -43,15 +136,24 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [isProjectPaneOpen, setIsProjectPaneOpen] = useState(false);
     
-    const [selectedCard, setSelectedCard] = useState<'custom' | any>('custom');
+    const [selectedTab, setSelectedTab] = useState<TabState>(TabType.Describe);
+    const [isExamplesDropdownOpen, setIsExamplesDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const [customPrompt, setCustomPrompt] = useState("");
     const [name, setName] = useState("");
     const [defaultName, setDefaultName] = useState('Assistant 1');
-    const [isExamplesExpanded, setIsExamplesExpanded] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] = useState<string>('custom');
-    const [showCustomPrompt, setShowCustomPrompt] = useState(true);
     const [promptError, setPromptError] = useState<string | null>(null);
-    const [hasEditedPrompt, setHasEditedPrompt] = useState(false);
+
+    // Inject glow animation styles
+    useEffect(() => {
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = glowStyles;
+        document.head.appendChild(styleSheet);
+
+        return () => {
+            document.head.removeChild(styleSheet);
+        };
+    }, []);
 
     const getNextAssistantNumber = (projects: z.infer<typeof Project>[]) => {
         const untitledProjects = projects
@@ -94,37 +196,46 @@ export default function App() {
         }
     }, []);
 
-    const handleCardSelect = (card: 'custom' | any) => {
-        setSelectedCard(card);
-        
-        if (card === 'custom') {
-            setCustomPrompt("");
-        } else {
-            setCustomPrompt(card.prompt || card.description);
+    // Add click outside handler
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsExamplesDropdownOpen(false);
+            }
         }
+
+        if (isExamplesDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isExamplesDropdownOpen]);
+
+    const handleTabChange = (tab: TabState) => {
+        setSelectedTab(tab);
+        setIsExamplesDropdownOpen(false);
+
+        if (tab === TabType.Blank) {
+            setCustomPrompt('');
+        } else if (tab === TabType.Describe) {
+            setCustomPrompt('');
+        }
+    };
+
+    const handleBlankTemplateClick = (e: React.MouseEvent) => {
+        e.preventDefault(); // Prevent any form submission
+        handleTabChange(TabType.Blank);
+    };
+
+    const handleExampleSelect = (exampleName: string) => {
+        setSelectedTab(TabType.Example);
+        setCustomPrompt(starting_copilot_prompts[exampleName] || '');
+        setIsExamplesDropdownOpen(false);
     };
 
     const router = useRouter();
-
-    const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = e.target.value;
-        setSelectedTemplate(value);
-        
-        if (value === 'blank') {
-            setShowCustomPrompt(false);
-            setCustomPrompt('');
-        } else if (value === 'custom') {
-            setShowCustomPrompt(true);
-            setCustomPrompt('');
-        } else {
-            // Handle example prompts
-            const prompt = starting_copilot_prompts[value];
-            if (prompt) {
-                setShowCustomPrompt(true);
-                setCustomPrompt(prompt);
-            }
-        }
-    };
 
     const validatePrompt = (value: string) => {
         if (!value.trim()) {
@@ -136,14 +247,14 @@ export default function App() {
     async function handleSubmit(formData: FormData) {
         try {
             // Validate prompt if custom prompt section is shown
-            if (showCustomPrompt && !customPrompt.trim()) {
+            if (selectedTab !== TabType.Blank && !customPrompt.trim()) {
                 setPromptError("Prompt cannot be empty");
                 return;
             }
 
             let response;
             
-            if (selectedTemplate === 'blank') {
+            if (selectedTab === TabType.Blank) {
                 const newFormData = new FormData();
                 newFormData.append('name', name);
                 newFormData.append('template', 'default');
@@ -170,7 +281,10 @@ export default function App() {
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+        // Only allow Enter key submission for non-blank templates and when not in a textarea
+        if (e.key === 'Enter' && 
+            selectedTab !== TabType.Blank && 
+            (e.target as HTMLElement).tagName !== 'TEXTAREA') {
             e.preventDefault();
             const formData = new FormData();
             formData.append('name', name);
@@ -246,9 +360,91 @@ export default function App() {
                             <form
                                 id="create-project-form"
                                 action={handleSubmit}
+                                onSubmit={(e) => {
+                                    // Prevent default form submission
+                                    e.preventDefault();
+                                    const formData = new FormData(e.currentTarget);
+                                    handleSubmit(formData);
+                                }}
                                 onKeyDown={handleKeyDown}
                                 className="pt-12 pb-16 space-y-12"
                             >
+                                {/* Tab Section */}
+                                <div>
+                                    <div className="mb-5">
+                                        <SectionHeading>
+                                            ✨ Get started
+                                        </SectionHeading>
+                                    </div>
+
+                                    {/* Tab Navigation */}
+                                    <div className="flex gap-6 relative">
+                                        <Button
+                                            variant={selectedTab === TabType.Describe ? 'primary' : 'tertiary'}
+                                            size="md"
+                                            onClick={() => handleTabChange(TabType.Describe)}
+                                            className={selectedTab === TabType.Describe ? selectedTabStyles : unselectedTabStyles}
+                                        >
+                                           Decsribe your assistant
+                                        </Button>
+                                        <Button
+                                            variant={selectedTab === TabType.Blank ? 'primary' : 'tertiary'}
+                                            size="md"
+                                            onClick={handleBlankTemplateClick}
+                                            type="button"
+                                            className={selectedTab === TabType.Blank ? selectedTabStyles : unselectedTabStyles}
+                                        >
+                                            Start from a blank template
+                                        </Button>
+                                        <div className="relative" ref={dropdownRef}>
+                                            <Button
+                                                variant={selectedTab === TabType.Example ? 'primary' : 'tertiary'}
+                                                size="md"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    setIsExamplesDropdownOpen(!isExamplesDropdownOpen);
+                                                }}
+                                                type="button"
+                                                className={selectedTab === TabType.Example ? selectedTabStyles : unselectedTabStyles}
+                                                endContent={
+                                                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                    </svg>
+                                                }
+                                            >
+                                                Customize an existing example
+                                            </Button>
+                                            
+                                            {isExamplesDropdownOpen && (
+                                                <div className="absolute z-10 mt-2 min-w-[200px] max-w-[240px] rounded-lg shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                                    <div className="py-1">
+                                                        {Object.entries(starting_copilot_prompts)
+                                                            .filter(([name]) => name !== 'Blank Template')
+                                                            .map(([name]) => (
+                                                                <Button
+                                                                    key={name}
+                                                                    variant="tertiary"
+                                                                    size="sm"
+                                                                    className="w-full justify-start text-left text-sm py-1.5"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        handleExampleSelect(name);
+                                                                    }}
+                                                                    type="button"
+                                                                >
+                                                                    {name}
+                                                                </Button>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Name Section */}
                                 {USE_MULTIPLE_PROJECTS && (
                                     <div className="space-y-4">
@@ -274,11 +470,11 @@ export default function App() {
                                 )}
 
                                 {/* Custom Prompt Section - Only show when needed */}
-                                {showCustomPrompt && (
+                                {(selectedTab === TabType.Describe || selectedTab === TabType.Example) && (
                                     <div className="space-y-4">
                                         <div className="flex flex-col gap-4">
                                             <label className={largeSectionHeaderStyles}>
-                                                {selectedTemplate === 'custom' ? 'What do you want to build?' : 'Customize the description'}
+                                                {selectedTab === TabType.Describe ? '✏️ What do you want to build?' : '✏️ Customize the description'}
                                             </label>
                                             <div className="space-y-2">
                                                 <Textarea
@@ -292,12 +488,13 @@ export default function App() {
                                                         textareaStyles,
                                                         "text-base",
                                                         "text-gray-900 dark:text-gray-100",
-                                                        promptError && "border-red-500 focus:ring-red-500/20"
+                                                        promptError && "border-red-500 focus:ring-red-500/20",
+                                                        !customPrompt && emptyTextareaStyles
                                                     )}
                                                     style={{ minHeight: "120px" }}
                                                     autoFocus
                                                     autoResize
-                                                    required
+                                                    required={selectedTab !== TabType.Blank}
                                                 />
                                                 {promptError && (
                                                     <p className="text-sm text-red-500">
@@ -309,55 +506,18 @@ export default function App() {
                                     </div>
                                 )}
 
-
-                                {/* Template Selection Section */}
-                                <div className="space-y-4">
-                                    <div className="flex flex-col gap-4">
-                                        <label className={largeSectionHeaderStyles}>
-                                            How do you want to start?
-                                        </label>
-                                        <select
-                                            value={selectedTemplate}
-                                            onChange={handleTemplateChange}
-                                            className={clsx(
-                                                "w-[400px]",
-                                                "px-4 py-2",
-                                                "pr-8",
-                                                "rounded-lg",
-                                                "border border-gray-200 dark:border-gray-700",
-                                                "bg-white dark:bg-gray-800",
-                                                "hover:bg-gray-50 dark:hover:bg-gray-750",
-                                                "focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20",
-                                                "appearance-none",
-                                                "text-base",
-                                                "text-gray-900 dark:text-gray-100",
-                                                "bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]",
-                                                "bg-[length:1.25em]",
-                                                "bg-[calc(100%-8px)_center]",
-                                                "bg-no-repeat",
-                                                "dark:bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]"
-                                            )}
-                                        >
-                                            <option value="custom">Tell us what you want to build</option>
-                                            <option value="blank">I&apos;ll provide a description later</option>
-                                            <optgroup label="Customizable Examples">
-                                                {starting_copilot_prompts && 
-                                                    Object.entries(starting_copilot_prompts)
-                                                        .filter(([name]) => name !== 'Blank Template')
-                                                        .map(([name, prompt]) => (
-                                                            <option key={name} value={name}>
-                                                                {name}
-                                                            </option>
-                                                        ))
-                                                }
-                                            </optgroup>
-                                        </select>
+                                {selectedTab === TabType.Blank && (
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col gap-4">
+                                            <p className="text-gray-600 dark:text-gray-400 text-sm">
+                                                👇 Click "Create assistant" below to get started
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
-                                
                                 {/* Submit Button */}
-                                <div className="pt-6 w-full">
+                                <div className="pt-1 w-full -mt-4">
                                     <Submit />
                                 </div>
                             </form>
