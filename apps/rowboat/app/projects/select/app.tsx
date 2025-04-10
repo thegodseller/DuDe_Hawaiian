@@ -11,7 +11,6 @@ import { templates, starting_copilot_prompts } from "@/app/lib/project_templates
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchProjects } from "./components/search-projects";
-import { CustomPromptCard } from "./components/custom-prompt-card";
 import { Submit } from "./components/submit-button";
 import { PageHeading } from "@/components/ui/page-heading";
 import { USE_MULTIPLE_PROJECTS } from "@/app/lib/feature_flags";
@@ -297,235 +296,220 @@ export default function App() {
 
     return (
         <div className={clsx(
-            "min-h-screen flex flex-col",
-            tokens.colors.light.background,
-            tokens.colors.dark.background
+            "flex-1 px-12 pt-4 pb-32"
         )}>
             <div className={clsx(
-                "flex-1 px-12 pt-4 pb-32"
+                USE_MULTIPLE_PROJECTS 
+                    ? "grid grid-cols-1 lg:grid-cols-[1fr,2fr] gap-8 mt-8"
+                    : "mt-8 -mx-12"
             )}>
-                <PageHeading 
-                    title={USE_MULTIPLE_PROJECTS ? "Projects" : "Let's get started"}
-                    description={USE_MULTIPLE_PROJECTS 
-                        ? "Select an existing project or create a new one"
-                        : "Create a multi-agent assistant in minutes"
-                    }
-                />
+                {/* Left side: Project Selection */}
+                {USE_MULTIPLE_PROJECTS && isProjectPaneOpen && (
+                    <div className="overflow-auto">
+                        <SearchProjects
+                            projects={projects}
+                            isLoading={isLoading}
+                            heading="Select an existing assistant"
+                            className="h-full"
+                            onClose={() => setIsProjectPaneOpen(false)}
+                        />
+                    </div>
+                )}
 
+                {/* Right side: Project Creation */}
                 <div className={clsx(
-                    USE_MULTIPLE_PROJECTS 
-                        ? "grid grid-cols-1 lg:grid-cols-[1fr,2fr] gap-8 mt-8"
-                        : "mt-8 -mx-12"
+                    "overflow-auto",
+                    !USE_MULTIPLE_PROJECTS && "max-w-none px-12 py-12",
+                    USE_MULTIPLE_PROJECTS && !isProjectPaneOpen && "col-span-full"
                 )}>
-                    {/* Left side: Project Selection */}
-                    {USE_MULTIPLE_PROJECTS && isProjectPaneOpen && (
-                        <div className="overflow-auto">
-                            <SearchProjects
-                                projects={projects}
-                                isLoading={isLoading}
-                                heading="Select an existing project"
-                                subheading="Choose from your projects"
-                                className="h-full"
-                                onClose={() => setIsProjectPaneOpen(false)}
-                            />
-                        </div>
-                    )}
-
-                    {/* Right side: Project Creation */}
-                    <div className={clsx(
-                        "overflow-auto",
-                        !USE_MULTIPLE_PROJECTS && "max-w-none px-12 py-12",
-                        USE_MULTIPLE_PROJECTS && !isProjectPaneOpen && "col-span-full"
+                    <section className={clsx(
+                        "card h-full",
+                        !USE_MULTIPLE_PROJECTS && "px-24",
+                        USE_MULTIPLE_PROJECTS && "px-8"
                     )}>
-                        <section className={clsx(
-                            "card h-full",
-                            !USE_MULTIPLE_PROJECTS && "px-24",
-                            USE_MULTIPLE_PROJECTS && "px-8"
-                        )}>
-                            {USE_MULTIPLE_PROJECTS && (
-                                <div className="pt-12 flex justify-between items-center">
-                                    <SectionHeading subheading="Set up a new AI assistant">
-                                        Create a new project
+                        {USE_MULTIPLE_PROJECTS && (
+                            <div className="px-4 pt-4 pb-6 flex justify-between items-center">
+                                <SectionHeading>
+                                    Create a new assistant
+                                </SectionHeading>
+                                {!isProjectPaneOpen && (
+                                    <Button
+                                        onClick={() => setIsProjectPaneOpen(true)}
+                                        variant="primary"
+                                        size="md"
+                                        startContent={<FolderOpenIcon className="w-4 h-4" />}
+                                    >
+                                        View Projects
+                                    </Button>
+                                )}
+                            </div>
+                        )}
+                        
+                        <form
+                            id="create-project-form"
+                            action={handleSubmit}
+                            onSubmit={(e) => {
+                                // Prevent default form submission
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                handleSubmit(formData);
+                            }}
+                            onKeyDown={handleKeyDown}
+                            className="pt-6 pb-16 space-y-12"
+                        >
+                            {/* Tab Section */}
+                            <div>
+                                <div className="mb-5">
+                                    <SectionHeading>
+                                        ✨ Get started
                                     </SectionHeading>
-                                    {!isProjectPaneOpen && (
-                                        <Button
-                                            onClick={() => setIsProjectPaneOpen(true)}
-                                            variant="primary"
-                                            size="md"
-                                            startContent={<FolderOpenIcon className="w-4 h-4" />}
-                                        >
-                                            View Projects
-                                        </Button>
-                                    )}
                                 </div>
-                            )}
-                            
-                            <form
-                                id="create-project-form"
-                                action={handleSubmit}
-                                onSubmit={(e) => {
-                                    // Prevent default form submission
-                                    e.preventDefault();
-                                    const formData = new FormData(e.currentTarget);
-                                    handleSubmit(formData);
-                                }}
-                                onKeyDown={handleKeyDown}
-                                className="pt-12 pb-16 space-y-12"
-                            >
-                                {/* Tab Section */}
-                                <div>
-                                    <div className="mb-5">
-                                        <SectionHeading>
-                                            ✨ Get started
-                                        </SectionHeading>
-                                    </div>
 
-                                    {/* Tab Navigation */}
-                                    <div className="flex gap-6 relative">
+                                {/* Tab Navigation */}
+                                <div className="flex gap-6 relative">
+                                    <Button
+                                        variant={selectedTab === TabType.Describe ? 'primary' : 'tertiary'}
+                                        size="md"
+                                        onClick={() => handleTabChange(TabType.Describe)}
+                                        className={selectedTab === TabType.Describe ? selectedTabStyles : unselectedTabStyles}
+                                    >
+                                        Describe your assistant
+                                    </Button>
+                                    <Button
+                                        variant={selectedTab === TabType.Blank ? 'primary' : 'tertiary'}
+                                        size="md"
+                                        onClick={handleBlankTemplateClick}
+                                        type="button"
+                                        className={selectedTab === TabType.Blank ? selectedTabStyles : unselectedTabStyles}
+                                    >
+                                        Start from a blank template
+                                    </Button>
+                                    <div className="relative" ref={dropdownRef}>
                                         <Button
-                                            variant={selectedTab === TabType.Describe ? 'primary' : 'tertiary'}
+                                            variant={selectedTab === TabType.Example ? 'primary' : 'tertiary'}
                                             size="md"
-                                            onClick={() => handleTabChange(TabType.Describe)}
-                                            className={selectedTab === TabType.Describe ? selectedTabStyles : unselectedTabStyles}
-                                        >
-                                           Decsribe your assistant
-                                        </Button>
-                                        <Button
-                                            variant={selectedTab === TabType.Blank ? 'primary' : 'tertiary'}
-                                            size="md"
-                                            onClick={handleBlankTemplateClick}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setIsExamplesDropdownOpen(!isExamplesDropdownOpen);
+                                            }}
                                             type="button"
-                                            className={selectedTab === TabType.Blank ? selectedTabStyles : unselectedTabStyles}
+                                            className={selectedTab === TabType.Example ? selectedTabStyles : unselectedTabStyles}
+                                            endContent={
+                                                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                </svg>
+                                            }
                                         >
-                                            Start from a blank template
+                                            Customize an existing example
                                         </Button>
-                                        <div className="relative" ref={dropdownRef}>
-                                            <Button
-                                                variant={selectedTab === TabType.Example ? 'primary' : 'tertiary'}
-                                                size="md"
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    setIsExamplesDropdownOpen(!isExamplesDropdownOpen);
-                                                }}
-                                                type="button"
-                                                className={selectedTab === TabType.Example ? selectedTabStyles : unselectedTabStyles}
-                                                endContent={
-                                                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                    </svg>
-                                                }
-                                            >
-                                                Customize an existing example
-                                            </Button>
-                                            
-                                            {isExamplesDropdownOpen && (
-                                                <div className="absolute z-10 mt-2 min-w-[200px] max-w-[240px] rounded-lg shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                                    <div className="py-1">
-                                                        {Object.entries(starting_copilot_prompts)
-                                                            .filter(([name]) => name !== 'Blank Template')
-                                                            .map(([name]) => (
-                                                                <Button
-                                                                    key={name}
-                                                                    variant="tertiary"
-                                                                    size="sm"
-                                                                    className="w-full justify-start text-left text-sm py-1.5"
-                                                                    onClick={(e) => {
-                                                                        e.preventDefault();
-                                                                        e.stopPropagation();
-                                                                        handleExampleSelect(name);
-                                                                    }}
-                                                                    type="button"
-                                                                >
-                                                                    {name}
-                                                                </Button>
-                                                            ))
-                                                        }
-                                                    </div>
+                                        
+                                        {isExamplesDropdownOpen && (
+                                            <div className="absolute z-10 mt-2 min-w-[200px] max-w-[240px] rounded-lg shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                                <div className="py-1">
+                                                    {Object.entries(starting_copilot_prompts)
+                                                        .filter(([name]) => name !== 'Blank Template')
+                                                        .map(([name]) => (
+                                                            <Button
+                                                                key={name}
+                                                                variant="tertiary"
+                                                                size="sm"
+                                                                className="w-full justify-start text-left text-sm py-1.5"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    handleExampleSelect(name);
+                                                                }}
+                                                                type="button"
+                                                            >
+                                                                {name}
+                                                            </Button>
+                                                        ))
+                                                    }
                                                 </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Custom Prompt Section - Only show when needed */}
+                            {(selectedTab === TabType.Describe || selectedTab === TabType.Example) && (
+                                <div className="space-y-4">
+                                    <div className="flex flex-col gap-4">
+                                        <label className={largeSectionHeaderStyles}>
+                                            {selectedTab === TabType.Describe ? '✏️ What do you want to build?' : '✏️ Customize the description'}
+                                        </label>
+                                        <div className="space-y-2">
+                                            <Textarea
+                                                value={customPrompt}
+                                                onChange={(e) => {
+                                                    setCustomPrompt(e.target.value);
+                                                    setPromptError(null);
+                                                }}
+                                                placeholder="Example: Create a customer support assistant that can handle product inquiries and returns"
+                                                className={clsx(
+                                                    textareaStyles,
+                                                    "text-base",
+                                                    "text-gray-900 dark:text-gray-100",
+                                                    promptError && "border-red-500 focus:ring-red-500/20",
+                                                    !customPrompt && emptyTextareaStyles
+                                                )}
+                                                style={{ minHeight: "120px" }}
+                                                autoFocus
+                                                autoResize
+                                                required={isNotBlankTemplate(selectedTab)}
+                                            />
+                                            {promptError && (
+                                                <p className="text-sm text-red-500">
+                                                    {promptError}
+                                                </p>
                                             )}
                                         </div>
                                     </div>
                                 </div>
+                            )}
 
-                                {/* Name Section */}
-                                {USE_MULTIPLE_PROJECTS && (
-                                    <div className="space-y-4">
-                                        <div className="flex flex-col gap-4">
-                                            <label className={largeSectionHeaderStyles}>
-                                                Name
-                                            </label>
-                                            <Textarea
-                                                required
-                                                name="name"
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
-                                                className={clsx(
-                                                    textareaStyles,
-                                                    "min-h-[60px]",
-                                                    "text-base",
-                                                    "text-gray-900 dark:text-gray-100"
-                                                )}
-                                                placeholder={defaultName}
-                                            />
-                                        </div>
+                            {selectedTab === TabType.Blank && (
+                                <div className="space-y-4">
+                                    <div className="flex flex-col gap-4">
+                                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                                            👇 Click &ldquo;Create assistant&rdquo; below to get started
+                                        </p>
                                     </div>
-                                )}
-
-                                {/* Custom Prompt Section - Only show when needed */}
-                                {(selectedTab === TabType.Describe || selectedTab === TabType.Example) && (
-                                    <div className="space-y-4">
-                                        <div className="flex flex-col gap-4">
-                                            <label className={largeSectionHeaderStyles}>
-                                                {selectedTab === TabType.Describe ? '✏️ What do you want to build?' : '✏️ Customize the description'}
-                                            </label>
-                                            <div className="space-y-2">
-                                                <Textarea
-                                                    value={customPrompt}
-                                                    onChange={(e) => {
-                                                        setCustomPrompt(e.target.value);
-                                                        setPromptError(null);
-                                                    }}
-                                                    placeholder="Example: Create a customer support assistant that can handle product inquiries and returns"
-                                                    className={clsx(
-                                                        textareaStyles,
-                                                        "text-base",
-                                                        "text-gray-900 dark:text-gray-100",
-                                                        promptError && "border-red-500 focus:ring-red-500/20",
-                                                        !customPrompt && emptyTextareaStyles
-                                                    )}
-                                                    style={{ minHeight: "120px" }}
-                                                    autoFocus
-                                                    autoResize
-                                                    required={isNotBlankTemplate(selectedTab)}
-                                                />
-                                                {promptError && (
-                                                    <p className="text-sm text-red-500">
-                                                        {promptError}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {selectedTab === TabType.Blank && (
-                                    <div className="space-y-4">
-                                        <div className="flex flex-col gap-4">
-                                            <p className="text-gray-600 dark:text-gray-400 text-sm">
-                                                👇 Click &ldquo;Create assistant&rdquo; below to get started
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Submit Button */}
-                                <div className="pt-1 w-full -mt-4">
-                                    <Submit />
                                 </div>
-                            </form>
-                        </section>
-                    </div>
+                            )}
+
+                            {/* Name Section */}
+                            {USE_MULTIPLE_PROJECTS && (
+                                <div className="space-y-4">
+                                    <div className="flex flex-col gap-4">
+                                        <label className={largeSectionHeaderStyles}>
+                                            🏷️ Name the project
+                                        </label>
+                                        <Textarea
+                                            required
+                                            name="name"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className={clsx(
+                                                textareaStyles,
+                                                "min-h-[60px]",
+                                                "text-base",
+                                                "text-gray-900 dark:text-gray-100"
+                                            )}
+                                            placeholder={defaultName}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Submit Button */}
+                            <div className="pt-1 w-full -mt-4">
+                                <Submit />
+                            </div>
+                        </form>
+                    </section>
                 </div>
             </div>
         </div>

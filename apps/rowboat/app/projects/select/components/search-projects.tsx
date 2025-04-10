@@ -10,7 +10,7 @@ interface SearchProjectsProps {
     projects: z.infer<typeof Project>[];
     isLoading: boolean;
     heading: string;
-    subheading: string;
+    subheading?: string;
     className?: string;
     onClose?: () => void;
 }
