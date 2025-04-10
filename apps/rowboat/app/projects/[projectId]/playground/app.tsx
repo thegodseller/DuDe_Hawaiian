@@ -30,6 +30,7 @@ export function App({
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
     toolWebhookUrl: string;
 }) {
+    const [counter, setCounter] = useState<number>(0);
     const [testProfile, setTestProfile] = useState<WithStringId<z.infer<typeof TestProfile>> | null>(null);
     const [systemMessage, setSystemMessage] = useState<string>(defaultSystemMessage);
     const [chat, setChat] = useState<z.infer<typeof PlaygroundChat>>({
@@ -45,13 +46,16 @@ export function App({
 
     function handleSystemMessageChange(message: string) {
         setSystemMessage(message);
+        setCounter(counter + 1);
     }
 
     function handleTestProfileChange(profile: WithStringId<z.infer<typeof TestProfile>> | null) {
         setTestProfile(profile);
+        setCounter(counter + 1);
     }
 
     function handleNewChatButtonClick() {
+        setCounter(counter + 1);
         setChat({
             projectId,
             createdAt: new Date().toISOString(),
@@ -139,6 +143,7 @@ export function App({
                 />
                 <div className="h-full overflow-auto px-4 py-4">
                     <Chat
+                        key={`chat-${counter}`}
                         chat={chat}
                         projectId={projectId}
                         workflow={workflow}
