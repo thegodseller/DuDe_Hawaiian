@@ -8,7 +8,7 @@ import { AgenticAPIChatMessage, convertFromAgenticAPIChatMessages, convertToAgen
 import { convertWorkflowToAgenticAPI } from "@/app/lib/types/agents_api_types";
 import { AgenticAPIChatRequest } from "@/app/lib/types/agents_api_types";
 import { Workflow } from "@/app/lib/types/workflow_types";
-import { ComposeBox } from "@/components/common/compose-box";
+import { ComposeBoxPlayground } from "@/components/common/compose-box-playground";
 import { Button } from "@heroui/react";
 import { apiV1 } from "rowboat-shared";
 import { TestProfile } from "@/app/lib/types/testing_types";
@@ -289,7 +289,7 @@ export function Chat({
                 </div>
             )}
             
-            <ComposeBox
+            <ComposeBoxPlayground
                 handleUserMessage={handleUserMessage}
                 messages={messages.filter(msg => msg.content !== undefined) as any}
                 loading={loadingAssistantResponse}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useReducer, Reducer, useState, useCallback, useEffect, useRef } from "react";
+import React, { useReducer, Reducer, useState, useCallback, useEffect, useRef, createContext, useContext } from "react";
 import { MCPServer, WithStringId } from "../../../lib/types/types";
 import { Workflow } from "../../../lib/types/workflow_types";
 import { WorkflowTool } from "../../../lib/types/workflow_types";
@@ -15,6 +15,7 @@ import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownSection, Dropdown
 import { PromptConfig } from "../entities/prompt_config";
 import { EditableField } from "../../../lib/components/editable-field";
 import { RelativeTime } from "@primer/react";
+import { USE_PRODUCT_TOUR } from "@/app/lib/feature_flags";
 
 import {
     ResizableHandle,
@@ -29,13 +30,14 @@ import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/i
 import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
 import { McpImportTools } from "./mcp_imports";
+import { ProductTour } from "@/components/common/product-tour";
 
 enablePatches();
 
 const PANEL_RATIOS = {
     entityList: 25,    // Left panel
-    chatApp: 50,       // Middle panel
-    copilot: 25        // Right panel
+    chatApp: 40,       // Middle panel
+    copilot: 35        // Right panel
 } as const;
 
 interface StateItem {
@@ -605,6 +607,8 @@ export function WorkflowEditor({
     const [showCopilot, setShowCopilot] = useState(true);
     const [copilotWidth, setCopilotWidth] = useState<number>(PANEL_RATIOS.copilot);
     const [isMcpImportModalOpen, setIsMcpImportModalOpen] = useState(false);
+    const [isInitialState, setIsInitialState] = useState(true);
+    const [showTour, setShowTour] = useState(true);
 
     console.log(`workflow editor chat key: ${state.present.chatKey}`);
 
@@ -616,6 +620,20 @@ export function WorkflowEditor({
             setShowCopilot(true);
         }
     }, [state.present.workflow.projectId]);
+
+    // Reset initial state when user interacts with copilot or opens other menus
+    useEffect(() => {
+        if (state.present.selection !== null) {
+            setIsInitialState(false);
+        }
+    }, [state.present.selection]);
+
+    // Track copilot actions
+    useEffect(() => {
+        if (state.present.pendingChanges && state.present.workflow) {
+            setIsInitialState(false);
+        }
+    }, [state.present.workflow, state.present.pendingChanges]);
 
     function handleSelectAgent(name: string) {
         dispatch({ type: "select_agent", name });
@@ -756,6 +774,10 @@ export function WorkflowEditor({
         }
     }, [state.present.workflow, state.present.pendingChanges, processQueue, state]);
 
+    function handlePlaygroundClick() {
+        setIsInitialState(false);
+    }
+
     return <div className="flex flex-col h-full relative">
         <div className="shrink-0 flex justify-between items-center pb-6">
             <div className="workflow-version-selector flex items-center gap-1 px-2 text-gray-800 dark:text-gray-100">
@@ -882,9 +904,7 @@ export function WorkflowEditor({
                         variant="solid"
                         size="lg"
                         onPress={() => setShowCopilot(!showCopilot)}
-                        className="gap-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white relative overflow-hidden animate-pulse-subtle
-                        before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent
-                        before:translate-x-[-200%] before:animate-shine before:duration-1000 font-semibold text-base"
+                        className="gap-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base"
                         startContent={<Sparkles size={20} />}
                     >
                         Copilot
@@ -928,6 +948,8 @@ export function WorkflowEditor({
                     messageSubscriber={updateChatMessages}
                     mcpServerUrls={mcpServerUrls}
                     toolWebhookUrl={toolWebhookUrl}
+                    isInitialState={isInitialState}
+                    onPanelClick={handlePlaygroundClick}
                 />
                 {state.present.selection?.type === "agent" && <AgentConfig
                     key={state.present.selection.name}
@@ -982,11 +1004,18 @@ export function WorkflowEditor({
                                     messages: chatMessages
                                 } : undefined
                             }
+                            isInitialState={isInitialState}
                         />
                     </ResizablePanel>
                 </>
             )}
         </ResizablePanelGroup>
+        {USE_PRODUCT_TOUR && showTour && (
+            <ProductTour
+                projectId={state.present.workflow.projectId}
+                onComplete={() => setShowTour(false)}
+            />
+        )}
         <McpImportTools
             projectId={state.present.workflow.projectId}
             isOpen={isMcpImportModalOpen}

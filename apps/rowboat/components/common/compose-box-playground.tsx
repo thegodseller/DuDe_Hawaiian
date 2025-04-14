@@ -1,44 +1,23 @@
-'use client';
-
+import { useState, useRef } from 'react';
+import { Textarea } from '@/components/ui/textarea';
 import { Button, Spinner } from "@heroui/react";
-import { useRef, useState, useEffect } from "react";
-import { Textarea } from "@/components/ui/textarea";
 
-// Add a type to support both message formats
-type FlexibleMessage = {
-    role: 'user' | 'assistant' | 'system' | 'tool';
-    content: string | any;
-    version?: string;
-    chatId?: string;
-    createdAt?: string;
-    // Add any other optional fields that might be needed
-};
-
-interface ComposeBoxCopilotProps {
+interface ComposeBoxPlaygroundProps {
     handleUserMessage: (message: string) => void;
     messages: any[];
     loading: boolean;
     disabled?: boolean;
-    initialFocus?: boolean;
 }
 
-export function ComposeBoxCopilot({
+export function ComposeBoxPlayground({
     handleUserMessage,
     messages,
     loading,
     disabled = false,
-    initialFocus = false,
-}: ComposeBoxCopilotProps) {
+}: ComposeBoxPlaygroundProps) {
     const [input, setInput] = useState('');
     const [isFocused, setIsFocused] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    // Add effect to handle initial focus
-    useEffect(() => {
-        if (initialFocus && textareaRef.current) {
-            textareaRef.current.focus();
-        }
-    }, [initialFocus]);
 
     function handleInput() {
         const prompt = input.trim();
@@ -49,12 +28,12 @@ export function ComposeBoxCopilot({
         handleUserMessage(prompt);
     }
 
-    function handleInputKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
+    const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             handleInput();
         }
-    }
+    };
 
     return (
         <div className="relative group">
@@ -146,4 +125,4 @@ function SendIcon({ size, className }: { size: number, className?: string }) {
             <path d="M22 2L15 22L11 13L2 9L22 2Z" />
         </svg>
     );
-}
+} 

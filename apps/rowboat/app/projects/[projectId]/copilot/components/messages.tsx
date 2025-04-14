@@ -97,14 +97,21 @@ function AssistantMessage({
     );
 }
 
-function AssistantMessageLoading() {
+function AssistantMessageLoading({ currentStatus }: { currentStatus: 'thinking' | 'planning' | 'generating' }) {
+    const statusText = {
+        thinking: "Thinking...",
+        planning: "Planning...",
+        generating: "Generating..."
+    };
+
     return (
         <div className="w-full">
             <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2.5 
                 rounded-lg
                 border border-gray-200 dark:border-gray-700
-                shadow-sm dark:shadow-gray-950/20 animate-pulse min-h-[2.5rem] flex items-center">
+                shadow-sm dark:shadow-gray-950/20 animate-pulse min-h-[2.5rem] flex items-center gap-2">
                 <Spinner size="sm" className="ml-2" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">{statusText[currentStatus]}</span>
             </div>
         </div>
     );
@@ -113,12 +120,14 @@ function AssistantMessageLoading() {
 export function Messages({
     messages,
     loadingResponse,
+    currentStatus,
     workflow,
     handleApplyChange,
     appliedChanges
 }: {
     messages: z.infer<typeof CopilotMessage>[];
     loadingResponse: boolean;
+    currentStatus: 'thinking' | 'planning' | 'generating';
     workflow: z.infer<typeof Workflow>;
     handleApplyChange: (messageIndex: number, actionIndex: number, field?: string) => void;
     appliedChanges: Record<string, boolean>;
@@ -160,7 +169,7 @@ export function Messages({
                 ))}
                 {loadingResponse && (
                     <div className="animate-pulse">
-                        <AssistantMessageLoading />
+                        <AssistantMessageLoading currentStatus={currentStatus} />
                     </div>
                 )}
             </div>
