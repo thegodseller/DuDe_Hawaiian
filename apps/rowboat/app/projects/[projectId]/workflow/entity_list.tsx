@@ -67,7 +67,13 @@ const ListItemWithMenu = ({
     statusLabel?: React.ReactNode;
     icon?: React.ReactNode;
 }) => (
-    <div className="group flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800">
+    <div className={clsx(
+        "group flex items-center gap-2 px-2 py-1.5 rounded-md",
+        {
+            "bg-indigo-50 dark:bg-indigo-950/30": isSelected,
+            "hover:bg-zinc-50 dark:hover:bg-zinc-800": !isSelected
+        }
+    )}>
         <button
             ref={selectedRef}
             className={clsx(
