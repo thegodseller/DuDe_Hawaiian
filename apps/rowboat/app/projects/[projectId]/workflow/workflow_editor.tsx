@@ -601,7 +601,7 @@ export function WorkflowEditor({
     const saving = useRef(false);
     const isLive = state.present.workflow._id == state.present.publishedWorkflowId;
     const [showCopySuccess, setShowCopySuccess] = useState(false);
-    const [showCopilot, setShowCopilot] = useState(false);
+    const [showCopilot, setShowCopilot] = useState(true);
     const [copilotWidth, setCopilotWidth] = useState<number>(PANEL_RATIOS.copilot);
     const [isMcpImportModalOpen, setIsMcpImportModalOpen] = useState(false);
 
@@ -756,7 +756,7 @@ export function WorkflowEditor({
     }, [state.present.workflow, state.present.pendingChanges, processQueue, state]);
 
     return <div className="flex flex-col h-full relative">
-        <div className="shrink-0 flex justify-between items-center pb-2">
+        <div className="shrink-0 flex justify-between items-center pb-6">
             <div className="workflow-version-selector flex items-center gap-1 px-2 text-gray-800 dark:text-gray-100">
                 <WorkflowIcon size={16} />
                 <EditableField
@@ -877,13 +877,17 @@ export function WorkflowEditor({
                     >
                         <RedoIcon size={16} />
                     </button>
-                    <button
-                        className="p-1 text-blue-600 hover:text-blue-800 hover:cursor-pointer"
-                        title="Toggle Copilot"
-                        onClick={() => setShowCopilot(!showCopilot)}
+                    <Button
+                        variant="solid"
+                        size="lg"
+                        onPress={() => setShowCopilot(!showCopilot)}
+                        className="gap-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white relative overflow-hidden animate-pulse-subtle
+                        before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent
+                        before:translate-x-[-200%] before:animate-shine before:duration-1000 font-semibold text-base"
+                        startContent={<Sparkles size={20} />}
                     >
-                        <Sparkles size={16} />
-                    </button>
+                        Copilot
+                    </Button>
                 </>}
             </div>
         </div>
