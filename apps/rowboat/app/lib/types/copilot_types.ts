@@ -28,10 +28,7 @@ export const CopilotAssistantMessageActionPart = z.object({
 });
 export const CopilotAssistantMessage = z.object({
     role: z.literal('assistant'),
-    content: z.object({
-        thoughts: z.string().optional(),
-        response: z.array(z.union([CopilotAssistantMessageTextPart, CopilotAssistantMessageActionPart])),
-    }),
+    content: z.string(),
 });
 export const CopilotMessage = z.union([CopilotUserMessage, CopilotAssistantMessage]);
 

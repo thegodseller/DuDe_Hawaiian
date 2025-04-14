@@ -4,21 +4,19 @@ import { Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger,
 import { useRef, useState, createContext, useContext, useCallback, forwardRef, useImperativeHandle, useEffect, Ref } from "react";
 import { CopilotChatContext } from "../../../lib/types/copilot_types";
 import { CopilotMessage } from "../../../lib/types/copilot_types";
-import { CopilotAssistantMessageActionPart } from "../../../lib/types/copilot_types";
 import { Workflow } from "@/app/lib/types/workflow_types";
 import { z } from "zod";
-import { getCopilotResponse } from "@/app/actions/copilot_actions";
 import { Action as WorkflowDispatch } from "../workflow/workflow_editor";
 import { Panel } from "@/components/common/panel-common";
 import { ComposeBoxCopilot } from "@/components/common/compose-box-copilot";
 import { Messages } from "./components/messages";
 import { CopyIcon, CheckIcon, PlusIcon, XIcon, InfoIcon } from "lucide-react";
+import { useCopilot } from "./use-copilot";
 
 const CopilotContext = createContext<{
     workflow: z.infer<typeof Workflow> | null;
-    handleApplyChange: (messageIndex: number, actionIndex: number, field?: string) => void;
-    appliedChanges: Record<string, boolean>;
-}>({ workflow: null, handleApplyChange: () => { }, appliedChanges: {} });
+    dispatch: (action: any) => void;
+}>({ workflow: null, dispatch: () => { } });
 
 export function getAppliedChangeKey(messageIndex: number, actionIndex: number, field: string) {
     return `${messageIndex}-${actionIndex}-${field}`;
@@ -29,7 +27,7 @@ interface AppProps {
     workflow: z.infer<typeof Workflow>;
     dispatch: (action: any) => void;
     chatContext?: any;
-    onCopyJson?: (data: { messages: any[], lastRequest: any, lastResponse: any }) => void;
+    onCopyJson?: (data: { messages: any[] }) => void;
     onMessagesChange?: (messages: z.infer<typeof CopilotMessage>[]) => void;
     isInitialState?: boolean;
 }
@@ -43,17 +41,34 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
     onMessagesChange,
     isInitialState = false,
 }, ref) {
-    const messagesEndRef = useRef<HTMLDivElement>(null);
     const [messages, setMessages] = useState<z.infer<typeof CopilotMessage>[]>([]);
-    const [loadingResponse, setLoadingResponse] = useState(false);
-    const [responseError, setResponseError] = useState<string | null>(null);
-    const [appliedChanges, setAppliedChanges] = useState<Record<string, boolean>>({});
     const [discardContext, setDiscardContext] = useState(false);
-    const [lastRequest, setLastRequest] = useState<unknown | null>(null);
-    const [lastResponse, setLastResponse] = useState<unknown | null>(null);
-    const [currentStatus, setCurrentStatus] = useState<'thinking' | 'planning' | 'generating'>('thinking');
-    const statusIntervalRef = useRef<NodeJS.Timeout>();
     const [isLastInteracted, setIsLastInteracted] = useState(isInitialState);
+    const workflowRef = useRef(workflow);
+    const startRef = useRef<any>(null);
+    const cancelRef = useRef<any>(null);
+
+    // Keep workflow ref up to date
+    workflowRef.current = workflow;
+
+    // Get the effective context based on user preference
+    const effectiveContext = discardContext ? null : chatContext;
+
+    const {
+        streamingResponse,
+        loading: loadingResponse,
+        error: responseError,
+        start,
+        cancel
+    } = useCopilot({
+        projectId,
+        workflow: workflowRef.current,
+        context: effectiveContext
+    });
+
+    // Store latest start/cancel functions in refs
+    startRef.current = start;
+    cancelRef.current = cancel;
 
     // Notify parent of message changes
     useEffect(() => {
@@ -77,207 +92,56 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
         setDiscardContext(false);
     }, [chatContext]);
 
-    // Get the effective context based on user preference
-    const effectiveContext = discardContext ? null : chatContext;
-
     function handleUserMessage(prompt: string) {
         setMessages(currentMessages => [...currentMessages, {
             role: 'user',
             content: prompt
         }]);
-        setResponseError(null);
         setIsLastInteracted(true);
     }
 
-    const handleApplyChange = useCallback((
-        messageIndex: number,
-        actionIndex: number,
-        field?: string
-    ) => {
-        // validate
-        console.log('apply change', messageIndex, actionIndex, field);
-        const msg = messages[messageIndex];
-        if (!msg) {
-            console.log('no message');
-            return;
-        }
-        if (msg.role !== 'assistant') {
-            console.log('not assistant');
-            return;
-        }
-        const action = msg.content.response[actionIndex].content as z.infer<typeof CopilotAssistantMessageActionPart>['content'];
-        if (!action) {
-            console.log('no action');
-            return;
-        }
-        console.log('reached here');
-
-        if (action.action === 'create_new') {
-            switch (action.config_type) {
-                case 'agent':
-                    dispatch({
-                        type: 'add_agent',
-                        agent: {
-                            name: action.name,
-                            ...action.config_changes
-                        }
-                    });
-                    break;
-                case 'tool':
-                    dispatch({
-                        type: 'add_tool',
-                        tool: {
-                            name: action.name,
-                            ...action.config_changes
-                        }
-                    });
-                    break;
-                case 'prompt':
-                    dispatch({
-                        type: 'add_prompt',
-                        prompt: {
-                            name: action.name,
-                            ...action.config_changes
-                        }
-                    });
-                    break;
-            }
-            const appliedKeys = Object.keys(action.config_changes).reduce((acc, key) => {
-                acc[getAppliedChangeKey(messageIndex, actionIndex, key)] = true;
-                return acc;
-            }, {} as Record<string, boolean>);
-            setAppliedChanges({
-                ...appliedChanges,
-                ...appliedKeys,
-            });
-        } else if (action.action === 'edit') {
-            const changes = field
-                ? { [field]: action.config_changes[field] }
-                : action.config_changes;
-
-            switch (action.config_type) {
-                case 'agent':
-                    dispatch({
-                        type: 'update_agent',
-                        name: action.name,
-                        agent: changes
-                    });
-                    break;
-                case 'tool':
-                    dispatch({
-                        type: 'update_tool',
-                        name: action.name,
-                        tool: changes
-                    });
-                    break;
-                case 'prompt':
-                    dispatch({
-                        type: 'update_prompt',
-                        name: action.name,
-                        prompt: changes
-                    });
-                    break;
-            }
-            const appliedKeys = Object.keys(changes).reduce((acc, key) => {
-                acc[getAppliedChangeKey(messageIndex, actionIndex, key)] = true;
-                return acc;
-            }, {} as Record<string, boolean>);
-            setAppliedChanges({
-                ...appliedChanges,
-                ...appliedKeys,
-            });
-        }
-    }, [dispatch, appliedChanges, messages]);
-
-    // Effect for handling copilot responses
+    // Effect for getting copilot response
     useEffect(() => {
-        let ignore = false;
+        if (!messages.length || messages.at(-1)?.role !== 'user') return;
 
-        async function process() {
-            if (!messages.length) return;
-            
-            const lastMessage = messages[messages.length - 1];
-            if (lastMessage.role !== 'user') return;
-            
-            setLoadingResponse(true);
-            setCurrentStatus('thinking');
+        const currentStart = startRef.current;
+        const currentCancel = cancelRef.current;
 
-            // Start cycling through statuses
-            statusIntervalRef.current = setInterval(() => {
-                setCurrentStatus(prev => {
-                    if (prev === 'thinking') return 'planning';
-                    if (prev === 'planning') return 'generating';
-                    return 'generating'; // Stay on generating once reached
-                });
-            }, 3000);
-
-            try {
-                const response = await getCopilotResponse(
-                    projectId,
-                    messages,
-                    workflow,
-                    effectiveContext || null,
-                );
-                
-                if (ignore) return;
-                
-                setLastRequest(response.rawRequest);
-                setLastResponse(response.rawResponse);
-                setMessages(currentMessages => [...currentMessages, response.message]);
-            } catch (err) {
-                if (!ignore) {
-                    setResponseError(`Failed to get copilot response: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        currentStart(messages, (finalResponse: string) => {
+            setMessages(prev => [
+                ...prev,
+                {
+                    role: 'assistant',
+                    content: finalResponse
                 }
-            } finally {
-                if (!ignore) {
-                    setLoadingResponse(false);
-                    if (statusIntervalRef.current) {
-                        clearInterval(statusIntervalRef.current);
-                    }
-                }
-            }
-        }
+            ]);
+        });
 
-        process();
-
-        return () => {
-            ignore = true;
-            if (statusIntervalRef.current) {
-                clearInterval(statusIntervalRef.current);
-            }
-        };
-    }, [messages, projectId, workflow, effectiveContext]);
-
-    // Scroll to bottom on new messages
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, loadingResponse]);
+        return () => currentCancel();
+    }, [messages]); // Only depend on messages
 
     const handleCopyChat = useCallback(() => {
         if (onCopyJson) {
             onCopyJson({
                 messages,
-                lastRequest,
-                lastResponse,
             });
         }
-    }, [messages, lastRequest, lastResponse, onCopyJson]);
+    }, [messages, onCopyJson]);
 
     useImperativeHandle(ref, () => ({
         handleCopyChat
     }), [handleCopyChat]);
 
     return (
-        <CopilotContext.Provider value={{ workflow, handleApplyChange, appliedChanges }}>
+        <CopilotContext.Provider value={{ workflow: workflowRef.current, dispatch }}>
             <div className="h-full flex flex-col">
                 <div className="flex-1 overflow-auto">
                     <Messages
                         messages={messages}
+                        streamingResponse={streamingResponse}
                         loadingResponse={loadingResponse}
-                        currentStatus={currentStatus}
-                        workflow={workflow}
-                        handleApplyChange={handleApplyChange}
-                        appliedChanges={appliedChanges}
+                        workflow={workflowRef.current}
+                        dispatch={dispatch}
                     />
                 </div>
                 <div className="shrink-0 px-1 pb-6">
@@ -287,7 +151,9 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
                             <Button
                                 size="sm"
                                 color="danger"
-                                onClick={() => setResponseError(null)}
+                                onClick={() => {
+                                    setMessages(prev => [...prev.slice(0, -1)]); // remove last assistant if needed
+                                }}
                             >
                                 Retry
                             </Button>
@@ -313,10 +179,10 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
                         handleUserMessage={handleUserMessage}
                         messages={messages}
                         loading={loadingResponse}
-                        disabled={loadingResponse}
                         initialFocus={isInitialState}
                         shouldAutoFocus={isLastInteracted}
                         onFocus={() => setIsLastInteracted(true)}
+                        onCancel={cancel}
                     />
                 </div>
             </div>
@@ -347,7 +213,7 @@ export function Copilot({
         setMessages([]);
     }
 
-    function handleCopyJson(data: { messages: any[], lastRequest: any, lastResponse: any }) {
+    function handleCopyJson(data: { messages: any[] }) {
         const jsonString = JSON.stringify(data, null, 2);
         navigator.clipboard.writeText(jsonString);
         setShowCopySuccess(true);
