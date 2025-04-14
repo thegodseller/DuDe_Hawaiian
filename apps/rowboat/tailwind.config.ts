@@ -19,11 +19,33 @@ const config: Config = {
         'pulse-subtle': {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.85' }
+        },
+        gradient: {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' }
+        },
+        'sparkle-fade': {
+          '0%': { opacity: '0.2', transform: 'scale(0.9)' },
+          '50%': { opacity: '0.5', transform: 'scale(1.1)' },
+          '100%': { opacity: '0.2', transform: 'scale(0.9)' }
+        },
+        typing: {
+          '0%, 5%': { width: '0%' },
+          '45%, 55%': { width: '100%' },
+          '95%, 100%': { width: '0%' }
+        },
+        blink: {
+          '50%': { borderColor: 'transparent' }
         }
       },
       animation: {
         shine: 'shine 2s infinite',
-        'pulse-subtle': 'pulse-subtle 2s infinite'
+        'pulse-subtle': 'pulse-subtle 2s infinite',
+        'gradient': 'gradient var(--gradient-animation-duration, 15s) ease infinite',
+        'sparkle': 'sparkle-fade 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'typing': 'typing 8s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+        'cursor': 'blink .75s step-end infinite'
       },
   		backgroundImage: {
   			'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
