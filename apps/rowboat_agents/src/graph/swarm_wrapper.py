@@ -13,7 +13,7 @@ from .helpers.instructions import (
     add_rag_instructions_to_agent
 )
 
-from agents import Agent as NewAgent, Runner, FunctionTool, RunContextWrapper, ModelSettings
+from agents import Agent as NewAgent, Runner, FunctionTool, RunContextWrapper, ModelSettings, WebSearchTool
 # Add import for OpenAI functionality
 from src.utils.common import common_logger as logger, generate_openai_output
 from typing import Any
@@ -221,14 +221,17 @@ def get_agents(agent_configs, tool_configs, complete_request):
                     "type": "function",
                     "function": tool_config
                 })
-                tool = FunctionTool(
-                    name=tool_name,
-                    description=tool_config["description"],
-                    params_json_schema=tool_config["parameters"],
-                    strict_json_schema=False,
+                if tool_name == "web_search":
+                    tool = WebSearchTool()
+                else:
+                    tool = FunctionTool(
+                        name=tool_name,
+                        description=tool_config["description"],
+                        params_json_schema=tool_config["parameters"],
+                        strict_json_schema=False,
                     on_invoke_tool=lambda ctx, args, _tool_name=tool_name, _tool_config=tool_config, _complete_request=complete_request:
                         catch_all(ctx, args, _tool_name, _tool_config, _complete_request)
-                )
+                    )
                 new_tools.append(tool)
                 logger.debug(f"Added tool {tool_name} to agent {agent_config['name']}")
                 print(f"Added tool {tool_name} to agent {agent_config['name']}")
