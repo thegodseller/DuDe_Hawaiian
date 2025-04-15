@@ -6,7 +6,7 @@ import json
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
 
 openai_client = OpenAI()
-MODEL_NAME = "gpt-4o"  # OpenAI model name
+MODEL_NAME = "gpt-4.1"  # OpenAI model name
 
 class UserMessage(BaseModel):
     role: Literal["user"]
@@ -155,6 +155,7 @@ You are responsible for providing delivery information to the user.
 1. Fetch the delivery details using the function: [@tool:get_shipping_details](#mention).
 2. Answer the user's question based on the fetched delivery details.
 3. If the user's issue concerns refunds or other topics beyond delivery, politely inform them that the information is not available within this chat and express regret for the inconvenience.
+4. If the user's request is out of scope, call [@agent:Delivery Hub](#mention).
 
 ---
 ## 🎯 Scope:
@@ -183,7 +184,7 @@ You are responsible for providing delivery information to the user.
 - Do not leave the user with partial information. Refrain from phrases like 'please contact support'; instead, relay information limitations gracefully.
 '''
 
-use GPT-4o as the default model for new agents.
+use GPT-4o as the default model for new agents. Always add a line to the agents instruction to call the parent agent if the user's request is out of scope.
 
 
 ## Section 9: General Guidelines
@@ -200,6 +201,8 @@ Note:
 7. When you are suggesting a set of actions, add a text section that describes the changes being made before and after the actions.
 8. After providing the actions, add a text section with something like 'Once you review and apply the high-level plan, you can try out a basic chat first. I can then help you better configure each agent.'
 9. If the user asks you to do anything that is out of scope, politely inform the user that you are not equipped to perform that task yet. E.g. "I'm sorry, adding simulation scenarios is currently out of scope for my capabilities. Is there anything else you would like me to do?"
+10. Always edit the examples as well when editing an agent.
+11. Always add a line to the agents instruction to call the parent agent if the user's request is out of scope.
 
 If the user says 'Hi' or 'Hello', you should respond with a friendly greeting such as 'Hello! How can I help you today?'
 
@@ -318,7 +321,7 @@ Copilot output:
           "name": "2FA Setup",
           "type": "conversation",
           "description": "Agent to guide users in setting up 2FA.",
-          "instructions": "## 🧑‍💼 Role:\nHelp users set up their 2FA preferences.\n\n---\n## ⚙️ Steps to Follow:\n1. Ask the user about their preferred 2FA method (e.g., SMS, Email).\n2. Confirm the setup method with the user.\n3. Guide them through the setup steps.\n4. If the user request is out of scope, pass control to [@agent:2FA Hub](#mention)\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Setting up 2FA preferences\n\n❌ Out of Scope:\n- Changing existing 2FA settings\n- Handling queries outside 2FA setup.\n- General knowledge queries.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Clearly explain setup options and steps.\n\n🚫 Don'ts:\n- Assume preferences without user confirmation.\n- Extend the conversation beyond 2FA setup.",
+          "instructions": "## 🧑‍💼 Role:\nHelp users set up their 2FA preferences.\n\n---\n## ⚙️ Steps to Follow:\n1. Ask the user about their preferred 2FA method (e.g., SMS, Email).\n2. Confirm the setup method with the user.\n3. Guide them through the setup steps.\n4. If the user request is out of scope, call [@agent:2FA Hub](#mention)\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Setting up 2FA preferences\n\n❌ Out of Scope:\n- Changing existing 2FA settings\n- Handling queries outside 2FA setup.\n- General knowledge queries.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Clearly explain setup options and steps.\n\n🚫 Don'ts:\n- Assume preferences without user confirmation.\n- Extend the conversation beyond 2FA setup.",
           "examples": "- **User** : I'd like to set up 2FA for my account.\n - **Agent response**: Sure, can you tell me your preferred method for 2FA? Options include SMS, Email, or an Authenticator App.\n\n- **User** : I want to use SMS for 2FA.\n - **Agent response**: Great, I'll guide you through the steps to set up 2FA via SMS.\n\n- **User** : How about using an Authenticator App?\n - **Agent response**: Sure, let's set up 2FA with an Authenticator App. I'll walk you through the necessary steps.\n\n- **User** : Can you help me set up 2FA through Email?\n - **Agent response**: No problem, I'll explain how to set up 2FA via Email now.\n\n- **User** : I changed my mind, can we start over?\n - **Agent response**: Of course, let's begin again. Please select your preferred 2FA method from SMS, Email, or Authenticator App.",
           "model": "gpt-4o",
           "toggleAble": true,
@@ -341,7 +344,7 @@ Copilot output:
           "name": "2FA Change",
           "type": "conversation",
           "description": "Agent to assist users in changing their 2FA method.",
-          "instructions": "## 🧑‍💼 Role:\nAssist users in changing their 2FA method preferences.\n\n---\n## ⚙️ Steps to Follow:\n1. Fetch the current 2FA method using the [@tool:get_current_2fa_method](#mention) tool.\n2. Confirm with the user if they want to change the method.\n3. Guide them through the process of changing the method.\n4. If the user request is out of scope, pass control to [@agent:2FA Hub](#mention)\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Changing existing 2FA settings\n\n❌ Out of Scope:\n- Initial setup of 2FA\n- Handling queries outside 2FA setup.\n- General knowledge queries.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Ensure the user is aware of the current method before change.\n\n🚫 Don'ts:\n- Change methods without explicit user confirmation.\n- Extend the conversation beyond 2FA change.",
+          "instructions": "## 🧑‍💼 Role:\nAssist users in changing their 2FA method preferences.\n\n---\n## ⚙️ Steps to Follow:\n1. Fetch the current 2FA method using the [@tool:get_current_2fa_method](#mention) tool.\n2. Confirm with the user if they want to change the method.\n3. Guide them through the process of changing the method.\n4. If the user request is out of scope, call [@agent:2FA Hub](#mention)\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Changing existing 2FA settings\n\n❌ Out of Scope:\n- Initial setup of 2FA\n- Handling queries outside 2FA setup.\n- General knowledge queries.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Ensure the user is aware of the current method before change.\n\n🚫 Don'ts:\n- Change methods without explicit user confirmation.\n- Extend the conversation beyond 2FA change.",
           "examples": "- **User** : I want to change my 2FA method from SMS to Email.\n - **Agent response**: I can help with that. Let me fetch your current 2FA setting first.\n - **Agent actions**: Call [@tool:get_current_2fa_method](#mention)\n\n- **User** : Can I switch to using an Authenticator App instead of Email?\n - **Agent response**: Sure, I'll guide you through switching to an Authenticator App.\n - **Agent actions**: Call [@tool:get_current_2fa_method](#mention)\n\n- **User** : I don't want to use 2FA via phone anymore, can you change it?\n - **Agent response**: Let's check your current method and proceed with the change.\n - **Agent actions**: Call [@tool:get_current_2fa_method](#mention)\n\n- **User** : I'd like to update my 2FA to be more secure, what do you suggest?\n - **Agent response**: For enhanced security, consider using an Authenticator App. Let's fetch your current method and update it.\n - **Agent actions**: Call [@tool:get_current_2fa_method](#mention)\n\n- **User** : I'm having trouble changing my 2FA method, can you assist?\n - **Agent response**: Certainly, let's see what your current setup is and I'll walk you through the change.",
           "model": "gpt-4o",
           "toggleAble": true,

@@ -29,6 +29,7 @@ interface AppProps {
     dispatch: (action: any) => void;
     chatContext?: any;
     onCopyJson?: (data: { messages: any[], lastRequest: any, lastResponse: any }) => void;
+    onMessagesChange?: (messages: z.infer<typeof CopilotMessage>[]) => void;
 }
 
 const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
@@ -37,6 +38,7 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
     dispatch,
     chatContext = undefined,
     onCopyJson,
+    onMessagesChange,
 }, ref) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [messages, setMessages] = useState<z.infer<typeof CopilotMessage>[]>([]);
@@ -46,6 +48,11 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
     const [discardContext, setDiscardContext] = useState(false);
     const [lastRequest, setLastRequest] = useState<unknown | null>(null);
     const [lastResponse, setLastResponse] = useState<unknown | null>(null);
+
+    // Notify parent of message changes
+    useEffect(() => {
+        onMessagesChange?.(messages);
+    }, [messages, onMessagesChange]);
 
     // Check for initial prompt in local storage and send it
     useEffect(() => {
@@ -303,10 +310,12 @@ export function Copilot({
 }) {
     const [copilotKey, setCopilotKey] = useState(0);
     const [showCopySuccess, setShowCopySuccess] = useState(false);
+    const [messages, setMessages] = useState<z.infer<typeof CopilotMessage>[]>([]);
     const appRef = useRef<{ handleCopyChat: () => void }>(null);
 
     function handleNewChat() {
         setCopilotKey(prev => prev + 1);
+        setMessages([]);
     }
 
     function handleCopyJson(data: { messages: any[], lastRequest: any, lastResponse: any }) {
@@ -320,6 +329,7 @@ export function Copilot({
 
     return (
         <Panel variant="copilot"
+            showWelcome={messages.length === 0}
             title={
                 <div className="flex items-center gap-3">
                     <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -364,6 +374,7 @@ export function Copilot({
                     dispatch={dispatch}
                     chatContext={chatContext}
                     onCopyJson={handleCopyJson}
+                    onMessagesChange={setMessages}
                 />
             </div>
         </Panel>
