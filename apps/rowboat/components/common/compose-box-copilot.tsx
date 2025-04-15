@@ -20,6 +20,8 @@ interface ComposeBoxCopilotProps {
     loading: boolean;
     disabled?: boolean;
     initialFocus?: boolean;
+    shouldAutoFocus?: boolean;
+    onFocus?: () => void;
 }
 
 export function ComposeBoxCopilot({
@@ -28,17 +30,28 @@ export function ComposeBoxCopilot({
     loading,
     disabled = false,
     initialFocus = false,
+    shouldAutoFocus = false,
+    onFocus,
 }: ComposeBoxCopilotProps) {
     const [input, setInput] = useState('');
     const [isFocused, setIsFocused] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const previousMessagesLength = useRef(messages.length);
 
-    // Add effect to handle initial focus
+    // Handle initial focus
     useEffect(() => {
         if (initialFocus && textareaRef.current) {
             textareaRef.current.focus();
         }
     }, [initialFocus]);
+
+    // Handle auto-focus when new messages arrive
+    useEffect(() => {
+        if (shouldAutoFocus && messages.length > previousMessagesLength.current && textareaRef.current) {
+            textareaRef.current.focus();
+        }
+        previousMessagesLength.current = messages.length;
+    }, [messages.length, shouldAutoFocus]);
 
     function handleInput() {
         const prompt = input.trim();
@@ -55,6 +68,11 @@ export function ComposeBoxCopilot({
             handleInput();
         }
     }
+
+    const handleFocus = () => {
+        setIsFocused(true);
+        onFocus?.();
+    };
 
     return (
         <div className="relative group">
@@ -74,7 +92,7 @@ export function ComposeBoxCopilot({
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleInputKeyDown}
-                        onFocus={() => setIsFocused(true)}
+                        onFocus={handleFocus}
                         onBlur={() => setIsFocused(false)}
                         disabled={disabled || loading}
                         placeholder="Type a message..."

@@ -50,6 +50,7 @@ export function Chat({
     const [lastAgenticRequest, setLastAgenticRequest] = useState<unknown | null>(null);
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
     const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof apiV1.ChatMessage>[]>(chat.messages);
+    const [isLastInteracted, setIsLastInteracted] = useState(false);
 
     const getCopyContent = useCallback(() => {
         return JSON.stringify({
@@ -90,6 +91,7 @@ export function Chat({
         }];
         setMessages(updatedMessages);
         setFetchResponseError(null);
+        setIsLastInteracted(true);
     }
 
     // reset state when workflow changes
@@ -293,6 +295,8 @@ export function Chat({
                 handleUserMessage={handleUserMessage}
                 messages={messages.filter(msg => msg.content !== undefined) as any}
                 loading={loadingAssistantResponse}
+                shouldAutoFocus={isLastInteracted}
+                onFocus={() => setIsLastInteracted(true)}
             />
         </div>
     </div>;

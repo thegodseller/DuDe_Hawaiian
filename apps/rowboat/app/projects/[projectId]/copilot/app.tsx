@@ -53,6 +53,7 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
     const [lastResponse, setLastResponse] = useState<unknown | null>(null);
     const [currentStatus, setCurrentStatus] = useState<'thinking' | 'planning' | 'generating'>('thinking');
     const statusIntervalRef = useRef<NodeJS.Timeout>();
+    const [isLastInteracted, setIsLastInteracted] = useState(isInitialState);
 
     // Notify parent of message changes
     useEffect(() => {
@@ -85,6 +86,7 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
             content: prompt
         }]);
         setResponseError(null);
+        setIsLastInteracted(true);
     }
 
     const handleApplyChange = useCallback((
@@ -313,6 +315,8 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
                         loading={loadingResponse}
                         disabled={loadingResponse}
                         initialFocus={isInitialState}
+                        shouldAutoFocus={isLastInteracted}
+                        onFocus={() => setIsLastInteracted(true)}
                     />
                 </div>
             </div>

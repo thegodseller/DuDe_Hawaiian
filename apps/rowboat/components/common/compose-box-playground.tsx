@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button, Spinner } from "@heroui/react";
 
@@ -7,6 +7,8 @@ interface ComposeBoxPlaygroundProps {
     messages: any[];
     loading: boolean;
     disabled?: boolean;
+    shouldAutoFocus?: boolean;
+    onFocus?: () => void;
 }
 
 export function ComposeBoxPlayground({
@@ -14,10 +16,21 @@ export function ComposeBoxPlayground({
     messages,
     loading,
     disabled = false,
+    shouldAutoFocus = false,
+    onFocus,
 }: ComposeBoxPlaygroundProps) {
     const [input, setInput] = useState('');
     const [isFocused, setIsFocused] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const previousMessagesLength = useRef(messages.length);
+
+    // Handle auto-focus when new messages arrive
+    useEffect(() => {
+        if (shouldAutoFocus && messages.length > previousMessagesLength.current && textareaRef.current) {
+            textareaRef.current.focus();
+        }
+        previousMessagesLength.current = messages.length;
+    }, [messages.length, shouldAutoFocus]);
 
     function handleInput() {
         const prompt = input.trim();
@@ -33,6 +46,11 @@ export function ComposeBoxPlayground({
             e.preventDefault();
             handleInput();
         }
+    };
+
+    const handleFocus = () => {
+        setIsFocused(true);
+        onFocus?.();
     };
 
     return (
@@ -53,7 +71,7 @@ export function ComposeBoxPlayground({
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleInputKeyDown}
-                        onFocus={() => setIsFocused(true)}
+                        onFocus={handleFocus}
                         onBlur={() => setIsFocused(false)}
                         disabled={disabled || loading}
                         placeholder="Type a message..."
