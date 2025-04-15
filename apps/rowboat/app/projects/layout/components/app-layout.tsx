@@ -10,7 +10,7 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children, useRag = false, useAuth = false }: AppLayoutProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const pathname = usePathname();
   const projectId = pathname.split('/')[2];
 

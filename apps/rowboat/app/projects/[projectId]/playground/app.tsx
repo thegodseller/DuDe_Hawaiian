@@ -6,12 +6,14 @@ import { Workflow } from "@/app/lib/types/workflow_types";
 import { Chat } from "./components/chat";
 import { Panel } from "@/components/common/panel-common";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@heroui/react";
 import { apiV1 } from "rowboat-shared";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { WithStringId } from "@/app/lib/types/types";
 import { ProfileSelector } from "@/app/projects/[projectId]/test/[[...slug]]/components/selectors/profile-selector";
-import { CheckIcon, CopyIcon, PlusIcon, UserIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, PlusIcon, UserIcon, InfoIcon } from "lucide-react";
 import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
+import { clsx } from "clsx";
 
 const defaultSystemMessage = '';
 
@@ -22,6 +24,8 @@ export function App({
     messageSubscriber,
     mcpServerUrls,
     toolWebhookUrl,
+    isInitialState = false,
+    onPanelClick,
 }: {
     hidden?: boolean;
     projectId: string;
@@ -29,6 +33,8 @@ export function App({
     messageSubscriber?: (messages: z.infer<typeof apiV1.ChatMessage>[]) => void;
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
     toolWebhookUrl: string;
+    isInitialState?: boolean;
+    onPanelClick?: () => void;
 }) {
     const [counter, setCounter] = useState<number>(0);
     const [testProfile, setTestProfile] = useState<WithStringId<z.infer<typeof TestProfile>> | null>(null);
@@ -88,10 +94,17 @@ export function App({
     return (
         <>
             <Panel 
+                variant="playground"
+                tourTarget="playground"
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            PLAYGROUND
+                        <div className="flex items-center gap-2">
+                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                PLAYGROUND
+                            </div>
+                            <Tooltip content="Test your workflow and chat with your agents in real-time">
+                                <InfoIcon className="w-4 h-4 text-gray-400 cursor-help" />
+                            </Tooltip>
                         </div>
                         <Button
                             variant="primary"
@@ -133,6 +146,10 @@ export function App({
                         </Button>
                     </div>
                 }
+                className={clsx(
+                    isInitialState && "opacity-50 transition-opacity duration-300"
+                )}
+                onClick={onPanelClick}
             >
                 <ProfileSelector
                     projectId={projectId}

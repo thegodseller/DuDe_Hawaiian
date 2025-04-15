@@ -11,7 +11,9 @@ export const WorkflowAgent = z.object({
     instructions: z.string(),
     examples: z.string().optional(),
     model: z.union([
+        z.literal('gpt-4.1'),
         z.literal('gpt-4o'),
+        z.literal('gpt-4.1-mini'),
         z.literal('gpt-4o-mini'),
     ]),
     locked: z.boolean().default(false).describe('Whether this agent is locked and cannot be deleted').optional(),
@@ -46,6 +48,7 @@ export const WorkflowTool = z.object({
         required: z.array(z.string()).optional(),
     }),
     isMcp: z.boolean().default(false).optional(),
+    isLibrary: z.boolean().default(false).optional(),
     mcpServerName: z.string().optional(),
 });
 export const Workflow = z.object({
@@ -116,7 +119,7 @@ export function sanitizeTextWithMentions(
             }
             return false;
         })
-    
+
     // sanitize text
     for (const entity of entities) {
         const id = `${entity.type}:${entity.name}`;

@@ -1,5 +1,6 @@
 'use client';
 import { Button } from "@/components/ui/button";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger, Spinner, Tooltip } from "@heroui/react";
 import { useRef, useState, createContext, useContext, useCallback, forwardRef, useImperativeHandle, useEffect, Ref } from "react";
 import { CopilotChatContext } from "../../../lib/types/copilot_types";
 import { CopilotMessage } from "../../../lib/types/copilot_types";
@@ -11,7 +12,7 @@ import { Action as WorkflowDispatch } from "../workflow/workflow_editor";
 import { Panel } from "@/components/common/panel-common";
 import { ComposeBoxCopilot } from "@/components/common/compose-box-copilot";
 import { Messages } from "./components/messages";
-import { CopyIcon, CheckIcon, PlusIcon, XIcon } from "lucide-react";
+import { CopyIcon, CheckIcon, PlusIcon, XIcon, InfoIcon } from "lucide-react";
 
 const CopilotContext = createContext<{
     workflow: z.infer<typeof Workflow> | null;
@@ -30,6 +31,7 @@ interface AppProps {
     chatContext?: any;
     onCopyJson?: (data: { messages: any[], lastRequest: any, lastResponse: any }) => void;
     onMessagesChange?: (messages: z.infer<typeof CopilotMessage>[]) => void;
+    isInitialState?: boolean;
 }
 
 const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
@@ -39,6 +41,7 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
     chatContext = undefined,
     onCopyJson,
     onMessagesChange,
+    isInitialState = false,
 }, ref) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [messages, setMessages] = useState<z.infer<typeof CopilotMessage>[]>([]);
@@ -48,6 +51,9 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
     const [discardContext, setDiscardContext] = useState(false);
     const [lastRequest, setLastRequest] = useState<unknown | null>(null);
     const [lastResponse, setLastResponse] = useState<unknown | null>(null);
+    const [currentStatus, setCurrentStatus] = useState<'thinking' | 'planning' | 'generating'>('thinking');
+    const statusIntervalRef = useRef<NodeJS.Timeout>();
+    const [isLastInteracted, setIsLastInteracted] = useState(isInitialState);
 
     // Notify parent of message changes
     useEffect(() => {
@@ -80,6 +86,7 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
             content: prompt
         }]);
         setResponseError(null);
+        setIsLastInteracted(true);
     }
 
     const handleApplyChange = useCallback((
@@ -193,6 +200,16 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
             if (lastMessage.role !== 'user') return;
             
             setLoadingResponse(true);
+            setCurrentStatus('thinking');
+
+            // Start cycling through statuses
+            statusIntervalRef.current = setInterval(() => {
+                setCurrentStatus(prev => {
+                    if (prev === 'thinking') return 'planning';
+                    if (prev === 'planning') return 'generating';
+                    return 'generating'; // Stay on generating once reached
+                });
+            }, 3000);
 
             try {
                 const response = await getCopilotResponse(
@@ -214,6 +231,9 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
             } finally {
                 if (!ignore) {
                     setLoadingResponse(false);
+                    if (statusIntervalRef.current) {
+                        clearInterval(statusIntervalRef.current);
+                    }
                 }
             }
         }
@@ -222,6 +242,9 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
 
         return () => {
             ignore = true;
+            if (statusIntervalRef.current) {
+                clearInterval(statusIntervalRef.current);
+            }
         };
     }, [messages, projectId, workflow, effectiveContext]);
 
@@ -251,6 +274,7 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
                     <Messages
                         messages={messages}
                         loadingResponse={loadingResponse}
+                        currentStatus={currentStatus}
                         workflow={workflow}
                         handleApplyChange={handleApplyChange}
                         appliedChanges={appliedChanges}
@@ -290,6 +314,9 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
                         messages={messages}
                         loading={loadingResponse}
                         disabled={loadingResponse}
+                        initialFocus={isInitialState}
+                        shouldAutoFocus={isLastInteracted}
+                        onFocus={() => setIsLastInteracted(true)}
                     />
                 </div>
             </div>
@@ -302,11 +329,13 @@ export function Copilot({
     workflow,
     chatContext = undefined,
     dispatch,
+    isInitialState = false,
 }: {
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     chatContext?: z.infer<typeof CopilotChatContext>;
     dispatch: (action: WorkflowDispatch) => void;
+    isInitialState?: boolean;
 }) {
     const [copilotKey, setCopilotKey] = useState(0);
     const [showCopySuccess, setShowCopySuccess] = useState(false);
@@ -329,11 +358,17 @@ export function Copilot({
 
     return (
         <Panel variant="copilot"
+            tourTarget="copilot"
             showWelcome={messages.length === 0}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        COPILOT
+                    <div className="flex items-center gap-2">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            COPILOT
+                        </div>
+                        <Tooltip content="Ask copilot to help you build and modify your workflow">
+                            <InfoIcon className="w-4 h-4 text-gray-400 cursor-help" />
+                        </Tooltip>
                     </div>
                     <Button
                         variant="primary"
@@ -375,6 +410,7 @@ export function Copilot({
                     chatContext={chatContext}
                     onCopyJson={handleCopyJson}
                     onMessagesChange={setMessages}
+                    isInitialState={isInitialState}
                 />
             </div>
         </Panel>
