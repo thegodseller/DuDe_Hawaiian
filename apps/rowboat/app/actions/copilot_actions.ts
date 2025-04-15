@@ -5,14 +5,14 @@ import {
     CopilotChatContext, CopilotMessage, CopilotAssistantMessage, CopilotWorkflow 
 } from "../lib/types/copilot_types";
 import { 
-    Workflow, WorkflowTool, WorkflowPrompt, WorkflowAgent 
-} from "../lib/types/workflow_types";
+    Workflow} from "../lib/types/workflow_types";
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { assert } from "node:console";
 import { check_query_limit } from "../lib/rate_limiting";
-import { QueryLimitError } from "../lib/client_utils";
+import { QueryLimitError, validateConfigChanges } from "../lib/client_utils";
 import { projectAuthCheck } from "./project_actions";
+import { redisClient } from "../lib/redis";
 
 export async function getCopilotResponse(
     projectId: string,
@@ -67,90 +67,19 @@ export async function getCopilotResponse(
     // validate response schema
     assert(msg.role === 'assistant');
     if (msg.role === 'assistant') {
-        for (const part of msg.content.response) {
+        const content = JSON.parse(msg.content);
+        for (const part of content.response) {
             if (part.type === 'action') {
-                switch (part.content.config_type) {
-                    case 'tool': {
-                        const test = {
-                            name: 'test',
-                            description: 'test',
-                            type: 'custom' as const,
-                            implementation: 'mock' as const,
-                            parameters: {
-                                type: 'object',
-                                properties: {},
-                                required: [],
-                            },
-                        } as z.infer<typeof WorkflowTool>;
-                        // iterate over each field in part.content.config_changes
-                        // and test if the final object schema is valid
-                        // if not, discard that field
-                        for (const [key, value] of Object.entries(part.content.config_changes)) {
-                            const result = WorkflowTool.safeParse({
-                                ...test,
-                                [key]: value,
-                            });
-                            if (!result.success) {
-                                console.log(`discarding field ${key} from ${part.content.config_type}: ${part.content.name}`, result.error.message);
-                                delete part.content.config_changes[key];
-                            }
-                        }
-                        break;
-                    }
-                    case 'agent': {
-                        const test = {
-                            name: 'test',
-                            description: 'test',
-                            type: 'conversation',
-                            instructions: 'test',
-                            prompts: [],
-                            tools: [],
-                            model: 'gpt-4o',
-                            ragReturnType: 'chunks',
-                            ragK: 10,
-                            connectedAgents: [],
-                            controlType: 'retain',
-                        } as z.infer<typeof WorkflowAgent>;
-                        // iterate over each field in part.content.config_changes
-                        // and test if the final object schema is valid
-                        // if not, discard that field
-                        for (const [key, value] of Object.entries(part.content.config_changes)) {
-                            const result = WorkflowAgent.safeParse({
-                                ...test,
-                                [key]: value,
-                            });
-                            if (!result.success) {
-                                console.log(`discarding field ${key} from ${part.content.config_type}: ${part.content.name}`, result.error.message);
-                                delete part.content.config_changes[key];
-                            }
-                        }
-                        break;
-                    }
-                    case 'prompt': {
-                        const test = {
-                            name: 'test',
-                            type: 'base_prompt',
-                            prompt: "test",
-                        } as z.infer<typeof WorkflowPrompt>;
-                        // iterate over each field in part.content.config_changes
-                        // and test if the final object schema is valid
-                        // if not, discard that field
-                        for (const [key, value] of Object.entries(part.content.config_changes)) {
-                            const result = WorkflowPrompt.safeParse({
-                                ...test,
-                                [key]: value,
-                            });
-                            if (!result.success) {
-                                console.log(`discarding field ${key} from ${part.content.config_type}: ${part.content.name}`, result.error.message);
-                                delete part.content.config_changes[key];
-                            }
-                        }
-                        break;
-                    }
-                    default: {
-                        part.content.error = `Unknown config type: ${part.content.config_type}`;
-                        break;
-                    }
+                const result = validateConfigChanges(
+                    part.content.config_type,
+                    part.content.config_changes,
+                    part.content.name
+                );
+                
+                if ('error' in result) {
+                    part.content.error = result.error;
+                } else {
+                    part.content.config_changes = result.changes;
                 }
             }
         }
@@ -160,6 +89,43 @@ export async function getCopilotResponse(
         message: msg as z.infer<typeof CopilotAssistantMessage>,
         rawRequest: request,
         rawResponse: json,
+    };
+}
+
+export async function getCopilotResponseStream(
+    projectId: string,
+    messages: z.infer<typeof CopilotMessage>[],
+    current_workflow_config: z.infer<typeof Workflow>,
+    context: z.infer<typeof CopilotChatContext> | null
+): Promise<{
+    streamId: string;
+}> {
+    await projectAuthCheck(projectId);
+    if (!await check_query_limit(projectId)) {
+        throw new QueryLimitError();
+    }
+
+    // prepare request
+    const request: z.infer<typeof CopilotAPIRequest> = {
+        messages: messages.map(convertToCopilotApiMessage),
+        workflow_schema: JSON.stringify(zodToJsonSchema(CopilotWorkflow)),
+        current_workflow_config: JSON.stringify(convertToCopilotWorkflow(current_workflow_config)),
+        context: context ? convertToCopilotApiChatContext(context) : null,
+    };
+
+    // serialize the request
+    const payload = JSON.stringify(request);
+
+    // create a uuid for the stream
+    const streamId = crypto.randomUUID();
+
+    // store payload in redis
+    await redisClient.set(`copilot-stream-${streamId}`, payload, {
+        EX: 60 * 10, // expire in 10 minutes
+    });
+
+    return {
+        streamId,
     };
 }
 
