@@ -403,6 +403,21 @@ async def run_turn_streamed(
                             'tool_name': None,
                             'response_type': 'internal'
                         }
+                        print("Yielding message: ", message)
+                        yield ('message', message)
+
+                        result_message = {
+                        'content': "Web search done",
+                        'role': 'tool',
+                        'sender': None,
+                        'tool_calls': None,
+                        'tool_call_id': call_id,
+                        'tool_name': 'web_search',
+                        'response_type': 'internal'
+                        }
+
+                        print("Yielding web search results: ", result_message)
+                        yield ('message', result_message)
                     else:
                         # Handle normal tool calls
                         message = {
@@ -421,8 +436,9 @@ async def run_turn_streamed(
                             'tool_name': None,
                             'response_type': 'internal'
                         }
-                    print("Yielding message: ", message)
-                    yield ('message', message)
+                        print("Yielding message: ", message)
+                        yield ('message', message)
+
 
                 elif event.item.type == "tool_call_output_item":
                     # Check if it's a web search result
