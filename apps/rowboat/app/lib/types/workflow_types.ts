@@ -36,15 +36,7 @@ export const WorkflowPrompt = z.object({
 export const WorkflowTool = z.object({
     name: z.string(),
     description: z.string(),
-    type: z.union([
-        z.literal('library'),
-        z.literal('custom'),
-    ]).default('custom'),
-    implementation: z.union([
-        z.literal('mock'),
-        z.literal('default'),
-        z.literal('api')
-    ]).default('mock'),
+    mockTool: z.boolean().default(false).optional(),
     autoSubmitMockedResponse: z.boolean().default(false).optional(),
     mockInstructions: z.string().optional(),
     parameters: z.object({
@@ -56,6 +48,7 @@ export const WorkflowTool = z.object({
         required: z.array(z.string()).optional(),
     }),
     isMcp: z.boolean().default(false).optional(),
+    isLibrary: z.boolean().default(false).optional(),
     mcpServerName: z.string().optional(),
 });
 export const Workflow = z.object({

@@ -2,7 +2,7 @@
 import { WorkflowTool } from "../../../lib/types/workflow_types";
 import { Checkbox, Select, SelectItem, RadioGroup, Radio } from "@heroui/react";
 import { z } from "zod";
-import { ImportIcon, XIcon, PlusIcon } from "lucide-react";
+import { ImportIcon, XIcon, PlusIcon, FolderIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/common/panel-common";
@@ -161,7 +161,7 @@ export function ToolConfig({
     handleClose: () => void
 }) {
     const [selectedParams, setSelectedParams] = useState(new Set([]));
-    const isReadOnly = tool.isMcp;
+    const isReadOnly = tool.isMcp || tool.isLibrary;
     const [nameError, setNameError] = useState<string | null>(null);
 
     function handleParamRename(oldName: string, newName: string) {
@@ -245,6 +245,12 @@ export function ToolConfig({
                                 <span className="text-xs">MCP: {tool.mcpServerName}</span>
                             </div>
                         )}
+                        {tool.isLibrary && (
+                            <div className="flex items-center gap-2 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
+                                <FolderIcon className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                                <span className="text-xs">Library Tool</span>
+                            </div>
+                        )}
                     </div>
                     <Button
                         variant="secondary"
@@ -259,7 +265,7 @@ export function ToolConfig({
             }
         >
             <div className="flex flex-col gap-6 p-4">
-                {!isReadOnly && tool.type !== 'library' && (
+                {!isReadOnly && (
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label className={sectionHeaderStyles}>
@@ -310,7 +316,7 @@ export function ToolConfig({
                                 description: e.target.value
                             })}
                             placeholder="Describe what this tool does..."
-                            disabled={isReadOnly || tool.type === 'library'}
+                            disabled={isReadOnly}
                             className={textareaStyles}
                             autoResize
                         />
@@ -324,13 +330,12 @@ export function ToolConfig({
                         </label>
                         
                         <RadioGroup
-                            defaultValue={tool.implementation}
-                            value={tool.implementation}
+                            defaultValue="mock"
+                            value={tool.mockTool ? "mock" : "api"}
                             onValueChange={(value) => handleUpdate({
                                 ...tool,
-                                implementation: value as "mock" | "default" | "api",
-                                autoSubmitMockedResponse: value === "mock" ? true : undefined,
-                                mockInstructions: value === "mock" ? tool.mockInstructions : undefined
+                                mockTool: value === "mock",
+                                autoSubmitMockedResponse: value === "mock" ? true : undefined
                             })}
                             orientation="horizontal"
                             classNames={{
@@ -347,32 +352,20 @@ export function ToolConfig({
                             >
                                 Mock tool responses
                             </Radio>
-                            {tool.type === "library" ? (
-                                <Radio 
-                                    value="default"
-                                    classNames={{
-                                        base: "p-0 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-900/50 rounded-lg transition-colors",
-                                        label: "text-base font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
-                                    }}
-                                >
-                                    Use default implementation
-                                </Radio>
-                            ) : (
-                                <Radio 
-                                    value="api"
-                                    classNames={{
-                                        base: "p-0 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-900/50 rounded-lg transition-colors",
-                                        label: "text-base font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
-                                    }}
-                                >
-                                    Connect tool to your API
-                                </Radio>
-                            )}
+                            <Radio 
+                                value="api"
+                                classNames={{
+                                    base: "p-0 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-900/50 rounded-lg transition-colors",
+                                    label: "text-base font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
+                                }}
+                            >
+                                Connect tool to your API
+                            </Radio>
                         </RadioGroup>
                     </div>
                 )}
 
-                {tool.implementation === "mock" && (
+                {tool.mockTool && (
                     <div className={`space-y-4 ${dividerStyles} pt-6`}>
                         <div className="space-y-4">
                             <label className={sectionHeaderStyles}>
@@ -424,12 +417,12 @@ export function ToolConfig({
                                 handleUpdate={handleParamUpdate}
                                 handleDelete={handleParamDelete}
                                 handleRename={handleParamRename}
-                                readOnly={isReadOnly || tool.type === 'library'}
+                                readOnly={isReadOnly}
                             />
                         ))}
                     </div>
 
-                    {!isReadOnly && tool.type !== 'library' && (
+                    {!isReadOnly && (
                         <div className="pl-3">
                             <Button
                                 variant="primary"
@@ -447,8 +440,6 @@ export function ToolConfig({
 
                                     handleUpdate({
                                         ...tool,
-                                        type: 'custom',
-                                        implementation: 'mock',
                                         parameters: {
                                             type: 'object',
                                             properties: newProperties,

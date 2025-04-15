@@ -295,8 +295,7 @@ function reducer(state: State, action: Action): State {
                                     type: 'object',
                                     properties: {},
                                 },
-                                type: 'custom',
-                                implementation: 'mock',
+                                mockTool: true,
                                 autoSubmitMockedResponse: true,
                                 ...action.tool
                             });

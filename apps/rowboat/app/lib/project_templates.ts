@@ -55,12 +55,11 @@ You are an helpful customer support assistant
             {
                 "name": "web_search",
                 "description": "Fetch information from the web based on chat context",
-                "type": "library",
                 "parameters": {
                     "type": "object",
                     "properties": {},
                 },
-                "implementation": "default",
+                "isLibrary": true
             }
         ],
     }
