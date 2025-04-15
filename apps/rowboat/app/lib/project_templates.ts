@@ -49,11 +49,6 @@ You are an helpful customer support assistant
                 name: "Style prompt",
                 type: "style_prompt",
                 prompt: "You should be empathetic and helpful.",
-            },
-            {
-                name: "Greeting",
-                type: "greeting",
-                prompt: "Hello! How can I help you?"
             }
         ],
         tools: [
