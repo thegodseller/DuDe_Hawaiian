@@ -44,13 +44,7 @@ You are an helpful customer support assistant
                 controlType: "retain",
             },
         ],
-        prompts: [
-            {
-                name: "Style prompt",
-                type: "style_prompt",
-                prompt: "You should be empathetic and helpful.",
-            }
-        ],
+        prompts: [],
         tools: [
             {
                 "name": "web_search",
