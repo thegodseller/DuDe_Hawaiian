@@ -2,7 +2,7 @@
 import { WorkflowTool } from "../../../lib/types/workflow_types";
 import { Checkbox, Select, SelectItem, RadioGroup, Radio } from "@heroui/react";
 import { z } from "zod";
-import { ImportIcon, XIcon, PlusIcon } from "lucide-react";
+import { ImportIcon, XIcon, PlusIcon, FolderIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/common/panel-common";
@@ -161,7 +161,7 @@ export function ToolConfig({
     handleClose: () => void
 }) {
     const [selectedParams, setSelectedParams] = useState(new Set([]));
-    const isReadOnly = tool.isMcp;
+    const isReadOnly = tool.isMcp || tool.isLibrary;
     const [nameError, setNameError] = useState<string | null>(null);
 
     function handleParamRename(oldName: string, newName: string) {
@@ -243,6 +243,12 @@ export function ToolConfig({
                             <div className="flex items-center gap-2 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
                                 <ImportIcon className="w-4 h-4 text-blue-700 dark:text-blue-400" />
                                 <span className="text-xs">MCP: {tool.mcpServerName}</span>
+                            </div>
+                        )}
+                        {tool.isLibrary && (
+                            <div className="flex items-center gap-2 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
+                                <FolderIcon className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                                <span className="text-xs">Library Tool</span>
                             </div>
                         )}
                     </div>

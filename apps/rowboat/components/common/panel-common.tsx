@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { Sparkles } from "lucide-react";
+import { SHOW_COPILOT_MARQUEE } from "@/app/lib/feature_flags";
 
 export function ActionButton({
     icon = null,
@@ -34,8 +35,11 @@ interface PanelProps {
     actions?: React.ReactNode;
     children: React.ReactNode;
     maxHeight?: string;
-    variant?: 'default' | 'copilot' | 'projects';
+    variant?: 'default' | 'copilot' | 'playground' | 'projects';
     showWelcome?: boolean;
+    className?: string;
+    onClick?: () => void;
+    tourTarget?: string;
 }
 
 export function Panel({
@@ -46,32 +50,43 @@ export function Panel({
     maxHeight,
     variant = 'default',
     showWelcome = true,
+    className,
+    onClick,
+    tourTarget,
 }: PanelProps) {
-    return <div className={clsx(
-        "flex flex-col overflow-hidden rounded-xl border relative",
-        "border-zinc-200 dark:border-zinc-800",
-        "bg-white dark:bg-zinc-900",
-        maxHeight ? "max-h-[var(--panel-height)]" : "h-full"
-    )}
-    style={{ 
-        '--panel-height': maxHeight
-    } as React.CSSProperties}
+    return <div 
+        className={clsx(
+            "flex flex-col overflow-hidden rounded-xl border relative",
+            variant === 'copilot' ? "border-blue-200 dark:border-blue-800" : "border-zinc-200 dark:border-zinc-800",
+            "bg-white dark:bg-zinc-900",
+            maxHeight ? "max-h-[var(--panel-height)]" : "h-full",
+            className
+        )}
+        style={{ 
+            '--panel-height': maxHeight
+        } as React.CSSProperties}
+        onClick={onClick}
+        data-tour-target={tourTarget}
     >
         {variant === 'copilot' && showWelcome && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -mt-16">
                 <Sparkles className="w-32 h-32 text-blue-400/40 dark:text-blue-500/25 animate-sparkle" />
-                <div className="relative mt-8 max-w-full px-8">
-                    <div className="font-mono text-sm whitespace-nowrap text-blue-400/60 dark:text-blue-500/40 font-small inline-flex">
-                        <div className="overflow-hidden w-0 animate-typing">What can I help you build?</div>
-                        <div className="border-r-2 border-blue-400 dark:border-blue-500 animate-cursor">&nbsp;</div>
+                {SHOW_COPILOT_MARQUEE && (
+                    <div className="relative mt-8 max-w-full px-8">
+                        <div className="font-mono text-sm whitespace-nowrap text-blue-400/60 dark:text-blue-500/40 font-small inline-flex">
+                            <div className="overflow-hidden w-0 animate-typing">What can I help you build?</div>
+                            <div className="border-r-2 border-blue-400 dark:border-blue-500 animate-cursor">&nbsp;</div>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         )}
-        <div className={clsx(
-            "shrink-0 border-b border-zinc-100 dark:border-zinc-800 relative",
-            variant === 'projects' ? "flex flex-col gap-3 px-4 py-3" : "flex items-center justify-between px-4 py-3"
-        )}>
+        <div 
+            className={clsx(
+                "shrink-0 border-b border-zinc-100 dark:border-zinc-800 relative",
+                variant === 'projects' ? "flex flex-col gap-3 px-4 py-3" : "flex items-center justify-between px-4 py-3"
+            )}
+        >
             {variant === 'projects' ? (
                 <>
                     <div className="text-sm uppercase tracking-wide text-zinc-500 dark:text-zinc-400">

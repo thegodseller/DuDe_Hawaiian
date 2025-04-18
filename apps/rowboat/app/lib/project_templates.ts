@@ -44,19 +44,18 @@ You are an helpful customer support assistant
                 controlType: "retain",
             },
         ],
-        prompts: [
+        prompts: [],
+        tools: [
             {
-                name: "Style prompt",
-                type: "style_prompt",
-                prompt: "You should be empathetic and helpful.",
-            },
-            {
-                name: "Greeting",
-                type: "greeting",
-                prompt: "Hello! How can I help you?"
+                "name": "web_search",
+                "description": "Fetch information from the web based on chat context",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                },
+                "isLibrary": true
             }
         ],
-        tools: [],
     }
 }
 

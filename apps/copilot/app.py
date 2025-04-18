@@ -1,11 +1,13 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response, stream_with_context
 from pydantic import BaseModel, ValidationError
 from typing import List
-from copilot import UserMessage, AssistantMessage, get_response
+from copilot import UserMessage, AssistantMessage, get_response, openai_client
+from streaming import get_streaming_response
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
 import os
 from functools import wraps
-from copilot import copilot_instructions, copilot_instructions_edit_agent
+from copilot import copilot_instructions_edit_agent
+import json
 
 class ApiRequest(BaseModel):
     messages: List[UserMessage | AssistantMessage]
@@ -46,24 +48,37 @@ def require_api_key(f):
 def health():
     return jsonify({'status': 'ok'})
 
-@app.route('/chat', methods=['POST'])
+@app.route('/chat_stream', methods=['POST'])
 @require_api_key
-def chat():
+def chat_stream():
     try:
         request_data = ApiRequest(**request.json)
-        print(f"received /chat request: {request_data}")
+        print(f"received /chat_stream request: {request_data}")
         validate_request(request_data)
 
-        response = get_response(
-            messages=request_data.messages,
-            workflow_schema=request_data.workflow_schema,
-            current_workflow_config=request_data.current_workflow_config,
-            context=request_data.context,
-            copilot_instructions=copilot_instructions
+        def generate():
+            stream = get_streaming_response(
+                messages=request_data.messages,
+                workflow_schema=request_data.workflow_schema,
+                current_workflow_config=request_data.current_workflow_config,
+                context=request_data.context
+            )
+
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    content = chunk.choices[0].delta.content
+                    yield f"data: {json.dumps({'content': content})}\n\n"
+
+            yield "event: done\ndata: {}\n\n"
+
+        return Response(
+            stream_with_context(generate()),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'X-Accel-Buffering': 'no'
+            }
         )
-        api_response = ApiResponse(response=response).model_dump()
-        print(f"sending /chat response: {api_response}")
-        return jsonify(api_response)
 
     except ValidationError as ve:
         print(ve)

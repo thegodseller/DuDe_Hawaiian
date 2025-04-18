@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import clsx from "clsx";
 import { z } from "zod";
 import { CopilotAssistantMessageActionPart } from "../../../../lib/types/copilot_types";
@@ -7,35 +7,34 @@ import { Workflow } from "../../../../lib/types/workflow_types";
 import { PreviewModalProvider, usePreviewModal } from '../../workflow/preview-modal';
 import { getAppliedChangeKey } from "../app";
 import { AlertTriangleIcon, CheckCheckIcon, CheckIcon, ChevronsDownIcon, ChevronsUpIcon, EyeIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { Spinner } from "@heroui/react";
 
 const ActionContext = createContext<{
     msgIndex: number;
     actionIndex: number;
     action: z.infer<typeof CopilotAssistantMessageActionPart>['content'] | null;
     workflow: z.infer<typeof Workflow> | null;
-    handleApplyChange: (messageIndex: number, actionIndex: number, field?: string) => void;
     appliedFields: string[];
     stale: boolean;
-}>({ msgIndex: 0, actionIndex: 0, action: null, workflow: null, handleApplyChange: () => { }, appliedFields: [], stale: false });
+}>({ msgIndex: 0, actionIndex: 0, action: null, workflow: null, appliedFields: [], stale: false });
 
 export function Action({
     msgIndex,
     actionIndex,
     action,
     workflow,
-    handleApplyChange,
-    appliedChanges,
+    dispatch,
     stale,
 }: {
     msgIndex: number;
     actionIndex: number;
     action: z.infer<typeof CopilotAssistantMessageActionPart>['content'];
     workflow: z.infer<typeof Workflow>;
-    handleApplyChange: (messageIndex: number, actionIndex: number, field?: string) => void;
-    appliedChanges: Record<string, boolean>;
+    dispatch: (action: any) => void;
     stale: boolean;
 }) {
     const [expanded, setExpanded] = useState(false);
+    const [appliedChanges, setAppliedChanges] = useState<Record<string, boolean>>({});
 
     if (!action || typeof action !== 'object') {
         console.warn('Invalid action object:', action);
@@ -49,17 +48,115 @@ export function Action({
         appliedFields.includes(key)
     );
 
-    // generate apply change function
-    const applyChangeHandler = () => {
-        handleApplyChange(msgIndex, actionIndex);
-    }
+    // Handle applying a single field change
+    const handleFieldChange = (field: string) => {
+        const changes = { [field]: action.config_changes[field] };
+        
+        switch (action.config_type) {
+            case 'agent':
+                dispatch({
+                    type: 'update_agent',
+                    name: action.name,
+                    agent: changes
+                });
+                break;
+            case 'tool':
+                dispatch({
+                    type: 'update_tool',
+                    name: action.name,
+                    tool: changes
+                });
+                break;
+            case 'prompt':
+                dispatch({
+                    type: 'update_prompt',
+                    name: action.name,
+                    prompt: changes
+                });
+                break;
+        }
+
+        setAppliedChanges(prev => ({
+            ...prev,
+            [getAppliedChangeKey(msgIndex, actionIndex, field)]: true
+        }));
+    };
+
+    // Handle applying all changes
+    const handleApplyAll = () => {
+        if (action.action === 'create_new') {
+            switch (action.config_type) {
+                case 'agent':
+                    dispatch({
+                        type: 'add_agent',
+                        agent: {
+                            name: action.name,
+                            ...action.config_changes
+                        }
+                    });
+                    break;
+                case 'tool':
+                    dispatch({
+                        type: 'add_tool',
+                        tool: {
+                            name: action.name,
+                            ...action.config_changes
+                        }
+                    });
+                    break;
+                case 'prompt':
+                    dispatch({
+                        type: 'add_prompt',
+                        prompt: {
+                            name: action.name,
+                            ...action.config_changes
+                        }
+                    });
+                    break;
+            }
+        } else if (action.action === 'edit') {
+            switch (action.config_type) {
+                case 'agent':
+                    dispatch({
+                        type: 'update_agent',
+                        name: action.name,
+                        agent: action.config_changes
+                    });
+                    break;
+                case 'tool':
+                    dispatch({
+                        type: 'update_tool',
+                        name: action.name,
+                        tool: action.config_changes
+                    });
+                    break;
+                case 'prompt':
+                    dispatch({
+                        type: 'update_prompt',
+                        name: action.name,
+                        prompt: action.config_changes
+                    });
+                    break;
+            }
+        }
+
+        // Mark all fields as applied
+        const appliedKeys = Object.keys(action.config_changes).reduce((acc, key) => {
+            acc[getAppliedChangeKey(msgIndex, actionIndex, key)] = true;
+            return acc;
+        }, {} as Record<string, boolean>);
+        setAppliedChanges(prev => ({
+            ...prev,
+            ...appliedKeys
+        }));
+    };
 
     return <div className={clsx('flex flex-col rounded-sm border border-t-4', {
         'bg-gray-50 dark:bg-gray-800/50 border-gray-400 dark:border-gray-600 border-t-blue-500 shadow': !stale && !allApplied && action.action == 'create_new',
         'bg-gray-50 dark:bg-gray-800/50 border-gray-400 dark:border-gray-600 border-t-orange-500 shadow': !stale && !allApplied && action.action == 'edit',
         'bg-gray-100 dark:bg-gray-800/30 border-gray-400 dark:border-gray-600 border-t-gray-400': stale || allApplied || action.error,
     })}>
-        <ActionContext.Provider value={{ msgIndex, actionIndex, action, workflow, handleApplyChange, appliedFields, stale }}>
+        <ActionContext.Provider value={{ msgIndex, actionIndex, action, workflow, appliedFields, stale }}>
             <ActionHeader />
             <ActionSummary />
             {expanded && <PreviewModalProvider>
@@ -69,7 +166,7 @@ export function Action({
                 </div>}
                 <div className="flex flex-col gap-2 px-1">
                     {Object.entries(action.config_changes).map(([key, value]) => {
-                        return <ActionField key={key} field={key} />
+                        return <ActionField key={key} field={key} onApply={handleFieldChange} />
                     })}
                 </div>
             </PreviewModalProvider>}
@@ -82,7 +179,7 @@ export function Action({
                 </div>}
                 {!action.error && <button
                     className="grow rounded-l-sm bg-blue-100 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/30 disabled:bg-gray-100 dark:disabled:bg-gray-800/30 disabled:text-gray-300 dark:disabled:text-gray-600 flex flex-col items-center justify-center h-8"
-                    onClick={applyChangeHandler}
+                    onClick={handleApplyAll}
                     disabled={stale || allApplied}
                 >
                     <div className="flex items-center gap-2 justify-center">
@@ -108,7 +205,7 @@ export function Action({
 }
 
 export function ActionSummary() {
-    const { msgIndex, actionIndex, action, workflow, handleApplyChange, appliedFields, stale } = useContext(ActionContext);
+    const { msgIndex, actionIndex, action, workflow, appliedFields, stale } = useContext(ActionContext);
     if (!action || !workflow) return null;
 
     return <div className="px-1 my-1">
@@ -119,7 +216,7 @@ export function ActionSummary() {
 }
 
 export function ActionHeader() {
-    const { msgIndex, actionIndex, action, workflow, handleApplyChange, appliedFields, stale } = useContext(ActionContext);
+    const { msgIndex, actionIndex, action, workflow, appliedFields, stale } = useContext(ActionContext);
     if (!action || !workflow) return null;
 
     const targetType = action.config_type === 'tool' ? 'tool' : action.config_type === 'agent' ? 'agent' : 'prompt';
@@ -134,10 +231,12 @@ export function ActionHeader() {
 
 export function ActionField({
     field,
+    onApply,
 }: {
     field: string;
+    onApply: (field: string) => void;
 }) {
-    const { msgIndex, actionIndex, action, workflow, handleApplyChange, appliedFields, stale } = useContext(ActionContext);
+    const { msgIndex, actionIndex, action, workflow, appliedFields, stale } = useContext(ActionContext);
     const { showPreview } = usePreviewModal();
     if (!action || !workflow) return null;
 
@@ -178,11 +277,6 @@ export function ActionField({
         (action.config_type === 'agent' && field === 'examples') ||
         (action.config_type === 'prompt' && field === 'prompt') ||
         (action.config_type === 'tool' && field === 'description');
-
-    // generate apply change function
-    const applyChangeHandler = () => {
-        handleApplyChange(msgIndex, actionIndex, field);
-    }
     
     // generate preview modal function
     const previewModalHandler = () => {
@@ -193,7 +287,7 @@ export function ActionField({
                 markdownPreviewCondition,
                 `${action.name} - ${field}`,
                 "Review changes",
-                applyChangeHandler
+                () => onApply(field)
             );
         }
     }
@@ -213,7 +307,7 @@ export function ActionField({
                         'text-green-600 dark:text-green-400': applied,
                         'text-gray-600 dark:text-gray-400': stale,
                     })}
-                    onClick={applyChangeHandler}
+                    onClick={() => onApply(field)}
                     disabled={stale || applied}
                 >
                     <CheckIcon size={16} />
@@ -223,6 +317,38 @@ export function ActionField({
         <div className="px-2 pb-1">
             <div className="text-sm italic truncate dark:text-gray-300">
                 {JSON.stringify(newValue)}
+            </div>
+        </div>
+    </div>;
+}
+
+export function StreamingAction({
+    action,
+    loading,
+}: {
+    action: {
+        action?: 'create_new' | 'edit';
+        config_type?: 'tool' | 'agent' | 'prompt';
+        name?: string;
+    };
+    loading: boolean;
+}) {
+    return <div className={clsx('flex flex-col rounded-sm border border-t-4', {
+        'bg-gray-50 dark:bg-gray-800/50 border-gray-400 dark:border-gray-600 border-t-blue-500 shadow': action.action == 'create_new',
+        'bg-gray-50 dark:bg-gray-800/50 border-gray-400 dark:border-gray-600 border-t-orange-500 shadow': action.action == 'edit',
+    })}>
+        <div className="flex gap-2 items-center py-1 px-1">
+            {action.action == 'create_new' && <PlusIcon size={16} />}
+            {action.action == 'edit' && <PencilIcon size={16} />}
+            <div className="text-sm truncate">
+                {action.config_type && `${action.action === 'create_new' ? 'Create' : 'Edit'} ${action.config_type}`}
+                {action.name && <span className="font-medium ml-1">{action.name}</span>}
+            </div>
+        </div>
+        <div className="px-1 my-1">
+            <div className="bg-white dark:bg-gray-800 rounded-sm p-2 text-sm flex items-center gap-2">
+                {loading && <Spinner size="sm" />}
+                {!loading && <div className="text-gray-400">Canceled</div>}
             </div>
         </div>
     </div>;

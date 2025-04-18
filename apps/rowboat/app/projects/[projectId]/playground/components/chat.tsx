@@ -8,7 +8,7 @@ import { AgenticAPIChatMessage, convertFromAgenticAPIChatMessages, convertToAgen
 import { convertWorkflowToAgenticAPI } from "@/app/lib/types/agents_api_types";
 import { AgenticAPIChatRequest } from "@/app/lib/types/agents_api_types";
 import { Workflow } from "@/app/lib/types/workflow_types";
-import { ComposeBox } from "@/components/common/compose-box";
+import { ComposeBoxPlayground } from "@/components/common/compose-box-playground";
 import { Button } from "@heroui/react";
 import { apiV1 } from "rowboat-shared";
 import { TestProfile } from "@/app/lib/types/testing_types";
@@ -50,6 +50,7 @@ export function Chat({
     const [lastAgenticRequest, setLastAgenticRequest] = useState<unknown | null>(null);
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
     const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof apiV1.ChatMessage>[]>(chat.messages);
+    const [isLastInteracted, setIsLastInteracted] = useState(false);
 
     const getCopyContent = useCallback(() => {
         return JSON.stringify({
@@ -90,6 +91,7 @@ export function Chat({
         }];
         setMessages(updatedMessages);
         setFetchResponseError(null);
+        setIsLastInteracted(true);
     }
 
     // reset state when workflow changes
@@ -289,10 +291,12 @@ export function Chat({
                 </div>
             )}
             
-            <ComposeBox
+            <ComposeBoxPlayground
                 handleUserMessage={handleUserMessage}
                 messages={messages.filter(msg => msg.content !== undefined) as any}
                 loading={loadingAssistantResponse}
+                shouldAutoFocus={isLastInteracted}
+                onFocus={() => setIsLastInteracted(true)}
             />
         </div>
     </div>;

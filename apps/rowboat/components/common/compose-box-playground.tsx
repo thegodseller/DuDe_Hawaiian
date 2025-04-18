@@ -1,49 +1,28 @@
-'use client';
-
+import { useState, useRef, useEffect } from 'react';
+import { Textarea } from '@/components/ui/textarea';
 import { Button, Spinner } from "@heroui/react";
-import { useRef, useState, useEffect } from "react";
-import { Textarea } from "@/components/ui/textarea";
 
-// Add a type to support both message formats
-type FlexibleMessage = {
-    role: 'user' | 'assistant' | 'system' | 'tool';
-    content: string | any;
-    version?: string;
-    chatId?: string;
-    createdAt?: string;
-    // Add any other optional fields that might be needed
-};
-
-interface ComposeBoxCopilotProps {
+interface ComposeBoxPlaygroundProps {
     handleUserMessage: (message: string) => void;
     messages: any[];
     loading: boolean;
-    initialFocus?: boolean;
+    disabled?: boolean;
     shouldAutoFocus?: boolean;
     onFocus?: () => void;
-    onCancel?: () => void;
 }
 
-export function ComposeBoxCopilot({
+export function ComposeBoxPlayground({
     handleUserMessage,
     messages,
     loading,
-    initialFocus = false,
+    disabled = false,
     shouldAutoFocus = false,
     onFocus,
-    onCancel,
-}: ComposeBoxCopilotProps) {
+}: ComposeBoxPlaygroundProps) {
     const [input, setInput] = useState('');
     const [isFocused, setIsFocused] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const previousMessagesLength = useRef(messages.length);
-
-    // Handle initial focus
-    useEffect(() => {
-        if (initialFocus && textareaRef.current) {
-            textareaRef.current.focus();
-        }
-    }, [initialFocus]);
 
     // Handle auto-focus when new messages arrive
     useEffect(() => {
@@ -62,12 +41,12 @@ export function ComposeBoxCopilot({
         handleUserMessage(prompt);
     }
 
-    function handleInputKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
+    const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             handleInput();
         }
-    }
+    };
 
     const handleFocus = () => {
         setIsFocused(true);
@@ -94,7 +73,7 @@ export function ComposeBoxCopilot({
                         onKeyDown={handleInputKeyDown}
                         onFocus={handleFocus}
                         onBlur={() => setIsFocused(false)}
-                        disabled={loading}
+                        disabled={disabled || loading}
                         placeholder="Type a message..."
                         autoResize={true}
                         maxHeight={120}
@@ -118,15 +97,13 @@ export function ComposeBoxCopilot({
                 <Button
                     size="sm"
                     isIconOnly
-                    disabled={!loading && !input.trim()}
-                    onPress={loading ? onCancel : handleInput}
+                    disabled={disabled || loading || !input.trim()}
+                    onPress={handleInput}
                     className={`
                         transition-all duration-200
-                        ${loading 
-                            ? 'bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/50 dark:hover:bg-red-800/60 dark:text-red-300'
-                            : input.trim() 
-                                ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:hover:bg-indigo-800/60 dark:text-indigo-300' 
-                                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
+                        ${input.trim() 
+                            ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:hover:bg-indigo-800/60 dark:text-indigo-300' 
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
                         }
                         scale-100 hover:scale-105 active:scale-95
                         disabled:opacity-50 disabled:scale-95
@@ -135,7 +112,7 @@ export function ComposeBoxCopilot({
                     `}
                 >
                     {loading ? (
-                        <StopIcon size={16} />
+                        <Spinner size="sm" color={input.trim() ? "primary" : "default"} />
                     ) : (
                         <SendIcon 
                             size={16} 
@@ -166,20 +143,4 @@ function SendIcon({ size, className }: { size: number, className?: string }) {
             <path d="M22 2L15 22L11 13L2 9L22 2Z" />
         </svg>
     );
-}
-
-// Custom StopIcon component for better visual alignment
-function StopIcon({ size, className }: { size: number, className?: string }) {
-    return (
-        <svg 
-            width={size} 
-            height={size} 
-            viewBox="0 0 24 24" 
-            fill="currentColor" 
-            stroke="none"
-            className={className}
-        >
-            <rect x="6" y="6" width="12" height="12" rx="1" />
-        </svg>
-    );
-}
+} 

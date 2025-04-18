@@ -12,11 +12,12 @@ import {
   FolderOpenIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  Moon
+  Moon,
+  HelpCircle
 } from "lucide-react";
 import { getProjectConfig } from "@/app/actions/project_actions";
 import { useTheme } from "@/app/providers/theme-provider";
-import { USE_TESTING_FEATURE } from '@/app/lib/feature_flags';
+import { USE_TESTING_FEATURE, USE_PRODUCT_TOUR } from '@/app/lib/feature_flags';
 
 interface SidebarProps {
   projectId: string;
@@ -137,6 +138,7 @@ export default function Sidebar({ projectId, useRag, useAuth, collapsed = false,
                           }
                         `}
                         disabled={isDisabled}
+                        data-tour-target={item.href === 'config' ? 'settings' : undefined}
                       >
                         <Icon 
                           size={collapsed ? COLLAPSED_ICON_SIZE : EXPANDED_ICON_SIZE} 
@@ -179,6 +181,27 @@ export default function Sidebar({ projectId, useRag, useAuth, collapsed = false,
 
         {/* Theme and Auth Controls */}
         <div className="p-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+          {USE_PRODUCT_TOUR && !isProjectsRoute && (
+            <Tooltip content={collapsed ? "Take Tour" : ""} showArrow placement="right">
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('user_product_tour_completed');
+                  window.location.reload();
+                }}
+                className={`
+                  w-full rounded-md flex items-center
+                  text-[15px] font-medium transition-all duration-200
+                  ${collapsed ? 'justify-center py-4' : 'px-4 py-4 gap-3'}
+                  hover:bg-zinc-100 dark:hover:bg-zinc-800/50
+                  text-zinc-600 dark:text-zinc-400
+                `}
+              >
+                <HelpCircle size={COLLAPSED_ICON_SIZE} />
+                {!collapsed && <span>Take Tour</span>}
+              </button>
+            </Tooltip>
+          )}
+
           <Tooltip content={collapsed ? "Appearance" : ""} showArrow placement="right">
             <button 
               onClick={toggleTheme}

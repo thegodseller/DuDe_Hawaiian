@@ -3,17 +3,19 @@ import { AgenticAPITool } from "../../../lib/types/agents_api_types";
 import { WorkflowPrompt } from "../../../lib/types/workflow_types";
 import { WorkflowAgent } from "../../../lib/types/workflow_types";
 import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@heroui/react";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Wrench, PenLine } from "lucide-react";
 import { Panel } from "@/components/common/panel-common";
 import { Button } from "@/components/ui/button";
 import { clsx } from "clsx";
 
-const MAX_SECTION_HEIGHTS = {
-    AGENTS: '20rem',
-    TOOLS: '15rem',
-    PROMPTS: '15rem',
+const SECTION_HEIGHT_PERCENTAGES = {
+    AGENTS: 40,    // 50% of available height
+    TOOLS: 30,     // 30% of available height
+    PROMPTS: 30,   // 20% of available height
 } as const;
+
+const GAP_SIZE = 24; // 6 units * 4px (tailwind's default spacing unit)
 
 interface EntityListProps {
     agents: z.infer<typeof WorkflowAgent>[];
@@ -124,8 +126,22 @@ export function EntityList({
     triggerMcpImport,
 }: EntityListProps) {
     const selectedRef = useRef<HTMLButtonElement | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [containerHeight, setContainerHeight] = useState<number>(0);
     const headerClasses = "font-semibold text-zinc-700 dark:text-zinc-300 flex items-center justify-between w-full";
     const buttonClasses = "text-sm px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:hover:bg-indigo-900 dark:text-indigo-400";
+
+    useEffect(() => {
+        const updateHeight = () => {
+            if (containerRef.current) {
+                setContainerHeight(containerRef.current.clientHeight);
+            }
+        };
+
+        updateHeight();
+        window.addEventListener('resize', updateHeight);
+        return () => window.removeEventListener('resize', updateHeight);
+    }, []);
 
     useEffect(() => {
         if (selectedEntity && selectedRef.current) {
@@ -133,11 +149,19 @@ export function EntityList({
         }
     }, [selectedEntity]);
 
+    const calculateSectionHeight = (percentage: number) => {
+        // Total gaps = 2 gaps between 3 sections
+        const totalGaps = GAP_SIZE * 2;
+        const availableHeight = containerHeight - totalGaps;
+        return `${(availableHeight * percentage) / 100}px`;
+    };
+
     return (
-        <div className="flex flex-col gap-6 h-full overflow-hidden">
-            <div className="flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+        <div ref={containerRef} className="flex flex-col h-full">
+            <div className="flex flex-col gap-6 h-full flex-1">
                 {/* Agents Panel */}
                 <Panel variant="projects"
+                    tourTarget="entity-agents"
                     title={
                         <div className={headerClasses}>
                             <div className="flex items-center gap-2">
@@ -156,9 +180,10 @@ export function EntityList({
                             </Button>
                         </div>
                     }
-                    maxHeight={MAX_SECTION_HEIGHTS.AGENTS}
+                    maxHeight={calculateSectionHeight(SECTION_HEIGHT_PERCENTAGES.AGENTS)}
+                    className="overflow-hidden flex-[50]"
                 >
-                    <div className="flex flex-col">
+                    <div className="flex flex-col h-full overflow-y-auto">
                         {agents.length > 0 ? (
                             <div className="space-y-1 pb-2">
                                 {agents.map((agent, index) => (
@@ -190,6 +215,7 @@ export function EntityList({
 
                 {/* Tools Panel */}
                 <Panel variant="projects"
+                    tourTarget="entity-tools"
                     title={
                         <div className={headerClasses}>
                             <div className="flex items-center gap-2">
@@ -210,7 +236,13 @@ export function EntityList({
                                 <Button
                                     variant="secondary"
                                     size="sm"
-                                    onClick={() => onAddTool({})}
+                                    onClick={() => onAddTool({
+                                        mockTool: true,
+                                        parameters: {
+                                            type: 'object',
+                                            properties: {}
+                                        }
+                                    })}
                                     className={`group ${buttonClasses}`}
                                     showHoverContent={true}
                                     hoverContent="Add Tool"
@@ -220,9 +252,10 @@ export function EntityList({
                             </div>
                         </div>
                     }
-                    maxHeight={MAX_SECTION_HEIGHTS.TOOLS}
+                    maxHeight={calculateSectionHeight(SECTION_HEIGHT_PERCENTAGES.TOOLS)}
+                    className="overflow-hidden flex-[30]"
                 >
-                    <div className="flex flex-col">
+                    <div className="flex flex-col h-full overflow-y-auto">
                         {tools.length > 0 ? (
                             <div className="space-y-1 pb-2">
                                 {tools.map((tool, index) => (
@@ -250,6 +283,7 @@ export function EntityList({
 
                 {/* Prompts Panel */}
                 <Panel variant="projects"
+                    tourTarget="entity-prompts"
                     title={
                         <div className={headerClasses}>
                             <div className="flex items-center gap-2">
@@ -268,9 +302,10 @@ export function EntityList({
                             </Button>
                         </div>
                     }
-                    maxHeight={MAX_SECTION_HEIGHTS.PROMPTS}
+                    maxHeight={calculateSectionHeight(SECTION_HEIGHT_PERCENTAGES.PROMPTS)}
+                    className="overflow-hidden flex-[20]"
                 >
-                    <div className="flex flex-col">
+                    <div className="flex flex-col h-full overflow-y-auto">
                         {prompts.length > 0 ? (
                             <div className="space-y-1 pb-2">
                                 {prompts.map((prompt, index) => (
