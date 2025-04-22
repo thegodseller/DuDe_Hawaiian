@@ -262,6 +262,8 @@ export function Messages({
                 role: 'assistant',
                 content: streamingResponse
             }]);
+        } else {
+            setDisplayMessages(messages);
         }
     }, [messages, loadingResponse, streamingResponse]);
 
