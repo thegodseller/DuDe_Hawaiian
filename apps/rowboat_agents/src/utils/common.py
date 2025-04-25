@@ -7,6 +7,7 @@ import time
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from src.utils.client import completions_client
 load_dotenv()
 
 def setup_logger(name, log_file='./run.log', level=logging.INFO, log_to_file=False):
@@ -53,31 +54,28 @@ def get_api_key(key_name):
         raise ValueError(f"{key_name} not found. Did you set it in the .env file?")
     return api_key
 
-openai_client = OpenAI(
-    api_key=get_api_key("OPENAI_API_KEY")
-)
-
 def generate_gpt4o_output_from_multi_turn_conv(messages, output_type='json', model="gpt-4o"):
     return generate_openai_output(messages, output_type, model)
 
 def generate_openai_output(messages, output_type='not_json', model="gpt-4o", return_completion=False):
+    print(f"In generate_openai_output, using client: {completions_client} and model: {model}")
     try:
         if output_type == 'json':
-            chat_completion = openai_client.chat.completions.create(
-                messages=messages,
+            chat_completion = completions_client.chat.completions.create(
                 model=model,
+                messages=messages,
                 response_format={"type": "json_object"}
             )
         else:
-            chat_completion = openai_client.chat.completions.create(
-                messages=messages,
+            chat_completion = completions_client.chat.completions.create(
                 model=model,
+                messages=messages,
             )
         
         if return_completion:
             return chat_completion
         return chat_completion.choices[0].message.content
-            
+
     except Exception as e:
         logger.error(e)
         return None

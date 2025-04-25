@@ -20,6 +20,8 @@ import { Button as CustomButton } from "@/components/ui/button";
 import clsx from "clsx";
 import { EditableField } from "@/app/lib/components/editable-field";
 import { USE_TRANSFER_CONTROL_OPTIONS } from "@/app/lib/feature_flags";
+import { Input } from "@/components/ui/input";
+import { Info } from "lucide-react";
 
 // Common section header styles
 const sectionHeaderStyles = "text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400";
@@ -405,20 +407,33 @@ export function AgentConfig({
                 )}
 
                 <div className="space-y-4">
-                    <label className={sectionHeaderStyles}>
-                        Model
-                    </label>
-                    <CustomDropdown
+                    <div className="flex items-center">
+                        <label className={sectionHeaderStyles}>
+                            Model
+                        </label>
+                        <div className="relative ml-2 group">
+                            <Info 
+                                className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors"
+                            />
+                            <div className="absolute bottom-full left-0 mb-2 p-3 w-80 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs invisible group-hover:visible z-50">
+                                <div className="mb-1 font-medium">Model Configuration</div>
+                                Set this according to the PROVIDER_BASE_URL you have set in your .env file (such as your LiteLLM, gateway). 
+                                <br />
+                                <br />
+                                E.g. LiteLLM&apos;s naming convention is like: &apos;claude-3-7-sonnet-latest&apos;, but you may have set alias model names or might be using a different provider like openrouter, openai etc. 
+                                <br />
+                                <br />
+                                By default, the model is set to gpt-4.1, assuming your OpenAI API key is set in PROVIDER_API_KEY and PROVIDER_BASE_URL is not set.
+                                <div className="absolute h-2 w-2 bg-white dark:bg-gray-800 transform rotate-45 -bottom-1 left-4 border-r border-b border-gray-200 dark:border-gray-700"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <Input
                         value={agent.model}
-                        options={WorkflowAgent.shape.model.options.map((model) => ({
-                            key: model.value,
-                            label: model.value
-                        }))}
-                        onChange={(value) => handleUpdate({
+                        onChange={(e) => handleUpdate({
                             ...agent,
-                            model: value as z.infer<typeof WorkflowAgent>['model']
+                            model: e.target.value as z.infer<typeof WorkflowAgent>['model']
                         })}
-                        className="w-40"
                     />
                 </div>
 

@@ -3,6 +3,7 @@ import json
 import aiohttp
 import jwt
 import hashlib
+from agents import OpenAIChatCompletionsModel
 
 # Import helper functions needed for get_agents
 from .helpers.access import (
@@ -31,6 +32,8 @@ MONGO_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/rowboat").s
 mongo_client = MongoClient(MONGO_URI)
 db = mongo_client["rowboat"]
 
+from src.utils.client import client, PROVIDER_DEFAULT_MODEL
+
 class NewResponse(BaseModel):
     messages: List[Dict]
     agent: Optional[Any] = None
@@ -47,7 +50,9 @@ async def mock_tool(tool_name: str, args: str, description: str, mock_instructio
         ]
 
         print(f"Generating simulated response for tool: {tool_name}")
-        response_content = generate_openai_output(messages, output_type='text', model="gpt-4o")
+        response_content = None
+        response_content = generate_openai_output(messages, output_type='text', model=PROVIDER_DEFAULT_MODEL)
+        print("Custom provider client not found, using default model: gpt-4o")
         return response_content
     except Exception as e:
         logger.error(f"Error in mock_tool: {str(e)}")
@@ -173,8 +178,6 @@ def get_rag_tool(config: dict, complete_request: dict) -> FunctionTool:
     else:
         return None
 
-
-
 def get_agents(agent_configs, tool_configs, complete_request):
     """
     Creates and initializes Agent objects based on their configurations and connections.
@@ -246,12 +249,15 @@ def get_agents(agent_configs, tool_configs, complete_request):
         # add the name and description to the agent instructions
         agent_instructions = f"## Your Name\n{agent_config['name']}\n\n## Description\n{agent_config['description']}\n\n## Instructions\n{agent_config['instructions']}"
         try:
+            model_name = agent_config["model"] if agent_config["model"] else PROVIDER_DEFAULT_MODEL
+            print(f"Using model: {model_name}")
+            model=OpenAIChatCompletionsModel(model=model_name, openai_client=client) if client else agent_config["model"]
             new_agent = NewAgent(
                 name=agent_config["name"],
                 instructions=agent_instructions,
                 handoff_description=agent_config["description"],
                 tools=new_tools,
-                model=agent_config["model"],
+                model = model,
                 model_settings=ModelSettings(temperature=0.0)
             )
 

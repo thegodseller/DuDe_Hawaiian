@@ -4,9 +4,8 @@ from pydantic import BaseModel, ValidationError
 from typing import List, Dict, Any, Literal
 import json
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
-
-openai_client = OpenAI()
-MODEL_NAME = "gpt-4.1"  # OpenAI model name
+from client import PROVIDER_DEFAULT_MODEL
+from client import completions_client
 
 class UserMessage(BaseModel):
     role: Literal["user"]
@@ -75,8 +74,8 @@ User: {last_message.content}
         message.model_dump() for message in messages
     ]
 
-    response = openai_client.chat.completions.create(
-        model=MODEL_NAME,
+    response = completions_client.chat.completions.create(
+        model=PROVIDER_DEFAULT_MODEL,
         messages=updated_msgs,
         temperature=0.0,
         response_format={"type": "json_object"}

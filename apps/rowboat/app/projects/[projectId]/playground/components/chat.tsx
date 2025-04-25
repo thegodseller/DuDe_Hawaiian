@@ -202,6 +202,19 @@ export function Chat({
                 setLoadingAssistantResponse(false);
             });
 
+            eventSource.addEventListener('stream_error', (event) => {
+                if (eventSource) {
+                    eventSource.close();
+                }
+
+                console.error('SSE Error:', event);
+                if (!ignore) {
+                    setLoadingAssistantResponse(false);
+                    setFetchResponseError('Error: ' + JSON.parse(event.data).error);
+                    setOptimisticMessages(messages);
+                }
+            });
+
             eventSource.onerror = (error) => {
                 console.error('SSE Error:', error);
                 if (!ignore) {
