@@ -13,6 +13,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   Moon,
+  Sun,
   HelpCircle
 } from "lucide-react";
 import { getProjectConfig } from "@/app/actions/project_actions";
@@ -213,7 +214,7 @@ export default function Sidebar({ projectId, useRag, useAuth, collapsed = false,
                 text-zinc-600 dark:text-zinc-400
               `}
             >
-              <Moon size={COLLAPSED_ICON_SIZE} />
+              { theme == "light" ? <Moon size={COLLAPSED_ICON_SIZE} /> : <Sun size={COLLAPSED_ICON_SIZE} /> }
               {!collapsed && <span>Appearance</span>}
             </button>
           </Tooltip>
