@@ -75,7 +75,7 @@ export function Chat({
 
     // collect published tool call results
     const toolCallResults: Record<string, z.infer<typeof apiV1.ToolMessage>> = {};
-    messages
+    optimisticMessages
         .filter((message) => message.role == 'tool')
         .forEach((message) => {
             toolCallResults[message.tool_call_id] = message;
