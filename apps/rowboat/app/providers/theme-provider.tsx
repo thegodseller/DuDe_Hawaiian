@@ -15,18 +15,21 @@ type ThemeProviderState = {
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undefined)
-const root = window.document.documentElement
 
 export function ThemeProvider({
   children,
   defaultTheme = 'light',
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const storedTheme = localStorage.getItem("theme")
-    return storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : defaultTheme
-  })
-
+  const [theme, setTheme] = useState<Theme>(defaultTheme)
+  
   useEffect(() => {
+    const root = document.documentElement
+    const storedTheme = localStorage.getItem("theme")
+    
+    if (storedTheme === 'dark' || storedTheme === 'light') {
+      setTheme(storedTheme)
+    }
+    
     root.classList.remove('light', 'dark')
     root.classList.add(theme)
   }, [theme])
@@ -34,7 +37,9 @@ export function ThemeProvider({
   const toggleTheme = () => {
     setTheme((prevTheme) => {
       const newTheme = prevTheme === 'light' ? 'dark' : 'light'
-      localStorage.setItem("theme", newTheme)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("theme", newTheme)
+      }
       return newTheme
     })
   }
