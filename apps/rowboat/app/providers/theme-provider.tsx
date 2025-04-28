@@ -21,15 +21,27 @@ export function ThemeProvider({
   defaultTheme = 'light',
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme)
-
+  
   useEffect(() => {
-    const root = window.document.documentElement
+    const root = document.documentElement
+    const storedTheme = localStorage.getItem("theme")
+    
+    if (storedTheme === 'dark' || storedTheme === 'light') {
+      setTheme(storedTheme)
+    }
+    
     root.classList.remove('light', 'dark')
     root.classList.add(theme)
   }, [theme])
 
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light')
+    setTheme((prevTheme) => {
+      const newTheme = prevTheme === 'light' ? 'dark' : 'light'
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("theme", newTheme)
+      }
+      return newTheme
+    })
   }
 
   return (
@@ -45,4 +57,4 @@ export function useTheme() {
     throw new Error('useTheme must be used within a ThemeProvider')
   }
   return context
-} 
+}
