@@ -70,6 +70,7 @@ services:
       - PROVIDER_BASE_URL=${PROVIDER_BASE_URL}
       - PROVIDER_API_KEY=${PROVIDER_API_KEY}
       - PROVIDER_DEFAULT_MODEL=${PROVIDER_DEFAULT_MODEL}
+      - PROVIDER_COPILOT_MODEL=${PROVIDER_COPILOT_MODEL}
     restart: unless-stopped
 
   # tools_webhook:
@@ -157,7 +158,6 @@ services:
       - MONGODB_CONNECTION_STRING=mongodb://mongo:27017/rowboat
       - QDRANT_URL=${QDRANT_URL}
       - QDRANT_API_KEY=${QDRANT_API_KEY}
-      - REDIS_URL=redis://redis:6379
     restart: unless-stopped
 
   # chat_widget:

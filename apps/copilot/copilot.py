@@ -4,7 +4,7 @@ from pydantic import BaseModel, ValidationError
 from typing import List, Dict, Any, Literal
 import json
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
-from client import PROVIDER_DEFAULT_MODEL
+from client import PROVIDER_COPILOT_MODEL
 from client import completions_client
 
 class UserMessage(BaseModel):
@@ -75,7 +75,7 @@ User: {last_message.content}
     ]
 
     response = completions_client.chat.completions.create(
-        model=PROVIDER_DEFAULT_MODEL,
+        model=PROVIDER_COPILOT_MODEL,
         messages=updated_msgs,
         temperature=0.0,
         response_format={"type": "json_object"}

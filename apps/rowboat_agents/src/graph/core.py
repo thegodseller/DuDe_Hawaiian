@@ -49,15 +49,7 @@ def set_sys_message(messages):
     """
     If the system message is empty, set it to the default message: "You are a helplful assistant."
     """
-    if not any(msg.get("role") == "system" for msg in messages):
-        messages.insert(0, {
-            "role": "system",
-            "content": "You are a helpful assistant."
-        })
-        print("Inserted system message: ", messages[0])
-        logger.info("Inserted system message: ", messages[0])
-
-    elif messages[0].get("role") == "system" and messages[0].get("content") == "":
+    if messages[0].get("role") == "system" and messages[0].get("content") == "":
         messages[0]["content"] = "You are a helpful assistant."
         print("Updated system message: ", messages[0])
         logger.info("Updated system message: ", messages[0])

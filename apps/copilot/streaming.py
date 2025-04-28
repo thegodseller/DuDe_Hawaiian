@@ -4,7 +4,7 @@ from pydantic import BaseModel, ValidationError
 from typing import List, Dict, Any, Literal
 import json
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
-from client import PROVIDER_DEFAULT_MODEL
+from client import PROVIDER_COPILOT_MODEL, PROVIDER_DEFAULT_MODEL
 from client import completions_client
 
 class UserMessage(BaseModel):
@@ -71,6 +71,9 @@ def get_streaming_response(
     # add the workflow schema to the system prompt
     sys_prompt = streaming_instructions.replace("{workflow_schema}", workflow_schema)
 
+    # add the agent model to the system prompt
+    sys_prompt = sys_prompt.replace("{agent_model}", PROVIDER_DEFAULT_MODEL)
+
     # add the current workflow config to the last user message
     last_message = messages[-1]
     last_message.content = f"""
@@ -90,7 +93,7 @@ User: {last_message.content}
     ]
 
     return completions_client.chat.completions.create(
-        model=PROVIDER_DEFAULT_MODEL,
+        model=PROVIDER_COPILOT_MODEL,
         messages=updated_msgs,
         temperature=0.0,
         stream=True

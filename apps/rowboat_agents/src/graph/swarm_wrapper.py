@@ -52,7 +52,6 @@ async def mock_tool(tool_name: str, args: str, description: str, mock_instructio
         print(f"Generating simulated response for tool: {tool_name}")
         response_content = None
         response_content = generate_openai_output(messages, output_type='text', model=PROVIDER_DEFAULT_MODEL)
-        print("Custom provider client not found, using default model: gpt-4o")
         return response_content
     except Exception as e:
         logger.error(f"Error in mock_tool: {str(e)}")

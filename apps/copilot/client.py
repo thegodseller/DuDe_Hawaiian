@@ -4,11 +4,21 @@ import dotenv
 dotenv.load_dotenv()
 
 PROVIDER_BASE_URL = os.getenv('PROVIDER_BASE_URL', '')
-PROVIDER_API_KEY = os.getenv('PROVIDER_API_KEY', os.getenv('OPENAI_API_KEY', ''))
-PROVIDER_DEFAULT_MODEL = os.getenv('PROVIDER_DEFAULT_MODEL', 'gpt-4.1')
+PROVIDER_API_KEY = os.getenv('PROVIDER_API_KEY')
+PROVIDER_DEFAULT_MODEL = os.getenv('PROVIDER_DEFAULT_MODEL')
+PROVIDER_COPILOT_MODEL = os.getenv('PROVIDER_COPILOT_MODEL')
+
+if not PROVIDER_COPILOT_MODEL:
+    PROVIDER_COPILOT_MODEL = 'gpt-4.1'
 
 if not PROVIDER_API_KEY:
-    raise ValueError("No LLM Provider API key found")
+    PROVIDER_API_KEY = os.getenv('OPENAI_API_KEY')
+
+if not PROVIDER_API_KEY:
+    raise(ValueError("No LLM Provider API key found"))
+
+if not PROVIDER_DEFAULT_MODEL:
+    PROVIDER_DEFAULT_MODEL = 'gpt-4.1'
 
 completions_client = None
 if PROVIDER_BASE_URL:
