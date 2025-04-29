@@ -15,9 +15,11 @@ import { getProjectConfig } from "@/app/actions/project_actions";
 export function App({
     projectId,
     useRag,
+    defaultModel,
 }: {
     projectId: string;
     useRag: boolean;
+    defaultModel: string;
 }) {
     const [selectorKey, setSelectorKey] = useState(0);
     const [workflow, setWorkflow] = useState<WithStringId<z.infer<typeof Workflow>> | null>(null);
@@ -118,6 +120,7 @@ export function App({
             useRag={useRag}
             mcpServerUrls={mcpServerUrls}
             toolWebhookUrl={toolWebhookUrl}
+            defaultModel={defaultModel}
         />}
     </>
 }

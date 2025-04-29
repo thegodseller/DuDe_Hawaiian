@@ -4,9 +4,8 @@ from pydantic import BaseModel, ValidationError
 from typing import List, Dict, Any, Literal
 import json
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
-
-openai_client = OpenAI()
-MODEL_NAME = "gpt-4.1"  # OpenAI model name
+from client import PROVIDER_COPILOT_MODEL, PROVIDER_DEFAULT_MODEL
+from client import completions_client
 
 class UserMessage(BaseModel):
     role: Literal["user"]
@@ -72,6 +71,9 @@ def get_streaming_response(
     # add the workflow schema to the system prompt
     sys_prompt = streaming_instructions.replace("{workflow_schema}", workflow_schema)
 
+    # add the agent model to the system prompt
+    sys_prompt = sys_prompt.replace("{agent_model}", PROVIDER_DEFAULT_MODEL)
+
     # add the current workflow config to the last user message
     last_message = messages[-1]
     last_message.content = f"""
@@ -90,8 +92,8 @@ User: {last_message.content}
         message.model_dump() for message in messages
     ]
 
-    return openai_client.chat.completions.create(
-        model=MODEL_NAME,
+    return completions_client.chat.completions.create(
+        model=PROVIDER_COPILOT_MODEL,
         messages=updated_msgs,
         temperature=0.0,
         stream=True

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, Response, stream_with_context
 from pydantic import BaseModel, ValidationError
 from typing import List
-from copilot import UserMessage, AssistantMessage, get_response, openai_client
+from copilot import UserMessage, AssistantMessage, get_response
 from streaming import get_streaming_response
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
 import os
