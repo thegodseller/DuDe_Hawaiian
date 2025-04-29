@@ -37,6 +37,7 @@ services:
       - MAX_QUERIES_PER_MINUTE=${MAX_QUERIES_PER_MINUTE}
       - MAX_PROJECTS_PER_USER=${MAX_PROJECTS_PER_USER}
       - VOICE_API_URL=${VOICE_API_URL}
+      - PROVIDER_DEFAULT_MODEL=${PROVIDER_DEFAULT_MODEL}
     restart: unless-stopped
 
   rowboat_agents:
@@ -52,6 +53,9 @@ services:
       - MONGODB_URI=mongodb://mongo:27017/rowboat
       - QDRANT_URL=${QDRANT_URL}
       - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - PROVIDER_BASE_URL=${PROVIDER_BASE_URL}
+      - PROVIDER_API_KEY=${PROVIDER_API_KEY}
+      - PROVIDER_DEFAULT_MODEL=${PROVIDER_DEFAULT_MODEL}
     restart: unless-stopped
 
   copilot:
@@ -63,6 +67,10 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - API_KEY=${COPILOT_API_KEY}
+      - PROVIDER_BASE_URL=${PROVIDER_BASE_URL}
+      - PROVIDER_API_KEY=${PROVIDER_API_KEY}
+      - PROVIDER_DEFAULT_MODEL=${PROVIDER_DEFAULT_MODEL}
+      - PROVIDER_COPILOT_MODEL=${PROVIDER_COPILOT_MODEL}
     restart: unless-stopped
 
   # tools_webhook:

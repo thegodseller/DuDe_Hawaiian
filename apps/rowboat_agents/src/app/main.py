@@ -91,6 +91,7 @@ async def chat():
             start_agent_name=data.get("startAgent", ""),
             agent_configs=data.get("agents", []),
             tool_configs=data.get("tools", []),
+            prompt_configs=data.get("prompts", []),
             start_turn_with_start_agent=config.get("start_turn_with_start_agent", False),
             state=data.get("state", {}),
             additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL],
@@ -157,6 +158,7 @@ async def chat_stream():
                 start_agent_name=request_data.get("startAgent", ""),
                 agent_configs=request_data.get("agents", []),
                 tool_configs=request_data.get("tools", []),
+                prompt_configs=request_data.get("prompts", []),
                 start_turn_with_start_agent=config.get("start_turn_with_start_agent", False),
                 state=request_data.get("state", {}),
                 additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL],
@@ -168,6 +170,9 @@ async def chat_stream():
                 elif event_type == 'done':
                     print("Yielding done:")
                     yield format_sse(event_data, "done")
+                elif event_type == 'error':
+                    print("Yielding error:")
+                    yield format_sse(event_data, "stream_error")
 
         except Exception as e:
             logger.error(f"Streaming error: {str(e)}")

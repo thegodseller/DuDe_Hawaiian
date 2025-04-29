@@ -1,6 +1,8 @@
 import { WorkflowTemplate } from "./types/workflow_types";
 import { z } from 'zod';
 
+const DEFAULT_MODEL = process.env.PROVIDER_DEFAULT_MODEL || "gpt-4.1";
+
 export const templates: { [key: string]: z.infer<typeof WorkflowTemplate> } = {
     // Default template
     'default': {
@@ -37,7 +39,7 @@ You are an helpful customer support assistant
 
 ❌ Don'ts:
 - don't ask user any other detail than email`,
-                model: "gpt-4o",
+                model: DEFAULT_MODEL,
                 toggleAble: true,
                 ragReturnType: "chunks",
                 ragK: 3,

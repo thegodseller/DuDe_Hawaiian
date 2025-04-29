@@ -3,6 +3,7 @@ import { App } from "./app";
 import { USE_RAG } from "@/app/lib/feature_flags";
 import { projectsCollection } from "@/app/lib/mongodb";
 import { notFound } from "next/navigation";
+const DEFAULT_MODEL = process.env.PROVIDER_DEFAULT_MODEL || "gpt-4.1";
 
 export const metadata: Metadata = {
     title: "Workflow"
@@ -25,6 +26,7 @@ export default async function Page({
         <App
             projectId={params.projectId}
             useRag={USE_RAG}
+            defaultModel={DEFAULT_MODEL}
         />
     );
 }

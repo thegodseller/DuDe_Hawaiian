@@ -75,7 +75,7 @@ export function Chat({
 
     // collect published tool call results
     const toolCallResults: Record<string, z.infer<typeof apiV1.ToolMessage>> = {};
-    messages
+    optimisticMessages
         .filter((message) => message.role == 'tool')
         .forEach((message) => {
             toolCallResults[message.tool_call_id] = message;
@@ -200,6 +200,19 @@ export function Chat({
                 
                 setMessages([...messages, ...msgs]);
                 setLoadingAssistantResponse(false);
+            });
+
+            eventSource.addEventListener('stream_error', (event) => {
+                if (eventSource) {
+                    eventSource.close();
+                }
+
+                console.error('SSE Error:', event);
+                if (!ignore) {
+                    setLoadingAssistantResponse(false);
+                    setFetchResponseError('Error: ' + JSON.parse(event.data).error);
+                    setOptimisticMessages(messages);
+                }
             });
 
             eventSource.onerror = (error) => {

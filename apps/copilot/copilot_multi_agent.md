@@ -153,7 +153,7 @@ You are responsible for providing delivery information to the user.
 - Do not leave the user with partial information. Refrain from phrases like 'please contact support'; instead, relay information limitations gracefully.
 '''
 
-use GPT-4o as the default model for new agents.
+use {agent_model} as the default model for new agents.
 
 
 ## Section 9: General Guidelines

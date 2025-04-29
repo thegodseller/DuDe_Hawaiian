@@ -263,7 +263,7 @@ function reducer(state: State, action: Action): State {
                                 description: "",
                                 disabled: false,
                                 instructions: "",
-                                model: "gpt-4o",
+                                model: "",
                                 locked: false,
                                 toggleAble: true,
                                 ragReturnType: "chunks",
@@ -552,7 +552,6 @@ function reducer(state: State, action: Action): State {
                 draft.currentIndex++;
                 draft.present = nextState;
             });
-
         }
     }
 
@@ -568,6 +567,7 @@ export function WorkflowEditor({
     useRag,
     mcpServerUrls,
     toolWebhookUrl,
+    defaultModel,
 }: {
     dataSources: WithStringId<z.infer<typeof DataSource>>[];
     workflow: WithStringId<z.infer<typeof Workflow>>;
@@ -577,6 +577,7 @@ export function WorkflowEditor({
     useRag: boolean;
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
     toolWebhookUrl: string;
+    defaultModel: string;
 }) {
     const [state, dispatch] = useReducer<Reducer<State, Action>>(reducer, {
         patches: [],
@@ -659,7 +660,11 @@ export function WorkflowEditor({
     }
 
     function handleAddAgent(agent: Partial<z.infer<typeof WorkflowAgent>> = {}) {
-        dispatch({ type: "add_agent", agent });
+        const agentWithModel = {
+            ...agent,
+            model: agent.model || defaultModel || "gpt-4o"
+        };
+        dispatch({ type: "add_agent", agent: agentWithModel });
     }
 
     function handleAddTool(tool: Partial<z.infer<typeof WorkflowTool>> = {}) {
