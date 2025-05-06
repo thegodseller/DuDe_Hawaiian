@@ -212,6 +212,7 @@ def get_agents(agent_configs, tool_configs, complete_request):
         if rag_tool:
             new_tools.append(rag_tool)
             print(f"Added rag tool to agent {agent_config['name']}")
+            agent_config = add_rag_instructions_to_agent(agent_config, rag_tool.name)
 
         for tool_name in agent_config["tools"]:
 
