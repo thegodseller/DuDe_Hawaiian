@@ -190,8 +190,12 @@ export function EditableField({
                     className="w-full"
                     classNames={{
                         ...commonProps.classNames,
-                        input: "rounded-md py-2",
-                        inputWrapper: "rounded-md border-medium py-1"
+                        input: clsx("rounded-md py-2", {
+                            "border-0 focus:outline-none pl-2": inline
+                        }),
+                        inputWrapper: clsx("rounded-md border-medium py-1", {
+                            "border-0 bg-transparent": inline
+                        })
                     }}
                 />}
             </div>
