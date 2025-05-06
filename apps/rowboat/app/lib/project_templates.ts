@@ -43,5 +43,5 @@ export const starting_copilot_prompts: { [key: string]: string } = {
 
     "Scheduling Assistant": "Create an appointment scheduling assistant that helps users schedule, modify, and manage their appointments efficiently. Help with finding available time slots, sending reminders, rescheduling appointments, and answering questions about scheduling policies and procedures. Maintain a professional and organized approach.",
 
-    "Banking Assistant": "Create a banking assistant focused on helping customers with their banking needs. Help with account inquiries, banking products and services, transaction information, and general banking guidance. Prioritize accuracy and security while providing clear and helpful responses to banking-related questions."
+    "Blog Assistant": "Create a blog writer assistant with agents for researching, compiling, outlining and writing the blog. The research agent will research the topic and compile the information. The outline agent will write bullet points for the blog post. The writing agent will expand upon the outline and write the blog post. The blog post should be 1000 words or more.",
 }
