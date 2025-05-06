@@ -92,6 +92,7 @@ export function convertWorkflowToAgenticAPI(workflow: z.infer<typeof Workflow>):
                     ragDataSources: agent.ragDataSources,
                     ragK: agent.ragK,
                     ragReturnType: agent.ragReturnType,
+                    outputVisibility: agent.outputVisibility,
                     tools: entities.filter(e => e.type == 'tool').map(e => e.name),
                     prompts: entities.filter(e => e.type == 'prompt').map(e => e.name),
                     connectedAgents: entities.filter(e => e.type === 'agent').map(e => e.name),

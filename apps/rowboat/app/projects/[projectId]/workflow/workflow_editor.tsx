@@ -269,6 +269,7 @@ function reducer(state: State, action: Action): State {
                                 ragReturnType: "chunks",
                                 ragK: 3,
                                 controlType: "retain",
+                                outputVisibility: "user_facing",
                                 ...action.agent
                             });
                             draft.selection = {

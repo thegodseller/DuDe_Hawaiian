@@ -3,7 +3,7 @@ import json
 import aiohttp
 import jwt
 import hashlib
-from agents import OpenAIChatCompletionsModel
+from agents import OpenAIChatCompletionsModel, trace, add_trace_processor
 
 # Import helper functions needed for get_agents
 from .helpers.access import (
@@ -15,10 +15,10 @@ from .helpers.instructions import (
 )
 
 from agents import Agent as NewAgent, Runner, FunctionTool, RunContextWrapper, ModelSettings, WebSearchTool
+from .tracing import AgentTurnTraceProcessor
 # Add import for OpenAI functionality
-from src.utils.common import common_logger as logger, generate_openai_output
+from src.utils.common import generate_openai_output
 from typing import Any
-from dataclasses import asdict
 import asyncio
 from mcp import ClientSession
 from mcp.client.sse import sse_client
@@ -54,7 +54,7 @@ async def mock_tool(tool_name: str, args: str, description: str, mock_instructio
         response_content = generate_openai_output(messages, output_type='text', model=PROVIDER_DEFAULT_MODEL)
         return response_content
     except Exception as e:
-        logger.error(f"Error in mock_tool: {str(e)}")
+        print(f"Error in mock_tool: {str(e)}")
         return f"Error: {str(e)}"
 
 async def call_webhook(tool_name: str, args: str, webhook_url: str, signing_secret: str) -> str:
@@ -91,7 +91,7 @@ async def call_webhook(tool_name: str, args: str, webhook_url: str, signing_secr
                     print(f"Webhook error: {error_msg}")
                     return f"Error: {error_msg}"
     except Exception as e:
-        logger.error(f"Exception in call_webhook: {str(e)}")
+        print(f"Exception in call_webhook: {str(e)}")
         return f"Error: Failed to call webhook - {str(e)}"
 
 async def call_mcp(tool_name: str, args: str, mcp_server_url: str) -> str:
@@ -106,7 +106,7 @@ async def call_mcp(tool_name: str, args: str, mcp_server_url: str) -> str:
 
         return json_output
     except Exception as e:
-        logger.error(f"Error in call_mcp: {str(e)}")
+        print(f"Error in call_mcp: {str(e)}")
         return f"Error: {str(e)}"
 
 async def catch_all(ctx: RunContextWrapper[Any], args: str, tool_name: str, tool_config: dict, complete_request: dict) -> str:
@@ -143,7 +143,7 @@ async def catch_all(ctx: RunContextWrapper[Any], args: str, tool_name: str, tool
             response_content = await call_webhook(tool_name, args, webhook_url, signing_secret)
         return response_content
     except Exception as e:
-        logger.error(f"Error in catch_all: {str(e)}")
+        print(f"Error in catch_all: {str(e)}")
         return f"Error: {str(e)}"
 
 
@@ -191,7 +191,6 @@ def get_agents(agent_configs, tool_configs, complete_request):
     new_agent_name_to_index = {}
     # Create Agent objects from config
     for agent_config in agent_configs:
-        logger.debug(f"Processing config for agent: {agent_config['name']}")
         print("="*100)
         print(f"Processing config for agent: {agent_config['name']}")
 
@@ -204,14 +203,12 @@ def get_agents(agent_configs, tool_configs, complete_request):
         # Prepare tool lists for this agent
         external_tools = []
 
-        logger.debug(f"Agent {agent_config['name']} has {len(agent_config['tools'])} configured tools")
         print(f"Agent {agent_config['name']} has {len(agent_config['tools'])} configured tools")
 
         new_tools = []
         rag_tool = get_rag_tool(agent_config, complete_request)
         if rag_tool:
             new_tools.append(rag_tool)
-            logger.debug(f"Added rag tool to agent {agent_config['name']}")
             print(f"Added rag tool to agent {agent_config['name']}")
 
         for tool_name in agent_config["tools"]:
@@ -235,14 +232,11 @@ def get_agents(agent_configs, tool_configs, complete_request):
                         catch_all(ctx, args, _tool_name, _tool_config, _complete_request)
                     )
                 new_tools.append(tool)
-                logger.debug(f"Added tool {tool_name} to agent {agent_config['name']}")
                 print(f"Added tool {tool_name} to agent {agent_config['name']}")
             else:
-                logger.warning(f"Tool {tool_name} not found in tool_configs")
                 print(f"WARNING: Tool {tool_name} not found in tool_configs")
 
         # Create the agent object
-        logger.debug(f"Creating Agent object for {agent_config['name']}")
         print(f"Creating Agent object for {agent_config['name']}")
 
         # add the name and description to the agent instructions
@@ -263,10 +257,8 @@ def get_agents(agent_configs, tool_configs, complete_request):
             new_agent_to_children[agent_config["name"]] = agent_config.get("connectedAgents", [])
             new_agent_name_to_index[agent_config["name"]] = len(new_agents)
             new_agents.append(new_agent)
-            logger.debug(f"Successfully created agent: {agent_config['name']}")
             print(f"Successfully created agent: {agent_config['name']}")
         except Exception as e:
-            logger.error(f"Failed to create agent {agent_config['name']}: {str(e)}")
             print(f"ERROR: Failed to create agent {agent_config['name']}: {str(e)}")
             raise
 
@@ -281,17 +273,20 @@ def get_agents(agent_configs, tool_configs, complete_request):
     print("="*100)
     return new_agents
 
+# Initialize a flag to track if the trace processor is added
+trace_processor_added = False
+
 async def run_streamed(
     agent,
     messages,
     external_tools=None,
-    tokens_used=None
+    tokens_used=None,
+    enable_tracing=False  # Changed default to False
 ):
     """
     Wrapper function for initializing and running the Swarm client in streaming mode.
     """
-    logger.info(f"Initializing Swarm streaming client for agent: {agent.name}")
-    print(f"Initializing Swarm streaming client for agent: {agent.name}")
+    print(f"Initializing streaming client for agent: {agent.name}")
 
     # Initialize default parameters
     if external_tools is None:
@@ -314,14 +309,38 @@ async def run_streamed(
                 "content": str(msg)
             })
 
-    logger.info("Beginning Swarm streaming run")
-    print("Beginning Swarm streaming run")
+    print("Beginning streaming run")
 
     try:
-        # Use the Runner.run_streamed method
+        # Add our custom trace processor only if tracing is enabled
+        global trace_processor_added
+        if enable_tracing and not trace_processor_added:
+            trace_processor = AgentTurnTraceProcessor()
+            add_trace_processor(trace_processor)
+            trace_processor_added = True
+
+        # Create a trace context only if tracing is enabled
+        trace_ctx = None
+        if enable_tracing:
+            trace_ctx = trace(f"Agent turn: {agent.name}")
+            trace_ctx.__enter__()
+        
+        # Get the stream result
         stream_result = Runner.run_streamed(agent, formatted_messages)
+        
+        # Patch the stream_events method to ensure trace context is maintained if tracing is enabled
+        if enable_tracing:
+            original_stream_events = stream_result.stream_events
+            async def wrapped_stream_events():
+                try:
+                    async for event in original_stream_events():
+                        yield event
+                finally:
+                    if trace_ctx:
+                        trace_ctx.__exit__(None, None, None)
+            stream_result.stream_events = wrapped_stream_events
+        
         return stream_result
     except Exception as e:
-        logger.error(f"Error during streaming run: {str(e)}")
         print(f"Error during streaming run: {str(e)}")
         raise

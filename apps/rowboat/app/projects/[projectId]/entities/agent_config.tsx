@@ -185,6 +185,38 @@ export function AgentConfig({
                         />
                     </div>
                 </div>
+                
+                <div className="space-y-4">
+                    <div className="flex items-center">
+                        <label className={sectionHeaderStyles}>
+                            Agent Type
+                        </label>
+                        <div className="relative ml-2 group">
+                            <Info 
+                                className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors"
+                            />
+                            <div className="absolute bottom-full left-0 mb-2 p-3 w-80 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs invisible group-hover:visible z-50">
+                                <div className="mb-1 font-medium">Agent Types</div>
+                                Conversation agents&apos; responses are user-facing.
+                                <br />
+                                <br />
+                                Task agents&apos; responses are internal but available to other agents.
+                                <div className="absolute h-2 w-2 bg-white dark:bg-gray-800 transform rotate-45 -bottom-1 left-4 border-r border-b border-gray-200 dark:border-gray-700"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <CustomDropdown
+                        value={agent.outputVisibility}
+                        options={[
+                            { key: "user_facing", label: "Conversation Agent" },
+                            { key: "internal", label: "Task Agent" }
+                        ]}
+                        onChange={(value) => handleUpdate({
+                            ...agent,
+                            outputVisibility: value as z.infer<typeof WorkflowAgent>['outputVisibility']
+                        })}
+                    />
+                </div>
 
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -456,6 +488,7 @@ export function AgentConfig({
                         />
                     </div>
                 )}
+                
 
                 <PreviewModalProvider>
                     <GenerateInstructionsModal 

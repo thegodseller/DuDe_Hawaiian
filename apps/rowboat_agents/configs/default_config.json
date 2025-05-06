@@ -7,5 +7,7 @@
     "max_messages_per_turn": 20,
     "max_messages_per_error_escalation_turn": 15,
     "escalate_errors": true,
-    "max_overall_turns": 25
+    "max_overall_turns": 25,
+    "max_calls_per_child_agent": 1,
+    "enable_tracing": false
 }
