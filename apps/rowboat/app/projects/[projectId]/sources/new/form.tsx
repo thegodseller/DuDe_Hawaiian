@@ -24,28 +24,34 @@ export function Form({
     const [sourceType, setSourceType] = useState("");
     const router = useRouter();
 
-    const dropdownOptions = [
+    let dropdownOptions = [
         {
             key: "text",
             label: "Text",
             startContent: <DataSourceIcon type="text" />
         },
-        {
-            key: "urls",
-            label: "Scrape URLs",
-            startContent: <DataSourceIcon type="urls" />
-        },
-        {
+    ];
+    if (useRagUploads) {
+        dropdownOptions.push({
             key: "files_local",
             label: "Upload files (Local)",
             startContent: <DataSourceIcon type="files" />
-        },
-        {
+        });
+    }
+    if (useRagS3Uploads) {
+        dropdownOptions.push({
             key: "files_s3",
             label: "Upload files (S3)",
             startContent: <DataSourceIcon type="files" />
-        }
-    ];
+        });
+    }
+    if (useRagScraping) {
+        dropdownOptions.push({
+            key: "urls",
+            label: "Scrape URLs",
+            startContent: <DataSourceIcon type="urls" />
+        });
+    }
 
     async function createUrlsDataSource(formData: FormData) {
         const source = await createDataSource({
@@ -131,11 +137,6 @@ export function Form({
                         value={sourceType}
                         onChange={setSourceType}
                         options={dropdownOptions}
-                        disabledKeys={[
-                            ...(useRagUploads ? [] : ['files_local']),
-                            ...(useRagS3Uploads ? [] : ['files_s3']),
-                            ...(useRagScraping ? [] : ['urls']),
-                        ]}
                     />
 
                     {sourceType === "urls" && <form
