@@ -16,6 +16,10 @@ app = Quart(__name__)
 master_config = read_json_from_file("./configs/default_config.json")
 print("Master config:", master_config)
 
+# Get environment variables with defaults
+MAX_CALLS_PER_CHILD_AGENT = int(os.environ.get('MAX_CALLS_PER_CHILD_AGENT', '1'))
+ENABLE_TRACING = os.environ.get('ENABLE_TRACING', 'false').lower() == 'true'
+
 # filter out agent transfer messages using a function
 def is_agent_transfer_message(msg):
     if (msg.get("role") == "assistant" and
@@ -63,9 +67,6 @@ async def chat():
         request_data = await request.get_json()
         print("Request:", json.dumps(request_data))
 
-        # Add enable_tracing from master_config to request_data
-        request_data["enable_tracing"] = master_config.get("enable_tracing", False)
-
         # filter out agent transfer messages
         input_messages = [msg for msg in request_data["messages"] if not is_agent_transfer_message(msg)]
 
@@ -93,10 +94,11 @@ async def chat():
             tool_configs=data.get("tools", []),
             prompt_configs=data.get("prompts", []),
             start_turn_with_start_agent=master_config.get("start_turn_with_start_agent", False),
-            max_calls_per_child_agent=master_config.get("max_calls_per_child_agent", 1),
+            max_calls_per_child_agent=MAX_CALLS_PER_CHILD_AGENT,
             state=data.get("state", {}),
             additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL],
-            complete_request=data
+            complete_request=data,
+            enable_tracing=ENABLE_TRACING
         ):
             if event_type == 'message':
                 messages.append(event_data)
@@ -135,9 +137,6 @@ async def chat_stream():
     print("Request:", request_data.decode('utf-8'))
     request_data = json.loads(request_data)
 
-    # Add enable_tracing from master_config to request_data
-    request_data["enable_tracing"] = master_config.get("enable_tracing", False)
-
     # filter out agent transfer messages
     input_messages = [msg for msg in request_data["messages"] if not is_agent_transfer_message(msg)]
 
@@ -164,10 +163,11 @@ async def chat_stream():
                 tool_configs=request_data.get("tools", []),
                 prompt_configs=request_data.get("prompts", []),
                 start_turn_with_start_agent=master_config.get("start_turn_with_start_agent", False),
-                max_calls_per_child_agent=master_config.get("max_calls_per_child_agent", 1),
+                max_calls_per_child_agent=MAX_CALLS_PER_CHILD_AGENT,
                 state=request_data.get("state", {}),
                 additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL],
-                complete_request=request_data
+                complete_request=request_data,
+                enable_tracing=ENABLE_TRACING
             ):
                 if event_type == 'message':
                     yield format_sse(event_data, "message")

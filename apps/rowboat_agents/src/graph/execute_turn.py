@@ -281,7 +281,7 @@ async def run_streamed(
     messages,
     external_tools=None,
     tokens_used=None,
-    enable_tracing=False  # Changed default to False
+    enable_tracing=False
 ):
     """
     Wrapper function for initializing and running the Swarm client in streaming mode.
@@ -319,25 +319,26 @@ async def run_streamed(
             add_trace_processor(trace_processor)
             trace_processor_added = True
 
-        # Create a trace context only if tracing is enabled
-        trace_ctx = None
-        if enable_tracing:
-            trace_ctx = trace(f"Agent turn: {agent.name}")
-            trace_ctx.__enter__()
-        
-        # Get the stream result
+        # Get the stream result without trace context first
         stream_result = Runner.run_streamed(agent, formatted_messages)
         
-        # Patch the stream_events method to ensure trace context is maintained if tracing is enabled
+        # If tracing is enabled, wrap the stream_events to handle tracing
         if enable_tracing:
             original_stream_events = stream_result.stream_events
+            
             async def wrapped_stream_events():
-                try:
-                    async for event in original_stream_events():
-                        yield event
-                finally:
-                    if trace_ctx:
-                        trace_ctx.__exit__(None, None, None)
+                # Create trace context inside the async function
+                with trace(f"Agent turn: {agent.name}") as trace_ctx:
+                    try:
+                        async for event in original_stream_events():
+                            yield event
+                    except GeneratorExit:
+                        # Handle generator exit gracefully
+                        raise
+                    except Exception as e:
+                        print(f"Error in stream events: {str(e)}")
+                        raise
+            
             stream_result.stream_events = wrapped_stream_events
         
         return stream_result

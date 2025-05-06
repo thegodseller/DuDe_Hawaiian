@@ -192,9 +192,6 @@ async def run_turn_streamed(
 
             async for event in stream_result.stream_events():
                 try:
-                    print('-'*100)
-                    print(f"Event: {event}")
-                    print('-'*100)
                     # Handle web search events
                     if event.type == "raw_response_event":
                         web_search_messages = handle_web_search_event(event, current_agent)
@@ -211,7 +208,6 @@ async def run_turn_streamed(
 
                     # Handle agent transfer
                     elif event.type == "agent_updated_stream_event":
-                        # print(f"\nAgent transfer attempt: {current_agent.name} -> {event.new_agent.name}")
                         
                         # Skip self-transfers
                         if current_agent.name == event.new_agent.name:
