@@ -5,10 +5,14 @@ mkdir -p data/uploads
 mkdir -p data/qdrant
 mkdir -p data/mongo
 
+# set the following environment variables
+export USE_RAG=true
+export USE_RAG_UPLOADS=true
+
 # Start with the base command and profile flags
 CMD="docker-compose"
-
-# enable rag text and files workers
+CMD="$CMD --profile setup_qdrant"
+CMD="$CMD --profile qdrant"
 CMD="$CMD --profile rag_text_worker"
 CMD="$CMD --profile rag_files_worker"
 

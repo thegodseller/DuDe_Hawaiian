@@ -29,10 +29,10 @@ services:
       - COPILOT_API_URL=http://copilot:3002
       - COPILOT_API_KEY=${COPILOT_API_KEY}
       - REDIS_URL=redis://redis:6379
-      - USE_RAG=true
+      - USE_RAG=${USE_RAG}
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_API_KEY=${QDRANT_API_KEY}
-      - USE_RAG_UPLOADS=true
+      - USE_RAG_UPLOADS=${USE_RAG_UPLOADS}
       - USE_RAG_S3_UPLOADS=${USE_RAG_S3_UPLOADS}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -112,6 +112,7 @@ services:
       context: ./apps/rowboat
       dockerfile: scripts.Dockerfile
     command: ["sh", "-c", "npm run setupQdrant"]
+    profiles: [ "setup_qdrant" ]
     environment:
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_API_KEY=${QDRANT_API_KEY}
@@ -245,5 +246,6 @@ services:
     environment:
       - QDRANT__STORAGE__STORAGE_PATH=/data/qdrant
     restart: unless-stopped
+    profiles: [ "qdrant" ]
     volumes:
       - ./data/qdrant:/data/qdrant
