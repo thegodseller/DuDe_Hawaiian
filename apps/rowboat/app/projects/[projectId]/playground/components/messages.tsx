@@ -46,13 +46,12 @@ function InternalAssistantMessage({ content, sender, latency, delta }: { content
             <div className="text-gray-500 dark:text-gray-400 text-xs pl-1">
                 {sender ?? 'Assistant'}
             </div>
-            <div className="max-w-[85%] inline-block">
-                <div className="bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 
-                    rounded-2xl rounded-bl-lg text-sm leading-relaxed
-                    text-gray-700 dark:text-gray-200 
-                    border-none shadow-sm animate-slideUpAndFade flex flex-col items-stretch">
+            <div className={expanded ? 'max-w-[85%] inline-block' : 'inline-block'}>
+                <div className={expanded
+                  ? 'bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade flex flex-col items-stretch'
+                  : 'bg-gray-50 dark:bg-zinc-800 px-4 py-0.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade w-fit'}>
                     {!expanded ? (
-                        <div className="flex justify-between items-center mt-2">
+                        <div className="flex justify-between items-center gap-6 mt-2">
                             <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(true)}>
                                 <ChevronDownIcon size={16} />
                                 Show internal message
@@ -66,7 +65,7 @@ function InternalAssistantMessage({ content, sender, latency, delta }: { content
                             <div className="text-left mb-2">
                                 <MarkdownContent content={content} />
                             </div>
-                            <div className="flex justify-between items-center mt-2">
+                            <div className="flex justify-between items-center gap-6 mt-2">
                                 <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(false)}>
                                     <ChevronUpIcon size={16} />
                                     Hide internal message
@@ -214,7 +213,7 @@ function TransferToAgentToolCall({
         </span>
     );
     return (
-        <div className="flex justify-center">
+        <div className="flex justify-center mb-2">
             <div className="flex items-center gap-2 px-4 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 shadow-sm text-xs">
                 <span className="text-gray-700 dark:text-gray-200">{sender}</span>
                 <ChevronRightIcon size={14} className="text-gray-400 dark:text-gray-300" />
