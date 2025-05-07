@@ -35,11 +35,14 @@ function InternalAssistantMessage({ content, sender, latency, delta }: { content
 
     // Show plus icon and duration
     const deltaDisplay = (
-        <span className="inline-flex items-center gap-1 text-gray-400 dark:text-gray-500">
-            <PlusIcon size={12} />
-            {Math.round(delta / 1000)}s
+        <span className="inline-flex items-center text-gray-400 dark:text-gray-500">
+            +{Math.round(delta / 1000)}s
         </span>
     );
+
+    // Get first line preview
+    const firstLine = content.split('\n')[0].trim();
+    const preview = firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
 
     return (
         <div className="self-start flex flex-col gap-1 my-5">
@@ -49,15 +52,20 @@ function InternalAssistantMessage({ content, sender, latency, delta }: { content
             <div className={expanded ? 'max-w-[85%] inline-block' : 'inline-block'}>
                 <div className={expanded
                   ? 'bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade flex flex-col items-stretch'
-                  : 'bg-gray-50 dark:bg-zinc-800 px-4 py-0.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade w-fit'}>
+                  : 'bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade w-fit'}>
                     {!expanded ? (
-                        <div className="flex justify-between items-center gap-6 mt-2">
-                            <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(true)}>
-                                <ChevronDownIcon size={16} />
-                                Show internal message
-                            </button>
-                            <div className="text-right text-xs">
-                                {deltaDisplay}
+                        <div className="flex flex-col gap-2">
+                            <div className="text-gray-700 dark:text-gray-200">
+                                {preview}
+                            </div>
+                            <div className="flex justify-between items-center gap-6">
+                                <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(true)}>
+                                    <ChevronDownIcon size={16} />
+                                    Show internal message
+                                </button>
+                                <div className="text-right text-xs">
+                                    {deltaDisplay}
+                                </div>
                             </div>
                         </div>
                     ) : (
@@ -207,9 +215,8 @@ function TransferToAgentToolCall({
         return <></>;
     }
     const deltaDisplay = (
-        <span className="inline-flex items-center gap-1 text-gray-400 dark:text-gray-500">
-            <PlusIcon size={12} />
-            {Math.round(delta / 1000)}s
+        <span className="inline-flex items-center text-gray-400 dark:text-gray-500">
+            +{Math.round(delta / 1000)}s
         </span>
     );
     return (
@@ -333,6 +340,7 @@ export function Messages({
     systemMessage,
     onSystemMessageChange,
     showSystemMessage,
+    showDebugMessages = true,
 }: {
     projectId: string;
     messages: z.infer<typeof apiV1.ChatMessage>[];
@@ -343,6 +351,7 @@ export function Messages({
     systemMessage: string | undefined;
     onSystemMessageChange: (message: string) => void;
     showSystemMessage: boolean;
+    showDebugMessages?: boolean;
 }) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     let lastUserMessageTimestamp = 0;
@@ -363,6 +372,12 @@ export function Messages({
             // Helper: is this message a transfer pill or internal message?
             const isTransferPill = 'tool_calls' in message && message.tool_calls.some(tc => tc.function.name.startsWith('transfer_to_'));
             const isInternal = message.agenticResponseType === 'internal';
+            
+            // Skip internal messages and transfer pills if debug mode is off
+            if (!showDebugMessages && (isTransferPill || isInternal)) {
+                return null;
+            }
+
             if (isTransferPill || isInternal) {
                 // Find previous message that is either a transfer pill or internal message
                 let delta = latency;
@@ -442,11 +457,17 @@ export function Messages({
     return (
         <div className="max-w-[768px] mx-auto">
             <div className="flex flex-col">
-                {messages.map((message, index) => (
-                    <div key={index}>
-                        {renderMessage(message, index)}
-                    </div>
-                ))}
+                {messages.map((message, index) => {
+                    const renderedMessage = renderMessage(message, index);
+                    if (renderedMessage) {
+                        return (
+                            <div key={index}>
+                                {renderedMessage}
+                            </div>
+                        );
+                    }
+                    return null;
+                })}
                 {loadingAssistantResponse && <AssistantMessageLoading />}
             </div>
             <div ref={messagesEndRef} />
