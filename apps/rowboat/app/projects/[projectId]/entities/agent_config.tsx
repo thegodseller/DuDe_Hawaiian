@@ -197,10 +197,10 @@ export function AgentConfig({
                             />
                             <div className="absolute bottom-full left-0 mb-2 p-3 w-80 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs invisible group-hover:visible z-50">
                                 <div className="mb-1 font-medium">Agent Types</div>
-                                Conversation agents&apos; responses are user-facing.
+                                Conversation agents&apos; responses are user-facing. You can use conversation agents for multi-turn conversations with users.
                                 <br />
                                 <br />
-                                Task agents&apos; responses are internal but available to other agents.
+                                Task agents&apos; responses are internal and available to other agents. You can use them to build pipelines and DAGs within workflows. E.g. Conversation Agent {'->'} Task Agent {'->'} Task Agent.
                                 <div className="absolute h-2 w-2 bg-white dark:bg-gray-800 transform rotate-45 -bottom-1 left-4 border-r border-b border-gray-200 dark:border-gray-700"></div>
                             </div>
                         </div>
