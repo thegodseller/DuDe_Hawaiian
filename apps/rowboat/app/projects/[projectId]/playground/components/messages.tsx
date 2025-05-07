@@ -6,22 +6,21 @@ import { Workflow } from "@/app/lib/types/workflow_types";
 import { WorkflowTool } from "@/app/lib/types/workflow_types";
 import MarkdownContent from "@/app/lib/components/markdown-content";
 import { apiV1 } from "rowboat-shared";
-import { MessageSquareIcon, EllipsisIcon, CircleCheckIcon, ChevronRightIcon, ChevronDownIcon, XIcon } from "lucide-react";
+import { MessageSquareIcon, EllipsisIcon, CircleCheckIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, XIcon, PlusIcon } from "lucide-react";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { ProfileContextBox } from "./profile-context-box";
 
 function UserMessage({ content }: { content: string }) {
     return (
-        <div className="self-end flex flex-col items-end gap-1">
+        <div className="self-end flex flex-col items-end gap-1 mt-5 mb-8">
             <div className="text-gray-500 dark:text-gray-400 text-xs">
                 User
             </div>
             <div className="max-w-[85%] inline-block">
-                <div className="bg-blue-50 dark:bg-[#1e2023] px-4 py-2.5 
+                <div className="bg-blue-100 dark:bg-blue-900/40 px-4 py-2.5 
                     rounded-2xl rounded-br-lg text-sm leading-relaxed
-                    text-gray-700 dark:text-gray-200 
-                    border border-blue-100 dark:border-[#2a2d31]
-                    shadow-sm animate-slideUpAndFade">
+                    text-gray-800 dark:text-blue-100 
+                    border-none shadow-sm animate-slideUpAndFade">
                     <div className="text-left">
                         <MarkdownContent content={content} />
                     </div>
@@ -31,52 +30,70 @@ function UserMessage({ content }: { content: string }) {
     );
 }
 
-function InternalAssistantMessage({ content, sender, latency }: { content: string, sender: string | null | undefined, latency: number }) {
+function InternalAssistantMessage({ content, sender, latency, delta }: { content: string, sender: string | null | undefined, latency: number, delta: number }) {
     const [expanded, setExpanded] = useState(false);
 
+    // Show plus icon and duration
+    const deltaDisplay = (
+        <span className="inline-flex items-center gap-1 text-gray-400 dark:text-gray-500">
+            <PlusIcon size={12} />
+            {Math.round(delta / 1000)}s
+        </span>
+    );
+
     return (
-        <div className="self-start flex flex-col gap-1">
-            {!expanded ? (
-                <button className="flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 gap-1 group"
-                    onClick={() => setExpanded(true)}>
-                    <MessageSquareIcon size={16} />
-                    <EllipsisIcon size={16} />
-                    <span className="text-xs">Show debug message</span>
-                </button>
-            ) : (
-                <>
-                    <div className="text-gray-500 dark:text-gray-400 text-xs pl-1 flex items-center justify-between">
-                        <span>{sender ?? 'Assistant'}</span>
-                        <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            onClick={() => setExpanded(false)}>
-                            <XIcon size={16} />
-                        </button>
-                    </div>
-                    <div className="max-w-[85%] inline-block">
-                        <div className="border border-gray-200 dark:border-gray-700 border-dashed 
-                            px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm
-                            text-gray-700 dark:text-gray-200 shadow-sm">
-                            <pre className="whitespace-pre-wrap">{content}</pre>
+        <div className="self-start flex flex-col gap-1 my-5">
+            <div className="text-gray-500 dark:text-gray-400 text-xs pl-1">
+                {sender ?? 'Assistant'}
+            </div>
+            <div className="max-w-[85%] inline-block">
+                <div className="bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 
+                    rounded-2xl rounded-bl-lg text-sm leading-relaxed
+                    text-gray-700 dark:text-gray-200 
+                    border-none shadow-sm animate-slideUpAndFade flex flex-col items-stretch">
+                    {!expanded ? (
+                        <div className="flex justify-between items-center mt-2">
+                            <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(true)}>
+                                <ChevronDownIcon size={16} />
+                                Show internal message
+                            </button>
+                            <div className="text-right text-xs">
+                                {deltaDisplay}
+                            </div>
                         </div>
-                    </div>
-                </>
-            )}
+                    ) : (
+                        <>
+                            <div className="text-left mb-2">
+                                <MarkdownContent content={content} />
+                            </div>
+                            <div className="flex justify-between items-center mt-2">
+                                <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(false)}>
+                                    <ChevronUpIcon size={16} />
+                                    Hide internal message
+                                </button>
+                                <div className="text-right text-xs">
+                                    {deltaDisplay}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
 
 function AssistantMessage({ content, sender, latency }: { content: string, sender: string | null | undefined, latency: number }) {
     return (
-        <div className="self-start flex flex-col gap-1">
+        <div className="self-start flex flex-col gap-1 my-5">
             <div className="text-gray-500 dark:text-gray-400 text-xs pl-1">
                 {sender ?? 'Assistant'}
             </div>
             <div className="max-w-[85%] inline-block">
-                <div className="bg-gray-50 dark:bg-[#1e2023] px-4 py-2.5 
+                <div className="bg-purple-50 dark:bg-purple-900/30 px-4 py-2.5 
                     rounded-2xl rounded-bl-lg text-sm leading-relaxed
-                    text-gray-700 dark:text-gray-200 
-                    border border-gray-200 dark:border-[#2a2d31]
-                    shadow-sm animate-slideUpAndFade">
+                    text-gray-800 dark:text-purple-100 
+                    border-none shadow-sm animate-slideUpAndFade">
                     <div className="flex flex-col gap-1">
                         <div className="text-left">
                             <MarkdownContent content={content} />
@@ -93,15 +110,11 @@ function AssistantMessage({ content, sender, latency }: { content: string, sende
 
 function AssistantMessageLoading() {
     return (
-        <div className="self-start flex flex-col gap-1">
-            <div className="text-gray-500 dark:text-gray-400 text-xs pl-1">
-                Assistant
-            </div>
+        <div className="self-start flex flex-col gap-1 my-5">
             <div className="max-w-[85%] inline-block">
-                <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2.5 
+                <div className="bg-purple-50 dark:bg-purple-900/30 px-4 py-2.5 
                     rounded-2xl rounded-bl-lg
-                    border border-gray-200 dark:border-gray-700
-                    shadow-sm dark:shadow-gray-950/20 animate-pulse min-h-[2.5rem] flex items-center">
+                    border-none shadow-sm animate-slideUpAndFade min-h-[2.5rem] flex items-center">
                     <Spinner size="sm" className="ml-2" />
                 </div>
             </div>
@@ -118,6 +131,7 @@ function ToolCalls({
     workflow,
     testProfile = null,
     systemMessage,
+    delta
 }: {
     toolCalls: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'];
     results: Record<string, z.infer<typeof apiV1.ToolMessage>>;
@@ -127,6 +141,7 @@ function ToolCalls({
     workflow: z.infer<typeof Workflow>;
     testProfile: z.infer<typeof TestProfile> | null;
     systemMessage: string | undefined;
+    delta: number;
 }) {
     return <div className="flex flex-col gap-4">
         {toolCalls.map(toolCall => {
@@ -136,6 +151,7 @@ function ToolCalls({
                 result={results[toolCall.id]}
                 sender={sender}
                 workflow={workflow}
+                delta={delta}
             />
         })}
     </div>;
@@ -146,11 +162,13 @@ function ToolCall({
     result,
     sender,
     workflow,
+    delta
 }: {
     toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
     result: z.infer<typeof apiV1.ToolMessage> | undefined;
     sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
+    delta: number;
 }) {
     let matchingWorkflowTool: z.infer<typeof WorkflowTool> | undefined;
     for (const tool of workflow.tools) {
@@ -163,45 +181,62 @@ function ToolCall({
     if (toolCall.function.name.startsWith('transfer_to_')) {
         return <TransferToAgentToolCall
             result={result}
-            sender={sender}
+            sender={sender ?? ''}
+            delta={delta}
         />;
     }
     return <ClientToolCall
         toolCall={toolCall}
         result={result}
-        sender={sender}
+        sender={sender ?? ''}
+        workflow={workflow}
+        delta={delta}
     />;
 }
 
 function TransferToAgentToolCall({
     result: availableResult,
     sender,
+    delta
 }: {
     result: z.infer<typeof apiV1.ToolMessage> | undefined;
     sender: string | null | undefined;
+    delta: number;
 }) {
     const typedResult = availableResult ? JSON.parse(availableResult.content) as { assistant: string } : undefined;
     if (!typedResult) {
         return <></>;
     }
-
-    return <div className="flex gap-1 items-center text-gray-500 text-sm justify-center">
-        <div>{sender}</div>
-        <svg className="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 12H5m14 0-4 4m4-4-4-4" />
-        </svg>
-        <div>{typedResult.assistant}</div>
-    </div>;
+    const deltaDisplay = (
+        <span className="inline-flex items-center gap-1 text-gray-400 dark:text-gray-500">
+            <PlusIcon size={12} />
+            {Math.round(delta / 1000)}s
+        </span>
+    );
+    return (
+        <div className="flex justify-center">
+            <div className="flex items-center gap-2 px-4 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 shadow-sm text-xs">
+                <span className="text-gray-700 dark:text-gray-200">{sender}</span>
+                <ChevronRightIcon size={14} className="text-gray-400 dark:text-gray-300" />
+                <span className="text-gray-700 dark:text-gray-200">{typedResult.assistant}</span>
+                <span className="ml-2">{deltaDisplay}</span>
+            </div>
+        </div>
+    );
 }
 
 function ClientToolCall({
     toolCall,
     result: availableResult,
     sender,
+    workflow,
+    delta
 }: {
     toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
     result: z.infer<typeof apiV1.ToolMessage> | undefined;
     sender: string | null | undefined;
+    workflow: z.infer<typeof Workflow>;
+    delta: number;
 }) {
     return (
         <div className="self-start flex flex-col gap-1">
@@ -322,36 +357,57 @@ export function Messages({
         const isConsecutive = index > 0 && messages[index - 1].role === message.role;
 
         if (message.role === 'assistant') {
-            // the assistant message createdAt is an ISO string timestamp
             let latency = new Date(message.createdAt).getTime() - lastUserMessageTimestamp;
-            // if this is the first message, set the latency to 0
             if (!userMessageSeen) {
                 latency = 0;
             }
-            if ('tool_calls' in message) {
-                return (
-                    <ToolCalls
-                        toolCalls={message.tool_calls}
-                        results={toolCallResults}
-                        projectId={projectId}
-                        messages={messages}
-                        sender={message.agenticSender}
-                        workflow={workflow}
-                        testProfile={testProfile}
-                        systemMessage={systemMessage}
-                    />
-                );
+            // Helper: is this message a transfer pill or internal message?
+            const isTransferPill = 'tool_calls' in message && message.tool_calls.some(tc => tc.function.name.startsWith('transfer_to_'));
+            const isInternal = message.agenticResponseType === 'internal';
+            if (isTransferPill || isInternal) {
+                // Find previous message that is either a transfer pill or internal message
+                let delta = latency;
+                for (let i = index - 1; i >= 0; i--) {
+                    const prev = messages[i];
+                    const prevIsTransferPill = prev.role === 'assistant' && 'tool_calls' in prev && prev.tool_calls.some(tc => tc.function.name.startsWith('transfer_to_'));
+                    const prevIsInternal = prev.role === 'assistant' && prev.agenticResponseType === 'internal';
+                    if (prevIsTransferPill || prevIsInternal) {
+                        delta = new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime();
+                        break;
+                    }
+                    if (prev.role === 'user') {
+                        break;
+                    }
+                }
+                if (isTransferPill) {
+                    return (
+                        <ToolCalls
+                            toolCalls={message.tool_calls}
+                            results={toolCallResults}
+                            projectId={projectId}
+                            messages={messages}
+                            sender={message.agenticSender ?? ''}
+                            workflow={workflow}
+                            testProfile={testProfile}
+                            systemMessage={systemMessage}
+                            delta={delta}
+                        />
+                    );
+                } else {
+                    return (
+                        <InternalAssistantMessage
+                            content={message.content ?? ''}
+                            sender={message.agenticSender ?? ''}
+                            latency={latency}
+                            delta={delta}
+                        />
+                    );
+                }
             }
-            return message.agenticResponseType === 'internal' ? (
-                <InternalAssistantMessage
-                    content={message.content}
-                    sender={message.agenticSender}
-                    latency={latency}
-                />
-            ) : (
+            return (
                 <AssistantMessage
-                    content={message.content}
-                    sender={message.agenticSender}
+                    content={message.content ?? ''}
+                    sender={message.agenticSender ?? ''}
                     latency={latency}
                 />
             );
@@ -366,6 +422,14 @@ export function Messages({
         return null;
     };
 
+    const isAgentTransition = (message: z.infer<typeof apiV1.ChatMessage>) => {
+        return message.role === 'assistant' && 'tool_calls' in message && Array.isArray(message.tool_calls) && message.tool_calls.some(tc => tc.function.name.startsWith('transfer_to_'));
+    };
+
+    const isAssistantMessage = (message: z.infer<typeof apiV1.ChatMessage>) => {
+        return message.role === 'assistant' && (!('tool_calls' in message) || !Array.isArray(message.tool_calls) || !message.tool_calls.some(tc => tc.function.name.startsWith('transfer_to_')));
+    };
+
     if (showSystemMessage) {
         return (
             <ProfileContextBox
@@ -378,12 +442,9 @@ export function Messages({
 
     return (
         <div className="max-w-[768px] mx-auto">
-            <div className="flex flex-col space-y-2">
+            <div className="flex flex-col">
                 {messages.map((message, index) => (
-                    <div 
-                        key={index}
-                        className={`${index > 0 && messages[index - 1].role === message.role ? 'mt-1' : 'mt-4'}`}
-                    >
+                    <div key={index}>
                         {renderMessage(message, index)}
                     </div>
                 ))}
