@@ -118,6 +118,7 @@ async function runDeletionPipeline(_logger: PrefixLogger, job: WithId<z.infer<ty
         // first try to find a job that needs deleting
         job = await dataSourcesCollection.findOneAndUpdate({
             status: "deleted",
+            "data.type": "text",
             $or: [
                 { attempts: { $exists: false } },
                 { attempts: { $lte: 3 } }
