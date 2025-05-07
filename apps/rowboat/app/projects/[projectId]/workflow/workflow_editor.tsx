@@ -11,7 +11,7 @@ import { AgentConfig } from "../entities/agent_config";
 import { ToolConfig } from "../entities/tool_config";
 import { App as ChatApp } from "../playground/app";
 import { z } from "zod";
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger, Spinner } from "@heroui/react";
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip } from "@heroui/react";
 import { PromptConfig } from "../entities/prompt_config";
 import { EditableField } from "../../../lib/components/editable-field";
 import { RelativeTime } from "@primer/react";
@@ -27,7 +27,7 @@ import { apiV1 } from "rowboat-shared";
 import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
 import { PublishedBadge } from "./published_badge";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
-import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon } from "lucide-react";
+import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine } from "lucide-react";
 import { EntityList } from "./entity_list";
 import { McpImportTools } from "./mcp_imports";
 import { ProductTour } from "@/components/common/product-tour";
@@ -785,28 +785,45 @@ export function WorkflowEditor({
 
     return <div className="flex flex-col h-full relative">
         <div className="shrink-0 flex justify-between items-center pb-6">
-            <div className="workflow-version-selector flex items-center gap-1 px-2 text-gray-800 dark:text-gray-100">
+            <div className="workflow-version-selector flex items-center gap-4 px-2 text-gray-800 dark:text-gray-100">
                 <WorkflowIcon size={16} />
-                <EditableField
-                    key={state.present.workflow._id}
-                    value={state.present.workflow?.name || ''}
-                    onChange={handleRenameWorkflow}
-                    placeholder="Name this version"
-                    className="text-sm font-semibold"
-                    inline={true}
-                />
-                {state.present.publishing && <Spinner size="sm" />}
-                {isLive && <PublishedBadge />}
+                <Tooltip content="Click to edit">
+                    <div>
+                        <EditableField
+                            key={state.present.workflow._id}
+                            value={state.present.workflow?.name || ''}
+                            onChange={handleRenameWorkflow}
+                            placeholder="Name this version"
+                            className="text-sm font-semibold"
+                            inline={true}
+                        />
+                    </div>
+                </Tooltip>
+                <div className="flex items-center gap-2">
+                    {state.present.publishing && <Spinner size="sm" />}
+                    {isLive && <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1">
+                        <RadioIcon size={12} />
+                        Live
+                    </div>}
+                    {!isLive && <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1">
+                        <PenLine size={12} />
+                        Draft
+                    </div>}
+                </div>
                 <Dropdown>
                     <DropdownTrigger>
-                        <button className="p-1 text-gray-400 hover:text-black">
-                            <HamburgerIcon size={16} />
-                        </button>
+                        <div>
+                            <Tooltip content="Version Menu">
+                                <button className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors">
+                                    <HamburgerIcon size={20} />
+                                </button>
+                            </Tooltip>
+                        </div>
                     </DropdownTrigger>
                     <DropdownMenu
                         disabledKeys={[
                             ...(state.present.pendingChanges ? ['switch', 'clone'] : []),
-                            ...(isLive ? ['publish', 'mcp'] : []),
+                            ...(isLive ? ['mcp'] : []),
                         ]}
                         onAction={(key) => {
                             if (key === 'switch') {
@@ -815,51 +832,34 @@ export function WorkflowEditor({
                             if (key === 'clone') {
                                 handleCloneVersion(state.present.workflow._id);
                             }
-                            if (key === 'publish') {
-                                handlePublishWorkflow();
-                            }
                             if (key === 'clipboard') {
                                 handleCopyJSON();
                             }
                         }}
                     >
-                        <DropdownSection>
-                            <DropdownItem
-                                key="switch"
-                                startContent={<div className="text-gray-500"><BackIcon size={16} /></div>}
-                                className="gap-x-2"
-                            >
-                                View versions
-                            </DropdownItem>
-                        </DropdownSection>
+                        <DropdownItem
+                            key="switch"
+                            startContent={<div className="text-gray-500"><BackIcon size={16} /></div>}
+                            className="gap-x-2"
+                        >
+                            View versions
+                        </DropdownItem>
 
-                        <DropdownSection>
-                            <DropdownItem
-                                key="clone"
-                                startContent={<div className="text-gray-500"><Layers2Icon size={16} /></div>}
-                                className="gap-x-2"
-                            >
-                                Clone this version
-                            </DropdownItem>
+                        <DropdownItem
+                            key="clone"
+                            startContent={<div className="text-gray-500"><Layers2Icon size={16} /></div>}
+                            className="gap-x-2"
+                        >
+                            Clone this version
+                        </DropdownItem>
 
-                            <DropdownItem
-                                key="publish"
-                                startContent={<div className="text-indigo-500"><RadioIcon size={16} /></div>}
-                                className="gap-x-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
-                            >
-                                Make version live
-                            </DropdownItem>
-                        </DropdownSection>
-
-                        <DropdownSection>
-                            <DropdownItem
-                                key="clipboard"
-                                startContent={<div className="text-gray-500"><CopyIcon size={16} /></div>}
-                                className="gap-x-2"
-                            >
-                                Export as JSON
-                            </DropdownItem>
-                        </DropdownSection>
+                        <DropdownItem
+                            key="clipboard"
+                            startContent={<div className="text-gray-500"><CopyIcon size={16} /></div>}
+                            className="gap-x-2"
+                        >
+                            Export as JSON
+                        </DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
             </div>
@@ -907,10 +907,19 @@ export function WorkflowEditor({
                     </button>
                     <Button
                         variant="solid"
-                        size="lg"
+                        size="md"
+                        onPress={handlePublishWorkflow}
+                        className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm"
+                        startContent={<RocketIcon size={16} />}
+                    >
+                        Deploy
+                    </Button>
+                    <Button
+                        variant="solid"
+                        size="md"
                         onPress={() => setShowCopilot(!showCopilot)}
-                        className="gap-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base"
-                        startContent={<Sparkles size={20} />}
+                        className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
+                        startContent={<Sparkles size={16} />}
                     >
                         Copilot
                     </Button>
