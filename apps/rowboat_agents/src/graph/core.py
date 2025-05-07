@@ -379,6 +379,47 @@ async def run_turn_streamed(
                                 print(f"\nSkipping agent {current_agent.name} because it has already responded")
                                 if parent_stack:
                                     print(f"-- Returning to parent agent {parent_stack[-1].name}")
+                                    # Create tool call for control transition
+                                    tool_call_id = str(uuid.uuid4())
+                                    transition_message = {
+                                        'content': None,
+                                        'role': 'assistant',
+                                        'sender': current_agent.name,
+                                        'tool_calls': [{
+                                            'function': {
+                                                'name': 'transfer_to_agent',
+                                                'arguments': json.dumps({
+                                                    'assistant': parent_stack[-1].name
+                                                })
+                                            },
+                                            'id': tool_call_id,
+                                            'type': 'function'
+                                        }],
+                                        'tool_call_id': None,
+                                        'tool_name': None,
+                                        'response_type': ResponseType.INTERNAL.value
+                                    }
+                                    print('-'*100)
+                                    print(f"Yielding control transition message: {transition_message}")
+                                    print('-'*100)
+                                    yield ('message', transition_message)
+
+                                    # Create tool response for control transition
+                                    transition_response = {
+                                        'content': json.dumps({
+                                            'assistant': parent_stack[-1].name
+                                        }),
+                                        'role': 'tool',
+                                        'sender': None,
+                                        'tool_calls': None,
+                                        'tool_call_id': tool_call_id,
+                                        'tool_name': 'transfer_to_agent'
+                                    }
+                                    print('-'*100)
+                                    print(f"Yielding control transition response: {transition_response}")
+                                    print('-'*100)
+                                    yield ('message', transition_response)
+
                                     current_agent = parent_stack.pop()
                                     continue
                                 else:
@@ -413,6 +454,47 @@ async def run_turn_streamed(
                             accumulated_messages.append(message)
                             # Return to parent or end turn
                             if is_internal and parent_stack:
+                                # Create tool call for control transition
+                                tool_call_id = str(uuid.uuid4())
+                                transition_message = {
+                                    'content': None,
+                                    'role': 'assistant',
+                                    'sender': current_agent.name,
+                                    'tool_calls': [{
+                                        'function': {
+                                            'name': 'transfer_to_agent',
+                                            'arguments': json.dumps({
+                                                'assistant': parent_stack[-1].name
+                                            })
+                                        },
+                                        'id': tool_call_id,
+                                        'type': 'function'
+                                    }],
+                                    'tool_call_id': None,
+                                    'tool_name': None,
+                                    'response_type': ResponseType.INTERNAL.value
+                                }
+                                print('-'*100)
+                                print(f"Yielding control transition message: {transition_message}")
+                                print('-'*100)
+                                yield ('message', transition_message)
+
+                                # Create tool response for control transition
+                                transition_response = {
+                                    'content': json.dumps({
+                                        'assistant': parent_stack[-1].name
+                                    }),
+                                    'role': 'tool',
+                                    'sender': None,
+                                    'tool_calls': None,
+                                    'tool_call_id': tool_call_id,
+                                    'tool_name': 'transfer_to_agent'
+                                }
+                                print('-'*100)
+                                print(f"Yielding control transition response: {transition_response}")
+                                print('-'*100)
+                                yield ('message', transition_response)
+
                                 current_agent = parent_stack.pop()
                                 continue
                             elif not is_internal:
