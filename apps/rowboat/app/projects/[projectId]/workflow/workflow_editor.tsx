@@ -801,12 +801,12 @@ export function WorkflowEditor({
                 </Tooltip>
                 <div className="flex items-center gap-2">
                     {state.present.publishing && <Spinner size="sm" />}
-                    {isLive && <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1">
-                        <RadioIcon size={12} />
+                    {isLive && <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+                        <RadioIcon size={16} />
                         Live
                     </div>}
-                    {!isLive && <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1">
-                        <PenLine size={12} />
+                    {!isLive && <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+                        <PenLine size={16} />
                         Draft
                     </div>}
                 </div>
