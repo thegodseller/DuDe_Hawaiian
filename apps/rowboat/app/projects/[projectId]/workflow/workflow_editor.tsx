@@ -27,7 +27,7 @@ import { apiV1 } from "rowboat-shared";
 import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
 import { PublishedBadge } from "./published_badge";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
-import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine } from "lucide-react";
+import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle } from "lucide-react";
 import { EntityList } from "./entity_list";
 import { McpImportTools } from "./mcp_imports";
 import { ProductTour } from "@/components/common/product-tour";
@@ -868,15 +868,27 @@ export function WorkflowEditor({
             </div>}
             <div className="flex items-center gap-2">
                 {isLive && <div className="flex items-center gap-2">
-                    <div className="bg-yellow-50 text-yellow-500 px-2 py-1 rounded-md text-sm">
-                        This version is locked. You cannot make changes.
+                    <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+                        <AlertTriangle size={16} />
+                        This version is locked. You cannot make changes. Changes applied through copilot will<b>not</b>be reflected.
                     </div>
                     <Button
-                        variant="bordered"
-                        size="sm"
+                        variant="solid"
+                        size="md"
                         onPress={() => handleCloneVersion(state.present.workflow._id)}
+                        className="gap-2 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm"
+                        startContent={<Layers2Icon size={16} />}
                     >
                         Clone this version
+                    </Button>
+                    <Button
+                        variant="solid"
+                        size="md"
+                        onPress={() => setShowCopilot(!showCopilot)}
+                        className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
+                        startContent={showCopilot ? null : <Sparkles size={16} />}
+                    >
+                        {showCopilot ? "Hide Copilot" : "Copilot"}
                     </Button>
                 </div>}
                 {!isLive && <div className="text-xs text-gray-400">
@@ -920,9 +932,9 @@ export function WorkflowEditor({
                         size="md"
                         onPress={() => setShowCopilot(!showCopilot)}
                         className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
-                        startContent={<Sparkles size={16} />}
+                        startContent={showCopilot ? null : <Sparkles size={16} />}
                     >
-                        Copilot
+                        {showCopilot ? "Hide Copilot" : "Copilot"}
                     </Button>
                 </>}
             </div>
