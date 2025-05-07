@@ -215,7 +215,7 @@ function TransferToAgentToolCall({
     );
     return (
         <div className="flex justify-center">
-            <div className="flex items-center gap-2 px-4 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 shadow-sm text-xs">
+            <div className="flex items-center gap-2 px-4 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 shadow-sm text-xs">
                 <span className="text-gray-700 dark:text-gray-200">{sender}</span>
                 <ChevronRightIcon size={14} className="text-gray-400 dark:text-gray-300" />
                 <span className="text-gray-700 dark:text-gray-200">{typedResult.assistant}</span>
