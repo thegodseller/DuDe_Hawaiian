@@ -28,7 +28,7 @@ export function HelpModal({ isOpen, onClose, onStartTour }: HelpModalProps) {
                         <div>
                             <div className="font-medium text-base text-gray-900 dark:text-gray-100">Take Product Tour</div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
-                                Learn about RowBoat's features
+                                Learn about RowBoat&apos;s features
                             </div>
                         </div>
                     </Button>
