@@ -122,10 +122,10 @@ export function AgentConfig({
                         variant="secondary"
                         size="sm"
                         onClick={handleClose}
-                        startContent={<XIcon className="w-4 h-4" />}
-                        aria-label="Close agent config"
+                        showHoverContent={true}
+                        hoverContent="Close"
                     >
-                        Close
+                        <XIcon className="w-4 h-4" />
                     </CustomButton>
                 </div>
             }
