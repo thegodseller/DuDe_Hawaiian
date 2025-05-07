@@ -17,8 +17,17 @@ master_config = read_json_from_file("./configs/default_config.json")
 print("Master config:", master_config)
 
 # Get environment variables with defaults
-MAX_CALLS_PER_CHILD_AGENT = int(os.environ.get('MAX_CALLS_PER_CHILD_AGENT', '1'))
-ENABLE_TRACING = os.environ.get('ENABLE_TRACING', 'false').lower() == 'true'
+MAX_CALLS_PER_CHILD_AGENT = 1
+try:
+    MAX_CALLS_PER_CHILD_AGENT = int(os.environ.get('MAX_CALLS_PER_CHILD_AGENT'))
+except Exception as e:
+    print(f"Error getting MAX_CALLS_PER_CHILD_AGENT: {e}, using default of 1")
+
+ENABLE_TRACING = False
+try:
+    ENABLE_TRACING = os.environ.get('ENABLE_TRACING').lower() == 'true'
+except Exception as e:
+    print(f"Error getting ENABLE_TRACING: {e}, using default of False")
 
 # filter out agent transfer messages using a function
 def is_agent_transfer_message(msg):
