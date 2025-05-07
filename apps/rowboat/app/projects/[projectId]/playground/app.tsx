@@ -146,9 +146,6 @@ export function App({
                         </Button>
                     </div>
                 }
-                className={clsx(
-                    isInitialState && "opacity-50 transition-opacity duration-300"
-                )}
                 onClick={onPanelClick}
             >
                 <ProfileSelector
