@@ -30,7 +30,7 @@ const sectionHeaderStyles = "text-xs font-medium uppercase tracking-wider text-g
 const textareaStyles = "rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500";
 
 // Add this type definition after the imports
-type TabType = 'configurations' | 'instructions' | 'examples';
+type TabType = 'instructions' | 'examples' | 'configurations';
 
 export function AgentConfig({
     projectId,
@@ -64,7 +64,7 @@ export function AgentConfig({
     const { showPreview } = usePreviewModal();
     const [localName, setLocalName] = useState(agent.name);
     const [nameError, setNameError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<TabType>('configurations');
+    const [activeTab, setActiveTab] = useState<TabType>('instructions');
     
     useEffect(() => {
         setLocalName(agent.name);
@@ -152,7 +152,7 @@ export function AgentConfig({
             <div className="flex flex-col gap-6 p-4 h-[calc(100vh-100px)] min-h-0 flex-1">
                 {/* Tabs */}
                 <div className="flex border-b border-gray-200 dark:border-gray-700">
-                    {(['configurations', 'instructions', 'examples'] as TabType[]).map((tab) => (
+                    {(['instructions', 'examples', 'configurations'] as TabType[]).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -170,6 +170,192 @@ export function AgentConfig({
 
                 {/* Tab Content */}
                 <div className="mt-4 flex-1 flex flex-col min-h-0 h-0">
+                    {activeTab === 'instructions' && (
+                        <>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <label className={sectionHeaderStyles}>
+                                        Instructions
+                                    </label>
+                                    <CustomButton
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => setIsInstructionsMaximized(!isInstructionsMaximized)}
+                                        showHoverContent={true}
+                                        hoverContent={isInstructionsMaximized ? "Minimize" : "Maximize"}
+                                    >
+                                        {isInstructionsMaximized ? (
+                                            <Minimize2 className="w-4 h-4" />
+                                        ) : (
+                                            <Maximize2 className="w-4 h-4" />
+                                        )}
+                                    </CustomButton>
+                                </div>
+                                <CustomButton
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() => setShowGenerateModal(true)}
+                                    startContent={<Sparkles className="w-4 h-4" />}
+                                >
+                                    Generate
+                                </CustomButton>
+                            </div>
+                            {isInstructionsMaximized ? (
+                                <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900">
+                                    <div className="h-full flex flex-col">
+                                        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                                            <div className="flex items-center gap-2">
+                                                <label className={sectionHeaderStyles}>
+                                                    Instructions
+                                                </label>
+                                                <CustomButton
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() => setIsInstructionsMaximized(false)}
+                                                    showHoverContent={true}
+                                                    hoverContent="Minimize"
+                                                >
+                                                    <Minimize2 className="w-4 h-4" />
+                                                </CustomButton>
+                                            </div>
+                                            <CustomButton
+                                                variant="primary"
+                                                size="sm"
+                                                onClick={() => setShowGenerateModal(true)}
+                                                startContent={<Sparkles className="w-4 h-4" />}
+                                            >
+                                                Generate
+                                            </CustomButton>
+                                        </div>
+                                        <div className="flex-1 overflow-hidden p-4">
+                                            <EditableField
+                                                key="instructions-maximized"
+                                                value={agent.instructions}
+                                                onChange={(value) => {
+                                                    handleUpdate({
+                                                        ...agent,
+                                                        instructions: value
+                                                    });
+                                                }}
+                                                markdown
+                                                multiline
+                                                mentions
+                                                mentionsAtValues={atMentions}
+                                                showSaveButton={true}
+                                                showDiscardButton={true}
+                                                className="h-full min-h-0 overflow-auto"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <EditableField
+                                    key="instructions"
+                                    value={agent.instructions}
+                                    onChange={(value) => {
+                                        handleUpdate({
+                                            ...agent,
+                                            instructions: value
+                                        });
+                                    }}
+                                    markdown
+                                    multiline
+                                    mentions
+                                    mentionsAtValues={atMentions}
+                                    showSaveButton={true}
+                                    showDiscardButton={true}
+                                    className="h-full min-h-0 overflow-auto"
+                                />
+                            )}
+                        </>
+                    )}
+
+                    {activeTab === 'examples' && (
+                        <>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <label className={sectionHeaderStyles}>
+                                        Examples
+                                    </label>
+                                    <CustomButton
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => setIsExamplesMaximized(!isExamplesMaximized)}
+                                        showHoverContent={true}
+                                        hoverContent={isExamplesMaximized ? "Minimize" : "Maximize"}
+                                    >
+                                        {isExamplesMaximized ? (
+                                            <Minimize2 className="w-4 h-4" />
+                                        ) : (
+                                            <Maximize2 className="w-4 h-4" />
+                                        )}
+                                    </CustomButton>
+                                </div>
+                            </div>
+                            {isExamplesMaximized ? (
+                                <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900">
+                                    <div className="h-full flex flex-col">
+                                        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                                            <div className="flex items-center gap-2">
+                                                <label className={sectionHeaderStyles}>
+                                                    Examples
+                                                </label>
+                                                <CustomButton
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() => setIsExamplesMaximized(false)}
+                                                    showHoverContent={true}
+                                                    hoverContent="Minimize"
+                                                >
+                                                    <Minimize2 className="w-4 h-4" />
+                                                </CustomButton>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 overflow-hidden p-4">
+                                            <EditableField
+                                                key="examples-maximized"
+                                                value={agent.examples || ""}
+                                                onChange={(value) => {
+                                                    handleUpdate({
+                                                        ...agent,
+                                                        examples: value
+                                                    });
+                                                }}
+                                                placeholder="Enter examples for this agent"
+                                                markdown
+                                                multiline
+                                                mentions
+                                                mentionsAtValues={atMentions}
+                                                showSaveButton={true}
+                                                showDiscardButton={true}
+                                                className="h-full min-h-0 overflow-auto"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <EditableField
+                                    key="examples"
+                                    value={agent.examples || ""}
+                                    onChange={(value) => {
+                                        handleUpdate({
+                                            ...agent,
+                                            examples: value
+                                        });
+                                    }}
+                                    placeholder="Enter examples for this agent"
+                                    markdown
+                                    multiline
+                                    mentions
+                                    mentionsAtValues={atMentions}
+                                    showSaveButton={true}
+                                    showDiscardButton={true}
+                                    className="h-full min-h-0 overflow-auto"
+                                />
+                            )}
+                        </>
+                    )}
+
                     {activeTab === 'configurations' && (
                         <div className="space-y-6">
                             {!agent.locked && (
@@ -474,200 +660,6 @@ export function AgentConfig({
                                             controlType: value as z.infer<typeof WorkflowAgent>['controlType']
                                         })}
                                     />
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {activeTab === 'instructions' && (
-                        <div className="flex flex-col flex-1 min-h-0 h-0">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <label className={sectionHeaderStyles}>
-                                        Instructions
-                                    </label>
-                                    <CustomButton
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => setIsInstructionsMaximized(!isInstructionsMaximized)}
-                                        showHoverContent={true}
-                                        hoverContent={isInstructionsMaximized ? "Minimize" : "Maximize"}
-                                    >
-                                        {isInstructionsMaximized ? (
-                                            <Minimize2 className="w-4 h-4" />
-                                        ) : (
-                                            <Maximize2 className="w-4 h-4" />
-                                        )}
-                                    </CustomButton>
-                                </div>
-                                <CustomButton
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() => setShowGenerateModal(true)}
-                                    startContent={<Sparkles className="w-4 h-4" />}
-                                >
-                                    Generate
-                                </CustomButton>
-                            </div>
-                            {isInstructionsMaximized ? (
-                                <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900">
-                                    <div className="h-full flex flex-col">
-                                        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                                            <div className="flex items-center gap-2">
-                                                <label className={sectionHeaderStyles}>
-                                                    Instructions
-                                                </label>
-                                                <CustomButton
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    onClick={() => setIsInstructionsMaximized(false)}
-                                                    showHoverContent={true}
-                                                    hoverContent="Minimize"
-                                                >
-                                                    <Minimize2 className="w-4 h-4" />
-                                                </CustomButton>
-                                            </div>
-                                            <CustomButton
-                                                variant="primary"
-                                                size="sm"
-                                                onClick={() => setShowGenerateModal(true)}
-                                                startContent={<Sparkles className="w-4 h-4" />}
-                                            >
-                                                Generate
-                                            </CustomButton>
-                                        </div>
-                                        <div className="flex-1 overflow-hidden p-4">
-                                            <EditableField
-                                                key="instructions-maximized"
-                                                value={agent.instructions}
-                                                onChange={(value) => {
-                                                    handleUpdate({
-                                                        ...agent,
-                                                        instructions: value
-                                                    });
-                                                }}
-                                                markdown
-                                                multiline
-                                                mentions
-                                                mentionsAtValues={atMentions}
-                                                showSaveButton={true}
-                                                showDiscardButton={true}
-                                                className="h-full min-h-0 border border-gray-200 dark:border-gray-700 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500/20 dark:focus-within:ring-indigo-400/20 overflow-auto"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex-1 min-h-0 h-0">
-                                    <div className="text-sm h-full">
-                                        <EditableField
-                                            key="instructions"
-                                            value={agent.instructions}
-                                            onChange={(value) => {
-                                                handleUpdate({
-                                                    ...agent,
-                                                    instructions: value
-                                                });
-                                            }}
-                                            markdown
-                                            multiline
-                                            mentions
-                                            mentionsAtValues={atMentions}
-                                            showSaveButton={true}
-                                            showDiscardButton={true}
-                                            className="h-full min-h-0 border border-gray-200 dark:border-gray-700 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500/20 dark:focus-within:ring-indigo-400/20 overflow-auto"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {activeTab === 'examples' && (
-                        <div className="flex flex-col flex-1 min-h-0 h-0">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <label className={sectionHeaderStyles}>
-                                        Examples
-                                    </label>
-                                    <CustomButton
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => setIsExamplesMaximized(!isExamplesMaximized)}
-                                        showHoverContent={true}
-                                        hoverContent={isExamplesMaximized ? "Minimize" : "Maximize"}
-                                    >
-                                        {isExamplesMaximized ? (
-                                            <Minimize2 className="w-4 h-4" />
-                                        ) : (
-                                            <Maximize2 className="w-4 h-4" />
-                                        )}
-                                    </CustomButton>
-                                </div>
-                            </div>
-                            {isExamplesMaximized ? (
-                                <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900">
-                                    <div className="h-full flex flex-col">
-                                        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                                            <div className="flex items-center gap-2">
-                                                <label className={sectionHeaderStyles}>
-                                                    Examples
-                                                </label>
-                                                <CustomButton
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    onClick={() => setIsExamplesMaximized(false)}
-                                                    showHoverContent={true}
-                                                    hoverContent="Minimize"
-                                                >
-                                                    <Minimize2 className="w-4 h-4" />
-                                                </CustomButton>
-                                            </div>
-                                        </div>
-                                        <div className="flex-1 overflow-hidden p-4">
-                                            <EditableField
-                                                key="examples-maximized"
-                                                value={agent.examples || ""}
-                                                onChange={(value) => {
-                                                    handleUpdate({
-                                                        ...agent,
-                                                        examples: value
-                                                    });
-                                                }}
-                                                placeholder="Enter examples for this agent"
-                                                markdown
-                                                multiline
-                                                mentions
-                                                mentionsAtValues={atMentions}
-                                                showSaveButton={true}
-                                                showDiscardButton={true}
-                                                className="h-full min-h-0 border border-gray-200 dark:border-gray-700 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500/20 dark:focus-within:ring-indigo-400/20 overflow-auto"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex-1 min-h-0 h-0">
-                                    <div className="text-sm h-full">
-                                        <EditableField
-                                            key="examples"
-                                            value={agent.examples || ""}
-                                            onChange={(value) => {
-                                                handleUpdate({
-                                                    ...agent,
-                                                    examples: value
-                                                });
-                                            }}
-                                            placeholder="Enter examples for this agent"
-                                            markdown
-                                            multiline
-                                            mentions
-                                            mentionsAtValues={atMentions}
-                                            showSaveButton={true}
-                                            showDiscardButton={true}
-                                            className="h-full min-h-0 border border-gray-200 dark:border-gray-700 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500/20 dark:focus-within:ring-indigo-400/20 overflow-auto"
-                                        />
-                                    </div>
                                 </div>
                             )}
                         </div>
