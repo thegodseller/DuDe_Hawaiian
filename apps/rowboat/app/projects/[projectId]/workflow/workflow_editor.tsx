@@ -911,6 +911,7 @@ export function WorkflowEditor({
                         onPress={handlePublishWorkflow}
                         className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm"
                         startContent={<RocketIcon size={16} />}
+                        data-tour-target="deploy"
                     >
                         Deploy
                     </Button>
