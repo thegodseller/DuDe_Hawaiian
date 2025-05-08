@@ -61,11 +61,9 @@ def add_openai_recommended_instructions_to_agents(agents):
         agent.instructions = RECOMMENDED_PROMPT_PREFIX + '\n\n' + agent.instructions
     return agents
 
-def check_internal_visibility(current_agent, agent_configs):
+def check_internal_visibility(current_agent):
     """Check if an agent is internal based on its outputVisibility"""
-    agent_config = get_agent_config_by_name(current_agent.name, agent_configs)
-    visibility = agent_config.get('outputVisibility', outputVisibility.EXTERNAL.value)
-    return visibility == outputVisibility.INTERNAL.value
+    return current_agent.output_visibility == outputVisibility.INTERNAL.value
 
 def add_sender_details_to_messages(messages):
     for msg in messages:
@@ -175,7 +173,7 @@ async def run_turn_streamed(
         iter = 0
         while True:
             iter += 1
-            is_internal_agent = check_internal_visibility(current_agent, agent_configs)
+            is_internal_agent = check_internal_visibility(current_agent)
             print('-'*100)
             print(f"Iteration {iter} of turn loop")
             print(f"Current agent: {current_agent.name} (internal: {is_internal_agent})")
@@ -274,7 +272,7 @@ async def run_turn_streamed(
                         yield ('message', message)
 
                         # Update tracking and switch to child
-                        if check_internal_visibility(event.new_agent, agent_configs):
+                        if check_internal_visibility(event.new_agent):
                             child_call_counts[parent_child_key] = current_count + 1
                             parent_stack.append(current_agent)
                         current_agent = event.new_agent
@@ -381,7 +379,7 @@ async def run_turn_streamed(
                                                 url_citations.append(citation)
 
                             # Determine message type and create message
-                            is_internal = check_internal_visibility(current_agent, agent_configs)
+                            is_internal = check_internal_visibility(current_agent)
                             response_type = ResponseType.INTERNAL.value if is_internal else ResponseType.EXTERNAL.value
 
                             message = {

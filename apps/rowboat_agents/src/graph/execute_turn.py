@@ -13,7 +13,7 @@ from .helpers.access import (
 from .helpers.instructions import (
     add_rag_instructions_to_agent
 )
-
+from .types import outputVisibility
 from agents import Agent as NewAgent, Runner, FunctionTool, RunContextWrapper, ModelSettings, WebSearchTool
 from .tracing import AgentTurnTraceProcessor
 # Add import for OpenAI functionality
@@ -265,6 +265,14 @@ def get_agents(agent_configs, tool_configs, complete_request):
                 print(f"WARNING: Max calls per parent agent not received for agent {new_agent.name}. Using rowboat_agents default of {DEFAULT_MAX_CALLS_PER_PARENT_AGENT}")
             else:
                 print(f"Max calls per parent agent for agent {new_agent.name}: {new_agent.max_calls_per_parent_agent}")
+
+            # Set output visibility
+            new_agent.output_visibility = agent_config.get("outputVisibility", outputVisibility.EXTERNAL.value)
+            if not agent_config.get("outputVisibility", None):
+                print(f"WARNING: Output visibility not received for agent {new_agent.name}. Using rowboat_agents default of {new_agent.output_visibility}")
+            else:
+                print(f"Output visibility for agent {new_agent.name}: {new_agent.output_visibility}")
+
             # Handle the connected agents
             new_agent_to_children[agent_config["name"]] = agent_config.get("connectedAgents", [])
             new_agent_name_to_index[agent_config["name"]] = len(new_agents)
