@@ -326,7 +326,7 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                                         </svg>
                                     }
                                 >
-                                    Customize an existing example
+                                    Use an example
                                 </Button>
                                 
                                 {isExamplesDropdownOpen && (
