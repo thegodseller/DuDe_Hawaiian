@@ -369,55 +369,45 @@ export function Messages({
             if (!userMessageSeen) {
                 latency = 0;
             }
-            // Helper: is this message a transfer pill or internal message?
-            const isTransferPill = 'tool_calls' in message && message.tool_calls.some(tc => tc.function.name.startsWith('transfer_to_'));
-            const isInternal = message.agenticResponseType === 'internal';
-            
-            // Skip internal messages and transfer pills if debug mode is off
-            if (!showDebugMessages && (isTransferPill || isInternal)) {
-                return null;
+
+            // First check for tool calls
+            if ('tool_calls' in message && message.tool_calls) {
+                // Skip tool calls if debug mode is off
+                if (!showDebugMessages) {
+                    return null;
+                }
+                return (
+                    <ToolCalls
+                        toolCalls={message.tool_calls}
+                        results={toolCallResults}
+                        projectId={projectId}
+                        messages={messages}
+                        sender={message.agenticSender ?? ''}
+                        workflow={workflow}
+                        testProfile={testProfile}
+                        systemMessage={systemMessage}
+                        delta={latency}
+                    />
+                );
             }
 
-            if (isTransferPill || isInternal) {
-                // Find previous message that is either a transfer pill or internal message
-                let delta = latency;
-                for (let i = index - 1; i >= 0; i--) {
-                    const prev = messages[i];
-                    const prevIsTransferPill = prev.role === 'assistant' && 'tool_calls' in prev && prev.tool_calls.some(tc => tc.function.name.startsWith('transfer_to_'));
-                    const prevIsInternal = prev.role === 'assistant' && prev.agenticResponseType === 'internal';
-                    if (prevIsTransferPill || prevIsInternal) {
-                        delta = new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime();
-                        break;
-                    }
-                    if (prev.role === 'user') {
-                        break;
-                    }
+            // Then check for internal messages
+            if (message.agenticResponseType === 'internal') {
+                // Skip internal messages if debug mode is off
+                if (!showDebugMessages) {
+                    return null;
                 }
-                if (isTransferPill) {
-                    return (
-                        <ToolCalls
-                            toolCalls={message.tool_calls}
-                            results={toolCallResults}
-                            projectId={projectId}
-                            messages={messages}
-                            sender={message.agenticSender ?? ''}
-                            workflow={workflow}
-                            testProfile={testProfile}
-                            systemMessage={systemMessage}
-                            delta={delta}
-                        />
-                    );
-                } else {
-                    return (
-                        <InternalAssistantMessage
-                            content={message.content ?? ''}
-                            sender={message.agenticSender ?? ''}
-                            latency={latency}
-                            delta={delta}
-                        />
-                    );
-                }
+                return (
+                    <InternalAssistantMessage
+                        content={message.content ?? ''}
+                        sender={message.agenticSender ?? ''}
+                        latency={latency}
+                        delta={latency}
+                    />
+                );
             }
+
+            // Finally, regular assistant messages
             return (
                 <AssistantMessage
                     content={message.content ?? ''}
