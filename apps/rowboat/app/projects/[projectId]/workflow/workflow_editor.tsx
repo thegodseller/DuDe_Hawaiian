@@ -270,6 +270,7 @@ function reducer(state: State, action: Action): State {
                                 ragK: 3,
                                 controlType: "retain",
                                 outputVisibility: "user_facing",
+                                maxCallsPerParentAgent: 3,
                                 ...action.agent
                             });
                             draft.selection = {

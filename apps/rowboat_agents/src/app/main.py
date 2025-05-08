@@ -1,6 +1,5 @@
 import traceback
 from quart import Quart, request, jsonify, Response
-from datetime import datetime
 from functools import wraps
 import os
 import json
@@ -9,7 +8,6 @@ from hypercorn.asyncio import serve
 import asyncio
 
 from src.graph.core import run_turn_streamed
-from src.graph.tools import RAG_TOOL, CLOSE_CHAT_TOOL
 from src.utils.common import read_json_from_file
 
 app = Quart(__name__)
@@ -17,12 +15,6 @@ master_config = read_json_from_file("./configs/default_config.json")
 print("Master config:", master_config)
 
 # Get environment variables with defaults
-MAX_CALLS_PER_CHILD_AGENT = 1
-try:
-    MAX_CALLS_PER_CHILD_AGENT = int(os.environ.get('MAX_CALLS_PER_CHILD_AGENT'))
-except Exception as e:
-    print(f"Error getting MAX_CALLS_PER_CHILD_AGENT: {e}, using default of 1")
-
 ENABLE_TRACING = False
 try:
     ENABLE_TRACING = os.environ.get('ENABLE_TRACING').lower() == 'true'
@@ -103,9 +95,7 @@ async def chat():
             tool_configs=data.get("tools", []),
             prompt_configs=data.get("prompts", []),
             start_turn_with_start_agent=master_config.get("start_turn_with_start_agent", False),
-            max_calls_per_child_agent=MAX_CALLS_PER_CHILD_AGENT,
             state=data.get("state", {}),
-            additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL],
             complete_request=data,
             enable_tracing=ENABLE_TRACING
         ):
@@ -172,9 +162,7 @@ async def chat_stream():
                 tool_configs=request_data.get("tools", []),
                 prompt_configs=request_data.get("prompts", []),
                 start_turn_with_start_agent=master_config.get("start_turn_with_start_agent", False),
-                max_calls_per_child_agent=MAX_CALLS_PER_CHILD_AGENT,
                 state=request_data.get("state", {}),
-                additional_tool_configs=[RAG_TOOL, CLOSE_CHAT_TOOL],
                 complete_request=request_data,
                 enable_tracing=ENABLE_TRACING
             ):

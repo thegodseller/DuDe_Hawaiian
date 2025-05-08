@@ -176,6 +176,8 @@ def get_rag_tool(config: dict, complete_request: dict) -> FunctionTool:
         return tool
     else:
         return None
+    
+DEFAULT_MAX_CALLS_PER_PARENT_AGENT = 3
 
 def get_agents(agent_configs, tool_configs, complete_request):
     """
@@ -242,9 +244,12 @@ def get_agents(agent_configs, tool_configs, complete_request):
         # add the name and description to the agent instructions
         agent_instructions = f"## Your Name\n{agent_config['name']}\n\n## Description\n{agent_config['description']}\n\n## Instructions\n{agent_config['instructions']}"
         try:
+            # Identify the model
             model_name = agent_config["model"] if agent_config["model"] else PROVIDER_DEFAULT_MODEL
             print(f"Using model: {model_name}")
             model=OpenAIChatCompletionsModel(model=model_name, openai_client=client) if client else agent_config["model"]
+
+            # Create the agent object
             new_agent = NewAgent(
                 name=agent_config["name"],
                 instructions=agent_instructions,
@@ -254,6 +259,13 @@ def get_agents(agent_configs, tool_configs, complete_request):
                 model_settings=ModelSettings(temperature=0.0)
             )
 
+            # Set the max calls per parent agent
+            new_agent.max_calls_per_parent_agent = agent_config.get("maxCallsPerParentAgent", DEFAULT_MAX_CALLS_PER_PARENT_AGENT)
+            if not agent_config.get("maxCallsPerParentAgent", None):
+                print(f"WARNING: Max calls per parent agent not received for agent {new_agent.name}. Using rowboat_agents default of {DEFAULT_MAX_CALLS_PER_PARENT_AGENT}")
+            else:
+                print(f"Max calls per parent agent for agent {new_agent.name}: {new_agent.max_calls_per_parent_agent}")
+            # Handle the connected agents
             new_agent_to_children[agent_config["name"]] = agent_config.get("connectedAgents", [])
             new_agent_name_to_index[agent_config["name"]] = len(new_agents)
             new_agents.append(new_agent)
@@ -268,7 +280,7 @@ def get_agents(agent_configs, tool_configs, complete_request):
             new_agent.handoffs = []
         # Look up the agent's children from the old agent and create a list called handoffs in new_agent with pointers to the children in new_agents
         new_agent.handoffs = [new_agents[new_agent_name_to_index[child]] for child in new_agent_to_children[new_agent.name]]
-
+    
     print("Returning created agents")
     print("="*100)
     return new_agents

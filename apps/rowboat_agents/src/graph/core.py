@@ -93,9 +93,7 @@ async def run_turn_streamed(
     tool_configs,
     prompt_configs,
     start_turn_with_start_agent,
-    max_calls_per_child_agent,
     state={},
-    additional_tool_configs=[],
     complete_request={},
     enable_tracing=None
 ):
@@ -156,7 +154,11 @@ async def run_turn_streamed(
 
         # Initialize agents and get external tools
 
-        new_agents = get_agents(agent_configs=agent_configs, tool_configs=tool_configs, complete_request=complete_request)
+        new_agents = get_agents(
+            agent_configs=agent_configs, 
+            tool_configs=tool_configs, 
+            complete_request=complete_request
+        )
         new_agents = add_child_transfer_related_instructions_to_agents(new_agents)
         new_agents = add_openai_recommended_instructions_to_agents(new_agents)
         last_agent_name = get_last_agent_name(
@@ -226,7 +228,7 @@ async def run_turn_streamed(
                         # Check if we've already called this child agent too many times
                         parent_child_key = f"{current_agent.name}:{event.new_agent.name}"
                         current_count = child_call_counts.get(parent_child_key, 0)
-                        if current_count >= max_calls_per_child_agent:
+                        if current_count >= event.new_agent.max_calls_per_parent_agent:
                             print(f"Skipping transfer from {current_agent.name} to {event.new_agent.name} (max calls reached from parent to child)")
                             continue
 

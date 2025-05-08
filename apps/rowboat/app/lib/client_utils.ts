@@ -40,6 +40,7 @@ export function validateConfigChanges(configType: string, configChanges: Record<
                 connectedAgents: [],
                 controlType: 'retain',
                 outputVisibility: 'user_facing',
+                maxCallsPerParentAgent: 3,
             } as z.infer<typeof WorkflowAgent>;
             schema = WorkflowAgent;
             break;
