@@ -194,6 +194,15 @@ async def run_turn_streamed(
                 try:
                     # Handle web search events
                     if event.type == "raw_response_event":
+                        # Handle token usage counting
+                        if hasattr(event.data, 'type') and event.data.type == "response.completed" and hasattr(event.data.response, 'usage'):
+                            tokens_used["total"] += event.data.response.usage.total_tokens
+                            tokens_used["prompt"] += event.data.response.usage.input_tokens
+                            tokens_used["completion"] += event.data.response.usage.output_tokens
+                            print('-'*50)
+                            print(f"Found usage information. Updated cumulative tokens: {tokens_used}")
+                            print('-'*50)
+
                         web_search_messages = handle_web_search_event(event, current_agent)
                         for message in web_search_messages:
                             message['response_type'] = ResponseType.INTERNAL.value
