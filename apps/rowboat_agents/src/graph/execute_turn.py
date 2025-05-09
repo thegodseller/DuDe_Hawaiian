@@ -235,7 +235,6 @@ def get_agents(agent_configs, tool_configs, complete_request):
                     )
                 if tool:
                     new_tools.append(tool)
-                    logger.debug(f"Added tool {tool_name} to agent {agent_config['name']}")
                     print(f"Added tool {tool_name} to agent {agent_config['name']}")
             else:
                 print(f"WARNING: Tool {tool_name} not found in tool_configs")
