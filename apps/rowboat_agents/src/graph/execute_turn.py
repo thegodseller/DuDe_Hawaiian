@@ -153,7 +153,7 @@ def get_rag_tool(config: dict, complete_request: dict) -> FunctionTool:
     """
     project_id = complete_request.get("projectId", "")
     if config.get("ragDataSources", None):
-        print("rag_search")
+        print(f"Creating rag_search tool with params:\n-Data Sources: {config.get('ragDataSources', [])}\n-Return Type: {config.get('ragReturnType', 'chunks')}\n-K: {config.get('ragK', 3)}")
         params = {
             "type": "object",
             "properties": {
@@ -168,10 +168,10 @@ def get_rag_tool(config: dict, complete_request: dict) -> FunctionTool:
             ]
         }
         tool = FunctionTool(
-            name="rag_search",
-            description="Get information about an article",
-            params_json_schema=params,
-            on_invoke_tool=lambda ctx, args: call_rag_tool(project_id, json.loads(args)['query'], config.get("ragDataSources", []), "chunks", 3)
+                name="rag_search",
+                description="Get information about an article",
+                params_json_schema=params,
+                on_invoke_tool=lambda ctx, args: call_rag_tool(project_id, json.loads(args)['query'], config.get("ragDataSources", []), config.get("ragReturnType", "chunks"), config.get("ragK", 3))
         )
         return tool
     else:
