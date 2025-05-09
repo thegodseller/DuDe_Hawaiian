@@ -14,6 +14,8 @@ import { getDataSource } from "../../../../actions/datasource_actions";
 import { TextSource } from "../components/text-source";
 import { Panel } from "@/components/common/panel-common";
 import { Section, SectionRow, SectionLabel, SectionContent } from "../components/section";
+import Link from "next/link";
+import { BackIcon } from "../../../../lib/components/icons";
 
 export function SourcePage({
     sourceId,
@@ -95,6 +97,15 @@ export function SourcePage({
         <Panel title={source.name.toUpperCase()}>
             <div className="h-full overflow-auto px-4 py-4">
                 <div className="max-w-[768px] mx-auto space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Link 
+                            href={`/projects/${projectId}/sources`}
+                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                        >
+                            <BackIcon size={16} />
+                            <span>Back to sources</span>
+                        </Link>
+                    </div>
                     <Section
                         title="Details"
                         description="Basic information about this data source."
