@@ -96,7 +96,7 @@ export function AgentConfig({
             setShowRagCta(false);
         }
         setPreviousRagSources(currentSources);
-    }, [agent.ragDataSources]);
+    }, [agent.ragDataSources, previousRagSources.length]);
 
     const handleUpdateInstructions = async () => {
         const message = `Update the instructions for agent "${agent.name}" to use the rag tool (rag_search) since data sources have been added. If this has already been done, do not take any action, but let me know.`;

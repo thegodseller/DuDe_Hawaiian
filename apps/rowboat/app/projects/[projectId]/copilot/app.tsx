@@ -195,6 +195,8 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
     );
 });
 
+App.displayName = 'App';
+
 export const Copilot = forwardRef<{ handleUserMessage: (message: string) => void }, {
     projectId: string;
     workflow: z.infer<typeof Workflow>;
@@ -300,4 +302,6 @@ export const Copilot = forwardRef<{ handleUserMessage: (message: string) => void
         </Panel>
     );
 });
+
+Copilot.displayName = 'Copilot';
 
