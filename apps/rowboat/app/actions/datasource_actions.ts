@@ -43,11 +43,13 @@ export async function listDataSources(projectId: string): Promise<WithStringId<z
 export async function createDataSource({
     projectId,
     name,
+    description,
     data,
     status = 'pending',
 }: {
     projectId: string,
     name: string,
+    description?: string,
     data: z.infer<typeof DataSource>['data'],
     status?: 'pending' | 'ready',
 }): Promise<WithStringId<z.infer<typeof DataSource>>> {
@@ -57,6 +59,7 @@ export async function createDataSource({
         projectId: projectId,
         active: true,
         name: name,
+        description,
         createdAt: (new Date()).toISOString(),
         attempts: 0,
         status: status,
@@ -353,4 +356,29 @@ export async function getUploadUrlsForFilesDataSource(
     }
 
     return urls;
+}
+
+export async function updateDataSource({
+    projectId,
+    sourceId,
+    description,
+}: {
+    projectId: string,
+    sourceId: string,
+    description: string,
+}) {
+    await projectAuthCheck(projectId);
+    await getDataSource(projectId, sourceId);
+
+    await dataSourcesCollection.updateOne({
+        _id: new ObjectId(sourceId),
+    }, {
+        $set: {
+            description,
+            lastUpdatedAt: (new Date()).toISOString(),
+        },
+        $inc: {
+            version: 1,
+        },
+    });
 }

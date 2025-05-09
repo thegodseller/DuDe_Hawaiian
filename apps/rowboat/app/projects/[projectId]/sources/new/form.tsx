@@ -57,6 +57,7 @@ export function Form({
         const source = await createDataSource({
             projectId,
             name: formData.get('name') as string,
+            description: formData.get('description') as string,
             data: {
                 type: 'urls',
             },
@@ -85,6 +86,7 @@ export function Form({
         const source = await createDataSource({
             projectId,
             name: formData.get('name') as string,
+            description: formData.get('description') as string,
             data: {
                 type: formData.get('type') as 'files_local' | 'files_s3',
             },
@@ -98,6 +100,7 @@ export function Form({
         const source = await createDataSource({
             projectId,
             name: formData.get('name') as string,
+            description: formData.get('description') as string,
             data: {
                 type: 'text',
             },
@@ -167,6 +170,17 @@ export function Form({
                                 className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                             />
                         </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Description
+                            </label>
+                            <Textarea
+                                name="description"
+                                placeholder="e.g. A collection of help articles from our documentation"
+                                rows={2}
+                                className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                            />
+                        </div>
                         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                             <div className="flex items-center gap-2 mb-2 text-gray-700 dark:text-gray-300">
                                 <svg 
@@ -219,6 +233,17 @@ export function Form({
                                 name="name"
                                 placeholder="e.g. Documentation files"
                                 rows={1}
+                                className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Description
+                            </label>
+                            <Textarea
+                                name="description"
+                                placeholder="e.g. A collection of documentation files"
+                                rows={2}
                                 className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                             />
                         </div>
@@ -278,6 +303,17 @@ export function Form({
                                 name="name"
                                 placeholder="e.g. Product documentation"
                                 rows={1}
+                                className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Description
+                            </label>
+                            <Textarea
+                                name="description"
+                                placeholder="e.g. A collection of documentation for our product"
+                                rows={2}
                                 className="rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                             />
                         </div>

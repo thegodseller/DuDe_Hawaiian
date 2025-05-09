@@ -1033,6 +1033,7 @@ export function WorkflowEditor({
                                 } : undefined
                             }
                             isInitialState={isInitialState}
+                            dataSources={dataSources}
                         />
                     </ResizablePanel>
                 </>

@@ -5,6 +5,7 @@ import { useRef, useState, createContext, useContext, useCallback, forwardRef, u
 import { CopilotChatContext } from "../../../lib/types/copilot_types";
 import { CopilotMessage } from "../../../lib/types/copilot_types";
 import { Workflow } from "@/app/lib/types/workflow_types";
+import { DataSource } from "@/app/lib/types/datasource_types";
 import { z } from "zod";
 import { Action as WorkflowDispatch } from "../workflow/workflow_editor";
 import { Panel } from "@/components/common/panel-common";
@@ -30,6 +31,7 @@ interface AppProps {
     onCopyJson?: (data: { messages: any[] }) => void;
     onMessagesChange?: (messages: z.infer<typeof CopilotMessage>[]) => void;
     isInitialState?: boolean;
+    dataSources?: z.infer<typeof DataSource>[];
 }
 
 const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
@@ -40,6 +42,7 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
     onCopyJson,
     onMessagesChange,
     isInitialState = false,
+    dataSources,
 }, ref) {
     const [messages, setMessages] = useState<z.infer<typeof CopilotMessage>[]>([]);
     const [discardContext, setDiscardContext] = useState(false);
@@ -63,7 +66,8 @@ const App = forwardRef<{ handleCopyChat: () => void }, AppProps>(function App({
     } = useCopilot({
         projectId,
         workflow: workflowRef.current,
-        context: effectiveContext
+        context: effectiveContext,
+        dataSources: dataSources
     });
 
     // Store latest start/cancel functions in refs
@@ -196,12 +200,14 @@ export function Copilot({
     chatContext = undefined,
     dispatch,
     isInitialState = false,
+    dataSources,
 }: {
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     chatContext?: z.infer<typeof CopilotChatContext>;
     dispatch: (action: WorkflowDispatch) => void;
     isInitialState?: boolean;
+    dataSources?: z.infer<typeof DataSource>[];
 }) {
     const [copilotKey, setCopilotKey] = useState(0);
     const [showCopySuccess, setShowCopySuccess] = useState(false);
@@ -277,6 +283,7 @@ export function Copilot({
                     onCopyJson={handleCopyJson}
                     onMessagesChange={setMessages}
                     isInitialState={isInitialState}
+                    dataSources={dataSources}
                 />
             </div>
         </Panel>

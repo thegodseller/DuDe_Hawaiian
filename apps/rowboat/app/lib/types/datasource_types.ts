@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const DataSource = z.object({
     name: z.string(),
+    description: z.string().optional(),
     projectId: z.string(),
     active: z.boolean().default(true),
     status: z.union([
