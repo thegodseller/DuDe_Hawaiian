@@ -16,6 +16,7 @@ class AssistantMessage(BaseModel):
     content: str
 
 class DataSource(BaseModel):
+    _id: str
     name: str
     description: Optional[str] = None
     active: bool = True

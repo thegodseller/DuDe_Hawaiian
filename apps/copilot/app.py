@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, Response, stream_with_context
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, Field
 from typing import List, Optional
 from copilot import UserMessage, AssistantMessage, get_response
 from streaming import get_streaming_response
@@ -10,12 +10,16 @@ from copilot import copilot_instructions_edit_agent
 import json
 
 class DataSource(BaseModel):
+    id: str = Field(alias='_id')
     name: str
     description: Optional[str] = None
     active: bool = True
     status: str  # 'pending' | 'ready' | 'error' | 'deleted'
     error: Optional[str] = None
     data: dict  # The discriminated union based on type
+
+    class Config:
+        populate_by_name = True
 
 class ApiRequest(BaseModel):
     messages: List[UserMessage | AssistantMessage]
@@ -61,7 +65,10 @@ def health():
 @require_api_key
 def chat_stream():
     try:
-        request_data = ApiRequest(**request.json)
+        raw_data = request.json
+        print(f"Raw request JSON: {json.dumps(raw_data)}")
+        
+        request_data = ApiRequest(**raw_data)
         print(f"received /chat_stream request: {request_data}")
         validate_request(request_data)
 

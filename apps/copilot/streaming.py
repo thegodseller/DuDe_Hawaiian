@@ -1,6 +1,6 @@
 from openai import OpenAI
 from flask import Flask, request, jsonify, Response, stream_with_context
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, Field
 from typing import List, Dict, Any, Literal, Optional
 import json
 from lib import AgentContext, PromptContext, ToolContext, ChatContext
@@ -16,12 +16,16 @@ class AssistantMessage(BaseModel):
     content: str
 
 class DataSource(BaseModel):
+    id: str = Field(alias='_id')
     name: str
     description: Optional[str] = None
     active: bool = True
     status: str  # 'pending' | 'ready' | 'error' | 'deleted'
     error: Optional[str] = None
     data: dict  # The discriminated union based on type
+
+    class Config:
+        populate_by_name = True
 
 with open('copilot_multi_agent.md', 'r', encoding='utf-8') as file:
     copilot_instructions_multi_agent = file.read()
@@ -81,6 +85,7 @@ def get_streaming_response(
     data_sources_prompt = ""
     if dataSources:
         print(f"Data sources found at project level: {dataSources}")
+        print(f"Data source IDs: {[ds.id for ds in dataSources]}")
         data_sources_prompt = f"""
 **NOTE**: The following data sources are available:
 ```json
@@ -136,6 +141,8 @@ def create_app():
             if not request_data or 'messages' not in request_data:
                 return jsonify({'error': 'No messages provided'}), 400
 
+            print(f"Raw request data: {request_data}")
+
             messages = [
                 UserMessage(**msg) if msg['role'] == 'user' else AssistantMessage(**msg)
                 for msg in request_data['messages']
@@ -144,13 +151,19 @@ def create_app():
             workflow_schema = request_data.get('workflow_schema', '')
             current_workflow_config = request_data.get('current_workflow_config', '')
             context = None  # You can add context handling if needed
+            dataSources = None
+            if 'dataSources' in request_data and request_data['dataSources']:
+                print(f"Raw dataSources from request: {request_data['dataSources']}")
+                dataSources = [DataSource(**ds) for ds in request_data['dataSources']]
+                print(f"Parsed dataSources: {dataSources}")
 
             def generate():
                 stream = get_streaming_response(
                     messages=messages,
                     workflow_schema=workflow_schema,
                     current_workflow_config=current_workflow_config,
-                    context=context
+                    context=context,
+                    dataSources=dataSources
                 )
 
                 for chunk in stream:

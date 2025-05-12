@@ -6,14 +6,33 @@ import { convertToAgenticAPIChatMessages } from "./agents_api_types";
 import { DataSource } from "./datasource_types";
 
 // Create a filtered version of DataSource for copilot
-export const CopilotDataSource = DataSource.omit({
-    projectId: true,
-    version: true,
-    attempts: true,
-    createdAt: true,
-    lastUpdatedAt: true,
-    pendingRefresh: true,
-});
+export const CopilotDataSource = z.object({
+    _id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    active: z.boolean().default(true),
+    status: z.union([
+        z.literal('pending'),
+        z.literal('ready'),
+        z.literal('error'),
+        z.literal('deleted'),
+    ]),
+    error: z.string().optional(),
+    data: z.discriminatedUnion('type', [
+        z.object({
+            type: z.literal('urls'),
+        }),
+        z.object({
+            type: z.literal('files_local'),
+        }),
+        z.object({
+            type: z.literal('files_s3'),
+        }),
+        z.object({
+            type: z.literal('text'),
+        })
+    ]),
+}).passthrough();
 
 export const CopilotWorkflow = Workflow.omit({
     lastUpdatedAt: true,
