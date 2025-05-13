@@ -119,7 +119,7 @@ User: {last_message.content}
     updated_msgs = [{"role": "system", "content": sys_prompt}] + [
         message.model_dump() for message in messages
     ]
-    
+    print(f"Input to copilot chat completions: {updated_msgs}")
     return completions_client.chat.completions.create(
         model=PROVIDER_COPILOT_MODEL,
         messages=updated_msgs,
