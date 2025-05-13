@@ -62,10 +62,15 @@ export async function createDataSource({
         description,
         createdAt: (new Date()).toISOString(),
         attempts: 0,
-        status: status,
         version: 1,
         data,
     };
+
+    // Only set status for non-file data sources
+    if (data.type !== 'files_local' && data.type !== 'files_s3') {
+        source.status = status;
+    }
+
     await dataSourcesCollection.insertOne(source);
 
     const { _id, ...rest } = source as WithId<z.infer<typeof DataSource>>;
@@ -158,7 +163,7 @@ export async function addDocsToDataSource({
     }[]
 }): Promise<void> {
     await projectAuthCheck(projectId);
-    await getDataSource(projectId, sourceId);
+    const source = await getDataSource(projectId, sourceId);
 
     await dataSourceDocsCollection.insertMany(docData.map(doc => {
         const record: z.infer<typeof DataSourceDoc> = {
@@ -177,19 +182,22 @@ export async function addDocsToDataSource({
         return recordWithId;
     }));
 
-    await dataSourcesCollection.updateOne(
-        { _id: new ObjectId(sourceId) },
-        {
-            $set: {
-                status: 'pending',
-                attempts: 0,
-                lastUpdatedAt: new Date().toISOString(),
-            },
-            $inc: {
-                version: 1,
-            },
-        }
-    );
+    // Only set status to pending when files are added
+    if (docData.length > 0 && (source.data.type === 'files_local' || source.data.type === 'files_s3')) {
+        await dataSourcesCollection.updateOne(
+            { _id: new ObjectId(sourceId) },
+            {
+                $set: {
+                    status: 'pending',
+                    attempts: 0,
+                    lastUpdatedAt: new Date().toISOString(),
+                },
+                $inc: {
+                    version: 1,
+                },
+            }
+        );
+    }
 }
 
 export async function listDocsInDataSource({

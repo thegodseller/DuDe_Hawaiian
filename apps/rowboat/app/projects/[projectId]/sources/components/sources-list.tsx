@@ -102,9 +102,11 @@ export function SourcesList({ projectId }: { projectId: string }) {
                                             <th className="w-[20%] px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                                 Type
                                             </th>
-                                            <th className="w-[35%] px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                                Status
-                                            </th>
+                                            {sources.some(source => source.status) && (
+                                                <th className="w-[35%] px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                                    Status
+                                                </th>
+                                            )}
                                             <th className="w-[15%] px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                                 Active
                                             </th>
@@ -152,16 +154,18 @@ export function SourcesList({ projectId }: { projectId: string }) {
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4 text-left">
-                                                    <div className="text-sm">
-                                                        <SelfUpdatingSourceStatus 
-                                                            sourceId={source._id} 
-                                                            projectId={projectId} 
-                                                            initialStatus={source.status} 
-                                                            compact={true} 
-                                                        />
-                                                    </div>
-                                                </td>
+                                                {sources.some(source => source.status) && (
+                                                    <td className="px-6 py-4 text-left">
+                                                        <div className="text-sm">
+                                                            <SelfUpdatingSourceStatus 
+                                                                sourceId={source._id} 
+                                                                projectId={projectId} 
+                                                                initialStatus={source.status} 
+                                                                compact={true} 
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                )}
                                                 <td className="px-6 py-4 text-left">
                                                     <ToggleSource 
                                                         projectId={projectId} 

@@ -200,12 +200,15 @@ export function SourcePage({
                                 </SectionContent>
                             </SectionRow>
 
-                            <SectionRow>
-                                <SectionLabel>Source</SectionLabel>
-                                <SectionContent>
-                                    <SourceStatus status={source.status} projectId={projectId} />
-                                </SectionContent>
-                            </SectionRow>
+                            {/* Only show status when it exists */}
+                            {source.status && (
+                                <SectionRow>
+                                    <SectionLabel>Status</SectionLabel>
+                                    <SectionContent>
+                                        <SourceStatus status={source.status} projectId={projectId} />
+                                    </SectionContent>
+                                </SectionRow>
+                            )}
                         </div>
                     </Section>
 

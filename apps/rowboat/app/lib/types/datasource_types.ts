@@ -10,7 +10,7 @@ export const DataSource = z.object({
         z.literal('ready'),
         z.literal('error'),
         z.literal('deleted'),
-    ]),
+    ]).optional(),
     version: z.number(),
     error: z.string().optional(),
     createdAt: z.string().datetime(),

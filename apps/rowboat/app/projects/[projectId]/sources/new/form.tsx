@@ -90,7 +90,6 @@ export function Form({
             data: {
                 type: formData.get('type') as 'files_local' | 'files_s3',
             },
-            status: 'ready',
         });
 
         router.push(`/projects/${projectId}/sources/${source._id}`);
