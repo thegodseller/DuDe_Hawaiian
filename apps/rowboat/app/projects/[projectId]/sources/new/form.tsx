@@ -151,7 +151,7 @@ export function Form({
                                 />
                             </svg>
                             <div className="text-sm text-blue-700 dark:text-blue-300">
-                                To use these data sources with your agents, go to the RAG tab inside individual agent settings.
+                                After creating data sources, go to the RAG tab inside individual agent settings to connect them to agents.
                             </div>
                         </div>
                     </div>
