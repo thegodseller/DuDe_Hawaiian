@@ -7,6 +7,8 @@ import { projectsCollection } from '../lib/mongodb';
 import { fetchMcpTools, toggleMcpTool } from './mcp_actions';
 import { fetchMcpToolsForServer } from './mcp_actions';
 import { headers } from 'next/headers';
+import { authorizeUserAction } from './billing_actions';
+import { redisClient } from '../lib/redis';
 
 type McpServerType = z.infer<typeof MCPServer>;
 type McpToolType = z.infer<typeof McpTool>;
@@ -542,13 +544,34 @@ export async function enableServer(
     serverName: string,
     projectId: string,
     enabled: boolean
-): Promise<CreateServerInstanceResponse | {}> {
+): Promise<CreateServerInstanceResponse | {} | { billingError: string }> {
     try {
         await projectAuthCheck(projectId);
 
         console.log('[Klavis API] Toggle server request:', { serverName, projectId, enabled });
         
         if (enabled) {
+            // get count of enabled hosted mcp servers for this project
+            const existingInstances = await listActiveServerInstances(projectId);
+            // billing limit check
+            const authResponse = await authorizeUserAction({
+              type: 'enable_hosted_tool_server',
+              data: {
+                existingServerCount: existingInstances.length,
+              },
+            });
+            if (!authResponse.success) {
+              return { billingError: authResponse.error || 'Billing error' };
+            }
+
+            // set key in redis to indicate that a server is being enabled on this project
+            // the key set should only succeed if the key does not already exist
+            const setResult = await redisClient.set(`klavis_enabling_server:${projectId}`, 'true', { EX: 60 * 60, NX: true });
+            console.log('[redis] Set result here:', setResult);
+            if (setResult !== 'OK') {
+              throw new Error("A server is already being enabled on this project");
+            }
+
             console.log(`[Klavis API] Creating server instance for ${serverName}...`);
             const result = await createMcpServerInstance(serverName, projectId, "Rowboat");
             console.log('[Klavis API] Server instance created:', { 
@@ -639,6 +662,9 @@ export async function enableServer(
             } catch (enrichError) {
                 console.error(`[Klavis API] Tool enrichment failed for ${serverName}:`, enrichError);
             }
+
+            // remove key from redis
+            await redisClient.del(`klavis_enabling_server:${projectId}`);
 
             return result;
         } else {

@@ -4,10 +4,10 @@ import { AgenticAPITool } from "../../../lib/types/agents_api_types";
 import { WorkflowPrompt, WorkflowAgent, Workflow, WorkflowTool } from "../../../lib/types/workflow_types";
 import { DataSource } from "../../../lib/types/datasource_types";
 import { z } from "zod";
-import { PlusIcon, Sparkles, X as XIcon, ChevronDown, ChevronRight, Trash2, Maximize2, Minimize2 } from "lucide-react";
+import { PlusIcon, Sparkles, X as XIcon, ChevronDown, ChevronRight, Trash2, Maximize2, Minimize2, StarIcon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { usePreviewModal } from "../workflow/preview-modal";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, SelectItem } from "@heroui/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, SelectItem, Chip, SelectSection } from "@heroui/react";
 import { PreviewModalProvider } from "../workflow/preview-modal";
 import { CopilotMessage } from "@/app/lib/types/copilot_types";
 import { getCopilotAgentInstructions } from "@/app/actions/copilot_actions";
@@ -23,6 +23,8 @@ import { USE_TRANSFER_CONTROL_OPTIONS } from "@/app/lib/feature_flags";
 import { Input } from "@/components/ui/input";
 import { Info } from "lucide-react";
 import { useCopilot } from "../copilot/use-copilot";
+import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
+import { ModelsResponse } from "@/app/lib/types/billing_types";
 
 // Common section header styles
 const sectionHeaderStyles = "text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400";
@@ -47,6 +49,7 @@ export function AgentConfig({
     handleClose,
     useRag,
     triggerCopilotChat,
+    eligibleModels,
 }: {
     projectId: string,
     workflow: z.infer<typeof Workflow>,
@@ -61,6 +64,7 @@ export function AgentConfig({
     handleClose: () => void,
     useRag: boolean,
     triggerCopilotChat: (message: string) => void,
+    eligibleModels: z.infer<typeof ModelsResponse.shape.agentModels> | "*",
 }) {
     const [isAdvancedConfigOpen, setIsAdvancedConfigOpen] = useState(false);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -72,7 +76,8 @@ export function AgentConfig({
     const [activeTab, setActiveTab] = useState<TabType>('instructions');
     const [showRagCta, setShowRagCta] = useState(false);
     const [previousRagSources, setPreviousRagSources] = useState<string[]>([]);
-    
+    const [billingError, setBillingError] = useState<string | null>(null);
+
     const {
         start: startCopilotChat,
     } = useCopilot({
@@ -490,8 +495,8 @@ export function AgentConfig({
                                     <label className={sectionHeaderStyles}>
                                         Model
                                     </label>
-                                    <div className="relative ml-2 group">
-                                        <Info 
+                                    {eligibleModels === "*" && <div className="relative ml-2 group">
+                                        <Info
                                             className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors"
                                         />
                                         <div className="absolute bottom-full left-0 mb-2 p-3 w-80 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs invisible group-hover:visible z-50">
@@ -505,17 +510,67 @@ export function AgentConfig({
                                             By default, the model is set to gpt-4.1, assuming your OpenAI API key is set in PROVIDER_API_KEY and PROVIDER_BASE_URL is not set.
                                             <div className="absolute h-2 w-2 bg-white dark:bg-gray-800 transform rotate-45 -bottom-1 left-4 border-r border-b border-gray-200 dark:border-gray-700"></div>
                                         </div>
-                                    </div>
+                                    </div>}
                                 </div>
                                 <div className="w-full">
-                                    <Input
+                                    {eligibleModels === "*" && <Input
                                         value={agent.model}
                                         onChange={(e) => handleUpdate({
                                             ...agent,
                                             model: e.target.value as z.infer<typeof WorkflowAgent>['model']
                                         })}
                                         className="w-full max-w-64"
-                                    />
+                                    />}
+                                    {eligibleModels !== "*" && <Select
+                                        variant="bordered"
+                                        placeholder="Select model"
+                                        className="w-full max-w-64"
+                                        selectedKeys={[agent.model]}
+                                        onSelectionChange={(keys) => {
+                                            const key = keys.currentKey as string;
+                                            const model = eligibleModels.find((m) => m.name === key);
+                                            if (!model) {
+                                                return;
+                                            }
+                                            if (!model.eligible) {
+                                                setBillingError(`Please upgrade to the ${model.plan.toUpperCase()} plan to use this model.`);
+                                                return;
+                                            }
+                                            handleUpdate({
+                                                ...agent,
+                                                model: key as z.infer<typeof WorkflowAgent>['model']
+                                            });
+                                        }}
+                                    >
+                                        <SelectSection title="Available">
+                                            {eligibleModels.filter((model) => model.eligible).map((model) => (
+                                                <SelectItem
+                                                    key={model.name}
+                                                >
+                                                    {model.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectSection>
+                                        <SelectSection title="Requires plan upgrade">
+                                            {eligibleModels.filter((model) => !model.eligible).map((model) => (
+                                                <SelectItem
+                                                    key={model.name}
+                                                    endContent={<Chip
+                                                        color="warning"
+                                                        size="sm"
+                                                        variant="bordered"
+                                                    >
+                                                        {model.plan.toUpperCase()}
+                                                    </Chip>
+                                                    }
+                                                    startContent={<StarIcon className="w-4 h-4 text-warning" />}
+                                                >
+                                                    {model.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectSection>
+                                    </Select>
+                                    }
                                 </div>
                             </div>
 
@@ -764,6 +819,12 @@ export function AgentConfig({
                         }}
                     />
                 </PreviewModalProvider>
+
+                <BillingUpgradeModal
+                    isOpen={!!billingError}
+                    onClose={() => setBillingError(null)}
+                    errorMessage={billingError || ''}
+                />
             </div>
         </Panel>
     );
@@ -789,6 +850,7 @@ function GenerateInstructionsModal({
     const [prompt, setPrompt] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [billingError, setBillingError] = useState<string | null>(null);
     const { showPreview } = usePreviewModal();
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -797,6 +859,7 @@ function GenerateInstructionsModal({
             setPrompt("");
             setIsLoading(false);
             setError(null);
+            setBillingError(null);
             textareaRef.current?.focus();
         }
     }, [isOpen]);
@@ -804,6 +867,7 @@ function GenerateInstructionsModal({
     const handleGenerate = async () => {
         setIsLoading(true);
         setError(null);
+        setBillingError(null);
         try {
             const msgs: z.infer<typeof CopilotMessage>[] = [
                 {
@@ -812,6 +876,12 @@ function GenerateInstructionsModal({
                 },
             ];
             const newInstructions = await getCopilotAgentInstructions(projectId, msgs, workflow, agent.name);
+            if (typeof newInstructions === 'object' && 'billingError' in newInstructions) {
+                setBillingError(newInstructions.billingError);
+                setError(newInstructions.billingError);
+                setIsLoading(false);
+                return;
+            }
             
             onClose();
             
@@ -840,59 +910,66 @@ function GenerateInstructionsModal({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} size="lg">
-            <ModalContent>
-                <ModalHeader>Generate Instructions</ModalHeader>
-                <ModalBody>
-                    <div className="flex flex-col gap-4">
-                        {error && (
-                            <div className="p-2 bg-red-50 border border-red-200 rounded-lg flex gap-2 justify-between items-center text-sm">
-                                <p className="text-red-600">{error}</p>
-                                <CustomButton
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() => {
-                                        setError(null);
-                                        handleGenerate();
-                                    }}
-                                >
-                                    Retry
-                                </CustomButton>
-                            </div>
-                        )}
-                        <Textarea
-                            ref={textareaRef}
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            onKeyDown={handleKeyDown}
+        <>
+            <Modal isOpen={isOpen} onClose={onClose} size="lg">
+                <ModalContent>
+                    <ModalHeader>Generate Instructions</ModalHeader>
+                    <ModalBody>
+                        <div className="flex flex-col gap-4">
+                            {error && (
+                                <div className="p-2 bg-red-50 border border-red-200 rounded-lg flex gap-2 justify-between items-center text-sm">
+                                    <p className="text-red-600">{error}</p>
+                                    <CustomButton
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={() => {
+                                            setError(null);
+                                            handleGenerate();
+                                        }}
+                                    >
+                                        Retry
+                                    </CustomButton>
+                                </div>
+                            )}
+                            <Textarea
+                                ref={textareaRef}
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                disabled={isLoading}
+                                placeholder="e.g., This agent should help users analyze their data and provide insights..."
+                                className={textareaStyles}
+                                autoResize
+                            />
+                        </div>
+                    </ModalBody>
+                    <ModalFooter>
+                        <CustomButton
+                            variant="secondary"
+                            size="sm"
+                            onClick={onClose}
                             disabled={isLoading}
-                            placeholder="e.g., This agent should help users analyze their data and provide insights..."
-                            className={textareaStyles}
-                            autoResize
-                        />
-                    </div>
-                </ModalBody>
-                <ModalFooter>
-                    <CustomButton
-                        variant="secondary"
-                        size="sm"
-                        onClick={onClose}
-                        disabled={isLoading}
-                    >
-                        Cancel
-                    </CustomButton>
-                    <CustomButton
-                        variant="primary"
-                        size="sm"
-                        onClick={handleGenerate}
-                        disabled={!prompt.trim() || isLoading}
-                        isLoading={isLoading}
-                    >
-                        Generate
-                    </CustomButton>
-                </ModalFooter>
-            </ModalContent>
-        </Modal>
+                        >
+                            Cancel
+                        </CustomButton>
+                        <CustomButton
+                            variant="primary"
+                            size="sm"
+                            onClick={handleGenerate}
+                            disabled={!prompt.trim() || isLoading}
+                            isLoading={isLoading}
+                        >
+                            Generate
+                        </CustomButton>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+            <BillingUpgradeModal
+                isOpen={!!billingError}
+                onClose={() => setBillingError(null)}
+                errorMessage={billingError || ''}
+            />
+        </>
     );
 }
 
