@@ -32,7 +32,7 @@ export function ToolsConfig() {
           </div>
         }>
           <div className="mt-4 p-6">
-            <HostedServers />
+            <HostedServers onSwitchTab={key => setActiveTab(key)} />
           </div>
         </Tab>
         <Tab key="custom" title="Custom MCP Servers">

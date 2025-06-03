@@ -20,6 +20,7 @@ import {
   ServerCard, 
   ToolManagementPanel,
 } from './MCPServersCommon';
+import type { Key } from 'react';
 
 type McpServerType = z.infer<typeof MCPServer>;
 type McpToolType = z.infer<typeof MCPServer>['tools'][number];
@@ -90,7 +91,7 @@ const ErrorBanner = ({ onRetry }: { onRetry: () => void }) => (
       <div className="flex items-center gap-3">
         <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
         <p className="text-sm text-red-700 dark:text-red-300">
-          Unable to load hosted tools. Please check your connection and try again. If the problem persists, contact us on Discord.
+          Unable to load hosted tools. Please check your connection and try again. If the problem persists, contact us on <a href={DISCORD_LINK} target="_blank" rel="noopener noreferrer" className="underline hover:text-red-600 dark:hover:text-red-300">Discord</a>.
         </p>
       </div>
       <Button
@@ -106,7 +107,18 @@ const ErrorBanner = ({ onRetry }: { onRetry: () => void }) => (
   </div>
 );
 
-export function HostedServers() {
+const ERROR_MESSAGE = {
+  NO_HOSTED_TOOLS: 'No hosted tools found. Make sure to set your <a href="https://www.klavis.ai/" target="_blank" rel="noopener noreferrer" class="underline hover:text-red-600 dark:hover:text-red-300">Klavis</a> API key. Contact us on <a href="https://discord.com/invite/rxB8pzHxaS" target="_blank" rel="noopener noreferrer" class="underline hover:text-red-600 dark:hover:text-red-300">discord</a> if you\'re still unable to see hosted tools.'
+};
+
+const DISCORD_LINK = 'https://discord.com/invite/rxB8pzHxaS';
+const DOCS_LINK = 'https://docs.rowboatlabs.com/add_tools/';
+
+type HostedServersProps = {
+  onSwitchTab?: (tab: string) => void;
+};
+
+export function HostedServers({ onSwitchTab }: HostedServersProps) {
   const params = useParams();
   const projectId = typeof params.projectId === 'string' ? params.projectId : params.projectId?.[0];
   if (!projectId) throw new Error('Project ID is required');
@@ -134,7 +146,7 @@ export function HostedServers() {
       const response = await listAvailableMcpServers(projectId || "");
       
       if (response.error || !response.data) {
-        setError('No hosted tools found. Make sure to set your Klavis API key. Contact us on discord if you\'re still unable to see hosted tools.');
+        setError(ERROR_MESSAGE.NO_HOSTED_TOOLS);
         return;
       }
       
@@ -147,7 +159,7 @@ export function HostedServers() {
       setServers(serversWithType);
       setError(null);
     } catch (err: any) {
-      setError('No hosted tools found. Make sure to set your Klavis API key. Contact us on discord if you\'re still unable to see hosted tools.');
+      setError(ERROR_MESSAGE.NO_HOSTED_TOOLS);
       console.error('Error fetching servers:', err);
       setServers([]);
     } finally {
@@ -307,7 +319,7 @@ export function HostedServers() {
         });
         setToggleError({
           serverId: serverKey,
-          message: "We're having trouble setting up this server. Please reach out on discord."
+          message: "We're having trouble setting up this server. Please reach out on <a href=\"" + DISCORD_LINK + "\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline hover:text-red-600 dark:hover:text-red-300\">discord</a>."
         });
       }
     } finally {
@@ -517,10 +529,27 @@ export function HostedServers() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <p className="text-center text-red-500 dark:text-red-400">
-          {error}
-        </p>
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-6 px-4">
+        <p 
+          className="text-center text-red-500 dark:text-red-400 max-w-[600px]"
+          dangerouslySetInnerHTML={{
+            __html: error
+          }}
+        />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <a href={DOCS_LINK} target="_blank" rel="noopener noreferrer">
+            <Button variant="secondary" className="w-full sm:w-auto">
+              Read our documentation
+            </Button>
+          </a>
+          <Button 
+            variant="secondary"
+            onClick={() => onSwitchTab?.('custom')}
+            className="w-full sm:w-auto"
+          >
+            Set up a custom server instead
+          </Button>
+        </div>
       </div>
     );
   }
