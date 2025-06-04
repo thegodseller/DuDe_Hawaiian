@@ -10,6 +10,8 @@ import { check_query_limit } from "../../../../lib/rate_limiting";
 import { PrefixLogger } from "../../../../lib/utils";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { fetchProjectMcpTools } from "@/app/lib/project_tools";
+import { authorize, getCustomerIdForProject, logUsage } from "@/app/lib/billing";
+import { USE_BILLING } from "@/app/lib/feature_flags";
 
 // get next turn / agent response
 export async function POST(
@@ -29,6 +31,12 @@ export async function POST(
     }
 
     return await authCheck(projectId, req, async () => {
+        // fetch billing customer id
+        let billingCustomerId: string | null = null;
+        if (USE_BILLING) {
+            billingCustomerId = await getCustomerIdForProject(projectId);
+        }
+
         // parse and validate the request body
         let body;
         try {
@@ -74,6 +82,23 @@ export async function POST(
             return Response.json({ error: "Workflow not found" }, { status: 404 });
         }
 
+        // check billing authorization
+        if (USE_BILLING && billingCustomerId) {
+            const agentModels = workflow.agents.reduce((acc, agent) => {
+                acc.push(agent.model);
+                return acc;
+            }, [] as string[]);
+            const response = await authorize(billingCustomerId, {
+                type: 'agent_response',
+                data: {
+                    agentModels,
+                },
+            });
+            if (!response.success) {
+                return Response.json({ error: response.error || 'Billing error' }, { status: 402 });
+            }
+        }
+
         // if test profile is provided in the request, use it
         let testProfile: z.infer<typeof TestProfile> | null = null;
         if (result.data.testProfileId) {
@@ -111,6 +136,15 @@ export async function POST(
         const { messages: agenticMessages, state } = await getAgenticApiResponse(request);
         const newMessages = convertFromAgenticApiToApiMessages(agenticMessages);
         const newState = state;
+
+        // log billing usage
+        if (USE_BILLING && billingCustomerId) {
+            const agentMessageCount = newMessages.filter(m => m.role === 'assistant').length;
+            await logUsage(billingCustomerId, {
+                type: 'agent_messages',
+                amount: agentMessageCount,
+            });
+        }
 
         const responseBody: z.infer<typeof ApiResponse> = {
             messages: newMessages,

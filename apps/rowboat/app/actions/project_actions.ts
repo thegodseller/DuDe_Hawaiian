@@ -6,12 +6,13 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { revalidatePath } from "next/cache";
 import { templates } from "../lib/project_templates";
-import { authCheck } from "./actions";
-import { WithStringId } from "../lib/types/types";
+import { authCheck } from "./auth_actions";
+import { User, WithStringId } from "../lib/types/types";
 import { ApiKey } from "../lib/types/project_types";
 import { Project } from "../lib/types/project_types";
 import { USE_AUTH } from "../lib/feature_flags";
 import { deleteMcpServerInstance, listActiveServerInstances } from "./klavis_actions";
+import { authorizeUserAction } from "./billing_actions";
 
 export async function projectAuthCheck(projectId: string) {
     if (!USE_AUTH) {
@@ -20,23 +21,27 @@ export async function projectAuthCheck(projectId: string) {
     const user = await authCheck();
     const membership = await projectMembersCollection.findOne({
         projectId,
-        userId: user.sub,
+        userId: user._id,
     });
     if (!membership) {
         throw new Error('User not a member of project');
     }
 }
 
-async function createBaseProject(name: string, user: any) {
-    // Check project limits
-    const projectsLimit = Number(process.env.MAX_PROJECTS_PER_USER) || 0;
-    if (projectsLimit > 0) {
-        const count = await projectsCollection.countDocuments({
-            createdByUserId: user.sub,
-        });
-        if (count >= projectsLimit) {
-            throw new Error('You have reached your project limit. Please upgrade your plan.');
-        }
+async function createBaseProject(name: string, user: WithStringId<z.infer<typeof User>>): Promise<{ id: string } | { billingError: string }> {
+    // fetch project count for this user
+    const projectCount = await projectsCollection.countDocuments({
+        createdByUserId: user._id,
+    });
+    // billing limit check
+    const authResponse = await authorizeUserAction({
+        type: 'create_project',
+        data: {
+            existingProjectCount: projectCount,
+        },
+    });
+    if (!authResponse.success) {
+        return { billingError: authResponse.error || 'Billing error' };
     }
 
     const projectId = crypto.randomUUID();
@@ -49,7 +54,7 @@ async function createBaseProject(name: string, user: any) {
         name,
         createdAt: (new Date()).toISOString(),
         lastUpdatedAt: (new Date()).toISOString(),
-        createdByUserId: user.sub,
+        createdByUserId: user._id,
         chatClientId,
         secret,
         nextWorkflowNumber: 1,
@@ -58,7 +63,7 @@ async function createBaseProject(name: string, user: any) {
 
     // Add user to project
     await projectMembersCollection.insertOne({
-        userId: user.sub,
+        userId: user._id,
         projectId: projectId,
         createdAt: (new Date()).toISOString(),
         lastUpdatedAt: (new Date()).toISOString(),
@@ -67,15 +72,20 @@ async function createBaseProject(name: string, user: any) {
     // Add first api key
     await createApiKey(projectId);
 
-    return projectId;
+    return { id: projectId };
 }
 
-export async function createProject(formData: FormData) {
+export async function createProject(formData: FormData): Promise<{ id: string } | { billingError: string }> {
     const user = await authCheck();
     const name = formData.get('name') as string;
     const templateKey = formData.get('template') as string;
     
-    const projectId = await createBaseProject(name, user);
+    const response = await createBaseProject(name, user);
+    if ('billingError' in response) {
+        return response;
+    }
+
+    const projectId = response.id;
 
     // Add first workflow version with specified template
     const { agents, prompts, tools, startAgent } = templates[templateKey];
@@ -90,7 +100,7 @@ export async function createProject(formData: FormData) {
         name: `Version 1`,
     });
 
-    redirect(`/projects/${projectId}/workflow`);
+    return { id: projectId };
 }
 
 export async function getProjectConfig(projectId: string): Promise<WithStringId<z.infer<typeof Project>>> {
@@ -107,7 +117,7 @@ export async function getProjectConfig(projectId: string): Promise<WithStringId<
 export async function listProjects(): Promise<z.infer<typeof Project>[]> {
     const user = await authCheck();
     const memberships = await projectMembersCollection.find({
-        userId: user.sub,
+        userId: user._id,
     }).toArray();
     const projectIds = memberships.map((m) => m.projectId);
     const projects = await projectsCollection.find({
@@ -271,11 +281,16 @@ export async function deleteProject(projectId: string) {
     redirect('/projects');
 }
 
-export async function createProjectFromPrompt(formData: FormData) {
+export async function createProjectFromPrompt(formData: FormData): Promise<{ id: string } | { billingError: string }> {
     const user = await authCheck();
     const name = formData.get('name') as string;
-    
-    const projectId = await createBaseProject(name, user);
+
+    const response = await createBaseProject(name, user);
+    if ('billingError' in response) {
+        return response;
+    }
+
+    const projectId = response.id;
 
     // Add first workflow version with default template
     const { agents, prompts, tools, startAgent } = templates['default'];

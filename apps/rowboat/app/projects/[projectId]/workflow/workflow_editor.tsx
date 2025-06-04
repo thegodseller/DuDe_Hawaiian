@@ -27,6 +27,7 @@ import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/i
 import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle } from "lucide-react";
 import { EntityList } from "./entity_list";
 import { ProductTour } from "@/components/common/product-tour";
+import { ModelsResponse } from "@/app/lib/types/billing_types";
 
 enablePatches();
 
@@ -563,6 +564,7 @@ export function WorkflowEditor({
     toolWebhookUrl,
     defaultModel,
     projectTools,
+    eligibleModels,
 }: {
     dataSources: WithStringId<z.infer<typeof DataSource>>[];
     workflow: WithStringId<z.infer<typeof Workflow>>;
@@ -574,6 +576,7 @@ export function WorkflowEditor({
     toolWebhookUrl: string;
     defaultModel: string;
     projectTools: z.infer<typeof WorkflowTool>[];
+    eligibleModels: z.infer<typeof ModelsResponse> | "*";
 }) {
 
     const [state, dispatch] = useReducer<Reducer<State, Action>>(reducer, {
@@ -1026,6 +1029,7 @@ export function WorkflowEditor({
                     handleClose={handleUnselectAgent}
                     useRag={useRag}
                     triggerCopilotChat={triggerCopilotChat}
+                    eligibleModels={eligibleModels === "*" ? "*" : eligibleModels.agentModels}
                 />}
                 {state.present.selection?.type === "tool" && (() => {
                     const selectedTool = state.present.workflow.tools.find(
