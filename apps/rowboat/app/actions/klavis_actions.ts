@@ -388,7 +388,8 @@ export async function createMcpServerInstance(
     const requestBody = {
       serverName,
       userId: projectId,
-      platformName
+      platformName,
+      connectionType: "StreamableHttp",
     };
     console.log('[Klavis API] Creating server instance:', requestBody);
     

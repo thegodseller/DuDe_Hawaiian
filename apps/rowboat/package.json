@@ -31,7 +31,7 @@
     "@langchain/core": "^0.3.7",
     "@langchain/textsplitters": "^0.1.0",
     "@mendable/firecrawl-js": "^1.0.3",
-    "@modelcontextprotocol/sdk": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
     "@primer/react": "^36.27.0",
     "@qdrant/js-client-rest": "^1.13.0",
     "ai": "^4.3.13",
