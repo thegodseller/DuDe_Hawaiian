@@ -1,6 +1,6 @@
 'use client';
 
-import { Progress, Badge } from "@heroui/react";
+import { Progress, Badge, Chip } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/app/lib/components/label";
 import { Customer, UsageResponse, UsageType } from "@/app/lib/types/billing_types";
@@ -32,9 +32,19 @@ interface BillingPageProps {
     usage: z.infer<typeof UsageResponse>;
 }
 
+function getDisplayStatus(status: string | undefined) {
+    if (status === "active") {
+        return "Active";
+    } else if (status === "past_due") {
+        return "Past Due!";
+    } else {
+        return "Inactive";
+    }
+}
+
 export function BillingPage({ customer, usage }: BillingPageProps) {
     const plan = customer.subscriptionPlan || "free";
-    const isActive = customer.subscriptionActive || false;
+    const displayStatus = getDisplayStatus(customer.subscriptionStatus);
     const planInfo = planDetails[plan];
 
     async function handleManageSubscription() {
@@ -77,13 +87,13 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
                                 )}>
                                     {planInfo.name}
                                 </h3>
-                                <Badge 
-                                    color={isActive ? "success" : "warning"}
+                                <Chip
+                                    color={customer.subscriptionStatus === "active" ? "success" : "danger"}
                                     variant="flat"
                                     className="text-xs"
                                 >
-                                    {isActive ? "Active" : "Inactive"}
-                                </Badge>
+                                    {displayStatus}
+                                </Chip>
                             </div>
                         </div>
                         <form action={handleManageSubscription}>

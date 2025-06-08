@@ -1,7 +1,10 @@
 'use client';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import Sidebar from './sidebar';
 import { usePathname } from 'next/navigation';
+import { getCustomer } from '../../../actions/billing_actions';
+import { Button } from '@heroui/react';
+import { useRouter } from 'next/navigation';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -11,13 +14,30 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children, useRag = false, useAuth = false, useBilling = false }: AppLayoutProps) {
+  const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [billingPastDue, setBillingPastDue] = useState(false);
   const pathname = usePathname();
 
-  let projectId: string|null = null;
+  let projectId: string | null = null;
   if (pathname.startsWith('/projects')) {
     projectId = pathname.split('/')[2];
   }
+
+  useEffect(() => {
+    async function checkBillingPastDue() {
+      const billingCustomer = await getCustomer();
+      if (billingCustomer.subscriptionStatus === "past_due") {
+        setBillingPastDue(true);
+      }
+    }
+
+    if (!useBilling) {
+      return;
+    }
+
+    checkBillingPastDue();
+  }, [useBilling]);
 
   // Layout with sidebar for all routes
   return (
@@ -35,8 +55,24 @@ export default function AppLayout({ children, useRag = false, useAuth = false, u
       </div>
       
       {/* Main content area */}
-      <main className="flex-1 overflow-auto rounded-xl bg-white dark:bg-zinc-800 shadow-sm p-4">
-        {children}
+      <main className="flex gap-2 flex-col flex-1 overflow-auto rounded-xl bg-white dark:bg-zinc-800 shadow-sm p-4">
+        {billingPastDue && <div className="shrink-0">
+          <div className="bg-red-50 text-red-500 px-2 py-1 text-sm rounded-md flex items-center gap-2">
+            <span>Your subscription is past due. Please update your payment information to avoid losing access to your projects.</span>
+            <Button
+              variant="flat"
+              color="danger"
+              size="sm"
+              onPress={() => {
+                router.push('/billing');
+              }}>
+              Resolve
+            </Button>
+          </div>
+        </div>}
+        <div className="flex-1 overflow-auto">
+          {children}
+        </div>
       </main>
     </div>
   );

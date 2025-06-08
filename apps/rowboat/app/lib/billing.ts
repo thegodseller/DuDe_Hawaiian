@@ -17,8 +17,9 @@ const GUEST_BILLING_CUSTOMER = {
     name: "Guest",
     email: "guest@rowboatlabs.com",
     stripeCustomerId: "guest",
+    stripeSubscriptionId: "test",
     subscriptionPlan: "free" as const,
-    subscriptionActive: true,
+    subscriptionStatus: "active" as const,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
 };
@@ -190,7 +191,7 @@ export async function getPrices(): Promise<z.infer<typeof PricesResponse>> {
 }
 
 export async function updateSubscriptionPlan(customerId: string, request: z.infer<typeof UpdateSubscriptionPlanRequest>): Promise<string> {
-    const response = await fetch(`${BILLING_API_URL}/api/customers/${customerId}/update-subscription-plan`, {
+    const response = await fetch(`${BILLING_API_URL}/api/customers/${customerId}/update-sub-session`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${BILLING_API_KEY}`,
@@ -296,8 +297,8 @@ export async function requireBillingCustomer(): Promise<WithStringId<z.infer<typ
 export async function requireActiveBillingSubscription(): Promise<WithStringId<z.infer<typeof Customer>>> {
     const billingCustomer = await requireBillingCustomer();
 
-    if (USE_BILLING && !billingCustomer?.subscriptionActive) {
-        redirect('/billing/checkout');
+    if (USE_BILLING && billingCustomer.subscriptionStatus !== "active" && billingCustomer.subscriptionStatus !== "past_due") {
+        redirect('/billing');
     }
     return billingCustomer;
 }
