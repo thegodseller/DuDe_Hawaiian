@@ -533,6 +533,7 @@ function reducer(state: State, action: Action): State {
                                 break;
                             }
                             draft.workflow.startAgent = action.name;
+                            draft.pendingChanges = true;
                             draft.chatKey++;
                             break;
                     }
