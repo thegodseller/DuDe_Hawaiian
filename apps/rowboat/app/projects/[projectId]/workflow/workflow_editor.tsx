@@ -928,10 +928,13 @@ export function WorkflowEditor({
                         <Spinner size="sm" />
                         <div>Saving...</div>
                     </div>}
-                    {!state.present.saving && state.present.workflow && <div>
+                    {!state.present.saving && !state.present.pendingChanges && state.present.workflow && <div>
                         Updated <RelativeTime date={new Date(state.present.lastUpdatedAt)} />
                     </div>}
-                </div>}
+                    {!state.present.saving && state.present.pendingChanges && state.present.workflow && <div>
+                        Unsaved changes
+                    </div>}
+                 </div>}
                 {!isLive && <>
                     <button
                         className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
