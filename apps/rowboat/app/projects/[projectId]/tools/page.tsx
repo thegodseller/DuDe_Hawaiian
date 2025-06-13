@@ -1,8 +1,11 @@
 import { Suspense } from 'react';
 import { ToolsConfig } from './components/ToolsConfig';
 import { PageHeader } from '@/components/ui/page-header';
+import { requireActiveBillingSubscription } from '@/app/lib/billing';
 
-export default function ToolsPage() {
+export default async function ToolsPage() {
+  await requireActiveBillingSubscription();
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader

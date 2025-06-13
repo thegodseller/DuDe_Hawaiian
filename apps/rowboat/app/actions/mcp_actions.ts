@@ -2,12 +2,42 @@
 import { z } from "zod";
 import { WorkflowTool } from "../lib/types/workflow_types";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { projectAuthCheck } from "./project_actions";
 import { projectsCollection, agentWorkflowsCollection } from "../lib/mongodb";
 import { Project } from "../lib/types/project_types";
-import { MCPServer, McpTool, McpServerTool, convertMcpServerToolToWorkflowTool } from "../lib/types/types";
-import { ObjectId } from "mongodb";
+import { MCPServer, McpServerTool, convertMcpServerToolToWorkflowTool } from "../lib/types/types";
+
+async function getMcpClient(serverUrl: string, serverName: string): Promise<Client> {
+    let client: Client | undefined = undefined;
+    const baseUrl = new URL(serverUrl);
+
+    // Try to connect using Streamable HTTP transport
+    try {
+        client = new Client({
+            name: 'streamable-http-client',
+            version: '1.0.0'
+        });
+        const transport = new StreamableHTTPClientTransport(
+            new URL(baseUrl)
+        );
+        await client.connect(transport);
+        console.log(`[MCP] Connected using Streamable HTTP transport to ${serverName}`);
+        return client;
+    } catch (error) {
+        // If that fails with a 4xx error, try the older SSE transport
+        console.log(`[MCP] Streamable HTTP connection failed, falling back to SSE transport for ${serverName}`);
+        client = new Client({
+            name: 'sse-client',
+            version: '1.0.0'
+        });
+        const sseTransport = new SSEClientTransport(baseUrl);
+        await client.connect(sseTransport);
+        console.log(`[MCP] Connected using SSE transport to ${serverName}`);
+        return client;
+    }
+}
 
 export async function fetchMcpTools(projectId: string): Promise<z.infer<typeof WorkflowTool>[]> {
     await projectAuthCheck(projectId);
@@ -21,25 +51,9 @@ export async function fetchMcpTools(projectId: string): Promise<z.infer<typeof W
 
     for (const mcpServer of mcpServers) {
         if (!mcpServer.isActive) continue;
-        
+
         try {
-            const transport = new SSEClientTransport(new URL(mcpServer.serverUrl!));
-
-            const client = new Client(
-                {
-                    name: "rowboat-client",
-                    version: "1.0.0"
-                },
-                {
-                    capabilities: {
-                        prompts: {},
-                        resources: {},
-                        tools: {}
-                    }
-                }
-            );
-
-            await client.connect(transport);
+            const client = await getMcpClient(mcpServer.serverUrl!, mcpServer.name);
 
             // List tools
             const result = await client.listTools();
@@ -110,23 +124,7 @@ export async function fetchMcpToolsForServer(projectId: string, serverName: stri
             url: mcpServer.serverUrl
         });
 
-        const transport = new SSEClientTransport(new URL(mcpServer.serverUrl));
-        const client = new Client(
-            {
-                name: "rowboat-client",
-                version: "1.0.0"
-            },
-            {
-                capabilities: {
-                    prompts: {},
-                    resources: {},
-                    tools: {}
-                }
-            }
-        );
-
-        await client.connect(transport);
-        console.log('[Klavis API] MCP connection established:', { serverName });
+        const client = await getMcpClient(mcpServer.serverUrl, mcpServer.name);
 
         // List tools
         const result = await client.listTools();
@@ -394,23 +392,8 @@ export async function testMcpTool(
             toolId
         });
 
-        const transport = new SSEClientTransport(new URL(mcpServer.serverUrl));
-        const client = new Client(
-            {
-                name: "rowboat-client",
-                version: "1.0.0"
-            },
-            {
-                capabilities: {
-                    prompts: {},
-                    resources: {},
-                    tools: {}
-                }
-            }
-        );
+        const client = await getMcpClient(mcpServer.serverUrl, mcpServer.name);
 
-        await client.connect(transport);
-        
         console.log('[MCP Test] Connected to server, calling tool:', {
             toolId,
             parameters

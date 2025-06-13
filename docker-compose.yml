@@ -51,6 +51,9 @@ services:
       - KLAVIS_API_KEY=${KLAVIS_API_KEY}
       - KLAVIS_GITHUB_CLIENT_ID=${KLAVIS_GITHUB_CLIENT_ID}
       - KLAVIS_GOOGLE_CLIENT_ID=${KLAVIS_GOOGLE_CLIENT_ID}
+      - USE_BILLING=${USE_BILLING}
+      - BILLING_API_URL=${BILLING_API_URL}
+      - BILLING_API_KEY=${BILLING_API_KEY}
     restart: unless-stopped
     volumes:
       - uploads:/app/uploads
@@ -161,6 +164,9 @@ services:
       - QDRANT_API_KEY=${QDRANT_API_KEY}
       - RAG_UPLOADS_DIR=/app/uploads
       - USE_GEMINI_FILE_PARSING=${USE_GEMINI_FILE_PARSING}
+      - USE_BILLING=${USE_BILLING}
+      - BILLING_API_URL=${BILLING_API_URL}
+      - BILLING_API_KEY=${BILLING_API_KEY}
     restart: unless-stopped
     volumes:
       - uploads:/app/uploads
@@ -181,6 +187,9 @@ services:
       - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - USE_BILLING=${USE_BILLING}
+      - BILLING_API_URL=${BILLING_API_URL}
+      - BILLING_API_KEY=${BILLING_API_KEY}
     restart: unless-stopped
 
   rag_text_worker:
@@ -198,6 +207,9 @@ services:
       - REDIS_URL=redis://redis:6379
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - USE_BILLING=${USE_BILLING}
+      - BILLING_API_URL=${BILLING_API_URL}
+      - BILLING_API_KEY=${BILLING_API_KEY}
     restart: unless-stopped
 
   # chat_widget:

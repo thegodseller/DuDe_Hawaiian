@@ -17,6 +17,8 @@ import { projectAuthCheck } from "./project_actions";
 import { redisClient } from "../lib/redis";
 import { fetchProjectMcpTools } from "../lib/project_tools";
 import { mergeProjectTools } from "../lib/types/project_types";
+import { authorizeUserAction, logUsage } from "./billing_actions";
+import { USE_BILLING } from "../lib/feature_flags";
 
 export async function getCopilotResponse(
     projectId: string,
@@ -28,10 +30,19 @@ export async function getCopilotResponse(
     message: z.infer<typeof CopilotAssistantMessage>;
     rawRequest: unknown;
     rawResponse: unknown;
-}> {
+} | { billingError: string }> {
     await projectAuthCheck(projectId);
     if (!await check_query_limit(projectId)) {
         throw new QueryLimitError();
+    }
+
+    // Check billing authorization
+    const authResponse = await authorizeUserAction({
+        type: 'copilot_request',
+        data: {},
+    });
+    if (!authResponse.success) {
+        return { billingError: authResponse.error || 'Billing error' };
     }
 
     // Get MCP tools from project and merge with workflow tools
@@ -45,6 +56,7 @@ export async function getCopilotResponse(
 
     // prepare request
     const request: z.infer<typeof CopilotAPIRequest> = {
+        projectId: projectId,
         messages: messages.map(convertToCopilotApiMessage),
         workflow_schema: JSON.stringify(zodToJsonSchema(CopilotWorkflow)),
         current_workflow_config: JSON.stringify(copilotWorkflow),
@@ -132,8 +144,21 @@ export async function getCopilotResponseStream(
     dataSources?: z.infer<typeof DataSource>[]
 ): Promise<{
     streamId: string;
-}> {
+} | { billingError: string }> {
     await projectAuthCheck(projectId);
+    if (!await check_query_limit(projectId)) {
+        throw new QueryLimitError();
+    }
+
+    // Check billing authorization
+    const authResponse = await authorizeUserAction({
+        type: 'copilot_request',
+        data: {},
+    });
+    if (!authResponse.success) {
+        return { billingError: authResponse.error || 'Billing error' };
+    }
+
     if (!await check_query_limit(projectId)) {
         throw new QueryLimitError();
     }
@@ -149,6 +174,7 @@ export async function getCopilotResponseStream(
 
     // prepare request
     const request: z.infer<typeof CopilotAPIRequest> = {
+        projectId: projectId,
         messages: messages.map(convertToCopilotApiMessage),
         workflow_schema: JSON.stringify(zodToJsonSchema(CopilotWorkflow)),
         current_workflow_config: JSON.stringify(copilotWorkflow),
@@ -177,10 +203,19 @@ export async function getCopilotAgentInstructions(
     messages: z.infer<typeof CopilotMessage>[],
     current_workflow_config: z.infer<typeof Workflow>,
     agentName: string,
-): Promise<string> {
+): Promise<string | { billingError: string }> {
     await projectAuthCheck(projectId);
     if (!await check_query_limit(projectId)) {
         throw new QueryLimitError();
+    }
+
+    // Check billing authorization
+    const authResponse = await authorizeUserAction({
+        type: 'copilot_request',
+        data: {},
+    });
+    if (!authResponse.success) {
+        return { billingError: authResponse.error || 'Billing error' };
     }
 
     // Get MCP tools from project and merge with workflow tools
@@ -194,6 +229,7 @@ export async function getCopilotAgentInstructions(
 
     // prepare request
     const request: z.infer<typeof CopilotAPIRequest> = {
+        projectId: projectId,
         messages: messages.map(convertToCopilotApiMessage),
         workflow_schema: JSON.stringify(zodToJsonSchema(CopilotWorkflow)),
         current_workflow_config: JSON.stringify(copilotWorkflow),
@@ -235,6 +271,14 @@ export async function getCopilotAgentInstructions(
     }
     if ('error' in copilotResponse) {
         throw new Error(`Failed to call copilot api: ${copilotResponse.error}`);
+    }
+
+    // log the billing usage
+    if (USE_BILLING) {
+        await logUsage({
+            type: 'copilot_requests',
+            amount: 1,
+        });
     }
 
     // return response

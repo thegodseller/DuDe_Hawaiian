@@ -12,6 +12,8 @@ import { listDataSources } from "../../../actions/datasource_actions";
 import { listMcpServers, listProjectMcpTools } from "@/app/actions/mcp_actions";
 import { getProjectConfig } from "@/app/actions/project_actions";
 import { WorkflowTool } from "@/app/lib/types/workflow_types";
+import { getEligibleModels } from "@/app/actions/billing_actions";
+import { ModelsResponse } from "@/app/lib/types/billing_types";
 
 export function App({
     projectId,
@@ -31,15 +33,28 @@ export function App({
     const [autoSelectIfOnlyOneWorkflow, setAutoSelectIfOnlyOneWorkflow] = useState(true);
     const [mcpServerUrls, setMcpServerUrls] = useState<Array<z.infer<typeof MCPServer>>>([]);
     const [toolWebhookUrl, setToolWebhookUrl] = useState<string>('');
+    const [eligibleModels, setEligibleModels] = useState<z.infer<typeof ModelsResponse> | "*">("*");
 
     const handleSelect = useCallback(async (workflowId: string) => {
         setLoading(true);
-        const workflow = await fetchWorkflow(projectId, workflowId);
-        const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
-        const dataSources = await listDataSources(projectId);
-        const mcpServers = await listMcpServers(projectId);
-        const projectConfig = await getProjectConfig(projectId);
-        const projectTools = await listProjectMcpTools(projectId);
+        const [
+            workflow,
+            publishedWorkflowId,
+            dataSources,
+            mcpServers,
+            projectConfig,
+            projectTools,
+            eligibleModels,
+        ] = await Promise.all([
+            fetchWorkflow(projectId, workflowId),
+            fetchPublishedWorkflowId(projectId),
+            listDataSources(projectId),
+            listMcpServers(projectId),
+            getProjectConfig(projectId),
+            listProjectMcpTools(projectId),
+            getEligibleModels(),
+        ]);
+
         // Store the selected workflow ID in local storage
         localStorage.setItem(`lastWorkflowId_${projectId}`, workflowId);
         setWorkflow(workflow);
@@ -48,6 +63,7 @@ export function App({
         setMcpServerUrls(mcpServers);
         setToolWebhookUrl(projectConfig.webhookUrl ?? '');
         setProjectTools(projectTools);
+        setEligibleModels(eligibleModels);
         setLoading(false);
     }, [projectId]);
 
@@ -126,6 +142,7 @@ export function App({
             mcpServerUrls={mcpServerUrls}
             toolWebhookUrl={toolWebhookUrl}
             defaultModel={defaultModel}
+            eligibleModels={eligibleModels}
         />}
     </>
 }

@@ -12,6 +12,8 @@ import { getAgenticApiResponse } from "../../../../../../lib/utils";
 import { check_query_limit } from "../../../../../../lib/rate_limiting";
 import { PrefixLogger } from "../../../../../../lib/utils";
 import { fetchProjectMcpTools } from "@/app/lib/project_tools";
+import { authorize, getCustomerIdForProject, logUsage } from "@/app/lib/billing";
+import { USE_BILLING } from "@/app/lib/feature_flags";
 
 // get next turn / agent response
 export async function POST(
@@ -23,6 +25,12 @@ export async function POST(
         const logger = new PrefixLogger(`widget-chat:${chatId}`);
 
         logger.log(`Processing turn request for chat ${chatId}`);
+
+        // fetch billing customer id
+        let billingCustomerId: string | null = null;
+        if (USE_BILLING) {
+            billingCustomerId = await getCustomerIdForProject(session.projectId);
+        }
 
         // check query limit
         if (!await check_query_limit(session.projectId)) {
@@ -93,6 +101,23 @@ export async function POST(
             throw new Error("Workflow not found");
         }
 
+        // check billing authorization
+        if (USE_BILLING && billingCustomerId) {
+            const agentModels = workflow.agents.reduce((acc, agent) => {
+                acc.push(agent.model);
+                return acc;
+            }, [] as string[]);
+            const response = await authorize(billingCustomerId, {
+                type: 'agent_response',
+                data: {
+                    agentModels,
+                },
+            });
+            if (!response.success) {
+                return Response.json({ error: response.error || 'Billing error' }, { status: 402 });
+            }
+        }
+
         // get assistant response
         const { agents, tools, prompts, startAgent } = convertWorkflowToAgenticAPI(workflow, projectTools);
         const unsavedMessages: z.infer<typeof apiV1.ChatMessage>[] = [userMessage];
@@ -131,6 +156,15 @@ export async function POST(
         logger.log(`Saving ${unsavedMessages.length} new messages and updating chat state`);
         await chatMessagesCollection.insertMany(unsavedMessages);
         await chatsCollection.updateOne({ _id: new ObjectId(chatId) }, { $set: { agenticState: state } });
+
+        // log billing usage
+        if (USE_BILLING && billingCustomerId) {
+            const agentMessageCount = convertedMessages.filter(m => m.role === 'assistant').length;
+            await logUsage(billingCustomerId, {
+                type: 'agent_messages',
+                amount: agentMessageCount,
+            });
+        }
 
         logger.log(`Turn processing completed successfully`);
         const lastMessage = unsavedMessages[unsavedMessages.length - 1] as WithId<z.infer<typeof apiV1.ChatMessage>>;

@@ -20,7 +20,7 @@ import {
   ServerCard, 
   ToolManagementPanel,
 } from './MCPServersCommon';
-import type { Key } from 'react';
+import { BillingUpgradeModal } from '@/components/common/billing-upgrade-modal';
 
 type McpServerType = z.infer<typeof MCPServer>;
 type McpToolType = z.infer<typeof MCPServer>['tools'][number];
@@ -139,6 +139,7 @@ export function HostedServers({ onSwitchTab }: HostedServersProps) {
   const [savingTools, setSavingTools] = useState(false);
   const [serverToolCounts, setServerToolCounts] = useState<Map<string, number>>(new Map());
   const [syncingServers, setSyncingServers] = useState<Set<string>>(new Set());
+  const [billingError, setBillingError] = useState<string | null>(null);
 
   const fetchServers = useCallback(async () => {
     try {
@@ -239,6 +240,7 @@ export function HostedServers({ onSwitchTab }: HostedServersProps) {
         return next;
       });
       setToggleError(null);
+      setBillingError(null);
       
       setServerOperations(prev => {
         const next = new Map(prev);
@@ -249,6 +251,24 @@ export function HostedServers({ onSwitchTab }: HostedServersProps) {
       try {
         const result = await enableServer(server.name, projectId || "", newState);
         
+        // Check for billing error
+        if ('billingError' in result) {
+          setBillingError(result.billingError);
+          // Revert UI state
+          setServers(prevServers => {
+            return prevServers.map(s => {
+              if (s.name === serverKey) {
+                return {
+                  ...s,
+                  isActive: isCurrentlyEnabled
+                };
+              }
+              return s;
+            });
+          });
+          return;
+        }
+
         setEnabledServers(prev => {
           const next = new Set(prev);
           if (!newState) {
@@ -686,6 +706,12 @@ export function HostedServers({ onSwitchTab }: HostedServersProps) {
         hasChanges={hasToolChanges}
         isSaving={savingTools}
         isSyncing={selectedServer ? syncingServers.has(selectedServer.name) : false}
+      />
+
+      <BillingUpgradeModal
+        isOpen={!!billingError}
+        onClose={() => setBillingError(null)}
+        errorMessage={billingError || ''}
       />
     </div>
   );
