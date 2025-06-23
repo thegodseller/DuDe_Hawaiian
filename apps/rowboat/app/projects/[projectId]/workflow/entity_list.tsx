@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { AgenticAPITool } from "../../../lib/types/agents_api_types";
 import { WorkflowPrompt, WorkflowAgent, WorkflowTool } from "../../../lib/types/workflow_types";
 import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@heroui/react";
 import { useRef, useEffect, useState } from "react";
