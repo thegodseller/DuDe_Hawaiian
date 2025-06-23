@@ -280,10 +280,10 @@ export function ServerCard({
               )}
             </div>
             {error && (
-              <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 
-                py-1 px-2 rounded-md mt-2 animate-fadeIn">
-                {error.message}
-              </div>
+              <div 
+                className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 py-1 px-2 rounded-md mt-2 animate-fadeIn"
+                dangerouslySetInnerHTML={{ __html: error.message }}
+              />
             )}
           </div>
         </div>
