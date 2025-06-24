@@ -1,7 +1,7 @@
 import { useEffect, RefObject } from 'react';
 
 export function useClickAway(
-    ref: RefObject<HTMLElement>,
+    ref: RefObject<HTMLElement | null>,
     handler: (event: MouseEvent | TouchEvent) => void
 ) {
     useEffect(() => {

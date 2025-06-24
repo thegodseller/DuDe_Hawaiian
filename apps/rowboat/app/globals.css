@@ -1,7 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+@import 'tailwindcss';
 @import './styles/quill-mentions.css';
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+@plugin './hero.ts';
+
+@source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@custom-variant dark (&:is(.dark *));
+
+@reference 'tailwindcss';
 
 @layer utilities {
   .text-balance {
@@ -106,74 +112,16 @@ html, body {
   input, textarea, select {
     @apply rounded-lg border-[#E5E7EB] dark:border-[#2E2E30]
     bg-[#F3F4F6] dark:bg-[#2A2A2D]
-    focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50
+    focus:ring-2 focus:ring-indigo-500/50
     transition-all duration-200;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-
-  .card-shadow {
-    @apply shadow-sm dark:shadow-none dark:border-border;
-  }
-
-  .hover-effect {
-    @apply hover:bg-accent/10 dark:hover:bg-accent/20 transition-colors;
-  }
-
-  .border-subtle {
-    @apply border-border dark:border-border/50;
-  }
-
-  /* Apply rounded corners to common interactive elements by default */
-  button,
-  input,
-  textarea,
-  select,
-  [role="button"],
-  .card,
-  .input,
-  .select,
-  .textarea,
-  .button {
-    @apply !rounded-lg;
-  }
-}
-
-* {
-  -webkit-transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out !important;
-  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out !important;
-}
-
-* {
-  @apply transition-colors duration-200;
-}
-
-/* Add Inter font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-
-/* Set base font */
 html {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-@keyframes slideUpAndFade {
-  from {
-      opacity: 0;
-      transform: translateY(10px);
-  }
-  to {
-      opacity: 1;
-      transform: translateY(0);
-  }
+body {
+  background: var(--background);
+  color: var(--foreground);
 }
-
-.animate-slideUpAndFade {
-  animation: slideUpAndFade 0.2s ease-out forwards;
-} 

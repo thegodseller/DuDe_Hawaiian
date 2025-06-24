@@ -11,11 +11,12 @@ export const metadata: Metadata = {
     title: "Workflow"
 }
 
-export default async function Page({
-    params,
-}: {
-    params: { projectId: string };
-}) {
+export default async function Page(
+    props: {
+        params: Promise<{ projectId: string }>;
+    }
+) {
+    const params = await props.params;
     await requireActiveBillingSubscription();
     console.log('->>> workflow page being rendered');
     const project = await projectsCollection.findOne({

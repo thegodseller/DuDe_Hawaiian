@@ -1,13 +1,12 @@
 import { z } from "zod";
-import { Claims } from "@auth0/nextjs-auth0";
 import { ObjectId } from "mongodb";
 import { usersCollection, projectsCollection, projectMembersCollection } from "./mongodb";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "./auth0";
 import { User, WithStringId } from "./types/types";
 import { USE_AUTH } from "./feature_flags";
 import { redirect } from "next/navigation";
 
-export const GUEST_SESSION: Claims = {
+export const GUEST_SESSION = {
     email: "guest@rowboatlabs.com",
     email_verified: true,
     sub: "guest_user",
@@ -39,9 +38,9 @@ export async function requireAuth(): Promise<WithStringId<z.infer<typeof User>>>
         return GUEST_DB_USER;
     }
 
-    const { user } = await getSession() || {};
+    const { user } = await auth0.getSession() || {};
     if (!user) {
-        redirect('/api/auth/login');
+        redirect('/auth/login');
     }
 
     // fetch db user

@@ -193,7 +193,7 @@ export function TestToolModal({ isOpen, onClose, tool, server }: TestToolModalPr
                       value={item || ''}
                       onChange={(e) => handleArrayItemChange(index, e.target.value)}
                       placeholder="Enter value"
-                      className="focus:ring-0 focus:ring-offset-0 !ring-0 !ring-offset-0 focus:outline-none"
+                      className="focus:ring-0 focus:ring-offset-0 ring-0! ring-offset-0! focus:outline-none"
                     />
                   ) : itemSchema.type === 'number' || itemSchema.type === 'integer' ? (
                     <Input
@@ -209,7 +209,7 @@ export function TestToolModal({ isOpen, onClose, tool, server }: TestToolModalPr
                         handleArrayItemChange(index, isNaN(val) ? '' : val);
                       }}
                       placeholder="Enter value"
-                      className="focus:ring-0 focus:ring-offset-0 !ring-0 !ring-offset-0 focus:outline-none"
+                      className="focus:ring-0 focus:ring-offset-0 ring-0! ring-offset-0! focus:outline-none"
                     />
                   ) : itemSchema.type === 'boolean' ? (
                     <div className="scale-75 origin-left">
@@ -284,7 +284,7 @@ export function TestToolModal({ isOpen, onClose, tool, server }: TestToolModalPr
               className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md 
                 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100
                 focus:outline-none hover:border-gray-300 dark:hover:border-gray-600
-                focus:ring-0 focus:ring-offset-0 !ring-0 !ring-offset-0"
+                focus:ring-0 focus:ring-offset-0 ring-0! ring-offset-0!"
             >
               <option value="" disabled>Select {paramName}</option>
               {schema.enum.map((opt: string) => (
@@ -299,7 +299,7 @@ export function TestToolModal({ isOpen, onClose, tool, server }: TestToolModalPr
               type="datetime-local"
               value={value}
               onChange={(e) => handleParameterChange(paramName, e.target.value)}
-              className="focus:ring-0 focus:ring-offset-0 !ring-0 !ring-offset-0 focus:outline-none"
+              className="focus:ring-0 focus:ring-offset-0 ring-0! ring-offset-0! focus:outline-none"
             />
           );
         }
@@ -309,7 +309,7 @@ export function TestToolModal({ isOpen, onClose, tool, server }: TestToolModalPr
               type="date"
               value={value}
               onChange={(e) => handleParameterChange(paramName, e.target.value)}
-              className="focus:ring-0 focus:ring-offset-0 !ring-0 !ring-offset-0 focus:outline-none"
+              className="focus:ring-0 focus:ring-offset-0 ring-0! ring-offset-0! focus:outline-none"
             />
           );
         }
@@ -319,7 +319,7 @@ export function TestToolModal({ isOpen, onClose, tool, server }: TestToolModalPr
               type="time"
               value={value}
               onChange={(e) => handleParameterChange(paramName, e.target.value)}
-              className="focus:ring-0 focus:ring-offset-0 !ring-0 !ring-offset-0 focus:outline-none"
+              className="focus:ring-0 focus:ring-offset-0 ring-0! ring-offset-0! focus:outline-none"
             />
           );
         }
@@ -329,7 +329,7 @@ export function TestToolModal({ isOpen, onClose, tool, server }: TestToolModalPr
             value={value}
             onChange={(e) => handleParameterChange(paramName, e.target.value)}
             placeholder={`Enter ${paramName}`}
-            className="focus:ring-0 focus:ring-offset-0 !ring-0 !ring-offset-0 focus:outline-none"
+            className="focus:ring-0 focus:ring-offset-0 ring-0! ring-offset-0! focus:outline-none"
           />
         );
       
@@ -349,7 +349,7 @@ export function TestToolModal({ isOpen, onClose, tool, server }: TestToolModalPr
               handleParameterChange(paramName, isNaN(val) ? '' : val);
             }}
             placeholder={`Enter ${paramName}`}
-            className="focus:ring-0 focus:ring-offset-0 !ring-0 !ring-offset-0 focus:outline-none"
+            className="focus:ring-0 focus:ring-offset-0 ring-0! ring-offset-0! focus:outline-none"
           />
         );
       
@@ -377,7 +377,7 @@ export function TestToolModal({ isOpen, onClose, tool, server }: TestToolModalPr
             value={value}
             onChange={(e) => handleParameterChange(paramName, e.target.value)}
             placeholder={`Enter ${paramName}`}
-            className="focus:ring-0 focus:ring-offset-0 !ring-0 !ring-offset-0 focus:outline-none"
+            className="focus:ring-0 focus:ring-offset-0 ring-0! ring-offset-0! focus:outline-none"
           />
         );
     }

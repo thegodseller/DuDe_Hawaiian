@@ -11,7 +11,7 @@ export function HelpModal({ isOpen, onClose, onStartTour }: HelpModalProps) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-100 flex items-center justify-center">
             <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-6 w-[480px] max-w-[90vw] animate-in fade-in duration-200">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
                     Need Help?

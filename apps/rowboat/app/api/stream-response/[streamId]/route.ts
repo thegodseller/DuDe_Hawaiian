@@ -4,7 +4,8 @@ import { redisClient } from "@/app/lib/redis";
 import { AgenticAPIChatMessage, AgenticAPIChatRequest, convertFromAgenticAPIChatMessages } from "@/app/lib/types/agents_api_types";
 import { createParser, type EventSourceMessage } from 'eventsource-parser';
 
-export async function GET(request: Request, { params }: { params: { streamId: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ streamId: string }> }) {
+  const params = await props.params;
   // get the payload from redis
   const payload = await redisClient.get(`chat-stream-${params.streamId}`);
   if (!payload) {

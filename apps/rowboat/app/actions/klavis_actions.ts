@@ -777,7 +777,7 @@ export async function generateServerAuthUrl(
     await projectAuthCheck(projectId);
 
     // Get the origin from request headers
-    const headersList = headers();
+    const headersList = await headers();
     const host = headersList.get('host') || '';
     const protocol = headersList.get('x-forwarded-proto') || 'http';
     const origin = `${protocol}://${host}`;

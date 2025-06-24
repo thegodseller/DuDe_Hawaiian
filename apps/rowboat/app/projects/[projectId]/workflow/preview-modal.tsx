@@ -148,7 +148,7 @@ function PreviewModal({
                         </div>}
                         {view === 'markdown' && <div className="flex gap-1">
                             {oldValue !== undefined && <div className="w-1/2 flex flex-col border-r-2 border-gray-200 overflow-auto">
-                                <div className="text-gray-800 font-semibold italic text-sm px-2 py-1 border-b-1 border-gray-200">Old</div>
+                                <div className="text-gray-800 font-semibold italic text-sm px-2 py-1 border-b border-gray-200">Old</div>
                                 <div className="p-2 overflow-auto">
                                     <MarkdownContent
                                         content={oldValue}
@@ -158,7 +158,7 @@ function PreviewModal({
                             <div className={clsx("flex flex-col", {
                                 'w-1/2': oldValue !== undefined
                             })}>
-                                {oldValue !== undefined && <div className="text-gray-800 font-semibold italic text-sm px-2 py-1 border-b-1 border-gray-200">New</div>}
+                                {oldValue !== undefined && <div className="text-gray-800 font-semibold italic text-sm px-2 py-1 border-b border-gray-200">New</div>}
                                 <div className="p-2 overflow-auto">
                                     <MarkdownContent
                                         content={newValue}

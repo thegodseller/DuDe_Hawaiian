@@ -80,7 +80,7 @@ const ListItemWithMenu = ({
     isSelected?: boolean;
     onClick?: () => void;
     disabled?: boolean;
-    selectedRef?: React.RefObject<HTMLButtonElement>;
+    selectedRef?: React.RefObject<HTMLButtonElement | null>;
     menuContent: React.ReactNode;
     statusLabel?: React.ReactNode;
     icon?: React.ReactNode;
@@ -111,7 +111,7 @@ const ListItemWithMenu = ({
                 }}
                 disabled={disabled}
             >
-                <div className={clsx("flex-shrink-0 flex items-center justify-center w-4 h-4", iconClassName)}>
+                <div className={clsx("shrink-0 flex items-center justify-center w-4 h-4", iconClassName)}>
                     {mcpServerName ? (
                         <ServerLogo 
                             serverName={mcpServerName} 
@@ -147,7 +147,7 @@ interface ServerCardProps {
     } | null;
     onSelectTool: (name: string) => void;
     onDeleteTool: (name: string) => void;
-    selectedRef: React.RefObject<HTMLButtonElement>;
+    selectedRef: React.RefObject<HTMLButtonElement | null>;
 }
 
 const ServerCard = ({
@@ -343,7 +343,7 @@ export function EntityList({
                         tourTarget="entity-agents"
                         className={clsx(
                             "h-full overflow-hidden",
-                            !expandedPanels.agents && "!h-[53px]"
+                            !expandedPanels.agents && "h-[53px]!"
                         )}
                         title={
                             <button 
@@ -429,7 +429,7 @@ export function EntityList({
                         tourTarget="entity-tools"
                         className={clsx(
                             "h-full overflow-hidden",
-                            !expandedPanels.tools && "!h-[53px]"
+                            !expandedPanels.tools && "h-[53px]!"
                         )}
                         title={
                             <button 
@@ -549,7 +549,7 @@ export function EntityList({
                         tourTarget="entity-prompts"
                         className={clsx(
                             "h-full overflow-hidden",
-                            !expandedPanels.prompts && "!h-[53px]"
+                            !expandedPanels.prompts && "h-[53px]!"
                         )}
                         title={
                             <button 
@@ -696,7 +696,7 @@ const SortableAgentItem = ({ agent, isSelected, onClick, selectedRef, statusLabe
     agent: z.infer<typeof WorkflowAgent>;
     isSelected?: boolean;
     onClick?: () => void;
-    selectedRef?: React.RefObject<HTMLButtonElement>;
+    selectedRef?: React.RefObject<HTMLButtonElement | null>;
     statusLabel?: React.ReactNode;
     onToggle: (name: string) => void;
     onSetMainAgent: (name: string) => void;
