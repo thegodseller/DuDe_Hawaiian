@@ -61,7 +61,7 @@ export function Panel({
             "flex flex-col overflow-hidden rounded-xl border relative",
             variant === 'copilot' ? "border-blue-200 dark:border-blue-800" : "border-zinc-200 dark:border-zinc-800",
             "bg-white dark:bg-zinc-900",
-            maxHeight ? "max-h-[var(--panel-height)]" : "h-full",
+            maxHeight ? "max-h-(--panel-height)" : "h-full",
             className
         )}
         style={{ 

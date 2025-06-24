@@ -32,7 +32,7 @@ function Section({ title, children, description }: {
 
 export function WebhookConfig() {
     const params = useParams();
-    const projectId = typeof params.projectId === 'string' ? params.projectId : params.projectId[0];
+    const projectId = params.projectId ? (typeof params.projectId === 'string' ? params.projectId : params.projectId[0]) : '';
     
     const [loading, setLoading] = useState(true);
     const [webhookUrl, setWebhookUrl] = useState<string | null>(null);

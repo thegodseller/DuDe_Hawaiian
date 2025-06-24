@@ -6,11 +6,12 @@ import { RunsApp } from "./runs_app";
 import { TestingMenu } from "./testing_menu";
 import { requireActiveBillingSubscription } from '@/app/lib/billing';
 
-export default async function TestPage({ params }: { params: { projectId: string; slug?: string[] } }) {
+export default async function TestPage(props: { params: Promise<{ projectId: string; slug?: string[] }> }) {
+    const params = await props.params;
     await requireActiveBillingSubscription();
     const { projectId, slug = [] } = params;
     let app: "scenarios" | "simulations" | "profiles" | "runs" = "runs";
-    
+
     if (slug[0] === "scenarios") {
         app = "scenarios";
     } else if (slug[0] === "simulations") {

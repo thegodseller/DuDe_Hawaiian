@@ -9,7 +9,7 @@ interface ProfileFormProps {
         mockTools?: boolean;
         mockPrompt?: string;
     };
-    formRef: React.RefObject<HTMLFormElement>;
+    formRef: React.RefObject<HTMLFormElement | null>;
     handleSubmit: (formData: FormData) => Promise<void>;
     onCancel: () => void;
     submitButtonText: string;

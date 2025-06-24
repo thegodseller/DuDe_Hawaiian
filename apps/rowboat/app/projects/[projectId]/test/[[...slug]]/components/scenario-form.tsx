@@ -2,7 +2,7 @@ import { FormStatusButton } from "@/app/lib/components/form-status-button";
 import { Button, Input, Textarea } from "@heroui/react";
 
 interface ScenarioFormProps {
-    formRef: React.RefObject<HTMLFormElement>;
+    formRef: React.RefObject<HTMLFormElement | null>;
     handleSubmit: (formData: FormData) => Promise<void>;
     onCancel: () => void;
     submitButtonText: string;

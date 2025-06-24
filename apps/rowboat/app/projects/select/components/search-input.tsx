@@ -46,7 +46,7 @@ export function SearchInput({
                         tokens.colors.dark.text.primary,
                         "placeholder:text-gray-400 dark:placeholder:text-gray-500",
                         "border border-gray-200 dark:border-gray-700",
-                        "focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50",
+                        "focus:ring-2 focus:ring-indigo-500/50",
                         "focus:border-transparent"
                     )}
                 />
@@ -66,7 +66,7 @@ export function SearchInput({
                                 ? "bg-indigo-600 text-white"
                                 : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
                             "hover:bg-gray-100 dark:hover:bg-gray-700",
-                            "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+                            "focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                         )}
                     >
                         {filter.charAt(0).toUpperCase() + filter.slice(1)}

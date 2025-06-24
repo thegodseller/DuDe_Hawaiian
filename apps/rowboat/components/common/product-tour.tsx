@@ -89,7 +89,7 @@ function TourBackdrop({ targetElement }: { targetElement: Element | null }) {
     return (
         <>
             {/* Top */}
-            <div className="fixed z-[100] backdrop-blur-sm bg-black/30" style={{ 
+            <div className="fixed z-100 backdrop-blur-sm bg-black/30" style={{ 
                 top: 0, 
                 left: 0, 
                 right: 0, 
@@ -97,7 +97,7 @@ function TourBackdrop({ targetElement }: { targetElement: Element | null }) {
             }} />
             
             {/* Left */}
-            <div className="fixed z-[100] backdrop-blur-sm bg-black/30" style={{ 
+            <div className="fixed z-100 backdrop-blur-sm bg-black/30" style={{ 
                 top: Math.max(0, rect.top - padding),
                 left: 0,
                 width: Math.max(0, rect.left - padding),
@@ -105,7 +105,7 @@ function TourBackdrop({ targetElement }: { targetElement: Element | null }) {
             }} />
             
             {/* Right */}
-            <div className="fixed z-[100] backdrop-blur-sm bg-black/30" style={{ 
+            <div className="fixed z-100 backdrop-blur-sm bg-black/30" style={{ 
                 top: Math.max(0, rect.top - padding),
                 left: rect.right + padding,
                 right: 0,
@@ -113,7 +113,7 @@ function TourBackdrop({ targetElement }: { targetElement: Element | null }) {
             }} />
             
             {/* Bottom */}
-            <div className="fixed z-[100] backdrop-blur-sm bg-black/30" style={{ 
+            <div className="fixed z-100 backdrop-blur-sm bg-black/30" style={{ 
                 top: rect.bottom + padding,
                 left: 0,
                 right: 0,
@@ -122,7 +122,7 @@ function TourBackdrop({ targetElement }: { targetElement: Element | null }) {
 
             {/* Highlight border around target */}
             <div
-                className="fixed z-[100] border-2 border-white/50 rounded-lg pointer-events-none"
+                className="fixed z-100 border-2 border-white/50 rounded-lg pointer-events-none"
                 style={{
                     top: rect.top - padding,
                     left: rect.left - padding,

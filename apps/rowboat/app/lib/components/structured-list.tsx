@@ -26,7 +26,7 @@ export function ListItem({
     onClick: () => void;
     disabled?: boolean;
     rightElement?: React.ReactNode;
-    selectedRef?: React.RefObject<HTMLButtonElement>;
+    selectedRef?: React.RefObject<HTMLButtonElement | null>;
     icon?: React.ReactNode;
 }) {
     return (

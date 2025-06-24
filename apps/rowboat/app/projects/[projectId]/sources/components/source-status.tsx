@@ -28,7 +28,7 @@ export function SourceStatus({
             
             {status === 'pending' && (
                 <>
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                         <Spinner size="sm" className="text-blue-500 dark:text-blue-400" />
                     </div>
                     <div className="flex flex-col">

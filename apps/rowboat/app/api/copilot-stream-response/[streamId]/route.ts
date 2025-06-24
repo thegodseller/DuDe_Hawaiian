@@ -3,7 +3,8 @@ import { USE_BILLING } from "@/app/lib/feature_flags";
 import { redisClient } from "@/app/lib/redis";
 import { CopilotAPIRequest } from "@/app/lib/types/copilot_types";
 
-export async function GET(request: Request, { params }: { params: { streamId: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ streamId: string }> }) {
+  const params = await props.params;
   // get the payload from redis
   const payload = await redisClient.get(`copilot-stream-${params.streamId}`);
   if (!payload) {

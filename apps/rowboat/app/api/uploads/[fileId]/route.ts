@@ -8,10 +8,8 @@ import { ObjectId } from 'mongodb';
 const UPLOADS_DIR = process.env.RAG_UPLOADS_DIR || '/uploads';
 
 // PUT endpoint to handle file uploads
-export async function PUT(
-    request: NextRequest,
-    { params }: { params: { fileId: string } }
-) {
+export async function PUT(request: NextRequest, props: { params: Promise<{ fileId: string }> }) {
+    const params = await props.params;
     const fileId = params.fileId;
     if (!fileId) {
         return NextResponse.json({ error: 'Missing file ID' }, { status: 400 });
@@ -34,10 +32,8 @@ export async function PUT(
 }
 
 // GET endpoint to handle file downloads
-export async function GET(
-    request: NextRequest,
-    { params }: { params: { fileId: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ fileId: string }> }) {
+    const params = await props.params;
     const fileId = params.fileId;
     if (!fileId) {
         return NextResponse.json({ error: 'Missing file ID' }, { status: 400 });

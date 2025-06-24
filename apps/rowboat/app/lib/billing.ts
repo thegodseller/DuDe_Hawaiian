@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { Customer, AuthorizeRequest, AuthorizeResponse, LogUsageRequest, UsageResponse, CustomerPortalSessionResponse, PricesResponse, UpdateSubscriptionPlanRequest, UpdateSubscriptionPlanResponse, ModelsResponse } from './types/billing_types';
 import { ObjectId } from 'mongodb';
 import { projectsCollection, usersCollection } from './mongodb';
-import { getSession } from '@auth0/nextjs-auth0';
 import { redirect } from 'next/navigation';
 import { getUserFromSessionId, requireAuth } from './auth';
 import { USE_BILLING } from './feature_flags';

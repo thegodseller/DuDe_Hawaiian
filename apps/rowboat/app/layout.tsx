@@ -1,10 +1,10 @@
 import "./globals.css";
 import { ThemeProvider } from "./providers/theme-provider";
-import { UserProvider } from '@auth0/nextjs-auth0/client';
 import { Inter } from "next/font/google";
 import { Providers } from "./providers";
 import { Metadata } from "next";
 import { HelpModalProvider } from "./providers/help-modal-provider";
+import { Auth0Provider } from "@auth0/nextjs-auth0";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return <html lang="en" className="h-dvh">
-    <UserProvider>
+    <Auth0Provider>
       <ThemeProvider>
         <body className={`${inter.className} h-full text-base [scrollbar-width:thin] bg-background`}>
           <Providers className='h-full flex flex-col'>
@@ -31,6 +31,6 @@ export default function RootLayout({
           </Providers>
         </body>
       </ThemeProvider>
-    </UserProvider>
+    </Auth0Provider>
   </html>;
 }

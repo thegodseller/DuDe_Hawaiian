@@ -580,7 +580,7 @@ export function WorkflowEditor({
     eligibleModels: z.infer<typeof ModelsResponse> | "*";
 }) {
 
-    const [state, dispatch] = useReducer<Reducer<State, Action>>(reducer, {
+    const [state, dispatch] = useReducer(reducer, {
         patches: [],
         inversePatches: [],
         currentIndex: 0,

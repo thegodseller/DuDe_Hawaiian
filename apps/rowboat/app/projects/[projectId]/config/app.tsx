@@ -27,8 +27,8 @@ export function Section({
     title: string;
     children: React.ReactNode;
 }) {
-    return <div className="w-full flex flex-col gap-4 border border-border p-4 rounded-md">
-        <h2 className="font-semibold pb-2 border-b border-border">{title}</h2>
+    return <div className="w-full flex flex-col gap-4 border border p-4 rounded-md">
+        <h2 className="font-semibold pb-2 border-b border">{title}</h2>
         {children}
     </div>;
 }
@@ -198,9 +198,9 @@ export function ApiKeysSection({
 
             <Divider />
             {loading && <Spinner size="sm" />}
-            {!loading && <div className="border border-border rounded-lg text-sm">
-                <div className="flex items-center border-b border-border p-4">
-                    <div className="flex-[3] font-normal">API Key</div>
+            {!loading && <div className="border border rounded-lg text-sm">
+                <div className="flex items-center border-b border p-4">
+                    <div className="flex-3 font-normal">API Key</div>
                     <div className="flex-1 font-normal">Created</div>
                     <div className="flex-1 font-normal">Last Used</div>
                     <div className="w-10"></div>
@@ -216,8 +216,8 @@ export function ApiKeysSection({
                 </div>}
                 <div className="flex flex-col">
                     {keys.map((key) => (
-                        <div key={key._id} className="flex items-start border-b border-border last:border-b-0 p-4">
-                            <div className="flex-[3] p-2">
+                        <div key={key._id} className="flex items-start border-b border last:border-b-0 p-4">
+                            <div className="flex-3 p-2">
                                 <ApiKeyDisplay apiKey={key.key} />
                             </div>
                             <div className="flex-1 p-2">

@@ -3,10 +3,8 @@ import { chatsCollection } from "../../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { authCheck } from "../../../utils";
 
-export async function POST(
-    request: NextRequest,
-    { params }: { params: { chatId: string } }
-): Promise<Response> {
+export async function POST(request: NextRequest, props: { params: Promise<{ chatId: string }> }): Promise<Response> {
+    const params = await props.params;
     return await authCheck(request, async (session) => {
         const { chatId } = params;
 

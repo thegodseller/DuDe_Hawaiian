@@ -98,7 +98,7 @@ export default function Sidebar({ projectId, useRag, useAuth, collapsed = false,
   return (
     <>
       <aside className={`${collapsed ? 'w-16' : 'w-60'} bg-transparent flex flex-col h-full transition-all duration-300`}>
-        <div className="flex flex-col flex-grow">
+        <div className="flex flex-col grow">
           {!isProjectsRoute && (
             <>
               {/* Project Selector */}
@@ -141,46 +141,42 @@ export default function Sidebar({ projectId, useRag, useAuth, collapsed = false,
                     >
                       <Link 
                         href={isDisabled ? '#' : fullPath}
-                        className={isDisabled ? 'pointer-events-none' : ''}
+                        className={`
+                          relative w-full rounded-md flex items-center
+                          text-[15px] font-medium transition-all duration-200
+                          ${collapsed ? 'justify-center py-4' : 'px-2.5 py-3 gap-2.5'}
+                          ${isActive 
+                            ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-l-2 border-indigo-600 dark:border-indigo-400' 
+                            : isDisabled
+                              ? 'text-zinc-300 dark:text-zinc-600 cursor-not-allowed'
+                              : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-300'
+                          }
+                          ${isDisabled ? 'pointer-events-none' : ''}
+                        `}
+                        data-tour-target={item.href === 'config' ? 'settings' : item.href === 'sources' ? 'entity-data-sources' : undefined}
                       >
-                        <button 
+                        <Icon 
+                          size={collapsed ? COLLAPSED_ICON_SIZE : EXPANDED_ICON_SIZE} 
                           className={`
-                            relative w-full rounded-md flex items-center
-                            text-[15px] font-medium transition-all duration-200
-                            ${collapsed ? 'justify-center py-4' : 'px-2.5 py-3 gap-2.5'}
-                            ${isActive 
-                              ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-l-2 border-indigo-600 dark:border-indigo-400' 
-                              : isDisabled
-                                ? 'text-zinc-300 dark:text-zinc-600 cursor-not-allowed'
-                                : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-300'
+                            transition-all duration-200
+                            ${isDisabled 
+                              ? 'text-zinc-300 dark:text-zinc-600' 
+                              : isActive
+                                ? 'text-indigo-600 dark:text-indigo-400'
+                                : 'text-zinc-500 dark:text-zinc-400'
                             }
                           `}
-                          disabled={isDisabled}
-                          data-tour-target={item.href === 'config' ? 'settings' : item.href === 'sources' ? 'entity-data-sources' : undefined}
-                        >
-                          <Icon 
-                            size={collapsed ? COLLAPSED_ICON_SIZE : EXPANDED_ICON_SIZE} 
-                            className={`
-                              transition-all duration-200
-                              ${isDisabled 
-                                ? 'text-zinc-300 dark:text-zinc-600' 
-                                : isActive
-                                  ? 'text-indigo-600 dark:text-indigo-400'
-                                  : 'text-zinc-500 dark:text-zinc-400'
-                              }
-                            `}
-                          />
-                          {!collapsed && (
-                            <>
-                              <span>{item.label}</span>
-                              {item.beta && (
-                                <span className="ml-1.5 leading-none px-1.5 py-[2px] text-[9px] font-medium bg-gradient-to-r from-pink-500 to-violet-500 text-white rounded-full">
-                                  BETA
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </button>
+                        />
+                        {!collapsed && (
+                          <>
+                            <span>{item.label}</span>
+                            {item.beta && (
+                              <span className="ml-1.5 leading-none px-1.5 py-[2px] text-[9px] font-medium bg-linear-to-r from-pink-500 to-violet-500 text-white rounded-full">
+                                BETA
+                              </span>
+                            )}
+                          </>
+                        )}
                       </Link>
                     </Tooltip>
                   );
