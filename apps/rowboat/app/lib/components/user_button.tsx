@@ -24,7 +24,7 @@ export function UserButton({ useBilling }: { useBilling?: boolean }) {
         <DropdownMenu
             onAction={(key) => {
                 if (key === 'logout') {
-                    router.push('/api/auth/logout');
+                    router.push('/auth/logout');
                 }
                 if (key === 'billing') {
                     router.push('/billing');
