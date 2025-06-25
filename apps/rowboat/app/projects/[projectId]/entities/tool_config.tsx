@@ -16,7 +16,7 @@ const textareaStyles = "rounded-lg p-3 border border-gray-200 dark:border-gray-7
 const dividerStyles = "border-t border-gray-200 dark:border-gray-800";
 
 // Common section header styles
-const sectionHeaderStyles = "text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400";
+const sectionHeaderStyles = "block text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400";
 
 export function ParameterConfig({
     param,
@@ -411,8 +411,8 @@ export function ToolConfig({
                             <Radio 
                                 value="mock"
                                 classNames={{
-                                    base: "p-0 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-950/50 rounded-lg transition-colors",
-                                    label: "text-base font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
+                                    base: "px-2 py-1 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-950/50 rounded-lg transition-colors",
+                                    label: "text-sm font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
                                 }}
                             >
                                 Mock tool responses
@@ -420,8 +420,8 @@ export function ToolConfig({
                             <Radio 
                                 value="api"
                                 classNames={{
-                                    base: "p-0 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-900/50 rounded-lg transition-colors",
-                                    label: "text-base font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
+                                    base: "px-2 py-1 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-900/50 rounded-lg transition-colors",
+                                    label: "text-sm font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
                                 }}
                             >
                                 Connect tool to your API
