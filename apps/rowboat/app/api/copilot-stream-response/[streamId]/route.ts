@@ -2,6 +2,7 @@ import { getCustomerIdForProject, logUsage } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
 import { redisClient } from "@/app/lib/redis";
 import { CopilotAPIRequest } from "@/app/lib/types/copilot_types";
+import { streamMultiAgentResponse } from "@/app/lib/copilot/copilot";
 
 export async function GET(request: Request, props: { params: Promise<{ streamId: string }> }) {
   const params = await props.params;
@@ -12,42 +13,37 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
   }
 
   // parse the payload
-  const parsedPayload = CopilotAPIRequest.parse(JSON.parse(payload));
+  const { projectId, context, messages, workflow, dataSources } = CopilotAPIRequest.parse(JSON.parse(payload));
 
   // fetch billing customer id
   let billingCustomerId: string | null = null;
   if (USE_BILLING) {
-    billingCustomerId = await getCustomerIdForProject(parsedPayload.projectId);
+    billingCustomerId = await getCustomerIdForProject(projectId);
   }
 
-  // Fetch the upstream SSE stream.
-  const upstreamResponse = await fetch(`${process.env.COPILOT_API_URL}/chat_stream`, {
-    method: 'POST',
-    body: payload,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.COPILOT_API_KEY || 'test'}`,
-    },
-    cache: 'no-store',
-  });
-
-  // If the upstream request fails, return a 502 Bad Gateway.
-  if (!upstreamResponse.ok || !upstreamResponse.body) {
-    return new Response("Error connecting to upstream SSE stream", { status: 502 });
-  }
-
-  const reader = upstreamResponse.body.getReader();
+  const encoder = new TextEncoder();
+  let messageCount = 0;
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Read from the upstream stream continuously.
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          // Immediately enqueue each received chunk.
-          controller.enqueue(value);
+        // Iterate over the copilot stream generator
+        for await (const event of streamMultiAgentResponse(
+          projectId,
+          context,
+          messages,
+          workflow,
+          dataSources || [],
+        )) {
+          // Check if this is a content event
+          if ('content' in event) {
+            messageCount++;
+            controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(event)}\n\n`));
+          } else {
+            controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify(event)}\n\n`));
+          }
         }
+
         controller.close();
 
         // increment copilot request count in billing
@@ -62,6 +58,7 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
           }
         }
       } catch (error) {
+        console.error('Error processing copilot stream:', error);
         controller.error(error);
       }
     },
