@@ -8,11 +8,9 @@ const corsOptions = {
 
 
 export async function middleware(request: NextRequest, event: NextFetchEvent) {
-  const authRes = await auth0.middleware(request);
-
   // Check if the request path starts with /api/auth/
   if (request.nextUrl.pathname.startsWith('/auth')) {
-    return authRes;
+    return await auth0.middleware(request);
   }
 
   // Check if the request path starts with /api/
@@ -44,7 +42,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     request.nextUrl.pathname.startsWith('/onboarding')) {
     // Skip auth check if USE_AUTH is not enabled
     if (process.env.USE_AUTH === 'true') {
-      return authRes;
+      return await auth0.middleware(request);
     }
   }
 
