@@ -9,6 +9,7 @@ import { fetchMcpToolsForServer } from './mcp_actions';
 import { headers } from 'next/headers';
 import { authorizeUserAction } from './billing_actions';
 import { redisClient } from '../lib/redis';
+import { SERVER_URL_PARAMS, SERVER_CLIENT_ID_MAP } from '../lib/constants/klavis';
 
 type McpServerType = z.infer<typeof MCPServer>;
 type McpToolType = z.infer<typeof McpTool>;
@@ -674,6 +675,14 @@ export async function enableServer(
             const instance = instances.find(i => i.name === serverName);
             
             if (instance?.id) {
+                // Check if this server uses auth token (authNeeded but no OAuth)
+                const usesAuthToken = instance.authNeeded && !SERVER_URL_PARAMS[serverName];
+                
+                if (usesAuthToken) {
+                    // Delete auth data first
+                    await deleteServerAuthData(instance.id);
+                }
+                
                 await deleteMcpServerInstance(instance.id, projectId);
                 console.log('[Klavis API] Disabled server:', { serverName, instanceId: instance.id });
 
@@ -747,26 +756,6 @@ export async function deleteMcpServerInstance(
     throw error;
   }
 }
-
-// Server name to URL parameter mapping
-const SERVER_URL_PARAMS: Record<string, string> = {
-  'Google Calendar': 'gcalendar',
-  'Google Drive': 'gdrive',
-  'Google Docs': 'gdocs',
-  'Google Sheets': 'gsheets',
-  'Gmail': 'gmail',
-};
-
-// Server name to environment variable mapping for client IDs
-const SERVER_CLIENT_ID_MAP: Record<string, string | undefined> = {
-  'GitHub': process.env.KLAVIS_GITHUB_CLIENT_ID,
-  'Google Calendar': process.env.KLAVIS_GOOGLE_CLIENT_ID,
-  'Google Drive': process.env.KLAVIS_GOOGLE_CLIENT_ID,
-  'Google Docs': process.env.KLAVIS_GOOGLE_CLIENT_ID,
-  'Google Sheets': process.env.KLAVIS_GOOGLE_CLIENT_ID,
-  'Gmail': process.env.KLAVIS_GOOGLE_CLIENT_ID,
-  'Slack': process.env.KLAVIS_SLACK_ID,
-};
 
 export async function generateServerAuthUrl(
   serverName: string,
@@ -868,4 +857,50 @@ export async function syncServerTools(projectId: string, serverName: string): Pr
         });
         throw error;
     }
+}
+
+// Auth Token Management Functions
+export async function setServerAuthToken(
+  instanceId: string, 
+  authToken: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const response = await klavisApiCall<{ success: boolean; message: string }>(
+      `/mcp-server/instance/set-auth-token`,
+      {
+        method: 'POST',
+        body: { instanceId, authToken }
+      }
+    );
+    
+    return { success: true, message: response.message };
+  } catch (error: any) {
+    // Handle 422 validation errors
+    if (error.message.includes('422')) {
+      try {
+        const errorData = JSON.parse(error.message);
+        const validationErrors = errorData.detail?.map((err: any) => err.msg).join(', ');
+        return { success: false, error: validationErrors || 'Invalid auth token' };
+      } catch {
+        return { success: false, error: 'Invalid auth token format' };
+      }
+    }
+    
+    // Handle other errors
+    return { success: false, error: 'Failed to set auth token. Please try again.' };
+  }
+}
+
+export async function deleteServerAuthData(instanceId: string): Promise<void> {
+  try {
+    await klavisApiCall<{ success: boolean; message: string }>(
+      `/mcp-server/instance/delete-auth/${instanceId}`,
+      { method: 'DELETE' }
+    );
+    console.log('[Klavis API] Auth data deleted for instance:', instanceId);
+  } catch (error: any) {
+    // Log error but don't fail the deletion process
+    console.error('[Klavis API] Failed to delete auth data:', error);
+    // Don't throw - auth cleanup failure shouldn't prevent server deletion
+  }
 }
