@@ -4,12 +4,13 @@ import { CopilotMessage } from "@/app/lib/types/copilot_types";
 import { Workflow } from "@/app/lib/types/workflow_types";
 import { DataSource } from "@/app/lib/types/datasource_types";
 import { z } from "zod";
+import { WithStringId } from "@/app/lib/types/types";
 
 interface UseCopilotParams {
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     context: any;
-    dataSources?: z.infer<typeof DataSource>[];
+    dataSources?: WithStringId<z.infer<typeof DataSource>>[];
 }
 
 interface UseCopilotResult {
