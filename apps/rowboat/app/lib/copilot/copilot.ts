@@ -1,26 +1,21 @@
 import z from "zod";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject, streamText } from "ai";
-import path from "path";
-import fs from "fs";
 import { WithStringId } from "../types/types";
 import { Workflow } from "../types/workflow_types";
 import { CopilotChatContext, CopilotMessage } from "../types/copilot_types";
 import { DataSource } from "../types/datasource_types";
 import { PrefixLogger } from "../utils";
 import zodToJsonSchema from "zod-to-json-schema";
+import { COPILOT_INSTRUCTIONS_EDIT_AGENT } from "./copilot_edit_agent";
+import { COPILOT_INSTRUCTIONS_MULTI_AGENT } from "./copilot_multi_agent";
+import { COPILOT_MULTI_AGENT_EXAMPLE_1 } from "./example_multi_agent_1";
+import { CURRENT_WORKFLOW_PROMPT } from "./current_workflow";
 
 const PROVIDER_API_KEY = process.env.PROVIDER_API_KEY || process.env.OPENAI_API_KEY || '';
 const PROVIDER_BASE_URL = process.env.PROVIDER_BASE_URL || undefined;
 const COPILOT_MODEL = process.env.PROVIDER_COPILOT_MODEL || 'gpt-4.1';
 const AGENT_MODEL = process.env.PROVIDER_DEFAULT_MODEL || 'gpt-4.1';
-
-const BASE_PATH=path.join(process.cwd(), 'app/lib/copilot');
-
-const COPILOT_INSTRUCTIONS_MULTI_AGENT = fs.readFileSync(path.join(BASE_PATH, 'copilot_multi_agent.md'), 'utf8');
-const COPILOT_INSTRUCTIONS_EDIT_AGENT = fs.readFileSync(path.join(BASE_PATH, 'copilot_edit_agent.md'), 'utf8');
-const COPILOT_MULTI_AGENT_EXAMPLE_1 = fs.readFileSync(path.join(BASE_PATH, 'example_multi_agent_1.md'), 'utf8');
-const CURRENT_WORKFLOW_PROMPT = fs.readFileSync(path.join(BASE_PATH, 'current_workflow.md'), 'utf8');
 
 const WORKFLOW_SCHEMA = JSON.stringify(zodToJsonSchema(Workflow));
 

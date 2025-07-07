@@ -1,3 +1,4 @@
+export const COPILOT_MULTI_AGENT_EXAMPLE_1 = `
 ## Examples
 
 ### Example 1:
@@ -8,7 +9,7 @@ Copilot output:
 
 I'm creating the get_current_2fa_method tool to fetch the user's current 2FA method and assist the 2FA Change agent:
 
-```copilot_change
+\`\`\`copilot_change
 // action: create_new
 // config_type: tool
 // name: get_current_2fa_method
@@ -32,11 +33,11 @@ I'm creating the get_current_2fa_method tool to fetch the user's current 2FA met
     }
   }
 }
-```
+\`\`\`
 
 I'm creating the 2FA Setup agent to assist users in setting up their preferred 2FA method:
 
-```copilot_change
+\`\`\`copilot_change
 // action: create_new
 // config_type: agent
 // name: 2FA Setup
@@ -53,10 +54,10 @@ I'm creating the 2FA Setup agent to assist users in setting up their preferred 2
     "outputVisibility": "user_facing"
   }
 }
-```
+\`\`\`
 
 I'm creating the 2FA Change agent to help users change their 2FA methods effectively:
-```copilot_change
+\`\`\`copilot_change
 // action: create_new
 // config_type: agent
 // name: 2FA Change
@@ -73,10 +74,10 @@ I'm creating the 2FA Change agent to help users change their 2FA methods effecti
     "outputVisibility": "user_facing"
   }
 }
-```
+\`\`\`
 
 I'm creating the 2FA Troubleshooting agent to assist users in resolving issues with receiving 2FA codes:
-```copilot_change
+\`\`\`copilot_change
 // action: create_new
 // config_type: agent
 // name: 2FA Troubleshooting
@@ -93,11 +94,11 @@ I'm creating the 2FA Troubleshooting agent to assist users in resolving issues w
     "outputVisibility": "user_facing"
   }
 }
-```
+\`\`\`
 
 I'm creating the hub agent 2FA Hub by modifying the Example Agent to manage and direct 2FA-related queries to specific agents:
 
-```copilot_change
+\`\`\`copilot_change
 // action: edit
 // config_type: agent
 // name: Example Agent
@@ -111,7 +112,7 @@ I'm creating the hub agent 2FA Hub by modifying the Example Agent to manage and 
     "outputVisibility": "user_facing"
   }
 }
-```
+\`\`\`
 
 Once you review and apply the changes, you can try out a basic chat first. I can then help you better configure each agent.
 
@@ -127,7 +128,7 @@ Copilot output:
 
 I'm creating the Exec Search Evaluation agent to evaluate the quality of questions asked by the executive search agency:
 
-```copilot_change
+\`\`\`copilot_change
 // action: create_new
 // config_type: agent
 // name: Exec Search Evaluation
@@ -143,11 +144,11 @@ I'm creating the Exec Search Evaluation agent to evaluate the quality of questio
     "outputVisibility": "internal"
   }
 }
-```
+\`\`\`
 
 I'm creating the Candidate Evaluation agent to evaluate the quality of responses from the CxO candidate:
 
-```copilot_change
+\`\`\`copilot_change
 // action: create_new
 // config_type: agent
 // name: Candidate Evaluation
@@ -163,11 +164,11 @@ I'm creating the Candidate Evaluation agent to evaluate the quality of responses
     "outputVisibility": "internal"
   }
 }
-```
+\`\`\`
 
 I'm creating the Call Decision agent to determine if the call quality is sufficient based on both evaluations:
 
-```copilot_change
+\`\`\`copilot_change
 // action: create_new
 // config_type: agent
 // name: Call Decision
@@ -183,11 +184,11 @@ I'm creating the Call Decision agent to determine if the call quality is suffici
     "outputVisibility": "internal"
   }
 }
-```
+\`\`\`
 
 I'm creating the Evaluation Agent to coordinate between the two evaluation agents:
 
-```copilot_change
+\`\`\`copilot_change
 // action: create_new
 // config_type: agent
 // name: Evaluation Agent
@@ -207,11 +208,11 @@ I'm creating the Evaluation Agent to coordinate between the two evaluation agent
     ]
   }
 }
-```
+\`\`\`
 
 I'm creating the Interview Evaluation Hub agent to orchestrate the entire evaluation process:
 
-```copilot_change
+\`\`\`copilot_change
 // action: create_new
 // config_type: agent
 // name: Interview Evaluation Hub
@@ -231,8 +232,9 @@ I'm creating the Interview Evaluation Hub agent to orchestrate the entire evalua
     ]
   }
 }
-```
+\`\`\`
 
 Once you review and apply the changes, you can try out a basic chat first. I can then help you better configure each agent.
 
 This concludes my changes. Would you like some more help?
+`;
