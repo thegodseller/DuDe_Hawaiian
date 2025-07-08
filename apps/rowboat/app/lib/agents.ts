@@ -404,11 +404,12 @@ function getStartOfTurnAgentName(
     workflow: z.infer<typeof Workflow>,
 ): string {
     logger = logger.child(`getStartOfTurnAgentName`);
-    logger.log(`stack: ${stack.join(', ')}`);
+    logger.log(`stack: ${JSON.stringify(stack)}`);
 
    
     // if control type is retain, return last agent
     const lastAgentName = stack.pop() || workflow.startAgent;
+    logger.log(`popped agent from stack: ${lastAgentName} || reason: last agent logic`);
     const lastAgentConfig = agentConfig[lastAgentName];
     if (!lastAgentConfig) {
         logger.log(`last agent ${lastAgentName} not found in agent config, returning start agent: ${workflow.startAgent}`);
@@ -420,6 +421,7 @@ function getStartOfTurnAgentName(
             return lastAgentName;
         case 'relinquish_to_parent':
             const parentAgentName = stack.pop() || workflow.startAgent;
+            logger.log(`popped agent from stack: ${lastAgentName} || reason: relinquish to parent triggered`);
             logger.log(`last agent ${lastAgentName} control type is relinquish_to_parent, returning most recent parent: ${parentAgentName}`);
             return parentAgentName;
         case 'relinquish_to_start':
@@ -566,23 +568,6 @@ async function* emitGreetingTurn(logger: PrefixLogger, workflow: z.infer<typeof 
     yield* emitEvent(logger, new UsageTracker().asEvent());
 }
 
-function createAgentCallStack(messages: z.infer<typeof Message>[]): string[] {
-    console.log(`createAgentCallStack: Messages: ${JSON.stringify(messages)}`);
-    const stack: string[] = [];
-    for (const msg of messages) {
-        if (msg.role === 'assistant' && msg.agentName) {
-            // skip duplicate entries
-            if (stack.length > 0 && stack[stack.length - 1] === msg.agentName) {
-                continue;
-            }
-            // add to stack
-            stack.push(msg.agentName);
-        }
-    }
-    console.log(`createAgentCallStack: Stack: ${JSON.stringify(stack)}`);
-    return stack;
-}
-
 function createTools(logger: PrefixLogger, workflow: z.infer<typeof Workflow>, toolConfig: Record<string, z.infer<typeof WorkflowTool>>): Record<string, Tool> {
     const tools: Record<string, Tool> = {};
     for (const [toolName, config] of Object.entries(toolConfig)) {
@@ -683,8 +668,11 @@ export async function* streamResponse(
     // create map of agent, tool and prompt configs
     const { agentConfig, toolConfig, promptConfig } = mapConfig(workflow, projectTools);
 
-    // create agent call stack from input messages
-    const stack = createAgentCallStack(messages);
+    // create agent call stack from input messages - TODO - remove this
+    // const stack = createAgentCallStack(messages);
+    
+    const stack: string[] = [];
+    logger.log(`initialized stack: ${JSON.stringify(stack)}`);
 
     // create tools
     const tools = createTools(logger, workflow, toolConfig);
@@ -708,6 +696,8 @@ export async function* streamResponse(
 
     // loop indefinitely
     turnLoop: while (true) {
+
+        logger.log(`starting turn loop iteration: ${iter}`);
         // increment loop counter
         iter++;
 
@@ -716,7 +706,7 @@ export async function* streamResponse(
 
         // log agent info
         loopLogger.log(`agent name: ${agentName}`);
-        loopLogger.log(`stack: ${stack.join(', ')}`);
+        loopLogger.log(`stack: ${JSON.stringify(stack)}`);
         if (!agents[agentName]) {
             throw new Error(`agent not found in agent config!`);
         }
@@ -751,7 +741,6 @@ export async function* streamResponse(
         // handle streaming events
         for await (const event of result) {
             const eventLogger = loopLogger.child(event.type);
-            eventLogger.log(`----------> stack: ${JSON.stringify(stack)}`);
 
             switch (event.type) {
                 case 'raw_model_stream_event':
@@ -814,15 +803,20 @@ export async function* streamResponse(
                         // update transfer counter
                         transferCounter.increment(agentName, event.item.targetAgent.name);
 
-                        // add current agent to stack only if new agent is internal
                         const newAgentName = event.item.targetAgent.name;
-                        if (agentConfig[newAgentName]?.outputVisibility === 'internal') {
-                            stack.push(newAgentName);
-                        }
 
+                        loopLogger.log(`switched to agent: ${newAgentName} || reason: handoff by ${agentName}`);
+
+                        // add current agent to stack only if new agent is internal
+                        if (agentConfig[newAgentName]?.outputVisibility === 'internal') {
+                            stack.push(agentName);
+                            loopLogger.log(`-- pushed agent to stack: ${agentName} || reason: new agent ${newAgentName} is internal`);
+                            loopLogger.log(`-- stack is now: ${JSON.stringify(stack)}`);
+                        }
+                        
                         // set this as the new agent name
                         agentName = newAgentName;
-                        loopLogger.log(`switched to agent: ${agentName}`);
+                        
                     }
 
                     // handle tool call result
@@ -873,6 +867,8 @@ export async function* streamResponse(
                             const current = agentName;
                             // pop the stack
                             agentName = stack.pop()!;
+                            loopLogger.log(`-- popped agent from stack: ${agentName} || reason: it is an internal agent and it put out a message, hence the flow of control needs to return to the previous agent`);
+                            loopLogger.log(`-- stack is now: ${JSON.stringify(stack)}`);
 
                             // emit transfer tool call invocation
                             const [transferStart, transferComplete] = createTransferEvents(current, agentName);
@@ -889,7 +885,7 @@ export async function* streamResponse(
                             transferCounter.increment(current, agentName);
 
                             // set this as the new agent name
-                            loopLogger.log(`switched to agent (reason: internal agent put out a message): ${agentName}`);
+                            loopLogger.log(`switched to agent: ${agentName} || reason: internal agent (${current}) put out a message`);
 
                             // run the turn from the previous agent
                             continue turnLoop;
