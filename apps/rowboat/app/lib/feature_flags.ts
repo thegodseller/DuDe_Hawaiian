@@ -11,6 +11,6 @@ export const USE_BILLING = process.env.USE_BILLING === 'true';
 export const USE_MULTIPLE_PROJECTS = true;
 export const USE_TESTING_FEATURE = false;
 export const USE_VOICE_FEATURE = false;
-export const USE_TRANSFER_CONTROL_OPTIONS = false;
+export const USE_TRANSFER_CONTROL_OPTIONS = true;
 export const USE_PRODUCT_TOUR = true;
 export const SHOW_COPILOT_MARQUEE = false;

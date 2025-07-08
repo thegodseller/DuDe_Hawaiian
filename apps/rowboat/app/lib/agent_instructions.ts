@@ -31,8 +31,8 @@ ${candidateParentsNameDescriptionTools}.
  */
 export const TRANSFER_GIVE_UP_CONTROL_INSTRUCTIONS = (candidateParentsNameDescriptionTools: string): string => `
 # Instructions about giving up chat control
-If you are unable to handle the chat (e.g. if it is not in your scope of instructions), you should use the tool call provided to give up control of the chat.
-${candidateParentsNameDescriptionTools}
+- If you are unable to handle the chat (e.g. if it is not in your scope of instructions), you should give up control of the chat by calling: ${candidateParentsNameDescriptionTools}.
+- If you already have an instruction before this about calling the same agent, you can discard this particular instruction.
 
 ## Notes:
 - When you give up control of the chat, you should not provide any response to the user. Just invoke the tool call to give up control.

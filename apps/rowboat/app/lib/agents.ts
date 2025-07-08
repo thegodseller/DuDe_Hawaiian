@@ -347,7 +347,7 @@ ${CHILD_TRANSFER_RELATED_INSTRUCTIONS}
         agentLogger.log(`added rag instructions`);
     }
 
-    // Create the agent
+    // Create the agent with the dynamic instructions
     const agent = new Agent({
         name: config.name,
         instructions: sanitized,
@@ -397,41 +397,35 @@ function convertMsgsInput(messages: z.infer<typeof Message>[]): AgentInputItem[]
 }
 
 // Helper to determine the next agent name based on control settings
-function getNextAgentName(
+function getStartOfTurnAgentName(
     logger: PrefixLogger,
     stack: string[],
     agentConfig: Record<string, z.infer<typeof WorkflowAgent>>,
     workflow: z.infer<typeof Workflow>,
 ): string {
-    logger = logger.child(`getNextAgentName`);
+    logger = logger.child(`getStartOfTurnAgentName`);
     logger.log(`stack: ${stack.join(', ')}`);
 
-    // get the last agent from the stack
-    // if stack is empty, use the start agent
-    const lastAgentName = stack.pop() || workflow.startAgent;
-
-    return lastAgentName;
-
-    // TODO: control-type logic is being ignored for now
+   
     // if control type is retain, return last agent
-    // const lastAgentName = stack.pop() || workflow.startAgent;
-    // const lastAgentConfig = agentConfig[lastAgentName];
-    // if (!lastAgentConfig) {
-    //     logger.log(`last agent ${lastAgentName} not found in agent config, returning start agent: ${workflow.startAgent}`);
-    //     return workflow.startAgent;
-    // }
-    // switch (lastAgentConfig.controlType) {
-    //     case 'retain':
-    //         logger.log(`last agent ${lastAgentName} control type is retain, returning last agent: ${lastAgentName}`);
-    //         return lastAgentName;
-    //     case 'relinquish_to_parent':
-    //         const parentAgentName = stack.pop() || workflow.startAgent;
-    //         logger.log(`last agent ${lastAgentName} control type is relinquish_to_parent, returning most recent parent: ${parentAgentName}`);
-    //         return parentAgentName;
-    //     case 'relinquish_to_start':
-    //         logger.log(`last agent ${lastAgentName} control type is relinquish_to_start, returning start agent: ${workflow.startAgent}`);
-    //         return workflow.startAgent;
-    // }
+    const lastAgentName = stack.pop() || workflow.startAgent;
+    const lastAgentConfig = agentConfig[lastAgentName];
+    if (!lastAgentConfig) {
+        logger.log(`last agent ${lastAgentName} not found in agent config, returning start agent: ${workflow.startAgent}`);
+        return workflow.startAgent;
+    }
+    switch (lastAgentConfig.controlType) {
+        case 'retain':
+            logger.log(`last agent ${lastAgentName} control type is retain, returning last agent: ${lastAgentName}`);
+            return lastAgentName;
+        case 'relinquish_to_parent':
+            const parentAgentName = stack.pop() || workflow.startAgent;
+            logger.log(`last agent ${lastAgentName} control type is relinquish_to_parent, returning most recent parent: ${parentAgentName}`);
+            return parentAgentName;
+        case 'relinquish_to_start':
+            logger.log(`last agent ${lastAgentName} control type is relinquish_to_start, returning start agent: ${workflow.startAgent}`);
+            return workflow.startAgent;
+    }
 }
 
 // Logs an event and then yields it
@@ -573,6 +567,7 @@ async function* emitGreetingTurn(logger: PrefixLogger, workflow: z.infer<typeof 
 }
 
 function createAgentCallStack(messages: z.infer<typeof Message>[]): string[] {
+    console.log(`createAgentCallStack: Messages: ${JSON.stringify(messages)}`);
     const stack: string[] = [];
     for (const msg of messages) {
         if (msg.role === 'assistant' && msg.agentName) {
@@ -584,6 +579,7 @@ function createAgentCallStack(messages: z.infer<typeof Message>[]): string[] {
             stack.push(msg.agentName);
         }
     }
+    console.log(`createAgentCallStack: Stack: ${JSON.stringify(stack)}`);
     return stack;
 }
 
@@ -639,6 +635,28 @@ function createAgents(
     return { agents, mentions };
 }
 
+// Helper to get give up control instructions for child agents
+function getGiveUpControlInstructions(
+    agent: Agent,
+    parentAgentName: string,
+    logger: PrefixLogger
+): string {
+    let dynamicInstructions: string;
+    if (typeof agent.instructions === 'string') {
+        dynamicInstructions = agent.instructions;
+    } else {
+        throw new Error('Agent instructions must be a string for dynamic injection.');
+    }
+    // Only include the @mention for the parent, not the tool call format
+    const parentBlock = `@agent:${parentAgentName}`;
+    // Import the template
+    const { TRANSFER_GIVE_UP_CONTROL_INSTRUCTIONS } = require('./agent_instructions');
+    dynamicInstructions = dynamicInstructions + '\n\n' + TRANSFER_GIVE_UP_CONTROL_INSTRUCTIONS(parentBlock);
+    // For tracking
+    logger.log(`[inject] Added give up control instructions for ${agent.name} with parent ${parentAgentName}`);
+    return dynamicInstructions;
+}
+
 // Main function to stream an agentic response
 // using OpenAI Agents SDK
 export async function* streamResponse(
@@ -646,6 +664,8 @@ export async function* streamResponse(
     projectTools: z.infer<typeof WorkflowTool>[],
     messages: z.infer<typeof Message>[],
 ): AsyncIterable<z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage>> {
+    // Divider log for tracking agent loop start
+    console.log('-------------------- AGENT LOOP START --------------------');
     // set up logging
     let logger = new PrefixLogger(`agent-loop`)
     logger.log('projectId', workflow.projectId);
@@ -679,7 +699,7 @@ export async function* streamResponse(
     const usageTracker = new UsageTracker();
 
     // get next agent name
-    let agentName = getNextAgentName(logger, stack, agentConfig, workflow);
+    let agentName = getStartOfTurnAgentName(logger, stack, agentConfig, workflow);
 
     // set up initial state for loop
     logger.log('@@ starting agent turn @@');
@@ -702,18 +722,36 @@ export async function* streamResponse(
         }
         const agent: Agent = agents[agentName]!;
 
+        // --- DYNAMICALLY INJECT GIVE UP CONTROL INSTRUCTIONS FOR CHILD AGENTS ---
+        // Only inject for non-internal agents with controlType 'retain'
+        const agentConfigObj = agentConfig[agentName];
+        const isInternal = agentConfigObj?.outputVisibility === 'internal';
+        const isRetain = agentConfigObj?.controlType === 'retain';
+        loopLogger.log(`isInternal: ${isInternal}`);
+        loopLogger.log(`isRetain: ${isRetain}`);
+        loopLogger.log(`stack.length: ${stack.length}`);
+        if (!isInternal && isRetain && stack.length > 0) {
+            const parentAgentName = stack[stack.length - 1];
+            agents[agentName].instructions = getGiveUpControlInstructions(agent, parentAgentName, loopLogger);
+        }
+        // --- END DYNAMIC INJECTION ---
+
         // convert messages to agents sdk compatible input
         const inputs = convertMsgsInput(turnMsgs);
 
         // run the agent
-        const result = await run(agent, inputs, {
-            stream: true,
-        });
+        const result = await run(
+            agent,
+            inputs,
+            {
+                stream: true,
+            }
+        );
 
         // handle streaming events
         for await (const event of result) {
             const eventLogger = loopLogger.child(event.type);
-            // eventLogger.log(`----------> event: ${JSON.stringify(event)}`);
+            eventLogger.log(`----------> stack: ${JSON.stringify(stack)}`);
 
             switch (event.type) {
                 case 'raw_model_stream_event':
@@ -776,11 +814,14 @@ export async function* streamResponse(
                         // update transfer counter
                         transferCounter.increment(agentName, event.item.targetAgent.name);
 
-                        // add current agent to stack
-                        stack.push(agentName);
+                        // add current agent to stack only if new agent is internal
+                        const newAgentName = event.item.targetAgent.name;
+                        if (agentConfig[newAgentName]?.outputVisibility === 'internal') {
+                            stack.push(newAgentName);
+                        }
 
                         // set this as the new agent name
-                        agentName = event.item.targetAgent.name;
+                        agentName = newAgentName;
                         loopLogger.log(`switched to agent: ${agentName}`);
                     }
 
@@ -830,7 +871,8 @@ export async function* streamResponse(
                         // if this is an internal agent, switch to previous agent
                         if (isInternal) {
                             const current = agentName;
-                            agentName = getNextAgentName(logger, stack, agentConfig, workflow);
+                            // pop the stack
+                            agentName = stack.pop()!;
 
                             // emit transfer tool call invocation
                             const [transferStart, transferComplete] = createTransferEvents(current, agentName);
@@ -845,9 +887,6 @@ export async function* streamResponse(
 
                             // update transfer counter
                             transferCounter.increment(current, agentName);
-
-                            // add current agent to stack
-                            stack.push(current);
 
                             // set this as the new agent name
                             loopLogger.log(`switched to agent (reason: internal agent put out a message): ${agentName}`);
