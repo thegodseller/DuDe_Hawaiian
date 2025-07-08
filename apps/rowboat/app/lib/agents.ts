@@ -399,17 +399,33 @@ function convertMsgsInput(messages: z.infer<typeof Message>[]): AgentInputItem[]
 // Helper to determine the next agent name based on control settings
 function getStartOfTurnAgentName(
     logger: PrefixLogger,
-    stack: string[],
+    messages: z.infer<typeof Message>[],
     agentConfig: Record<string, z.infer<typeof WorkflowAgent>>,
     workflow: z.infer<typeof Workflow>,
 ): string {
-    logger = logger.child(`getStartOfTurnAgentName`);
-    logger.log(`stack: ${JSON.stringify(stack)}`);
 
-   
+    function createAgentCallStack(messages: z.infer<typeof Message>[]): string[] {
+        const stack: string[] = [];
+        for (const msg of messages) {
+            if (msg.role === 'assistant' && msg.agentName) {
+                // skip duplicate entries
+                if (stack.length > 0 && stack[stack.length - 1] === msg.agentName) {
+                    continue;
+                }
+                // add to stack
+                stack.push(msg.agentName);
+            }
+        }
+        return stack;
+    }    
+
+    logger = logger.child(`getStartOfTurnAgentName`);
+    const startAgentStack = createAgentCallStack(messages);
+    logger.log(`startAgentStack: ${JSON.stringify(startAgentStack)}`);
+
     // if control type is retain, return last agent
-    const lastAgentName = stack.pop() || workflow.startAgent;
-    logger.log(`popped agent from stack: ${lastAgentName} || reason: last agent logic`);
+    const lastAgentName = startAgentStack.pop() || workflow.startAgent;
+    logger.log(`setting last agent name initially to: ${lastAgentName}`);
     const lastAgentConfig = agentConfig[lastAgentName];
     if (!lastAgentConfig) {
         logger.log(`last agent ${lastAgentName} not found in agent config, returning start agent: ${workflow.startAgent}`);
@@ -420,8 +436,12 @@ function getStartOfTurnAgentName(
             logger.log(`last agent ${lastAgentName} control type is retain, returning last agent: ${lastAgentName}`);
             return lastAgentName;
         case 'relinquish_to_parent':
-            const parentAgentName = stack.pop() || workflow.startAgent;
-            logger.log(`popped agent from stack: ${lastAgentName} || reason: relinquish to parent triggered`);
+            const parentAgentName = startAgentStack.pop() || workflow.startAgent;
+            if (startAgentStack.length > 0) {
+                logger.log(`popped agent from stack: ${lastAgentName} || reason: relinquish to parent triggered`);
+            } else {
+                logger.log(`using start agent: ${lastAgentName} || reason: empty stack`);
+            }
             logger.log(`last agent ${lastAgentName} control type is relinquish_to_parent, returning most recent parent: ${parentAgentName}`);
             return parentAgentName;
         case 'relinquish_to_start':
@@ -591,9 +611,11 @@ function createAgents(
     tools: Record<string, Tool>,
     projectTools: z.infer<typeof WorkflowTool>[],
     promptConfig: Record<string, z.infer<typeof WorkflowPrompt>>,
-): { agents: Record<string, Agent>, mentions: Record<string, z.infer<typeof ConnectedEntity>[]> } {
+): { agents: Record<string, Agent>, mentions: Record<string, z.infer<typeof ConnectedEntity>[]>, originalInstructions: Record<string, string>, originalHandoffs: Record<string, Agent[]> } {
     const agents: Record<string, Agent> = {};
     const mentions: Record<string, z.infer<typeof ConnectedEntity>[]> = {};
+    const originalInstructions: Record<string, string> = {};
+    const originalHandoffs: Record<string, Agent[]> = {};
 
     // create agents
     for (const [agentName, config] of Object.entries(agentConfig)) {
@@ -607,17 +629,20 @@ function createAgents(
         );
         agents[agentName] = agent;
         mentions[agentName] = entities;
-        logger.log(`created agent: ${agentName}`);
+        originalInstructions[agentName] = agent.instructions as string;
+        // handoffs will be set after all agents are created
     }
 
     // set handoffs
     for (const [agentName, agent] of Object.entries(agents)) {
         const connectedAgentNames = (mentions[agentName] || []).filter(e => e.type === 'agent').map(e => e.name);
+        // Only store Agent objects in handoffs (filter out Handoff if present)
         agent.handoffs = connectedAgentNames.map(e => agents[e]).filter(Boolean) as Agent[];
-        logger.log(`set handoffs for ${agentName}: ${connectedAgentNames.join(',')}`);
+        originalHandoffs[agentName] = agent.handoffs.filter(h => h instanceof Agent);
+        logger.log(`set handoffs for ${agentName}: ${JSON.stringify(connectedAgentNames)}`);
     }
 
-    return { agents, mentions };
+    return { agents, mentions, originalInstructions, originalHandoffs };
 }
 
 // Helper to get give up control instructions for child agents
@@ -638,8 +663,40 @@ function getGiveUpControlInstructions(
     const { TRANSFER_GIVE_UP_CONTROL_INSTRUCTIONS } = require('./agent_instructions');
     dynamicInstructions = dynamicInstructions + '\n\n' + TRANSFER_GIVE_UP_CONTROL_INSTRUCTIONS(parentBlock);
     // For tracking
-    logger.log(`[inject] Added give up control instructions for ${agent.name} with parent ${parentAgentName}`);
+    logger.log(`Added give up control instructions for ${agent.name} with parent ${parentAgentName}`);
     return dynamicInstructions;
+}
+
+// Helper to dynamically inject give up control instructions and handoff
+function maybeInjectGiveUpControlInstructions(
+    agents: Record<string, Agent>,
+    agentConfig: Record<string, z.infer<typeof WorkflowAgent>>,
+    childAgentName: string,
+    parentAgentName: string,
+    logger: PrefixLogger,
+    originalInstructions: Record<string, string>,
+    originalHandoffs: Record<string, Agent[]>
+) {
+    // Reset to original before injecting
+    agents[childAgentName].instructions = originalInstructions[childAgentName];
+    agents[childAgentName].handoffs = [...originalHandoffs[childAgentName]];
+
+    const agentConfigObj = agentConfig[childAgentName];
+    const isInternal = agentConfigObj?.outputVisibility === 'internal';
+    const isRetain = agentConfigObj?.controlType === 'retain';
+    const injectLogger = logger.child(`inject`);
+    injectLogger.log(`isInternal: ${isInternal}`);
+    injectLogger.log(`isRetain: ${isRetain}`);
+    if (!isInternal && isRetain) {
+        // inject give up control instructions
+        agents[childAgentName].instructions = getGiveUpControlInstructions(agents[childAgentName], parentAgentName, injectLogger);
+        injectLogger.log(`Added give up control instructions for ${childAgentName} with parent ${parentAgentName}`);
+        // add the parent agent to the handoff list if not already present
+        if (!agents[childAgentName].handoffs.includes(agents[parentAgentName])) {
+            agents[childAgentName].handoffs.push(agents[parentAgentName]);
+        }
+        injectLogger.log(`Added parent ${parentAgentName} to handoffs for ${childAgentName}`);
+    }
 }
 
 // Main function to stream an agentic response
@@ -668,8 +725,6 @@ export async function* streamResponse(
     // create map of agent, tool and prompt configs
     const { agentConfig, toolConfig, promptConfig } = mapConfig(workflow, projectTools);
 
-    // create agent call stack from input messages - TODO - remove this
-    // const stack = createAgentCallStack(messages);
     
     const stack: string[] = [];
     logger.log(`initialized stack: ${JSON.stringify(stack)}`);
@@ -678,7 +733,7 @@ export async function* streamResponse(
     const tools = createTools(logger, workflow, toolConfig);
 
     // create agents
-    const { agents } = createAgents(logger, workflow, agentConfig, tools, projectTools, promptConfig);
+    const { agents, originalInstructions, originalHandoffs } = createAgents(logger, workflow, agentConfig, tools, projectTools, promptConfig);
 
     // track agent to agent calls
     const transferCounter = new AgentTransferCounter();
@@ -687,7 +742,7 @@ export async function* streamResponse(
     const usageTracker = new UsageTracker();
 
     // get next agent name
-    let agentName = getStartOfTurnAgentName(logger, stack, agentConfig, workflow);
+    let agentName = getStartOfTurnAgentName(logger, messages, agentConfig, workflow);
 
     // set up initial state for loop
     logger.log('@@ starting agent turn @@');
@@ -712,19 +767,8 @@ export async function* streamResponse(
         }
         const agent: Agent = agents[agentName]!;
 
-        // --- DYNAMICALLY INJECT GIVE UP CONTROL INSTRUCTIONS FOR CHILD AGENTS ---
-        // Only inject for non-internal agents with controlType 'retain'
-        const agentConfigObj = agentConfig[agentName];
-        const isInternal = agentConfigObj?.outputVisibility === 'internal';
-        const isRetain = agentConfigObj?.controlType === 'retain';
-        loopLogger.log(`isInternal: ${isInternal}`);
-        loopLogger.log(`isRetain: ${isRetain}`);
-        loopLogger.log(`stack.length: ${stack.length}`);
-        if (!isInternal && isRetain && stack.length > 0) {
-            const parentAgentName = stack[stack.length - 1];
-            agents[agentName].instructions = getGiveUpControlInstructions(agent, parentAgentName, loopLogger);
-        }
-        // --- END DYNAMIC INJECTION ---
+        // Dynamically inject give up control instructions for child agents and add parent to handoffs
+        // (No longer called here; will be called at handoff)
 
         // convert messages to agents sdk compatible input
         const inputs = convertMsgsInput(turnMsgs);
@@ -788,6 +832,17 @@ export async function* streamResponse(
                             eventLogger.log(`skipping handoff to same agent: ${agentName}`);
                             break;
                         }
+
+                        // inject give up control instructions if needed (parent handing off to child)
+                        maybeInjectGiveUpControlInstructions(
+                            agents,
+                            agentConfig,
+                            event.item.targetAgent.name, // child
+                            agentName, // parent
+                            eventLogger,
+                            originalInstructions,
+                            originalHandoffs
+                        );
 
                         // emit transfer tool call invocation
                         const [transferStart, transferComplete] = createTransferEvents(agentName, event.item.targetAgent.name);
