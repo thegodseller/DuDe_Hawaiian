@@ -7,6 +7,8 @@ import { CoreMessage, embed, generateText } from "ai";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { Composio } from '@composio/core';
+import { SignJWT } from "jose";
+import crypto from "crypto";
 
 // Internal dependencies
 import { embeddingModel } from '../lib/embedding';
@@ -167,6 +169,84 @@ async function invokeRagTool(
     return results;
 }
 
+export async function invokeWebhookTool(
+    logger: PrefixLogger,
+    projectId: string,
+    name: string,
+    input: any,
+): Promise<unknown> {
+    logger = logger.child(`invokeWebhookTool`);
+    logger.log(`projectId: ${projectId}`);
+    logger.log(`name: ${name}`);
+    logger.log(`input: ${JSON.stringify(input)}`);
+
+    const project = await projectsCollection.findOne({
+        "_id": projectId,
+    });
+    if (!project) {
+        throw new Error('Project not found');
+    }
+
+    if (!project.webhookUrl) {
+        throw new Error('Webhook URL not found');
+    }
+
+    // prepare request body
+    const toolCall: z.infer<typeof AssistantMessageWithToolCalls.shape.toolCalls>[number] = {
+        id: crypto.randomUUID(),
+        type: "function",
+        function: {
+            name,
+            arguments: JSON.stringify(input),
+        },
+    }
+    const content = JSON.stringify({
+        toolCall,
+    });
+    const requestId = crypto.randomUUID();
+    const bodyHash = crypto
+        .createHash('sha256')
+        .update(content, 'utf8')
+        .digest('hex');
+
+    // sign request
+    const jwt = await new SignJWT({
+        requestId,
+        projectId,
+        bodyHash,
+    })
+        .setProtectedHeader({
+            alg: 'HS256',
+            typ: 'JWT',
+        })
+        .setIssuer('rowboat')
+        .setAudience(project.webhookUrl)
+        .setSubject(`tool-call-${toolCall.id}`)
+        .setJti(requestId)
+        .setIssuedAt()
+        .setExpirationTime("5 minutes")
+        .sign(new TextEncoder().encode(project.secret));
+
+    // make request
+    const request = {
+        requestId,
+        content,
+    };
+    const response = await fetch(project.webhookUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-signature-jwt': jwt,
+        },
+        body: JSON.stringify(request),
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to call webhook: ${response.status}: ${response.statusText}`);
+    }
+    const responseBody = await response.json();
+    return responseBody;
+}
+
 // Helper to handle MCP tool calls
 async function invokeMcpTool(
     logger: PrefixLogger,
@@ -290,6 +370,40 @@ function createMockTool(
                 logger.log(`Error executing mock tool ${config.name}:`, error);
                 return JSON.stringify({
                     error: `Mock tool execution failed: ${error}`,
+                });
+            }
+        }
+    });
+}
+
+// Helper to create a webhook tool
+function createWebhookTool(
+    logger: PrefixLogger,
+    config: z.infer<typeof WorkflowTool>,
+    projectId: string,
+): Tool {
+    const { name, description, parameters } = config;
+
+    return tool({
+        name,
+        description,
+        strict: false,
+        parameters: {
+            type: 'object',
+            properties: parameters.properties,
+            required: parameters.required || [],
+            additionalProperties: true,
+        },
+        async execute(input: any) {
+            try {
+                const result = await invokeWebhookTool(logger, projectId, name, input);
+                return JSON.stringify({
+                    result,
+                });
+            } catch (error) {
+                logger.log(`Error executing webhook tool ${config.name}:`, error);
+                return JSON.stringify({
+                    error: `Tool execution failed: ${error}`,
                 });
             }
         }
@@ -678,7 +792,8 @@ function createTools(logger: PrefixLogger, workflow: z.infer<typeof Workflow>, t
             tools[toolName] = createMockTool(logger, config);
             logger.log(`created mock tool: ${toolName}`);
         } else {
-            logger.log(`unsupported tool type: ${toolName}`);
+            tools[toolName] = createWebhookTool(logger, config, workflow.projectId);
+            logger.log(`created webhook tool: ${toolName}`);
         }
     }
     return tools;
