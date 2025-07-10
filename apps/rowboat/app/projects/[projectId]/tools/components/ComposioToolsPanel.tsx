@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { PictureImg } from '@/components/ui/picture-img';
-import { Checkbox } from '@heroui/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { listTools } from '@/app/actions/composio_actions';
+import { Button, Checkbox } from '@heroui/react';
+import { ChevronLeft, ChevronRight, LinkIcon, Loader2, UnlinkIcon } from 'lucide-react';
+import { listTools, deleteConnectedAccount } from '@/app/actions/composio_actions';
 import { z } from 'zod';
 import { ZTool, ZListResponse } from '@/app/lib/composio/composio';
 import { SlidePanel } from '@/components/ui/slide-panel';
 import { Project } from '@/app/lib/types/project_types';
+import { ToolkitAuthModal } from './ToolkitAuthModal';
 
 type ToolType = z.infer<typeof ZTool>;
 type ToolListResponse = z.infer<ReturnType<typeof ZListResponse<typeof ZTool>>>;
@@ -29,6 +29,8 @@ interface ComposioToolsPanelProps {
   onClose: () => void;
   projectConfig: ProjectType | null;
   onUpdateToolsSelection: (selectedToolObjects: ToolType[]) => void;
+  onProjectConfigUpdate: () => void;
+  onRemoveToolkitTools: (toolkitSlug: string) => void;
   isSaving: boolean;
 }
 
@@ -38,6 +40,8 @@ export function ComposioToolsPanel({
   onClose, 
   projectConfig,
   onUpdateToolsSelection,
+  onProjectConfigUpdate,
+  onRemoveToolkitTools,
   isSaving
 }: ComposioToolsPanelProps) {
   const params = useParams();
@@ -51,6 +55,8 @@ export function ComposioToolsPanel({
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [hasChanges, setHasChanges] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isProcessingAuth, setIsProcessingAuth] = useState(false);
 
   const loadToolsForToolkit = useCallback(async (toolkitSlug: string, cursor: string | null = null) => {
     try {
@@ -117,6 +123,34 @@ export function ComposioToolsPanel({
     setHasChanges(false);
   }, [onUpdateToolsSelection, selectedTools, tools]);
 
+  const handleConnect = useCallback(() => {
+    setShowAuthModal(true);
+  }, []);
+
+  const handleDisconnect = useCallback(async () => {
+    if (!toolkit) return;
+    
+    const connectedAccountId = projectConfig?.composioConnectedAccounts?.[toolkit.slug]?.id;
+    
+    setIsProcessingAuth(true);
+    try {
+      if (connectedAccountId) {
+        await deleteConnectedAccount(projectId, toolkit.slug, connectedAccountId);
+        onProjectConfigUpdate();
+        onRemoveToolkitTools(toolkit.slug);
+      }
+    } catch (err: any) {
+      console.error('Disconnect failed:', err);
+    } finally {
+      setIsProcessingAuth(false);
+    }
+  }, [projectId, toolkit, projectConfig, onProjectConfigUpdate, onRemoveToolkitTools]);
+
+  const handleAuthComplete = useCallback(() => {
+    setShowAuthModal(false);
+    onProjectConfigUpdate();
+  }, [onProjectConfigUpdate]);
+
   const handleClose = useCallback(() => {
     setTools([]);
     setSelectedTools(new Set());
@@ -151,119 +185,170 @@ export function ComposioToolsPanel({
   const isToolkitConnected = toolkit.no_auth || projectConfig?.composioConnectedAccounts?.[toolkit.slug]?.status === 'ACTIVE';
 
   return (
-    <SlidePanel
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={
-        <div className="flex items-center gap-3">
-          {toolkit.meta.logo && (
-            <PictureImg 
-              src={toolkit.meta.logo} 
-              alt={`${toolkit.name} logo`}
-              width={24}
-              height={24}
-              className="rounded-md object-cover"
-            />
-          )}
-          <span>{toolkit.name}</span>
-        </div>
-      }
-    >
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Available Tools</h4>
-            <div className="flex items-center gap-2">
-              {!isToolkitConnected && !toolkit.no_auth && (
-                <div className="text-sm text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-900/20">
-                  Toolkit not connected
-                </div>
-              )}
-              {hasChanges && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleSaveTools}
-                  disabled={isSaving || !isToolkitConnected}
-                >
-                  {isSaving ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Changes'
-                  )}
-                </Button>
-              )}
-            </div>
+    <>
+      <SlidePanel
+        isOpen={isOpen}
+        onClose={handleClose}
+        title={
+          <div className="flex items-center gap-3">
+            {toolkit.meta.logo && (
+              <PictureImg 
+                src={toolkit.meta.logo} 
+                alt={`${toolkit.name} logo`}
+                width={24}
+                height={24}
+                className="rounded-md object-cover"
+              />
+            )}
+            <span>{toolkit.name}</span>
           </div>
-        </div>
-
-        {/* Scrollable Tools List */}
-        <div className="flex-1 overflow-y-auto">
-          {toolsLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800 dark:border-gray-200 mx-auto"></div>
-              <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading tools...</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {tools.map((tool) => (
-                <div key={tool.slug} className={`group p-4 rounded-lg transition-all duration-200 border border-transparent ${
-                  isToolkitConnected 
-                    ? 'bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600' 
-                    : 'bg-gray-100/50 dark:bg-gray-900/50 opacity-60'
-                }`}>
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      isSelected={selectedTools.has(tool.slug)}
-                      onValueChange={(selected) => handleToolSelectionChange(tool.slug, selected)}
-                      size="sm"
-                      isDisabled={!isToolkitConnected}
-                    />
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-                        {tool.name}
-                      </h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {tool.description}
-                      </p>
-                    </div>
+        }
+      >
+        <div className="flex flex-col h-full">
+          {/* Connection Status Banner */}
+          {!toolkit.no_auth && (
+            <div className={`mb-6 p-4 rounded-lg border-2 ${
+              isToolkitConnected 
+                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
+                : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${
+                    isToolkitConnected ? 'bg-emerald-500' : 'bg-orange-500'
+                  }`}></div>
+                  <div>
+                    <h3 className={`font-semibold text-sm ${
+                      isToolkitConnected 
+                        ? 'text-emerald-800 dark:text-emerald-200' 
+                        : 'text-orange-800 dark:text-orange-200'
+                    }`}>
+                      {isToolkitConnected ? 'Toolkit Connected' : 'Authentication Required'}
+                    </h3>
+                    <p className={`text-xs mt-0.5 ${
+                      isToolkitConnected 
+                        ? 'text-emerald-700 dark:text-emerald-300' 
+                        : 'text-orange-700 dark:text-orange-300'
+                    }`}>
+                      {isToolkitConnected 
+                        ? 'You can select and use tools from this toolkit'
+                        : 'Connect your account to access and use tools'
+                      }
+                    </p>
                   </div>
                 </div>
-              ))}
+                <Button
+                  variant="solid"
+                  size="sm"
+                  onPress={isToolkitConnected ? handleDisconnect : handleConnect}
+                  disabled={isProcessingAuth}
+                  color={isToolkitConnected ? "danger" : "primary"}
+                  isLoading={isProcessingAuth}
+                  startContent={isToolkitConnected ? <UnlinkIcon className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
+                >
+                  {isToolkitConnected ? 'Disconnect' : 'Connect Now'}
+                </Button>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Fixed Pagination Controls */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-          <div className="flex items-center justify-end">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handlePreviousPage}
-                disabled={cursorHistory.length === 0 || toolsLoading}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleNextPage}
-                disabled={!nextCursor || toolsLoading}
-              >
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Available Tools</h4>
+              <div className="flex items-center gap-2">
+                {hasChanges && (
+                  <Button
+                    variant="solid"
+                    size="sm"
+                    color="primary"
+                    onPress={handleSaveTools}
+                    disabled={isSaving || !isToolkitConnected}
+                    isLoading={isSaving}
+                  >
+                    Save Changes
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Scrollable Tools List */}
+          <div className="flex-1 overflow-y-auto">
+            {toolsLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800 dark:border-gray-200 mx-auto"></div>
+                <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading tools...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {tools.map((tool) => (
+                  <div key={tool.slug} className={`group p-4 rounded-lg transition-all duration-200 border border-transparent ${
+                    isToolkitConnected 
+                      ? 'bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600' 
+                      : 'bg-gray-100/50 dark:bg-gray-900/50 opacity-60'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        isSelected={selectedTools.has(tool.slug)}
+                        onValueChange={(selected) => handleToolSelectionChange(tool.slug, selected)}
+                        size="sm"
+                        isDisabled={!isToolkitConnected}
+                      />
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                          {tool.name}
+                        </h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {tool.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Fixed Pagination Controls */}
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+            <div className="flex items-center justify-end">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="bordered"
+                  size="sm"
+                  onClick={handlePreviousPage}
+                  disabled={cursorHistory.length === 0 || toolsLoading}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <Button
+                  variant="bordered"
+                  size="sm"
+                  onClick={handleNextPage}
+                  disabled={!nextCursor || toolsLoading}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </SlidePanel>
+      </SlidePanel>
+
+      {/* Auth Modal */}
+      {toolkit && (
+        <ToolkitAuthModal
+          key={toolkit.slug}
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          toolkitSlug={toolkit.slug}
+          projectId={projectId}
+          onComplete={handleAuthComplete}
+        />
+      )}
+    </>
   );
 } 

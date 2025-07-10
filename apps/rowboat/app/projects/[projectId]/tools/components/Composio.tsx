@@ -158,6 +158,16 @@ export function Composio() {
       toolkit.meta.description.toLowerCase().includes(searchLower) ||
       toolkit.slug.toLowerCase().includes(searchLower)
     );
+  }).sort((a, b) => {
+    // Sort by actual connection status first (only connected tools, not no-auth)
+    const aConnected = !a.no_auth && projectConfig?.composioConnectedAccounts?.[a.slug]?.status === 'ACTIVE';
+    const bConnected = !b.no_auth && projectConfig?.composioConnectedAccounts?.[b.slug]?.status === 'ACTIVE';
+    
+    if (aConnected && !bConnected) return -1;
+    if (!aConnected && bConnected) return 1;
+    
+    // If both have same connection status, maintain original order (don't sort alphabetically)
+    return 0;
   });
 
   if (loading) {
@@ -191,14 +201,6 @@ export function Composio() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-4">
-        <div className="flex gap-3">
-          <div className="shrink-0">
-            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          </div>
-        </div>
-      </div>
-
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1 flex items-center gap-4">
@@ -276,6 +278,8 @@ export function Composio() {
         onClose={handleCloseToolsPanel}
         projectConfig={projectConfig}
         onUpdateToolsSelection={handleUpdateToolsSelection}
+        onProjectConfigUpdate={handleProjectConfigUpdate}
+        onRemoveToolkitTools={handleRemoveToolkitTools}
         isSaving={savingTools}
       />
     </div>
