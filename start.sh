@@ -14,6 +14,11 @@ if [ -n "$COMPOSIO_API_KEY" ]; then
   export USE_COMPOSIO_TOOLS=true
 fi
 
+# enable klavis tools if API key is set
+if [ -n "$KLAVIS_API_KEY" ]; then
+  export USE_KLAVIS_TOOLS=true
+fi
+
 # Start with the base command and profile flags
 CMD="docker-compose"
 CMD="$CMD --profile setup_qdrant"

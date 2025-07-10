@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { ToolsConfig } from './components/ToolsConfig';
 import { PageHeader } from '@/components/ui/page-header';
 import { requireActiveBillingSubscription } from '@/app/lib/billing';
-import { USE_COMPOSIO_TOOLS } from '@/app/lib/feature_flags';
+import { USE_COMPOSIO_TOOLS, USE_KLAVIS_TOOLS } from '@/app/lib/feature_flags';
 
 export default async function ToolsPage() {
   await requireActiveBillingSubscription();
@@ -15,7 +15,10 @@ export default async function ToolsPage() {
       />
       <div className="flex-1 p-6">
         <Suspense fallback={<div>Loading...</div>}>
-          <ToolsConfig useComposioTools={USE_COMPOSIO_TOOLS} />
+          <ToolsConfig
+            useComposioTools={USE_COMPOSIO_TOOLS}
+            useKlavisTools={USE_KLAVIS_TOOLS}
+          />
         </Suspense>
       </div>
     </div>
