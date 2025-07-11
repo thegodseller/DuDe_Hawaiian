@@ -10,7 +10,6 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, Selec
 import { PreviewModalProvider } from "../workflow/preview-modal";
 import { CopilotMessage } from "@/app/lib/types/copilot_types";
 import { getCopilotAgentInstructions } from "@/app/actions/copilot_actions";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { Dropdown as CustomDropdown } from "../../../lib/components/dropdown";
 import { createAtMentions } from "../../../lib/components/atmentions";
 import { Textarea } from "@/components/ui/textarea";
@@ -110,12 +109,16 @@ export function AgentConfig({
         setShowRagCta(false);
     };
 
-    // Add effect to handle control type update when transfer control is disabled
+    // Add effect to handle control type update when transfer control is disabled or when internal agents have invalid control type
     useEffect(() => {
         if (!USE_TRANSFER_CONTROL_OPTIONS && agent.controlType !== 'retain') {
             handleUpdate({ ...agent, controlType: 'retain' });
         }
-    }, [agent.controlType, agent, handleUpdate]);
+        // For internal agents, "retain" is not a valid option, so change it to "relinquish_to_parent"
+        if (agent.outputVisibility === "internal" && agent.controlType === 'retain') {
+            handleUpdate({ ...agent, controlType: 'relinquish_to_parent' });
+        }
+    }, [agent.controlType, agent.outputVisibility, agent, handleUpdate]);
 
     // Add effect to handle escape key
     useEffect(() => {
@@ -610,11 +613,18 @@ export function AgentConfig({
                                     </label>
                                     <CustomDropdown
                                         value={agent.controlType}
-                                        options={[
-                                            { key: "retain", label: "Retain control" },
-                                            { key: "relinquish_to_parent", label: "Relinquish to parent" },
-                                            { key: "relinquish_to_start", label: "Relinquish to 'start' agent" }
-                                        ]}
+                                        options={
+                                            agent.outputVisibility === "internal" 
+                                                ? [
+                                                    { key: "relinquish_to_parent", label: "Relinquish to parent" },
+                                                    { key: "relinquish_to_start", label: "Relinquish to 'start' agent" }
+                                                ]
+                                                : [
+                                                    { key: "retain", label: "Retain control" },
+                                                    { key: "relinquish_to_parent", label: "Relinquish to parent" },
+                                                    { key: "relinquish_to_start", label: "Relinquish to 'start' agent" }
+                                                ]
+                                        }
                                         onChange={(value) => handleUpdate({
                                             ...agent,
                                             controlType: value as z.infer<typeof WorkflowAgent>['controlType']
