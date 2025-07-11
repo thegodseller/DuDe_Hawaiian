@@ -65,3 +65,20 @@
     background-color: #f59e0b !important;
     color: white !important;
 } 
+
+/* Quill editor font size in editing mode */
+.ql-editor {
+    font-size: 1rem !important; /* Increase base font size */
+    line-height: 1.6 !important; /* Adjust line height for better readability */
+}
+
+/* Keep the rendered markdown view at its original size */
+.ql-editor.ql-blank::before {
+    font-size: 1rem !important; /* Match placeholder text size */
+    font-style: italic;
+}
+
+/* Ensure mentions maintain proper size */
+.ql-editor .mention {
+    font-size: inherit !important;
+} 
