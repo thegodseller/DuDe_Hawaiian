@@ -7,7 +7,8 @@ import { Label } from "./label";
 import dynamic from "next/dynamic";
 import { Match } from "./mentions_editor";
 import { SparklesIcon } from "lucide-react";
-import { useEntitySelection } from "../../projects/[projectId]/workflow/workflow_editor";
+import { EntitySelectionContext } from "../../projects/[projectId]/workflow/workflow_editor";
+import { useContext } from "react";
 const MentionsEditor = dynamic(() => import('./mentions_editor'), { ssr: false });
 
 interface EditableFieldProps {
@@ -58,6 +59,9 @@ export function EditableField({
     const [localValue, setLocalValue] = useState(value);
     const ref = useRef<HTMLDivElement>(null);
 
+    // Use the context directly, will be undefined if not in provider
+    const entitySelection = useContext(EntitySelectionContext);
+
     const validationResult = validate?.(localValue);
     const isValid = !validate || validationResult?.valid;
 
@@ -76,15 +80,11 @@ export function EditableField({
         setIsEditing(false);
     });
 
-    let contextMentionNavigate: { onSelectAgent: (name: string) => void; onSelectTool: (name: string) => void; onSelectPrompt: (name: string) => void; } | undefined;
-    try {
-        contextMentionNavigate = useEntitySelection();
-    } catch {}
     const handleMentionNavigate = onMentionNavigate || ((type, name) => {
-        if (contextMentionNavigate) {
-            if (type === 'agent') contextMentionNavigate.onSelectAgent(name);
-            else if (type === 'tool') contextMentionNavigate.onSelectTool(name);
-            else if (type === 'prompt') contextMentionNavigate.onSelectPrompt(name);
+        if (entitySelection) {
+            if (type === 'agent') entitySelection.onSelectAgent(name);
+            else if (type === 'tool') entitySelection.onSelectTool(name);
+            else if (type === 'prompt') entitySelection.onSelectPrompt(name);
         }
     });
 
