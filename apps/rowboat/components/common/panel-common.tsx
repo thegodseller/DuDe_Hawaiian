@@ -1,6 +1,8 @@
 import clsx from "clsx";
 import { Sparkles } from "lucide-react";
 import { SHOW_COPILOT_MARQUEE } from "@/app/lib/feature_flags";
+import Image from "next/image";
+import mascot from "@/public/mascot.png";
 
 export function ActionButton({
     icon = null,
@@ -73,7 +75,7 @@ export function Panel({
         {variant === 'copilot' && showWelcome && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -mt-16">
                 {/* Replace Sparkles icon with mascot image */}
-                <img src="/mascot.png" alt="Rowboat Mascot" className="w-48 h-48 object-contain mb-2 animate-float" />
+                <Image src={mascot} alt="Rowboat Mascot" width={192} height={192} className="object-contain mb-2 animate-float" />
                 {SHOW_COPILOT_MARQUEE && (
                     <div className="relative mt-8 max-w-full px-8">
                         <div className="font-mono text-sm whitespace-nowrap text-blue-400/60 dark:text-blue-500/40 font-small inline-flex">
