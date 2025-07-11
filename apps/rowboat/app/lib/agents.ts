@@ -962,9 +962,6 @@ export async function* streamResponse(
         }
         const agent: Agent = agents[agentName]!;
 
-        // Dynamically inject give up control instructions for child agents and add parent to handoffs
-        // (No longer called here; will be called at handoff)
-
         // convert messages to agents sdk compatible input
         const inputs = convertMsgsInput(turnMsgs);
 
@@ -1115,9 +1112,16 @@ export async function* streamResponse(
                         // if this is an internal agent, switch to previous agent
                         if (isInternal) {
                             const current = agentName;
-                            // pop the stack
-                            agentName = stack.pop()!;
-                            loopLogger.log(`-- popped agent from stack: ${agentName} || reason: it is an internal agent and it put out a message, hence the flow of control needs to return to the previous agent`);
+
+                            // if the control type is relinquish_to_parent or retain, we need to pop the stack, else if the control type is relinquish_to_start, we need to use the start agent
+                            if (agentConfig[agentName]?.controlType === 'relinquish_to_parent' || agentConfig[agentName]?.controlType === 'retain') {
+                                agentName = stack.pop()!;
+                                loopLogger.log(`-- popped agent from stack: ${agentName} || reason: ${current} is an internal agent, it put out a message and it has a control type of ${agentConfig[agentName]?.controlType}, hence the flow of control needs to return to the previous agent`);
+                            } else if (agentConfig[agentName]?.controlType === 'relinquish_to_start') {
+                                agentName = workflow.startAgent;
+                                loopLogger.log(`-- using start agent: ${agentName} || reason: ${current} is an internal agent, it put out a message and it has a control type of ${agentConfig[agentName]?.controlType}, hence the flow of control needs to return to the start agent`);
+                            }
+                            
                             loopLogger.log(`-- stack is now: ${JSON.stringify(stack)}`);
 
                             // emit transfer tool call invocation
