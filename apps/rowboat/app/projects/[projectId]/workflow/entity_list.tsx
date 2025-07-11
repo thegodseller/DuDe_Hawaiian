@@ -2,7 +2,7 @@ import { z } from "zod";
 import { WorkflowPrompt, WorkflowAgent, WorkflowTool } from "../../../lib/types/workflow_types";
 import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@heroui/react";
 import { useRef, useEffect, useState } from "react";
-import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Boxes, Wrench, PenLine, Library, ChevronDown, ChevronRight, ServerIcon, Component, ScrollText, GripVertical } from "lucide-react";
+import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Boxes, Wrench, PenLine, Library, ChevronDown, ChevronRight, ServerIcon, Component, ScrollText, GripVertical, Users, Cog, CheckCircle2 } from "lucide-react";
 import { DndContext, DragEndEvent, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -12,6 +12,7 @@ import { PictureImg } from "@/components/ui/picture-img";
 import { clsx } from "clsx";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ServerLogo } from '../tools/components/MCPServersCommon';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 
 // Reduced gap size to match Cursor's UI
 const GAP_SIZE = 4; // 1 unit * 4px (tailwind's default spacing unit)
@@ -236,6 +237,13 @@ export function EntityList({
     projectId: string,
     onReorderAgents: (agents: z.infer<typeof WorkflowAgent>[]) => void 
 }) {
+    const [showAgentTypeModal, setShowAgentTypeModal] = useState(false);
+
+    const handleAddAgentWithType = (agentType: 'internal' | 'user_facing') => {
+        onAddAgent({
+            outputVisibility: agentType
+        });
+    };
     // Merge workflow tools with project tools
     const mergedTools = [...tools, ...projectTools];
     const selectedRef = useRef<HTMLButtonElement | null>(null);
@@ -388,7 +396,7 @@ export function EntityList({
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setExpandedPanels(prev => ({ ...prev, agents: true }));
-                                        onAddAgent({});
+                                        setShowAgentTypeModal(true);
                                     }}
                                     className={`group ${buttonClasses}`}
                                     showHoverContent={true}
@@ -648,6 +656,12 @@ export function EntityList({
                     </Panel>
                 </ResizablePanel>
             </ResizablePanelGroup>
+            
+            <AgentTypeModal
+                isOpen={showAgentTypeModal}
+                onClose={() => setShowAgentTypeModal(false)}
+                onConfirm={handleAddAgentWithType}
+            />
         </div>
     );
 }
@@ -865,3 +879,139 @@ const SortableAgentItem = ({ agent, isSelected, onClick, selectedRef, statusLabe
         </div>
     );
 }; 
+
+interface AgentTypeModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: (agentType: 'internal' | 'user_facing') => void;
+}
+
+function AgentTypeModal({ isOpen, onClose, onConfirm }: AgentTypeModalProps) {
+    const [selectedType, setSelectedType] = useState<'internal' | 'user_facing'>('internal');
+
+    const handleConfirm = () => {
+        onConfirm(selectedType);
+        onClose();
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} size="lg" className="max-w-3xl w-full">
+            <ModalContent className="max-w-3xl w-full">
+                <ModalHeader>
+                    <div className="flex items-center gap-2">
+                        <Brain className="w-5 h-5 text-indigo-600" />
+                        <span>Create New Agent</span>
+                    </div>
+                </ModalHeader>
+                <ModalBody>
+                    <div className="space-y-6">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Choose the type of agent you want to create:
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Task Agent (Internal) */}
+                            <button
+                                type="button"
+                                onClick={() => setSelectedType('internal')}
+                                className={clsx(
+                                    "relative group p-6 rounded-2xl border-2 flex flex-col items-start transition-all duration-200 text-left shadow-sm focus:outline-none",
+                                    selectedType === 'internal'
+                                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 shadow-lg scale-[1.03]"
+                                        : "border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:shadow-md bg-white dark:bg-gray-900"
+                                )}
+                            >
+                                <div className="flex items-center gap-4 w-full mb-2">
+                                    <div className={clsx(
+                                        "flex items-center justify-center w-12 h-12 rounded-lg transition-colors",
+                                        selectedType === 'internal'
+                                            ? "bg-indigo-100 dark:bg-indigo-900/60"
+                                            : "bg-gray-100 dark:bg-gray-800"
+                                    )}>
+                                        <Cog className={clsx(
+                                            "w-6 h-6 transition-colors",
+                                            selectedType === 'internal'
+                                                ? "text-indigo-600 dark:text-indigo-400"
+                                                : "text-gray-600 dark:text-gray-400"
+                                        )} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                            Task Agent
+                                        </h3>
+                                        <span className="inline-block align-middle">
+                                            <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/40 px-2 py-0.5 rounded">
+                                                Internal
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <ul className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mt-1 list-disc pl-5 space-y-1">
+                                  <li>Perform specific internal tasks, such as parts of workflows, pipelines, and data processing</li>
+                                  <li>Cannot put out user-facing responses directly</li>
+                                  <li>Can call other agents (both conversation and task agents)</li>
+                                </ul>
+                            </button>
+
+                            {/* Conversation Agent (User-facing) */}
+                            <button
+                                type="button"
+                                onClick={() => setSelectedType('user_facing')}
+                                className={clsx(
+                                    "relative group p-6 rounded-2xl border-2 flex flex-col items-start transition-all duration-200 text-left shadow-sm focus:outline-none",
+                                    selectedType === 'user_facing'
+                                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 shadow-lg scale-[1.03]"
+                                        : "border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:shadow-md bg-white dark:bg-gray-900"
+                                )}
+                            >
+                                <div className="flex items-center gap-4 w-full mb-2">
+                                    <div className={clsx(
+                                        "flex items-center justify-center w-12 h-12 rounded-lg transition-colors",
+                                        selectedType === 'user_facing'
+                                            ? "bg-indigo-100 dark:bg-indigo-900/60"
+                                            : "bg-gray-100 dark:bg-gray-800"
+                                    )}>
+                                        <Users className={clsx(
+                                            "w-6 h-6 transition-colors",
+                                            selectedType === 'user_facing'
+                                                ? "text-indigo-600 dark:text-indigo-400"
+                                                : "text-gray-600 dark:text-gray-400"
+                                        )} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                            Conversation Agent
+                                        </h3>
+                                        <span className="inline-block align-middle">
+                                            <span className="text-xs font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/40 px-2 py-0.5 rounded">
+                                                User-facing
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <ul className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mt-1 list-disc pl-5 space-y-1">
+                                  <li>Interact directly with users</li>
+                                  <li>Ideal for specific roles in customer support, chat interfaces, and other end-user interactions</li>
+                                  <li>Can call other agents (both conversation and task agents)</li>
+                                </ul>
+                            </button>
+                        </div>
+                    </div>
+                </ModalBody>
+                <ModalFooter>
+                    <Button
+                        variant="secondary"
+                        onClick={onClose}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={handleConfirm}
+                    >
+                        Create Agent
+                    </Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+    );
+} 
