@@ -567,7 +567,7 @@ function convertMsgsInput(messages: z.infer<typeof Message>[]): AgentInputItem[]
                 role: 'assistant',
                 content: [{
                     type: 'output_text',
-                    text: `Sender agent: ${msg.agentName}\nContent: ${msg.content}`,
+                    text: `${msg.content}`,
                 }],
                 status: 'completed',
             });
