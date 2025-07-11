@@ -89,19 +89,6 @@ export function AgentConfig({
         setLocalName(agent.name);
     }, [agent.name]);
 
-    // Store active tab in URL hash to persist across re-renders
-    useEffect(() => {
-        const hash = window.location.hash.slice(1);
-        if (hash === 'instructions' || hash === 'configurations') {
-            setActiveTab(hash as TabType);
-        }
-    }, []);
-
-    const handleTabChange = (tab: TabType) => {
-        setActiveTab(tab);
-        window.location.hash = tab;
-    };
-
     // Track changes in RAG datasources
     useEffect(() => {
         const currentSources = agent.ragDataSources || [];
@@ -211,7 +198,7 @@ export function AgentConfig({
                     {(['instructions', 'configurations'] as TabType[]).map((tab) => (
                         <button
                             key={tab}
-                            onClick={() => handleTabChange(tab)}
+                            onClick={() => setActiveTab(tab)}
                             className={clsx(
                                 "px-4 py-2 text-sm font-medium transition-colors relative",
                                 activeTab === tab
