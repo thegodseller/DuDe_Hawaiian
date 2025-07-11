@@ -4,10 +4,12 @@ import { Match } from './mentions_editor';
 
 export default function MarkdownContent({
     content,
-    atValues = []
+    atValues = [],
+    onMentionNavigate,
 }: {
     content: string;
     atValues?: Match[];
+    onMentionNavigate?: (type: 'agent' | 'tool' | 'prompt', name: string) => void;
 }) {
     return <div className="overflow-auto break-words">
         <Markdown
@@ -78,18 +80,45 @@ export default function MarkdownContent({
                             }
                         }
 
+                        // Parse type and name for display
+                        let displayLabel = label;
+                        const typeMatch = label.match(/^(agent|tool|prompt):(.*)$/);
+                        let type: 'agent' | 'tool' | 'prompt' | undefined;
+                        let name: string | undefined;
+                        if (typeMatch) {
+                            type = typeMatch[1] as 'agent' | 'tool' | 'prompt';
+                            name = typeMatch[2];
+                            if (type === 'agent') displayLabel = `Agent: ${name}`;
+                            else if (type === 'tool') displayLabel = `Tool: ${name}`;
+                            else if (type === 'prompt') displayLabel = `Prompt: ${name}`;
+                        }
+
                         // check if the the mention is valid
                         const invalid = !atValues.some(atValue => atValue.id === label);
+                        const handleMentionClick = (e: React.MouseEvent) => {
+                            if (onMentionNavigate && type && name) {
+                                e.preventDefault();
+                                onMentionNavigate(type, name);
+                            }
+                        };
                         if (atValues.length > 0 && invalid) {
                             return (
-                                <span className="inline-block bg-[#e0f2fe] text-[red] px-1.5 py-0.5 rounded whitespace-nowrap">
-                                    @{label} (!)
+                                <span
+                                    className="inline-block bg-[#e0f2fe] text-[red] px-1.5 py-0.5 rounded whitespace-nowrap cursor-pointer"
+                                    onClick={handleMentionClick}
+                                    title={onMentionNavigate ? 'Click to open' : undefined}
+                                >
+                                    {displayLabel} (!)
                                 </span>
                             );
                         }
                         return (
-                            <span className="inline-block bg-[#e0f2fe] text-[#1e40af] px-1.5 py-0.5 rounded whitespace-nowrap">
-                                @{label}
+                            <span
+                                className="inline-block bg-[#e0f2fe] text-[#1e40af] px-1.5 py-0.5 rounded whitespace-nowrap cursor-pointer"
+                                onClick={handleMentionClick}
+                                title={onMentionNavigate ? 'Click to open' : undefined}
+                            >
+                                {displayLabel}
                             </span>
                         );
                     }

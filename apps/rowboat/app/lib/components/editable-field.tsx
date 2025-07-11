@@ -7,6 +7,7 @@ import { Label } from "./label";
 import dynamic from "next/dynamic";
 import { Match } from "./mentions_editor";
 import { SparklesIcon } from "lucide-react";
+import { useEntitySelection } from "../../projects/[projectId]/workflow/workflow_editor";
 const MentionsEditor = dynamic(() => import('./mentions_editor'), { ssr: false });
 
 interface EditableFieldProps {
@@ -30,6 +31,7 @@ interface EditableFieldProps {
         show: boolean;
         setShow: (show: boolean) => void;
     };
+    onMentionNavigate?: (type: 'agent' | 'tool' | 'prompt', name: string) => void;
 }
 
 export function EditableField({
@@ -50,6 +52,7 @@ export function EditableField({
     error,
     inline = false,
     showGenerateButton,
+    onMentionNavigate,
 }: EditableFieldProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [localValue, setLocalValue] = useState(value);
@@ -71,6 +74,18 @@ export function EditableField({
             }
         }
         setIsEditing(false);
+    });
+
+    let contextMentionNavigate: { onSelectAgent: (name: string) => void; onSelectTool: (name: string) => void; onSelectPrompt: (name: string) => void; } | undefined;
+    try {
+        contextMentionNavigate = useEntitySelection();
+    } catch {}
+    const handleMentionNavigate = onMentionNavigate || ((type, name) => {
+        if (contextMentionNavigate) {
+            if (type === 'agent') contextMentionNavigate.onSelectAgent(name);
+            else if (type === 'tool') contextMentionNavigate.onSelectTool(name);
+            else if (type === 'prompt') contextMentionNavigate.onSelectPrompt(name);
+        }
     });
 
     const commonProps = {
@@ -236,10 +251,10 @@ export function EditableField({
                 {value ? (
                     <>
                         {markdown && <div>
-                            <MarkdownContent content={value} atValues={mentionsAtValues} />
+                            <MarkdownContent content={value} atValues={mentionsAtValues} onMentionNavigate={handleMentionNavigate} />
                         </div>}
                         {!markdown && <div className={multiline ? 'whitespace-pre-wrap' : 'flex items-center'}>
-                            <MarkdownContent content={value} atValues={mentionsAtValues} />
+                            <MarkdownContent content={value} atValues={mentionsAtValues} onMentionNavigate={handleMentionNavigate} />
                         </div>}
                     </>
                 ) : (
