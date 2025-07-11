@@ -576,35 +576,37 @@ export function AgentConfig({
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
-                                <div className="flex items-center">
-                                    <label className={sectionHeaderStyles}>
-                                        Max calls from parent agent per turn
-                                    </label>
-                                    <div className="relative ml-2 group">
-                                        <Info 
-                                            className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors"
-                                        />
-                                        <div className="absolute bottom-full left-0 mb-2 p-3 w-80 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs invisible group-hover:visible z-50">
-                                            <div className="mb-1 font-medium">Max Calls Configuration</div>
-                                            This setting limits how many times a parent agent can call this agent in a single turn, to prevent infinite loops.
-                                            <div className="absolute h-2 w-2 bg-white dark:bg-gray-800 transform rotate-45 -bottom-1 left-4 border-r border-b border-gray-200 dark:border-gray-700"></div>
+                            {agent.outputVisibility === "internal" && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center">
+                                        <label className={sectionHeaderStyles}>
+                                            Max calls from parent agent per turn
+                                        </label>
+                                        <div className="relative ml-2 group">
+                                            <Info 
+                                                className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors"
+                                            />
+                                            <div className="absolute bottom-full left-0 mb-2 p-3 w-80 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs invisible group-hover:visible z-50">
+                                                <div className="mb-1 font-medium">Max Calls Configuration</div>
+                                                This setting limits how many times a parent agent can call this agent in a single turn, to prevent infinite loops.
+                                                <div className="absolute h-2 w-2 bg-white dark:bg-gray-800 transform rotate-45 -bottom-1 left-4 border-r border-b border-gray-200 dark:border-gray-700"></div>
+                                            </div>
                                         </div>
                                     </div>
+                                    <div className="w-full">
+                                        <Input
+                                            type="number"
+                                            min="1"
+                                            value={agent.maxCallsPerParentAgent || 3}
+                                            onChange={(e) => handleUpdate({
+                                                ...agent,
+                                                maxCallsPerParentAgent: parseInt(e.target.value)
+                                            })}
+                                            className="w-full max-w-24"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="w-full">
-                                    <Input
-                                        type="number"
-                                        min="1"
-                                        value={agent.maxCallsPerParentAgent || 3}
-                                        onChange={(e) => handleUpdate({
-                                            ...agent,
-                                            maxCallsPerParentAgent: parseInt(e.target.value)
-                                        })}
-                                        className="w-full max-w-24"
-                                    />
-                                </div>
-                            </div>
+                            )}
 
                             {USE_TRANSFER_CONTROL_OPTIONS && (
                                 <div className="space-y-4">

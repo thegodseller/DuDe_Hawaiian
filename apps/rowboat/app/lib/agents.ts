@@ -1025,6 +1025,17 @@ export async function* streamResponse(
                             break;
                         }
 
+                        // Only apply max calls limit to internal agents (task agents)
+                        const targetAgentConfig = agentConfig[event.item.targetAgent.name];
+                        if (targetAgentConfig?.outputVisibility === 'internal') {
+                            const maxCalls = targetAgentConfig?.maxCallsPerParentAgent || 3;
+                            const currentCalls = transferCounter.get(agentName, event.item.targetAgent.name);
+                            if (currentCalls >= maxCalls) {
+                                eventLogger.log(`skipping handoff to ${event.item.targetAgent.name} || reason: max calls ${maxCalls} exceeded from ${agentName} to internal agent ${event.item.targetAgent.name}`);
+                                continue;
+                            }
+                        }
+
                         // inject give up control instructions if needed (parent handing off to child)
                         maybeInjectGiveUpControlInstructions(
                             agents,
