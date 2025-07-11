@@ -271,7 +271,7 @@ export function Chat({
         projectTools,
     ]);
 
-    return <div className="relative max-w-3xl mx-auto h-full flex flex-col">
+    return <div className="w-11/12 max-w-6xl mx-auto h-full flex flex-col relative">
         <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pt-4 pb-4">
             {USE_TESTING_FEATURE && (
                 <ProfileContextBox

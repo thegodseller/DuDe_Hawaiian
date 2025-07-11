@@ -58,7 +58,7 @@ export function Panel({
     
     return <div 
         className={clsx(
-            "flex flex-col overflow-hidden rounded-xl border relative",
+            "flex flex-col overflow-hidden rounded-xl border relative w-full",
             variant === 'copilot' ? "border-blue-200 dark:border-blue-800" : "border-zinc-200 dark:border-zinc-800",
             "bg-white dark:bg-zinc-900",
             maxHeight ? "max-h-(--panel-height)" : "h-full",

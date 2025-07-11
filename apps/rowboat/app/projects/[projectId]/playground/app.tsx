@@ -101,8 +101,8 @@ export function App({
                 title={
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
-                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                PLAYGROUND
+                            <div className="font-semibold text-zinc-700 dark:text-zinc-300">
+                                Playground
                             </div>
                             <Tooltip content="Test your workflow and chat with your agents in real-time">
                                 <InfoIcon className="w-4 h-4 text-gray-400 cursor-help" />
