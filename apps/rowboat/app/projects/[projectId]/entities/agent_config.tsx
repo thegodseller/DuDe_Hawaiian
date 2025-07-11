@@ -389,7 +389,7 @@ export function AgentConfig({
 
 
                     {activeTab === 'configurations' && (
-                        <div className="space-y-8">
+                        <div className="space-y-8 pb-6">
                             {!agent.locked && (
                                 <div className="space-y-2">
                                     <label className={sectionHeaderStyles}>
