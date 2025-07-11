@@ -23,7 +23,7 @@ import { Copilot } from "../copilot/app";
 import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
 import { PublishedBadge } from "./published_badge";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
-import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle } from "lucide-react";
+import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
 import { ProductTour } from "@/components/common/product-tour";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
@@ -765,14 +765,19 @@ export function WorkflowEditor({
         dispatch({ type: "set_published_workflow_id", workflowId: state.present.workflow._id });
     }
 
-    function handleCopyJSON() {
+    // Remove handleCopyJSON and add handleDownloadJSON
+    function handleDownloadJSON() {
         const { _id, projectId, ...workflow } = state.present.workflow;
         const json = JSON.stringify(workflow, null, 2);
-        navigator.clipboard.writeText(json);
-        setShowCopySuccess(true);
-        setTimeout(() => {
-            setShowCopySuccess(false);
-        }, 1500);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${state.present.workflow.name || 'workflow'}.json`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     }
 
     const processQueue = useCallback(async (state: State, dispatch: React.Dispatch<Action>) => {
@@ -840,59 +845,59 @@ export function WorkflowEditor({
                         <PenLine size={16} />
                         Draft
                     </div>}
+                    {/* Download JSON icon button, with tooltip, to the left of the menu */}
+                    <Tooltip content="Download Assistant JSON">
+                        <button
+                            onClick={handleDownloadJSON}
+                            className="p-1.5 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                            aria-label="Download JSON"
+                            type="button"
+                        >
+                            <DownloadIcon size={20} />
+                        </button>
+                    </Tooltip>
+                    <Dropdown>
+                        <DropdownTrigger>
+                            <div>
+                                <Tooltip content="Version Menu">
+                                    <button className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors">
+                                        <HamburgerIcon size={20} />
+                                    </button>
+                                </Tooltip>
+                            </div>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                            disabledKeys={[
+                                ...(state.present.pendingChanges ? ['switch', 'clone'] : []),
+                                ...(isLive ? ['mcp'] : []),
+                            ]}
+                            onAction={(key) => {
+                                if (key === 'switch') {
+                                    handleShowSelector();
+                                }
+                                if (key === 'clone') {
+                                    handleCloneVersion(state.present.workflow._id);
+                                }
+                            }}
+                        >
+                            <DropdownItem
+                                key="switch"
+                                startContent={<div className="text-gray-500"><BackIcon size={16} /></div>}
+                                className="gap-x-2"
+                            >
+                                View versions
+                            </DropdownItem>
+
+                            <DropdownItem
+                                key="clone"
+                                startContent={<div className="text-gray-500"><Layers2Icon size={16} /></div>}
+                                className="gap-x-2"
+                            >
+                                Clone this version
+                            </DropdownItem>
+                        </DropdownMenu>
+                    </Dropdown>
                 </div>
-                <Dropdown>
-                    <DropdownTrigger>
-                        <div>
-                            <Tooltip content="Version Menu">
-                                <button className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors">
-                                    <HamburgerIcon size={20} />
-                                </button>
-                            </Tooltip>
-                        </div>
-                    </DropdownTrigger>
-                    <DropdownMenu
-                        disabledKeys={[
-                            ...(state.present.pendingChanges ? ['switch', 'clone'] : []),
-                            ...(isLive ? ['mcp'] : []),
-                        ]}
-                        onAction={(key) => {
-                            if (key === 'switch') {
-                                handleShowSelector();
-                            }
-                            if (key === 'clone') {
-                                handleCloneVersion(state.present.workflow._id);
-                            }
-                            if (key === 'clipboard') {
-                                handleCopyJSON();
-                            }
-                        }}
-                    >
-                        <DropdownItem
-                            key="switch"
-                            startContent={<div className="text-gray-500"><BackIcon size={16} /></div>}
-                            className="gap-x-2"
-                        >
-                            View versions
-                        </DropdownItem>
-
-                        <DropdownItem
-                            key="clone"
-                            startContent={<div className="text-gray-500"><Layers2Icon size={16} /></div>}
-                            className="gap-x-2"
-                        >
-                            Clone this version
-                        </DropdownItem>
-
-                        <DropdownItem
-                            key="clipboard"
-                            startContent={<div className="text-gray-500"><CopyIcon size={16} /></div>}
-                            className="gap-x-2"
-                        >
-                            Export as JSON
-                        </DropdownItem>
-                    </DropdownMenu>
-                </Dropdown>
             </div>
             {showCopySuccess && <div className="flex items-center gap-2">
                 <div className="text-green-500">Copied to clipboard</div>
@@ -922,18 +927,6 @@ export function WorkflowEditor({
                         {showCopilot ? "Hide Copilot" : "Copilot"}
                     </Button>
                 </div>}
-                {!isLive && <div className="text-xs text-gray-400">
-                    {state.present.saving && <div className="flex items-center gap-1">
-                        <Spinner size="sm" />
-                        <div>Saving...</div>
-                    </div>}
-                    {!state.present.saving && !state.present.pendingChanges && state.present.workflow && <div>
-                        Updated <RelativeTime date={new Date(state.present.lastUpdatedAt)} />
-                    </div>}
-                    {!state.present.saving && state.present.pendingChanges && state.present.workflow && <div>
-                        Unsaved changes
-                    </div>}
-                 </div>}
                 {!isLive && <>
                     <button
                         className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
