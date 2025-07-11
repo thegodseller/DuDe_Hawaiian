@@ -147,3 +147,19 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #9ca3af transparent;
 }
+
+@keyframes float {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(24px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes pulse-mascot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Combine float (side-to-side) and pulse (scale) */
+.animate-float {
+  animation: float 5s ease-in-out infinite, pulse-mascot 4s infinite;
+}

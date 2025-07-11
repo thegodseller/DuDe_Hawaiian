@@ -924,7 +924,7 @@ export function WorkflowEditor({
                         className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
                         startContent={showCopilot ? null : <Sparkles size={16} />}
                     >
-                        {showCopilot ? "Hide Copilot" : "Copilot"}
+                        {showCopilot ? "Hide Skipper" : "Skipper"}
                     </Button>
                 </div>}
                 {!isLive && <>
@@ -961,7 +961,7 @@ export function WorkflowEditor({
                         className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
                         startContent={showCopilot ? null : <Sparkles size={16} />}
                     >
-                        {showCopilot ? "Hide Copilot" : "Copilot"}
+                        {showCopilot ? "Hide Skipper" : "Skipper"}
                     </Button>
                 </>}
             </div>
