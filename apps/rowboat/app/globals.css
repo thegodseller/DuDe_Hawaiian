@@ -127,3 +127,23 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Playground chat custom scrollbar: hide track background and border */
+.playground-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  background: transparent !important;
+}
+.playground-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.playground-scrollbar::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 4px;
+}
+
+.playground-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #9ca3af transparent;
+}

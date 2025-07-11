@@ -12,6 +12,7 @@ import { WithStringId } from "@/app/lib/types/types";
 import { ProfileContextBox } from "./profile-context-box";
 import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
 
 export function Chat({
     chat,
@@ -50,6 +51,32 @@ export function Chat({
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
     const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
     const [isLastInteracted, setIsLastInteracted] = useState(false);
+
+    // --- Scroll/auto-scroll/unread bubble logic ---
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [autoScroll, setAutoScroll] = useState(true);
+    const [showUnreadBubble, setShowUnreadBubble] = useState(false);
+
+    const handleScroll = useCallback(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const atBottom = scrollHeight - scrollTop - clientHeight < 20;
+        setAutoScroll(atBottom);
+        if (atBottom) setShowUnreadBubble(false);
+    }, []);
+
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        if (autoScroll) {
+            container.scrollTop = container.scrollHeight;
+            setShowUnreadBubble(false);
+        } else {
+            setShowUnreadBubble(true);
+        }
+    }, [optimisticMessages, loadingAssistantResponse, autoScroll]);
+    // --- End scroll/auto-scroll logic ---
 
     const getCopyContent = useCallback(() => {
         return JSON.stringify({
@@ -255,25 +282,40 @@ export function Chat({
             )}
         </div>
 
-        <div className="flex-1 overflow-auto pr-1 
-            [&::-webkit-scrollbar]{width:4px}
-            [&::-webkit-scrollbar-track]{background:transparent}
-            [&::-webkit-scrollbar-thumb]{background-color:rgb(156 163 175)}
-            dark:[&::-webkit-scrollbar-thumb]{background-color:#2a2d31}">
-            <div className="pr-4">
-                <Messages
-                    projectId={projectId}
-                    messages={optimisticMessages}
-                    toolCallResults={toolCallResults}
-                    loadingAssistantResponse={loadingAssistantResponse}
-                    workflow={workflow}
-                    testProfile={testProfile}
-                    systemMessage={systemMessage}
-                    onSystemMessageChange={onSystemMessageChange}
-                    showSystemMessage={false}
-                    showDebugMessages={showDebugMessages}
-                />
-            </div>
+        <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-auto pr-4 relative playground-scrollbar"
+            style={{ scrollBehavior: 'smooth' }}
+        >
+            <Messages
+                projectId={projectId}
+                messages={optimisticMessages}
+                toolCallResults={toolCallResults}
+                loadingAssistantResponse={loadingAssistantResponse}
+                workflow={workflow}
+                testProfile={testProfile}
+                systemMessage={systemMessage}
+                onSystemMessageChange={onSystemMessageChange}
+                showSystemMessage={false}
+                showDebugMessages={showDebugMessages}
+            />
+            {showUnreadBubble && (
+                <button
+                    className="absolute bottom-4 right-4 z-20 bg-blue-100 text-blue-700 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200 transition-colors animate-pulse"
+                    onClick={() => {
+                        const container = scrollContainerRef.current;
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                        setAutoScroll(true);
+                        setShowUnreadBubble(false);
+                    }}
+                    aria-label="Scroll to latest message"
+                >
+                    <ChevronDownIcon className="w-5 h-5" strokeWidth={2.2} />
+                </button>
+            )}
         </div>
 
         <div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-4 pb-2">

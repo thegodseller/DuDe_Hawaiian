@@ -1,6 +1,6 @@
 'use client';
 import { Spinner } from "@heroui/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import z from "zod";
 import { Workflow } from "@/app/lib/types/workflow_types";
 import { WorkflowTool } from "@/app/lib/types/workflow_types";
@@ -360,13 +360,11 @@ export function Messages({
     showSystemMessage: boolean;
     showDebugMessages?: boolean;
 }) {
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    let lastUserMessageTimestamp = 0;
-    let userMessageSeen = false;
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, loadingAssistantResponse]);
+    // Remove scroll/auto-scroll state and logic
+    // const scrollContainerRef = useRef<HTMLDivElement>(null);
+    // const [autoScroll, setAutoScroll] = useState(true);
+    // const [showUnreadBubble, setShowUnreadBubble] = useState(false);
+    // Remove handleScroll and useEffect for scroll
 
     const renderMessage = (message: z.infer<typeof Message>, index: number) => {
         if (message.role === 'assistant') {
@@ -427,7 +425,7 @@ export function Messages({
         if (message.role === 'user') {
             // TODO: add latency support
             // lastUserMessageTimestamp = new Date(message.createdAt).getTime();
-            userMessageSeen = true;
+            // userMessageSeen = true;
             return <UserMessage content={message.content} />;
         }
 
@@ -452,23 +450,21 @@ export function Messages({
         );
     }
 
+    // Just render the messages, no scroll container or unread bubble
     return (
-        <div className="max-w-[768px] mx-auto">
-            <div className="flex flex-col">
-                {messages.map((message, index) => {
-                    const renderedMessage = renderMessage(message, index);
-                    if (renderedMessage) {
-                        return (
-                            <div key={index}>
-                                {renderedMessage}
-                            </div>
-                        );
-                    }
-                    return null;
-                })}
-                {loadingAssistantResponse && <AssistantMessageLoading />}
-            </div>
-            <div ref={messagesEndRef} />
+        <div className="max-w-4xl mx-auto px-2 sm:px-6 relative">
+            {messages.map((message, index) => {
+                const renderedMessage = renderMessage(message, index);
+                if (renderedMessage) {
+                    return (
+                        <div key={index}>
+                            {renderedMessage}
+                        </div>
+                    );
+                }
+                return null;
+            })}
+            {loadingAssistantResponse && <AssistantMessageLoading />}
         </div>
     );
 }
