@@ -30,7 +30,7 @@ const openai = createOpenAI({
     baseURL: PROVIDER_BASE_URL,
 });
 
-export const ZUsage = z.object({
+const ZUsage = z.object({
     tokens: z.object({
         total: z.number(),
         prompt: z.number(),
@@ -169,7 +169,7 @@ async function invokeRagTool(
     return results;
 }
 
-export async function invokeWebhookTool(
+async function invokeWebhookTool(
     logger: PrefixLogger,
     projectId: string,
     name: string,
