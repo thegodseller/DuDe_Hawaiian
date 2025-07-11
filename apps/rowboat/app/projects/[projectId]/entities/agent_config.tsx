@@ -3,7 +3,7 @@ import { WithStringId } from "../../../lib/types/types";
 import { WorkflowPrompt, WorkflowAgent, Workflow, WorkflowTool } from "../../../lib/types/workflow_types";
 import { DataSource } from "../../../lib/types/datasource_types";
 import { z } from "zod";
-import { PlusIcon, Sparkles, X as XIcon, ChevronDown, ChevronRight, Trash2, Maximize2, Minimize2, StarIcon } from "lucide-react";
+import { PlusIcon, Sparkles, X as XIcon, ChevronDown, ChevronRight, Trash2, Maximize2, Minimize2, StarIcon, DatabaseIcon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { usePreviewModal } from "../workflow/preview-modal";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, SelectItem, Chip, SelectSection } from "@heroui/react";
@@ -23,6 +23,7 @@ import { Info } from "lucide-react";
 import { useCopilot } from "../copilot/use-copilot";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
+import { useRouter } from "next/navigation";
 
 // Common section header styles
 const sectionHeaderStyles = "block text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400";
@@ -75,6 +76,7 @@ export function AgentConfig({
     const [showRagCta, setShowRagCta] = useState(false);
     const [previousRagSources, setPreviousRagSources] = useState<string[]>([]);
     const [billingError, setBillingError] = useState<string | null>(null);
+    const router = useRouter();
 
     const {
         start: startCopilotChat,
@@ -644,12 +646,38 @@ export function AgentConfig({
                                         >
                                             {dataSources
                                                 .filter((ds) => !(agent.ragDataSources || []).includes(ds._id))
-                                                .map((ds) => (
-                                                    <SelectItem key={ds._id}>
-                                                        {ds.name}
-                                                    </SelectItem>
-                                                ))
-                                            }
+                                                .length > 0 ? (
+                                                dataSources
+                                                    .filter((ds) => !(agent.ragDataSources || []).includes(ds._id))
+                                                    .map((ds) => (
+                                                        <SelectItem key={ds._id}>
+                                                            {ds.name}
+                                                        </SelectItem>
+                                                    ))
+                                            ) : (
+                                                <SelectItem key="empty" isReadOnly>
+                                                    <div className="flex flex-col items-center justify-center p-4 text-center">
+                                                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 mb-2">
+                                                            <DatabaseIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                                            No data sources available
+                                                        </div>
+                                                        <CustomButton
+                                                            variant="primary"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                router.push(`/projects/${projectId}/sources`);
+                                                            }}
+                                                            startContent={<DatabaseIcon className="w-3 h-3" />}
+                                                        >
+                                                            Go to RAG Sources
+                                                        </CustomButton>
+                                                    </div>
+                                                </SelectItem>
+                                            )}
                                         </Select>
 
                                         {showRagCta && (
