@@ -401,12 +401,8 @@ export function AgentConfig({
                         <div className="flex flex-col gap-4 pb-4 pt-0">
                             {/* Identity Section Card */}
                             <SectionCard
-                                title={
-                                    <>
-                                        <UserIcon className="w-5 h-5 text-indigo-500" />
-                                        <span className="text-base font-semibold">Identity</span>
-                                    </>
-                                }
+                                icon={<UserIcon className="w-5 h-5 text-indigo-500" />}
+                                title="Identity"
                                 labelWidth="md:w-32"
                                 className="mb-1"
                             >
@@ -449,12 +445,8 @@ export function AgentConfig({
                             </SectionCard>
                             {/* Behavior Section Card */}
                             <SectionCard
-                                title={
-                                    <>
-                                        <Settings className="w-5 h-5 text-indigo-500" />
-                                        <span className="text-base font-semibold">Behavior</span>
-                                    </>
-                                }
+                                icon={<Settings className="w-5 h-5 text-indigo-500" />}
+                                title="Behavior"
                                 labelWidth="md:w-32"
                                 className="mb-1"
                             >
@@ -603,12 +595,8 @@ export function AgentConfig({
                             </SectionCard>
                             {/* RAG Data Sources Section Card */}
                             <SectionCard
-                                title={
-                                    <>
-                                        <DatabaseIcon className="w-5 h-5 text-indigo-500" />
-                                        <span className="text-base font-semibold">RAG</span>
-                                    </>
-                                }
+                                icon={<DatabaseIcon className="w-5 h-5 text-indigo-500" />}
+                                title="RAG"
                                 labelWidth="md:w-32"
                                 className="mb-1"
                             >
