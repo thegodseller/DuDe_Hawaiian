@@ -193,19 +193,19 @@ export function EditableField({
                     {...commonProps}
                     minRows={3}
                     maxRows={20}
-                    className="w-full"
+                    className="w-full text-sm focus-visible:ring-0 focus:ring-0 outline-none"
                     classNames={{
                         ...commonProps.classNames,
-                        input: "rounded-md py-2",
+                        input: "rounded-md py-2 text-base focus-visible:ring-0 focus:ring-0 outline-none",
                         inputWrapper: "rounded-md border-medium py-1"
                     }}
                 />}
                 {!multiline && <Input 
                     {...commonProps} 
-                    className="w-full"
+                    className="w-full text-sm focus-visible:ring-0 focus:ring-0 outline-none"
                     classNames={{
                         ...commonProps.classNames,
-                        input: clsx("rounded-md py-2", {
+                        input: clsx("rounded-md py-2 text-base focus-visible:ring-0 focus:ring-0 outline-none", {
                             "border-0 focus:outline-none pl-2": inline
                         }),
                         inputWrapper: clsx("rounded-md border-medium py-1", {
@@ -236,8 +236,10 @@ export function EditableField({
             )}
             <div
                 className={clsx(
+                    "rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 min-h-[40px] text-sm",
                     {
-                        "border border-gray-300 dark:border-gray-600 rounded px-3 py-3": !inline,
+                        "whitespace-pre-wrap": multiline,
+                        "flex items-center": !multiline,
                         "bg-transparent focus:outline-none focus:ring-0 border-0 rounded-none text-gray-900 dark:text-gray-100": inline,
                     }
                 )}

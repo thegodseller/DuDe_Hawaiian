@@ -3,7 +3,7 @@ import { WithStringId } from "../../../lib/types/types";
 import { WorkflowPrompt, WorkflowAgent, Workflow, WorkflowTool } from "../../../lib/types/workflow_types";
 import { DataSource } from "../../../lib/types/datasource_types";
 import { z } from "zod";
-import { PlusIcon, Sparkles, X as XIcon, ChevronDown, ChevronRight, Trash2, Maximize2, Minimize2, StarIcon, DatabaseIcon } from "lucide-react";
+import { PlusIcon, Sparkles, X as XIcon, ChevronDown, ChevronRight, Trash2, Maximize2, Minimize2, StarIcon, DatabaseIcon, UserIcon, Settings } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { usePreviewModal } from "../workflow/preview-modal";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, SelectItem, Chip, SelectSection } from "@heroui/react";
@@ -24,6 +24,7 @@ import { useCopilot } from "../copilot/use-copilot";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
 import { useRouter } from "next/navigation";
+import { SectionCard } from "@/components/common/section-card";
 
 // Common section header styles
 const sectionHeaderStyles = "block text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400";
@@ -175,11 +176,19 @@ export function AgentConfig({
         currentAgentName: agent.name
     });
 
+    // Add local state for max calls input
+    const [maxCallsInput, setMaxCallsInput] = useState(String(agent.maxCallsPerParentAgent || 3));
+    const [maxCallsError, setMaxCallsError] = useState<string | null>(null);
+    // Sync local state with agent prop
+    useEffect(() => {
+      setMaxCallsInput(String(agent.maxCallsPerParentAgent || 3));
+    }, [agent.maxCallsPerParentAgent]);
+
     return (
         <Panel 
             title={
                 <div className="flex items-center justify-between w-full">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    <div className="text-base font-semibold text-gray-900 dark:text-gray-100">
                         {agent.name}
                     </div>
                     <CustomButton
@@ -202,7 +211,7 @@ export function AgentConfig({
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={clsx(
-                                "px-4 py-2 text-sm font-medium transition-colors relative",
+                                "px-4 py-2 text-base font-semibold transition-colors relative",
                                 activeTab === tab
                                     ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-indigo-500 dark:after:bg-indigo-400"
                                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
@@ -389,365 +398,332 @@ export function AgentConfig({
 
 
                     {activeTab === 'configurations' && (
-                        <div className="space-y-8 pb-6">
-                            {!agent.locked && (
-                                <div className="space-y-2">
-                                    <label className={sectionHeaderStyles}>
-                                        Name
-                                    </label>
-                                    <div className={clsx(
-                                        "border rounded-lg focus-within:ring-2",
-                                        nameError 
-                                            ? "border-red-500 focus-within:ring-red-500/20" 
-                                            : "border-gray-200 dark:border-gray-700 focus-within:ring-indigo-500/20 dark:focus-within:ring-indigo-400/20"
-                                    )}>
-                                        <Textarea
-                                            value={agent.name}
-                                            useValidation={true}
-                                            updateOnBlur={true}
-                                            validate={(value) => {
-                                                const error = validateAgentName(value, agent.name, usedAgentNames);
-                                                setNameError(error);
-                                                return { valid: !error, errorMessage: error || undefined };
-                                            }}
-                                            onValidatedChange={(value) => {
-                                                handleUpdate({
-                                                    ...agent,
-                                                    name: value
-                                                });
-                                            }}
-                                            placeholder="Enter agent name..."
-                                            className="w-full text-sm bg-transparent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors px-4 py-3"
-                                            autoResize
-                                        />
-                                    </div>
-                                    {nameError && (
-                                        <p className="text-sm text-red-500">{nameError}</p>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <label className={sectionHeaderStyles}>
-                                    Description
-                                </label>
-                                <Textarea
-                                    value={agent.description || ""}
-                                    onChange={(e) => {
-                                        handleUpdate({
-                                            ...agent,
-                                            description: e.target.value
-                                        });
-                                    }}
-                                    placeholder="Enter a description for this agent"
-                                    className={textareaStyles}
-                                    autoResize
-                                />
-                            </div>
-                            
-                            <div className="space-y-2">
-                                <div className="flex items-center">
-                                    <label className={sectionHeaderStyles}>
-                                        Agent Type
-                                    </label>
-                                    <div className="relative ml-2 group">
-                                        <Info 
-                                            className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors"
-                                        />
-                                        <div className="absolute bottom-full left-0 mb-2 p-3 w-80 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs invisible group-hover:visible z-50">
-                                            <div className="mb-1 font-medium">Agent Types</div>
-                                            Conversation agents&apos; responses are user-facing. You can use conversation agents for multi-turn conversations with users.
-                                            <br />
-                                            <br />
-                                            Task agents&apos; responses are internal and available to other agents. You can use them to build pipelines and DAGs within workflows. E.g. Conversation Agent {'->'} Task Agent {'->'} Task Agent.
-                                            <div className="absolute h-2 w-2 bg-white dark:bg-gray-800 transform rotate-45 -bottom-1 left-4 border-r border-b border-gray-200 dark:border-gray-700"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <CustomDropdown
-                                    value={agent.outputVisibility}
-                                    options={[
-                                        { key: "user_facing", label: "Conversation Agent" },
-                                        { key: "internal", label: "Task Agent" }
-                                    ]}
-                                    onChange={(value) => handleUpdate({
-                                        ...agent,
-                                        outputVisibility: value as z.infer<typeof WorkflowAgent>['outputVisibility']
-                                    })}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="flex items-center">
-                                    <label className={sectionHeaderStyles}>
-                                        Model
-                                    </label>
-                                    {eligibleModels === "*" && <div className="relative ml-2 group">
-                                        <Info
-                                            className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors"
-                                        />
-                                        <div className="absolute bottom-full left-0 mb-2 p-3 w-80 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs invisible group-hover:visible z-50">
-                                            <div className="mb-1 font-medium">Model Configuration</div>
-                                            Set this according to the PROVIDER_BASE_URL you have set in your .env file (such as your LiteLLM, gateway). 
-                                            <br />
-                                            <br />
-                                            E.g. LiteLLM&apos;s naming convention is like: &apos;claude-3-7-sonnet-latest&apos;, but you may have set alias model names or might be using a different provider like openrouter, openai etc. 
-                                            <br />
-                                            <br />
-                                            By default, the model is set to gpt-4.1, assuming your OpenAI API key is set in PROVIDER_API_KEY and PROVIDER_BASE_URL is not set.
-                                            <div className="absolute h-2 w-2 bg-white dark:bg-gray-800 transform rotate-45 -bottom-1 left-4 border-r border-b border-gray-200 dark:border-gray-700"></div>
-                                        </div>
-                                    </div>}
-                                </div>
-                                <div className="w-full">
-                                    {eligibleModels === "*" && <Input
-                                        value={agent.model}
-                                        onChange={(e) => handleUpdate({
-                                            ...agent,
-                                            model: e.target.value as z.infer<typeof WorkflowAgent>['model']
-                                        })}
-                                        className="w-full max-w-64"
-                                    />}
-                                    {eligibleModels !== "*" && <Select
-                                        variant="bordered"
-                                        placeholder="Select model"
-                                        className="w-full max-w-64"
-                                        selectedKeys={[agent.model]}
-                                        onSelectionChange={(keys) => {
-                                            const key = keys.currentKey as string;
-                                            const model = eligibleModels.find((m) => m.name === key);
-                                            if (!model) {
-                                                return;
-                                            }
-                                            if (!model.eligible) {
-                                                setBillingError(`Please upgrade to the ${model.plan.toUpperCase()} plan to use this model.`);
-                                                return;
-                                            }
-                                            handleUpdate({
-                                                ...agent,
-                                                model: key as z.infer<typeof WorkflowAgent>['model']
-                                            });
-                                        }}
-                                    >
-                                        <SelectSection title="Available">
-                                            {eligibleModels.filter((model) => model.eligible).map((model) => (
-                                                <SelectItem
-                                                    key={model.name}
-                                                >
-                                                    {model.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectSection>
-                                        <SelectSection title="Requires plan upgrade">
-                                            {eligibleModels.filter((model) => !model.eligible).map((model) => (
-                                                <SelectItem
-                                                    key={model.name}
-                                                    endContent={<Chip
-                                                        color="warning"
-                                                        size="sm"
-                                                        variant="bordered"
-                                                    >
-                                                        {model.plan.toUpperCase()}
-                                                    </Chip>
-                                                    }
-                                                    startContent={<StarIcon className="w-4 h-4 text-warning" />}
-                                                >
-                                                    {model.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectSection>
-                                    </Select>
-                                    }
-                                </div>
-                            </div>
-
-                            {agent.outputVisibility === "internal" && (
-                                <div className="space-y-2">
-                                    <div className="flex items-center">
-                                        <label className={sectionHeaderStyles}>
-                                            Max calls from parent agent per turn
-                                        </label>
-                                        <div className="relative ml-2 group">
-                                            <Info 
-                                                className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors"
-                                            />
-                                            <div className="absolute bottom-full left-0 mb-2 p-3 w-80 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs invisible group-hover:visible z-50">
-                                                <div className="mb-1 font-medium">Max Calls Configuration</div>
-                                                This setting limits how many times a parent agent can call this agent in a single turn, to prevent infinite loops.
-                                                <div className="absolute h-2 w-2 bg-white dark:bg-gray-800 transform rotate-45 -bottom-1 left-4 border-r border-b border-gray-200 dark:border-gray-700"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="w-full">
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            value={agent.maxCallsPerParentAgent || 3}
-                                            onChange={(e) => handleUpdate({
-                                                ...agent,
-                                                maxCallsPerParentAgent: parseInt(e.target.value)
-                                            })}
-                                            className="w-full max-w-24"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {USE_TRANSFER_CONTROL_OPTIONS && (
-                                <div className="space-y-2">
-                                    <label className={sectionHeaderStyles}>
-                                        Conversation control after turn
-                                    </label>
-                                    <CustomDropdown
-                                        value={agent.controlType}
-                                        options={
-                                            agent.outputVisibility === "internal" 
-                                                ? [
-                                                    { key: "relinquish_to_parent", label: "Relinquish to parent" },
-                                                    { key: "relinquish_to_start", label: "Relinquish to 'start' agent" }
-                                                ]
-                                                : [
-                                                    { key: "retain", label: "Retain control" },
-                                                    { key: "relinquish_to_parent", label: "Relinquish to parent" },
-                                                    { key: "relinquish_to_start", label: "Relinquish to 'start' agent" }
-                                                ]
-                                        }
-                                        onChange={(value) => handleUpdate({
-                                            ...agent,
-                                            controlType: value as z.infer<typeof WorkflowAgent>['controlType']
-                                        })}
-                                    />
-                                </div>
-                            )}
-
-                            {useRag && (
-                                <div className="space-y-2">
-                                    <div className="flex items-center">
-                                        <label className={sectionHeaderStyles}>
-                                            RAG DATA SOURCES
-                                        </label>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <Select
-                                            variant="bordered"
-                                            placeholder="Add data source"
-                                            size="sm"
-                                            className="w-64"
-                                            onSelectionChange={(keys) => {
-                                                const key = keys.currentKey as string;
-                                                if (key) {
-                                                    handleUpdate({
-                                                        ...agent,
-                                                        ragDataSources: [...(agent.ragDataSources || []), key]
-                                                    });
-                                                }
-                                            }}
-                                            startContent={<PlusIcon className="w-4 h-4 text-gray-500" />}
-                                        >
-                                            {dataSources
-                                                .filter((ds) => !(agent.ragDataSources || []).includes(ds._id))
-                                                .length > 0 ? (
-                                                dataSources
-                                                    .filter((ds) => !(agent.ragDataSources || []).includes(ds._id))
-                                                    .map((ds) => (
-                                                        <SelectItem key={ds._id}>
-                                                            {ds.name}
-                                                        </SelectItem>
-                                                    ))
-                                            ) : (
-                                                <SelectItem key="empty" isReadOnly>
-                                                    <div className="flex flex-col items-center justify-center p-4 text-center">
-                                                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 mb-2">
-                                                            <DatabaseIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                                                        </div>
-                                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                                                            No data sources available
-                                                        </div>
-                                                        <CustomButton
-                                                            variant="primary"
-                                                            size="sm"
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                e.stopPropagation();
-                                                                router.push(`/projects/${projectId}/sources`);
-                                                            }}
-                                                            startContent={<DatabaseIcon className="w-3 h-3" />}
-                                                        >
-                                                            Go to RAG Sources
-                                                        </CustomButton>
-                                                    </div>
-                                                </SelectItem>
-                                            )}
-                                        </Select>
-
-                                        {showRagCta && (
-                                            <CustomButton
-                                                variant="primary"
-                                                size="sm"
-                                                onClick={handleUpdateInstructions}
-                                                className="whitespace-nowrap"
-                                            >
-                                                Update Instructions
-                                            </CustomButton>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {agent.ragDataSources !== undefined && agent.ragDataSources.length > 0 && (
-                                <div className="flex flex-col gap-2">
-                                    {(agent.ragDataSources || []).map((source) => {
-                                        const ds = dataSources.find((ds) => ds._id === source);
-                                        return (
-                                            <div 
-                                                key={source}
-                                                className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-50 dark:bg-indigo-900/20">
-                                                        <svg 
-                                                            className="w-4 h-4 text-indigo-600 dark:text-indigo-400" 
-                                                            fill="none" 
-                                                            viewBox="0 0 24 24" 
-                                                            stroke="currentColor"
-                                                        >
-                                                            <path 
-                                                                strokeLinecap="round" 
-                                                                strokeLinejoin="round" 
-                                                                strokeWidth={2} 
-                                                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" 
-                                                            />
-                                                        </svg>
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                            {ds?.name || "Unknown"}
-                                                        </span>
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                            Data Source
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <CustomButton
-                                                    variant="tertiary"
-                                                    size="sm"
-                                                    className="text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                    onClick={() => {
-                                                        const newSources = agent.ragDataSources?.filter((s) => s !== source);
+                        <div className="flex flex-col gap-4 pb-4 pt-0">
+                            {/* Identity Section Card */}
+                            <SectionCard
+                                title={
+                                    <>
+                                        <UserIcon className="w-5 h-5 text-indigo-500" />
+                                        <span className="text-base font-semibold">Identity</span>
+                                    </>
+                                }
+                                labelWidth="md:w-32"
+                                className="mb-1"
+                            >
+                                <div className="flex flex-col gap-6">
+                                    <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
+                                        <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Name</label>
+                                        <div className="flex-1">
+                                            <EditableField
+                                                value={localName}
+                                                onChange={(value) => {
+                                                    setLocalName(value);
+                                                    if (validateName(value)) {
                                                         handleUpdate({
                                                             ...agent,
-                                                            ragDataSources: newSources
+                                                            name: value
                                                         });
-                                                    }}
-                                                    startContent={<Trash2 className="w-4 h-4" />}
-                                                >
-                                                    Remove
-                                                </CustomButton>
-                                            </div>
-                                        );
-                                    })}
+                                                    }
+                                                }}
+                                                multiline={false}
+                                                showSaveButton={true}
+                                                showDiscardButton={true}
+                                                error={nameError}
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
+                                        <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Description</label>
+                                        <div className="flex-1">
+                                            <EditableField
+                                                value={agent.description || ""}
+                                                onChange={(value) => handleUpdate({ ...agent, description: value })}
+                                                multiline={true}
+                                                placeholder="Enter a description for this agent"
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
+                            </SectionCard>
+                            {/* Behavior Section Card */}
+                            <SectionCard
+                                title={
+                                    <>
+                                        <Settings className="w-5 h-5 text-indigo-500" />
+                                        <span className="text-base font-semibold">Behavior</span>
+                                    </>
+                                }
+                                labelWidth="md:w-32"
+                                className="mb-1"
+                            >
+                                <div className="flex flex-col gap-6">
+                                    <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
+                                        <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Agent Type</label>
+                                        <div className="flex-1">
+                                            <CustomDropdown
+                                                value={agent.outputVisibility}
+                                                options={[
+                                                    { key: "user_facing", label: "Conversation Agent" },
+                                                    { key: "internal", label: "Task Agent" }
+                                                ]}
+                                                onChange={(value) => handleUpdate({
+                                                    ...agent,
+                                                    outputVisibility: value as z.infer<typeof WorkflowAgent>["outputVisibility"]
+                                                })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
+                                        <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Model</label>
+                                        <div className="flex-1">
+                                            {/* Model select/input logic unchanged */}
+                                            {eligibleModels === "*" && <Input
+                                                value={agent.model}
+                                                onChange={(e) => handleUpdate({
+                                                    ...agent,
+                                                    model: e.target.value as z.infer<typeof WorkflowAgent>["model"]
+                                                })}
+                                                className="w-full max-w-64"
+                                            />}
+                                            {eligibleModels !== "*" && <Select
+                                                variant="bordered"
+                                                placeholder="Select model"
+                                                className="w-full max-w-64"
+                                                selectedKeys={[agent.model]}
+                                                onSelectionChange={(keys) => {
+                                                    const key = keys.currentKey as string;
+                                                    const model = eligibleModels.find((m) => m.name === key);
+                                                    if (!model) {
+                                                        return;
+                                                    }
+                                                    if (!model.eligible) {
+                                                        setBillingError(`Please upgrade to the ${model.plan.toUpperCase()} plan to use this model.`);
+                                                        return;
+                                                    }
+                                                    handleUpdate({
+                                                        ...agent,
+                                                        model: key as z.infer<typeof WorkflowAgent>["model"]
+                                                    });
+                                                }}
+                                            >
+                                                <SelectSection title="Available">
+                                                    {eligibleModels.filter((model) => model.eligible).map((model) => (
+                                                        <SelectItem
+                                                            key={model.name}
+                                                        >
+                                                            {model.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectSection>
+                                                <SelectSection title="Requires plan upgrade">
+                                                    {eligibleModels.filter((model) => !model.eligible).map((model) => (
+                                                        <SelectItem
+                                                            key={model.name}
+                                                            endContent={<Chip
+                                                                color="warning"
+                                                                size="sm"
+                                                                variant="bordered"
+                                                            >
+                                                                {model.plan.toUpperCase()}
+                                                            </Chip>
+                                                            }
+                                                            startContent={<StarIcon className="w-4 h-4 text-warning" />}
+                                                        >
+                                                            {model.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectSection>
+                                            </Select>
+                                            }
+                                        </div>
+                                    </div>
+                                    {agent.outputVisibility === "internal" && (
+                                        <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
+                                            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Max Calls From Parent</label>
+                                            <div className="flex-1">
+                                                <Input
+                                                    type="number"
+                                                    min="1"
+                                                    value={maxCallsInput}
+                                                    onChange={(e) => {
+                                                        setMaxCallsInput(e.target.value);
+                                                        setMaxCallsError(null);
+                                                    }}
+                                                    onBlur={() => {
+                                                        const num = Number(maxCallsInput);
+                                                        if (!maxCallsInput || isNaN(num) || num < 1 || !Number.isInteger(num)) {
+                                                            setMaxCallsError("Must be an integer >= 1");
+                                                            return;
+                                                        }
+                                                        setMaxCallsError(null);
+                                                        if (num !== agent.maxCallsPerParentAgent) {
+                                                            handleUpdate({
+                                                                ...agent,
+                                                                maxCallsPerParentAgent: num
+                                                            });
+                                                        }
+                                                    }}
+                                                    className="w-full max-w-24"
+                                                />
+                                                {maxCallsError && (
+                                                    <p className="text-sm text-red-500 mt-1">{maxCallsError}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {USE_TRANSFER_CONTROL_OPTIONS && (
+                                        <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
+                                            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">After Turn</label>
+                                            <div className="flex-1">
+                                                <CustomDropdown
+                                                    value={agent.controlType}
+                                                    options={
+                                                        agent.outputVisibility === "internal"
+                                                            ? [
+                                                                { key: "relinquish_to_parent", label: "Relinquish to parent" },
+                                                                { key: "relinquish_to_start", label: "Relinquish to 'start' agent" }
+                                                            ]
+                                                            : [
+                                                                { key: "retain", label: "Retain control" },
+                                                                { key: "relinquish_to_parent", label: "Relinquish to parent" },
+                                                                { key: "relinquish_to_start", label: "Relinquish to 'start' agent" }
+                                                            ]
+                                                    }
+                                                    onChange={(value) => handleUpdate({
+                                                        ...agent,
+                                                        controlType: value as z.infer<typeof WorkflowAgent>["controlType"]
+                                                    })}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </SectionCard>
+                            {/* RAG Data Sources Section Card */}
+                            <SectionCard
+                                title={
+                                    <>
+                                        <DatabaseIcon className="w-5 h-5 text-indigo-500" />
+                                        <span className="text-base font-semibold">RAG</span>
+                                    </>
+                                }
+                                labelWidth="md:w-32"
+                                className="mb-1"
+                            >
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
+                                        <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Add Source</label>
+                                        <div className="flex-1 flex items-center gap-3">
+                                            <Select
+                                                variant="bordered"
+                                                placeholder="Add data source"
+                                                size="sm"
+                                                className="w-64"
+                                                onSelectionChange={(keys) => {
+                                                    const key = keys.currentKey as string;
+                                                    if (key) {
+                                                        handleUpdate({
+                                                            ...agent,
+                                                            ragDataSources: [...(agent.ragDataSources || []), key]
+                                                        });
+                                                    }
+                                                }}
+                                                startContent={<PlusIcon className="w-4 h-4 text-gray-500" />}
+                                            >
+                                                {dataSources
+                                                    .filter((ds) => !(agent.ragDataSources || []).includes(ds._id))
+                                                    .length > 0 ? (
+                                                    dataSources
+                                                        .filter((ds) => !(agent.ragDataSources || []).includes(ds._id))
+                                                        .map((ds) => (
+                                                            <SelectItem key={ds._id}>
+                                                                {ds.name}
+                                                            </SelectItem>
+                                                        ))
+                                                ) : (
+                                                    <SelectItem key="empty" isReadOnly>
+                                                        <div className="flex flex-col items-center justify-center p-4 text-center">
+                                                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 mb-2">
+                                                                <DatabaseIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                                            </div>
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                                                No data sources available
+                                                            </div>
+                                                            <CustomButton
+                                                                variant="primary"
+                                                                size="sm"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    router.push(`/projects/${projectId}/sources`);
+                                                                }}
+                                                                startContent={<DatabaseIcon className="w-3 h-3" />}
+                                                            >
+                                                                Go to RAG Sources
+                                                            </CustomButton>
+                                                        </div>
+                                                    </SelectItem>
+                                                )}
+                                            </Select>
+                                            {showRagCta && (
+                                                <CustomButton
+                                                    variant="primary"
+                                                    size="sm"
+                                                    onClick={handleUpdateInstructions}
+                                                    className="whitespace-nowrap"
+                                                >
+                                                    Update Instructions
+                                                </CustomButton>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {agent.ragDataSources !== undefined && agent.ragDataSources.length > 0 && (
+                                        <div className="flex flex-col gap-2 mt-2">
+                                            {(agent.ragDataSources || []).map((source) => {
+                                                const ds = dataSources.find((ds) => ds._id === source);
+                                                return (
+                                                    <div
+                                                        key={source}
+                                                        className="flex items-center justify-between p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-50 dark:bg-indigo-900/20">
+                                                                <DatabaseIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                                    {ds?.name || "Unknown"}
+                                                                </span>
+                                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                                    Data Source
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <CustomButton
+                                                            variant="tertiary"
+                                                            size="sm"
+                                                            className="text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                            onClick={() => {
+                                                                const newSources = agent.ragDataSources?.filter((s) => s !== source);
+                                                                handleUpdate({
+                                                                    ...agent,
+                                                                    ragDataSources: newSources
+                                                                });
+                                                            }}
+                                                            startContent={<Trash2 className="w-4 h-4" />}
+                                                        >
+                                                            Remove
+                                                        </CustomButton>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </SectionCard>
+                            {/* The rest of the configuration sections will be refactored in subsequent steps */}
                         </div>
                     )}
 
