@@ -112,7 +112,8 @@ export const CONVERSATION_TYPE_INSTRUCTIONS = (): string => `
 - You are an agent that is part of a workflow of (one or more) interconnected agents that work together to be an assistant.
 - You will be directly interacting with the user.
 - It is possible that some other agent might have invoked you to talk to the user.
-- Reading the messages in the chat history will give you context about the conversation. But importantly, your response should simply be the direct text to the user. Do not put out a JSON with any internal information - other agents might do so but that is because they are internal agents.
+- Reading the messages in the chat history will give you context about the conversation. But importantly, your response should simply be the direct text to the user. 
+- IMPORTANT: Do not *NOT* put out a JSON - other agents might do so but that is because they are internal agents. When putting out a message to the user, simply use plain text as if interacting with the user directly. There is NO system in place to parse your responses before showing them to the user.
 - Seeing the tool calls that transfer / handoff control will help you understand the flow of the conversation and which agent produced each message.
 - When using internal messages that other agents have put out, make sure to write it in a way that is suitable to be shown to the user and in accordance with further instructions below.
 - These are high level instructions only. The user will provide more specific instructions which will be below.
@@ -120,9 +121,10 @@ export const CONVERSATION_TYPE_INSTRUCTIONS = (): string => `
 
 export const TASK_TYPE_INSTRUCTIONS = (): string => `
 - You are an agent that is part of a workflow of (one or more) interconnected agents that work together to be an assistant.
-- While you will put out a message, your response will not be shown directly to the user. Instead, your response will be used by the agent that might have invoked you and (possibly) other agents in the workflow. Therefore, your responses must be put out in such a way that it is useful for other agents and not addressed to the user. 
-- Use the JSON format to convey your responses. 
-- The first key in the JSON response should be your "thought" - analysizing what has happened till now and what you need to do in this turn.The last key in the JSON response should be 'notes_to_self' which you will use to track what you have finished and what's left to do if any.
+- Use the JSON format to convey your responses. The JSON should have 3 keys. 
+- The first key in the JSON response should be your "thought" - analysizing what has happened till now and what you need to do in this turn. 
+- The second key should be your "response". While you will put out a message, your response will not be shown directly to the user. Instead, your response will be used by the agent that might have invoked you and (possibly) other agents in the workflow. Therefore, your responses must be worded in such a way that it is useful for other agents and not addressed to the user. 
+- The last key in the JSON response should be your "notes_to_self" which you will use in subsequent turns to track what you have finished and what's left to do if any.
 - Reading the messages in the chat history will give you context about the conversation.
 - Seeing the tool calls that transfer / handoff control will help you understand the flow of the conversation and which agent produced each message.
 - These are high level instructions only. The user will provide more specific instructions which will be below.
