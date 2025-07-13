@@ -163,3 +163,12 @@ body {
 .animate-float {
   animation: float 5s ease-in-out infinite, pulse-mascot 4s infinite;
 }
+
+/* Feedback modal textarea overrides */
+.feedback-modal textarea,
+.feedback-modal textarea:focus {
+  font-size: 0.75rem !important; /* Tailwind's text-xs */
+  box-shadow: none !important;
+  outline: none !important;
+  border-color: #d1d5db !important; /* Tailwind's gray-300 */
+}

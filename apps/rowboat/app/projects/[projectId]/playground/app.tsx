@@ -26,6 +26,7 @@ export function App({
     isInitialState = false,
     onPanelClick,
     projectTools,
+    triggerCopilotChat,
 }: {
     hidden?: boolean;
     projectId: string;
@@ -36,6 +37,7 @@ export function App({
     isInitialState?: boolean;
     onPanelClick?: () => void;
     projectTools: z.infer<typeof WorkflowTool>[];
+    triggerCopilotChat?: (message: string) => void;
 }) {
     const [counter, setCounter] = useState<number>(0);
     const [testProfile, setTestProfile] = useState<WithStringId<z.infer<typeof TestProfile>> | null>(null);
@@ -187,6 +189,7 @@ export function App({
                         onCopyClick={(fn) => { getCopyContentRef.current = fn; }}
                         showDebugMessages={showDebugMessages}
                         projectTools={projectTools}
+                        triggerCopilotChat={triggerCopilotChat}
                     />
                 </div>
             </Panel>

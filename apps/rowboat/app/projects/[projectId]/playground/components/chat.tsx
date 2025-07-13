@@ -13,6 +13,8 @@ import { ProfileContextBox } from "./profile-context-box";
 import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import { FeedbackModal } from "./feedback-modal";
+import { FIX_WORKFLOW_PROMPT, FIX_WORKFLOW_PROMPT_WITH_FEEDBACK } from "../copilot-prompts";
 
 export function Chat({
     chat,
@@ -29,6 +31,7 @@ export function Chat({
     showDebugMessages = true,
     showJsonMode = false,
     projectTools,
+    triggerCopilotChat,
 }: {
     chat: z.infer<typeof PlaygroundChat>;
     projectId: string;
@@ -44,6 +47,7 @@ export function Chat({
     showDebugMessages?: boolean;
     showJsonMode?: boolean;
     projectTools: z.infer<typeof WorkflowTool>[];
+    triggerCopilotChat?: (message: string) => void;
 }) {
     const [messages, setMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
     const [loadingAssistantResponse, setLoadingAssistantResponse] = useState<boolean>(false);
@@ -53,6 +57,9 @@ export function Chat({
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
     const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
     const [isLastInteracted, setIsLastInteracted] = useState(false);
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+    const [pendingFixMessage, setPendingFixMessage] = useState<string | null>(null);
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
     // --- Scroll/auto-scroll/unread bubble logic ---
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -100,6 +107,37 @@ export function Chat({
     useEffect(() => {
         setOptimisticMessages(messages);
     }, [messages]);
+
+    // Handle fix functionality
+    const handleFix = useCallback((message: string) => {
+        setPendingFixMessage(message);
+        setShowFeedbackModal(true);
+    }, []);
+
+    const handleFeedbackSubmit = useCallback((feedback: string) => {
+        if (!pendingFixMessage) return;
+
+        // Create the copilot prompt
+        const prompt = feedback.trim() 
+            ? FIX_WORKFLOW_PROMPT_WITH_FEEDBACK
+                .replace('{chat_turn}', pendingFixMessage)
+                .replace('{feedback}', feedback)
+            : FIX_WORKFLOW_PROMPT
+                .replace('{chat_turn}', pendingFixMessage);
+
+        // Use the triggerCopilotChat function if available, otherwise fall back to localStorage
+        if (triggerCopilotChat) {
+            triggerCopilotChat(prompt);
+            // Show a subtle success indication
+            setShowSuccessMessage(true);
+            setTimeout(() => setShowSuccessMessage(false), 3000);
+        } else {
+            // Fallback for standalone playground
+            localStorage.setItem(`project_prompt_${projectId}`, prompt);
+            alert('Fix request submitted! Redirecting to workflow editor...');
+            window.location.href = `/projects/${projectId}/workflow`;
+        }
+    }, [pendingFixMessage, projectId, triggerCopilotChat]);
 
     // collect published tool call results
     const toolCallResults: Record<string, z.infer<typeof ToolMessage>> = {};
@@ -302,6 +340,7 @@ export function Chat({
                 showSystemMessage={false}
                 showDebugMessages={showDebugMessages}
                 showJsonMode={showJsonMode}
+                onFix={handleFix}
             />
             {showUnreadBubble && (
                 <button
@@ -322,6 +361,19 @@ export function Chat({
         </div>
 
         <div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-4 pb-2">
+            {showSuccessMessage && (
+                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 
+                              rounded-lg flex gap-2 justify-between items-center">
+                    <p className="text-green-600 dark:text-green-400 text-sm">Skipper will suggest fixes for you now.</p>
+                    <Button
+                        size="sm"
+                        color="success"
+                        onPress={() => setShowSuccessMessage(false)}
+                    >
+                        Dismiss
+                    </Button>
+                </div>
+            )}
             {fetchResponseError && (
                 <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 
                               rounded-lg flex gap-2 justify-between items-center">
@@ -353,6 +405,12 @@ export function Chat({
             isOpen={!!billingError}
             onClose={() => setBillingError(null)}
             errorMessage={billingError || ''}
+        />
+        <FeedbackModal
+            isOpen={showFeedbackModal}
+            onClose={() => setShowFeedbackModal(false)}
+            onSubmit={handleFeedbackSubmit}
+            title="Fix Assistant"
         />
     </div>;
 }

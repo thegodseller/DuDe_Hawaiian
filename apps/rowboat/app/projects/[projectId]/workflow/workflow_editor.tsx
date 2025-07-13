@@ -1028,6 +1028,7 @@ export function WorkflowEditor({
                             isInitialState={isInitialState}
                             onPanelClick={handlePlaygroundClick}
                             projectTools={projectTools}
+                            triggerCopilotChat={triggerCopilotChat}
                         />
                         {state.present.selection?.type === "agent" && <AgentConfig
                             key={`agent-${state.present.workflow.agents.findIndex(agent => agent.name === state.present.selection!.name)}`}
