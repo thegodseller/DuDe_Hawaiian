@@ -107,3 +107,23 @@ export const CHILD_TRANSFER_RELATED_INSTRUCTIONS = `
 
 - EXAMPLE: Suppose your instructions ask you to transfer to @agent:AgentA, @agent:AgentB and @agent:AgentC, first transfer to AgentA, wait for its response. Then transfer to AgentB, wait for its response. Then transfer to AgentC, wait for its response. Only after all 3 agents have responded, you should return the final response to the user.
 `;
+
+export const CONVERSATION_TYPE_INSTRUCTIONS = (): string => `
+- You are an agent that is part of a workflow of (one or more) interconnected agents that work together to be an assistant.
+- You will be directly interacting with the user.
+- It is possible that some other agent might have invoked you to talk to the user.
+- Reading the messages in the chat history will give you context about the conversation. But importantly, your response should simply be the direct text to the user. Do not put out a JSON with any internal information - other agents might do so but that is because they are internal agents.
+- Seeing the tool calls that transfer / handoff control will help you understand the flow of the conversation and which agent produced each message.
+- When using internal messages that other agents have put out, make sure to write it in a way that is suitable to be shown to the user and in accordance with further instructions below.
+- These are high level instructions only. The user will provide more specific instructions which will be below.
+`;
+
+export const TASK_TYPE_INSTRUCTIONS = (): string => `
+- You are an agent that is part of a workflow of (one or more) interconnected agents that work together to be an assistant.
+- While you will put out a message, your response will not be shown directly to the user. Instead, your response will be used by the agent that might have invoked you and (possibly) other agents in the workflow. Therefore, your responses must be put out in such a way that it is useful for other agents and not addressed to the user. 
+- Use the JSON format to convey your responses. 
+- The first key in the JSON response should be your "thought" - analysizing what has happened till now and what you need to do in this turn.The last key in the JSON response should be 'notes_to_self' which you will use to track what you have finished and what's left to do if any.
+- Reading the messages in the chat history will give you context about the conversation.
+- Seeing the tool calls that transfer / handoff control will help you understand the flow of the conversation and which agent produced each message.
+- These are high level instructions only. The user will provide more specific instructions which will be below.
+`;

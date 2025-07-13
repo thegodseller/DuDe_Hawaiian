@@ -30,8 +30,18 @@ function UserMessage({ content }: { content: string }) {
     );
 }
 
-function InternalAssistantMessage({ content, sender, latency, delta }: { content: string, sender: string | null | undefined, latency: number, delta: number }) {
-    const [expanded, setExpanded] = useState(false);
+function InternalAssistantMessage({ content, sender, latency, delta, showJsonMode = false }: { content: string, sender: string | null | undefined, latency: number, delta: number, showJsonMode?: boolean }) {
+    const [expanded, setExpanded] = useState(true);
+    const isJsonContent = useMemo(() => {
+        try {
+            JSON.parse(content);
+            return true;
+        } catch {
+            return false;
+        }
+    }, [content]);
+    const [jsonMode, setJsonMode] = useState(isJsonContent);
+    const [wrapText, setWrapText] = useState(true);
 
     // Show plus icon and duration
     const deltaDisplay = (
@@ -43,6 +53,16 @@ function InternalAssistantMessage({ content, sender, latency, delta }: { content
     // Get first line preview
     const firstLine = content.split('\n')[0].trim();
     const preview = firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
+
+    // Format JSON content
+    const formattedJson = useMemo(() => {
+        if (!isJsonContent) return content;
+        try {
+            return JSON.stringify(JSON.parse(content), null, 2);
+        } catch {
+            return content;
+        }
+    }, [content, isJsonContent]);
 
     return (
         <div className="self-start flex flex-col gap-1 my-5">
@@ -71,7 +91,38 @@ function InternalAssistantMessage({ content, sender, latency, delta }: { content
                     ) : (
                         <>
                             <div className="text-left mb-2">
-                                <MarkdownContent content={content} />
+                                {isJsonContent && (
+                                    <div className="mb-2 flex gap-4">
+                                        <button 
+                                            className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline self-start" 
+                                            onClick={() => setJsonMode(!jsonMode)}
+                                        >
+                                            <CodeIcon size={16} />
+                                            {jsonMode ? 'View in text mode' : 'View in JSON mode'}
+                                        </button>
+                                        {jsonMode && (
+                                            <button 
+                                                className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline self-start" 
+                                                onClick={() => setWrapText(!wrapText)}
+                                            >
+                                                <FileTextIcon size={16} />
+                                                {wrapText ? 'Overflow' : 'Wrap'}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                                {isJsonContent && jsonMode ? (
+                                    <pre
+                                        className={`text-xs leading-snug bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-2 py-1 font-mono shadow-sm border border-zinc-100 dark:border-zinc-700 ${
+                                            wrapText ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto whitespace-pre'
+                                        }`}
+                                        style={{ fontFamily: "'JetBrains Mono', 'Fira Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace" }}
+                                    >
+                                        {formattedJson}
+                                    </pre>
+                                ) : (
+                                    <MarkdownContent content={content} />
+                                )}
                             </div>
                             <div className="flex justify-between items-center gap-6 mt-2">
                                 <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(false)}>
@@ -244,8 +295,14 @@ function ClientToolCall({
     workflow: z.infer<typeof Workflow>;
     delta: number;
 }) {
+    const [wrapText, setWrapText] = useState(true);
+    const [paramsExpanded, setParamsExpanded] = useState(false);
+    const [resultsExpanded, setResultsExpanded] = useState(false);
+
+    const hasExpandedContent = paramsExpanded || resultsExpanded;
+
     return (
-        <div className="self-start flex flex-col gap-1 mb-4">
+        <div className="self-start flex flex-col gap-1 my-5">
             {sender && (
                 <div className="text-gray-500 dark:text-gray-400 text-xs pl-1">
                     {sender}
@@ -259,9 +316,9 @@ function ClientToolCall({
                         <div className="shrink-0 flex gap-2 items-center">
                             {!availableResult && <Spinner size="sm" />}
                             {availableResult && <CheckCircleIcon size={16} className="text-green-500" />}
-                            <div className="flex items-center font-semibold text-sm gap-2">
-                                <span>Function Call:</span>
-                                <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-100 font-bold text-sm align-middle">
+                            <div className="flex items-center font-medium text-xs gap-2">
+                                <span>Invoked Tool:</span>
+                                <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-100 text-xs align-middle">
                                     {toolCall.function.name}
                                 </span>
                             </div>
@@ -269,8 +326,38 @@ function ClientToolCall({
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <ExpandableContent label="Params" content={toolCall.function.arguments} expanded={false} icon={<CodeIcon size={14} />} />
-                        {availableResult && <ExpandableContent label="Result" content={availableResult.content} expanded={false} icon={<FileTextIcon size={14} className="text-blue-500" />} />}
+                        <ExpandableContent 
+                            label="Params" 
+                            content={toolCall.function.arguments} 
+                            expanded={false} 
+                            icon={<CodeIcon size={14} />}
+                            wrapText={wrapText}
+                            onExpandedChange={setParamsExpanded}
+                        />
+                        {availableResult && (
+                            <div className={(paramsExpanded ? 'mt-4 ' : '') + 'flex flex-col gap-2'}>
+                                <ExpandableContent 
+                                    label="Result" 
+                                    content={availableResult.content} 
+                                    expanded={false} 
+                                    icon={<FileTextIcon size={14} className="text-blue-500" />}
+                                    wrapText={wrapText}
+                                    onExpandedChange={setResultsExpanded}
+                                    rightButton={hasExpandedContent ? (
+                                        <button 
+                                            className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline" 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setWrapText(!wrapText);
+                                            }}
+                                        >
+                                            <FileTextIcon size={16} />
+                                            {wrapText ? 'Overflow' : 'Wrap'}
+                                        </button>
+                                    ) : undefined}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -282,12 +369,18 @@ function ExpandableContent({
     label,
     content,
     expanded = false,
-    icon
+    icon,
+    wrapText = false,
+    onExpandedChange,
+    rightButton
 }: {
     label: string,
     content: string | object | undefined,
     expanded?: boolean,
-    icon?: React.ReactNode
+    icon?: React.ReactNode,
+    wrapText?: boolean,
+    onExpandedChange?: (expanded: boolean) => void,
+    rightButton?: React.ReactNode
 }) {
     const [isExpanded, setIsExpanded] = useState(expanded);
 
@@ -308,7 +401,9 @@ function ExpandableContent({
     }, [content]);
 
     function toggleExpanded() {
-        setIsExpanded(!isExpanded);
+        const newExpanded = !isExpanded;
+        setIsExpanded(newExpanded);
+        onExpandedChange?.(newExpanded);
     }
 
     const isMarkdown = label === 'Result' && typeof content === 'string' && !content.startsWith('{');
@@ -319,6 +414,7 @@ function ExpandableContent({
             {isExpanded && <ChevronDownIcon size={16} />}
             {icon && <span className="mr-1">{icon}</span>}
             <div className='text-left break-all text-xs'>{label}</div>
+            {rightButton && <span className="ml-2">{rightButton}</span>}
         </div>
         {isExpanded && (
             isMarkdown ? (
@@ -327,7 +423,9 @@ function ExpandableContent({
                 </div>
             ) : (
                 <pre
-                  className="text-xs leading-snug bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-2 py-1 overflow-x-auto font-mono shadow-sm border border-zinc-100 dark:border-zinc-700"
+                  className={`text-xs leading-snug bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-2 py-1 font-mono shadow-sm border border-zinc-100 dark:border-zinc-700 ${
+                      wrapText ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto whitespace-pre'
+                  }`}
                   style={{ fontFamily: "'JetBrains Mono', 'Fira Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace" }}
                 >
                     {formattedContent}
@@ -348,6 +446,7 @@ export function Messages({
     onSystemMessageChange,
     showSystemMessage,
     showDebugMessages = true,
+    showJsonMode = false,
 }: {
     projectId: string;
     messages: z.infer<typeof Message>[];
@@ -359,6 +458,7 @@ export function Messages({
     onSystemMessageChange: (message: string) => void;
     showSystemMessage: boolean;
     showDebugMessages?: boolean;
+    showJsonMode?: boolean;
 }) {
     // Remove scroll/auto-scroll state and logic
     // const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -408,6 +508,7 @@ export function Messages({
                         sender={message.agentName ?? ''}
                         latency={latency}
                         delta={latency}
+                        showJsonMode={showJsonMode}
                     />
                 );
             }

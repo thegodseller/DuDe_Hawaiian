@@ -17,7 +17,7 @@ import { dataSourceDocsCollection, dataSourcesCollection, projectsCollection } f
 import { qdrantClient } from '../lib/qdrant';
 import { EmbeddingRecord } from "./types/datasource_types";
 import { ConnectedEntity, sanitizeTextWithMentions, Workflow, WorkflowAgent, WorkflowPrompt, WorkflowTool } from "./types/workflow_types";
-import { CHILD_TRANSFER_RELATED_INSTRUCTIONS, RAG_INSTRUCTIONS } from "./agent_instructions";
+import { CHILD_TRANSFER_RELATED_INSTRUCTIONS, CONVERSATION_TYPE_INSTRUCTIONS, RAG_INSTRUCTIONS, TASK_TYPE_INSTRUCTIONS } from "./agent_instructions";
 import { PrefixLogger } from "./utils";
 import { Message, AssistantMessage, AssistantMessageWithToolCalls, ToolMessage } from "./types/types";
 
@@ -502,7 +502,12 @@ ${config.name}
 ## Description
 ${config.description}
 
+## About You
+
+${config.outputVisibility === 'user_facing' ? CONVERSATION_TYPE_INSTRUCTIONS() : TASK_TYPE_INSTRUCTIONS()}
+
 ## Instructions
+
 ${config.instructions}
 
 ${config.examples ? ('# Examples\n' + config.examples) : ''}

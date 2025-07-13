@@ -10,7 +10,7 @@ import { Tooltip } from "@heroui/react";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { WithStringId } from "@/app/lib/types/types";
 import { ProfileSelector } from "@/app/projects/[projectId]/test/[[...slug]]/components/selectors/profile-selector";
-import { CheckIcon, CopyIcon, PlusIcon, UserIcon, InfoIcon, BugIcon, BugOffIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, PlusIcon, UserIcon, InfoIcon, BugIcon, BugOffIcon, CodeIcon } from "lucide-react";
 import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
 import { clsx } from "clsx";
 

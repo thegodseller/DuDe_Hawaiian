@@ -27,6 +27,7 @@ export function Chat({
     toolWebhookUrl,
     onCopyClick,
     showDebugMessages = true,
+    showJsonMode = false,
     projectTools,
 }: {
     chat: z.infer<typeof PlaygroundChat>;
@@ -41,6 +42,7 @@ export function Chat({
     toolWebhookUrl: string;
     onCopyClick: (fn: () => string) => void;
     showDebugMessages?: boolean;
+    showJsonMode?: boolean;
     projectTools: z.infer<typeof WorkflowTool>[];
 }) {
     const [messages, setMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
@@ -299,6 +301,7 @@ export function Chat({
                 onSystemMessageChange={onSystemMessageChange}
                 showSystemMessage={false}
                 showDebugMessages={showDebugMessages}
+                showJsonMode={showJsonMode}
             />
             {showUnreadBubble && (
                 <button
