@@ -103,18 +103,18 @@ function InternalAssistantMessage({ content, sender, latency, delta, showJsonMod
                         {isJsonContent && hasResponseKey && (
                             <div className="mb-2 flex gap-4">
                                 <button 
-                                    className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline self-start" 
+                                    className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 hover:underline self-start" 
                                     onClick={() => setJsonMode(!jsonMode)}
                                 >
-                                    {jsonMode ? <TextIcon size={16} /> : <BracesIcon size={16} />}
+                                    {jsonMode ? <TextIcon size={14} /> : <BracesIcon size={14} />}
                                     {jsonMode ? 'View response text' : 'View complete JSON'}
                                 </button>
                                 {jsonMode && (
                                     <button 
-                                        className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline self-start" 
+                                        className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 hover:underline self-start" 
                                         onClick={() => setWrapText(!wrapText)}
                                     >
-                                        {wrapText ? <ArrowRightFromLineIcon size={16} /> : <WrapTextIcon size={16} />}
+                                        {wrapText ? <ArrowRightFromLineIcon size={14} /> : <WrapTextIcon size={14} />}
                                         {wrapText ? 'Overflow' : 'Wrap'}
                                     </button>
                                 )}
