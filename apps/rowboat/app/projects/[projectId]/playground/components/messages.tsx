@@ -5,7 +5,7 @@ import z from "zod";
 import { Workflow } from "@/app/lib/types/workflow_types";
 import { WorkflowTool } from "@/app/lib/types/workflow_types";
 import MarkdownContent from "@/app/lib/components/markdown-content";
-import { ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, CodeIcon, CheckCircleIcon, FileTextIcon } from "lucide-react";
+import { ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, CodeIcon, CheckCircleIcon, FileTextIcon, EyeIcon, EyeOffIcon, WrapTextIcon, ArrowRightFromLineIcon, BracesIcon, TextIcon } from "lucide-react";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { ProfileContextBox } from "./profile-context-box";
 import { Message, ToolMessage, AssistantMessageWithToolCalls } from "@/app/lib/types/types";
@@ -81,7 +81,7 @@ function InternalAssistantMessage({ content, sender, latency, delta, showJsonMod
                             <div className="flex justify-between items-center gap-6">
                                 <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(true)}>
                                     <ChevronDownIcon size={16} />
-                                    Show internal message
+                                    Show
                                 </button>
                                 <div className="text-right text-xs">
                                     {deltaDisplay}
@@ -97,7 +97,7 @@ function InternalAssistantMessage({ content, sender, latency, delta, showJsonMod
                                             className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline self-start" 
                                             onClick={() => setJsonMode(!jsonMode)}
                                         >
-                                            <CodeIcon size={16} />
+                                            {jsonMode ? <TextIcon size={16} /> : <BracesIcon size={16} />}
                                             {jsonMode ? 'View in text mode' : 'View in JSON mode'}
                                         </button>
                                         {jsonMode && (
@@ -105,7 +105,7 @@ function InternalAssistantMessage({ content, sender, latency, delta, showJsonMod
                                                 className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline self-start" 
                                                 onClick={() => setWrapText(!wrapText)}
                                             >
-                                                <FileTextIcon size={16} />
+                                                {wrapText ? <ArrowRightFromLineIcon size={16} /> : <WrapTextIcon size={16} />}
                                                 {wrapText ? 'Overflow' : 'Wrap'}
                                             </button>
                                         )}
@@ -115,7 +115,7 @@ function InternalAssistantMessage({ content, sender, latency, delta, showJsonMod
                                     <pre
                                         className={`text-xs leading-snug bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-2 py-1 font-mono shadow-sm border border-zinc-100 dark:border-zinc-700 ${
                                             wrapText ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto whitespace-pre'
-                                        }`}
+                                        } w-full`}
                                         style={{ fontFamily: "'JetBrains Mono', 'Fira Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace" }}
                                     >
                                         {formattedJson}
@@ -127,7 +127,7 @@ function InternalAssistantMessage({ content, sender, latency, delta, showJsonMod
                             <div className="flex justify-between items-center gap-6 mt-2">
                                 <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(false)}>
                                     <ChevronUpIcon size={16} />
-                                    Hide internal message
+                                    Hide
                                 </button>
                                 <div className="text-right text-xs">
                                     {deltaDisplay}
@@ -298,9 +298,74 @@ function ClientToolCall({
     const [wrapText, setWrapText] = useState(true);
     const [paramsExpanded, setParamsExpanded] = useState(false);
     const [resultsExpanded, setResultsExpanded] = useState(false);
-
     const hasExpandedContent = paramsExpanded || resultsExpanded;
+    const isCompressed = !paramsExpanded && !resultsExpanded;
 
+    // Compressed state: stretch header, no wrapping
+    if (isCompressed) {
+        return (
+            <div className="self-start flex flex-col gap-1 my-5">
+                {sender && (
+                    <div className="text-gray-500 dark:text-gray-400 text-xs pl-1">
+                        {sender}
+                    </div>
+                )}
+                <div className="min-w-[85%]">
+                    <div className="border border-gray-200 dark:border-gray-700 p-3
+                        rounded-2xl rounded-bl-lg flex flex-col gap-2
+                        bg-gray-50 dark:bg-gray-800 shadow-sm dark:shadow-gray-950/20">
+                        <div className="flex flex-col gap-1 min-w-0">
+                            <div className="shrink-0 flex gap-2 items-center flex-nowrap">
+                                {!availableResult && <Spinner size="sm" />}
+                                {availableResult && <CheckCircleIcon size={16} className="text-green-500" />}
+                                <div className="flex items-center font-medium text-xs gap-2 min-w-0 flex-nowrap">
+                                    <span>Invoked Tool:</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-100 text-xs align-middle whitespace-nowrap">
+                                        {toolCall.function.name}
+                                    </span>
+                                </div>
+                            </div>
+                            {hasExpandedContent && (
+                                <div className="flex justify-start mt-2">
+                                    <button 
+                                        className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline" 
+                                        onClick={() => setWrapText(!wrapText)}
+                                    >
+                                        {wrapText ? <ArrowRightFromLineIcon size={16} /> : <WrapTextIcon size={16} />}
+                                        {wrapText ? 'Overflow' : 'Wrap'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex flex-col gap-2 min-w-0">
+                            <ExpandableContent 
+                                label="Params" 
+                                content={toolCall.function.arguments} 
+                                expanded={false} 
+                                icon={<CodeIcon size={14} />}
+                                wrapText={wrapText}
+                                onExpandedChange={setParamsExpanded}
+                            />
+                            {availableResult && (
+                                <div className={(paramsExpanded ? 'mt-4 ' : '') + 'flex flex-col gap-2 min-w-0'}>
+                                    <ExpandableContent 
+                                        label="Result" 
+                                        content={availableResult.content} 
+                                        expanded={false} 
+                                        icon={<FileTextIcon size={14} className="text-blue-500" />}
+                                        wrapText={wrapText}
+                                        onExpandedChange={setResultsExpanded}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Expanded state: respect 85% max width, prevent overshoot
     return (
         <div className="self-start flex flex-col gap-1 my-5">
             {sender && (
@@ -308,53 +373,51 @@ function ClientToolCall({
                     {sender}
                 </div>
             )}
-            <div className="min-w-[85%] inline-block">
+            <div className="w-full">
                 <div className="border border-gray-200 dark:border-gray-700 p-3
                     rounded-2xl rounded-bl-lg flex flex-col gap-2
-                    bg-gray-50 dark:bg-gray-800 shadow-sm dark:shadow-gray-950/20">
-                    <div className="flex flex-col gap-1">
-                        <div className="shrink-0 flex gap-2 items-center">
+                    bg-gray-50 dark:bg-gray-800 shadow-sm dark:shadow-gray-950/20 w-full">
+                    <div className="flex flex-col gap-1 w-full">
+                        <div className="shrink-0 flex gap-2 items-center w-full flex-nowrap">
                             {!availableResult && <Spinner size="sm" />}
                             {availableResult && <CheckCircleIcon size={16} className="text-green-500" />}
-                            <div className="flex items-center font-medium text-xs gap-2">
+                            <div className="flex items-center font-medium text-xs gap-2 w-full min-w-0 flex-nowrap">
                                 <span>Invoked Tool:</span>
-                                <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-100 text-xs align-middle">
+                                <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-100 text-xs align-middle truncate min-w-0 max-w-full">
                                     {toolCall.function.name}
                                 </span>
                             </div>
                         </div>
+                        {hasExpandedContent && (
+                            <div className="flex justify-start mt-2">
+                                <button 
+                                    className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline" 
+                                    onClick={() => setWrapText(!wrapText)}
+                                >
+                                    {wrapText ? <ArrowRightFromLineIcon size={16} /> : <WrapTextIcon size={16} />}
+                                    {wrapText ? 'Overflow' : 'Wrap'}
+                                </button>
+                            </div>
+                        )}
                     </div>
-
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 w-full">
                         <ExpandableContent 
                             label="Params" 
                             content={toolCall.function.arguments} 
-                            expanded={false} 
+                            expanded={paramsExpanded} 
                             icon={<CodeIcon size={14} />}
                             wrapText={wrapText}
                             onExpandedChange={setParamsExpanded}
                         />
                         {availableResult && (
-                            <div className={(paramsExpanded ? 'mt-4 ' : '') + 'flex flex-col gap-2'}>
+                            <div className={(paramsExpanded ? 'mt-4 ' : '') + 'flex flex-col gap-2 w-full'}>
                                 <ExpandableContent 
                                     label="Result" 
                                     content={availableResult.content} 
-                                    expanded={false} 
+                                    expanded={resultsExpanded} 
                                     icon={<FileTextIcon size={14} className="text-blue-500" />}
                                     wrapText={wrapText}
                                     onExpandedChange={setResultsExpanded}
-                                    rightButton={hasExpandedContent ? (
-                                        <button 
-                                            className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline" 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setWrapText(!wrapText);
-                                            }}
-                                        >
-                                            <FileTextIcon size={16} />
-                                            {wrapText ? 'Overflow' : 'Wrap'}
-                                        </button>
-                                    ) : undefined}
                                 />
                             </div>
                         )}
@@ -408,8 +471,8 @@ function ExpandableContent({
 
     const isMarkdown = label === 'Result' && typeof content === 'string' && !content.startsWith('{');
 
-    return <div className='flex flex-col gap-2'>
-        <div className='flex gap-1 items-start cursor-pointer text-gray-500 dark:text-gray-400' onClick={toggleExpanded}>
+    return <div className='flex flex-col gap-2 min-w-0'>
+        <div className='flex gap-1 items-start cursor-pointer text-gray-500 dark:text-gray-400 min-w-0' onClick={toggleExpanded}>
             {!isExpanded && <ChevronRightIcon size={16} />}
             {isExpanded && <ChevronDownIcon size={16} />}
             {icon && <span className="mr-1">{icon}</span>}
@@ -418,14 +481,14 @@ function ExpandableContent({
         </div>
         {isExpanded && (
             isMarkdown ? (
-                <div className='text-sm bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-900 dark:text-gray-100'>
+                <div className='text-sm bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-900 dark:text-gray-100 min-w-0'>
                     <MarkdownContent content={content as string} />
                 </div>
             ) : (
                 <pre
                   className={`text-xs leading-snug bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-2 py-1 font-mono shadow-sm border border-zinc-100 dark:border-zinc-700 ${
                       wrapText ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto whitespace-pre'
-                  }`}
+                  } min-w-0 max-w-full`}
                   style={{ fontFamily: "'JetBrains Mono', 'Fira Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace" }}
                 >
                     {formattedContent}
