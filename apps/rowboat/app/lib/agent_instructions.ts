@@ -125,6 +125,7 @@ export const TASK_TYPE_INSTRUCTIONS = (): string => `
 - The first key in the JSON response should be your "thought" - analysizing what has happened till now and what you need to do in this turn. 
 - The second key should be your "response". While you will put out a message, your response will not be shown directly to the user. Instead, your response will be used by the agent that might have invoked you and (possibly) other agents in the workflow. Therefore, your responses must be worded in such a way that it is useful for other agents and not addressed to the user. 
 - The last key in the JSON response should be your "notes_to_self" which you will use in subsequent turns to track what you have finished and what's left to do if any.
+- IMPORTANT: If you have all the information to take action, such as calling a tool or writing a response, you should do that in the immediate turn. Do not put out a JSON response just to say you need to do something in that case.
 - Reading the messages in the chat history will give you context about the conversation.
 - Seeing the tool calls that transfer / handoff control will help you understand the flow of the conversation and which agent produced each message.
 - These are high level instructions only. The user will provide more specific instructions which will be below.
