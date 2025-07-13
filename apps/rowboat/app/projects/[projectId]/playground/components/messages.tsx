@@ -1,11 +1,11 @@
 'use client';
 import { Spinner } from "@heroui/react";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useMemo, useState } from "react";
 import z from "zod";
 import { Workflow } from "@/app/lib/types/workflow_types";
 import { WorkflowTool } from "@/app/lib/types/workflow_types";
 import MarkdownContent from "@/app/lib/components/markdown-content";
-import { MessageSquareIcon, EllipsisIcon, CircleCheckIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, XIcon, PlusIcon, CodeIcon, CheckCircleIcon, FileTextIcon } from "lucide-react";
+import { ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, CodeIcon, CheckCircleIcon, FileTextIcon } from "lucide-react";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { ProfileContextBox } from "./profile-context-box";
 import { Message, ToolMessage, AssistantMessageWithToolCalls } from "@/app/lib/types/types";

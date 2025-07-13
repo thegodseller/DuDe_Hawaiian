@@ -739,8 +739,14 @@ function ensureSystemMessage(logger: PrefixLogger, messages: z.infer<typeof Mess
 
     // ensure that system message isn't blank
     if (messages.length > 0 && messages[0]?.role === 'system' && !messages[0].content) {
-        messages[0].content = 'You are a helpful assistant.';
-        logger.log(`updated system message: ${messages[0].content}`);
+        const defaultContext = `You are a helpful assistant.
+
+Basic context:
+    - Today's date is ${new Date().toLocaleDateString()}
+    - Current time is ${new Date().toLocaleTimeString()}.`;
+        
+        messages[0].content = defaultContext;
+        logger.log(`updated system message with default context: ${messages[0].content}`);
     }
 }
 
