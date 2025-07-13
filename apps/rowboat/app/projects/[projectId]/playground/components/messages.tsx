@@ -31,7 +31,6 @@ function UserMessage({ content }: { content: string }) {
 }
 
 function InternalAssistantMessage({ content, sender, latency, delta, showJsonMode = false }: { content: string, sender: string | null | undefined, latency: number, delta: number, showJsonMode?: boolean }) {
-    const [expanded, setExpanded] = useState(true);
     const isJsonContent = useMemo(() => {
         try {
             JSON.parse(content);
@@ -40,7 +39,18 @@ function InternalAssistantMessage({ content, sender, latency, delta, showJsonMod
             return false;
         }
     }, [content]);
-    const [jsonMode, setJsonMode] = useState(isJsonContent);
+    
+    const hasResponseKey = useMemo(() => {
+        if (!isJsonContent) return false;
+        try {
+            const parsed = JSON.parse(content);
+            return parsed && typeof parsed === 'object' && 'response' in parsed;
+        } catch {
+            return false;
+        }
+    }, [content, isJsonContent]);
+    
+    const [jsonMode, setJsonMode] = useState(false);
     const [wrapText, setWrapText] = useState(true);
 
     // Show plus icon and duration
@@ -50,9 +60,17 @@ function InternalAssistantMessage({ content, sender, latency, delta, showJsonMod
         </span>
     );
 
-    // Get first line preview
-    const firstLine = content.split('\n')[0].trim();
-    const preview = firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
+    // Extract response content for display
+    const displayContent = useMemo(() => {
+        if (!isJsonContent || !hasResponseKey) return content;
+        
+        try {
+            const parsed = JSON.parse(content);
+            return parsed.response || content;
+        } catch {
+            return content;
+        }
+    }, [content, isJsonContent, hasResponseKey]);
 
     // Format JSON content
     const formattedJson = useMemo(() => {
@@ -69,72 +87,47 @@ function InternalAssistantMessage({ content, sender, latency, delta, showJsonMod
             <div className="text-gray-500 dark:text-gray-400 text-xs pl-1">
                 {sender ?? 'Assistant'}
             </div>
-            <div className={expanded ? 'max-w-[85%] inline-block' : 'inline-block'}>
-                <div className={expanded
-                  ? 'bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade flex flex-col items-stretch'
-                  : 'bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade w-fit'}>
-                    {!expanded ? (
-                        <div className="flex flex-col gap-2">
-                            <div className="text-gray-700 dark:text-gray-200">
-                                {preview}
-                            </div>
-                            <div className="flex justify-between items-center gap-6">
-                                <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(true)}>
-                                    <ChevronDownIcon size={16} />
-                                    Show
+            <div className="max-w-[85%] inline-block">
+                <div className="bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade flex flex-col items-stretch">
+                    <div className="text-left mb-2">
+                        {isJsonContent && hasResponseKey && (
+                            <div className="mb-2 flex gap-4">
+                                <button 
+                                    className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline self-start" 
+                                    onClick={() => setJsonMode(!jsonMode)}
+                                >
+                                    {jsonMode ? <TextIcon size={16} /> : <BracesIcon size={16} />}
+                                    {jsonMode ? 'View response text' : 'View complete JSON'}
                                 </button>
-                                <div className="text-right text-xs">
-                                    {deltaDisplay}
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="text-left mb-2">
-                                {isJsonContent && (
-                                    <div className="mb-2 flex gap-4">
-                                        <button 
-                                            className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline self-start" 
-                                            onClick={() => setJsonMode(!jsonMode)}
-                                        >
-                                            {jsonMode ? <TextIcon size={16} /> : <BracesIcon size={16} />}
-                                            {jsonMode ? 'View in text mode' : 'View in JSON mode'}
-                                        </button>
-                                        {jsonMode && (
-                                            <button 
-                                                className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline self-start" 
-                                                onClick={() => setWrapText(!wrapText)}
-                                            >
-                                                {wrapText ? <ArrowRightFromLineIcon size={16} /> : <WrapTextIcon size={16} />}
-                                                {wrapText ? 'Overflow' : 'Wrap'}
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                                {isJsonContent && jsonMode ? (
-                                    <pre
-                                        className={`text-xs leading-snug bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-2 py-1 font-mono shadow-sm border border-zinc-100 dark:border-zinc-700 ${
-                                            wrapText ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto whitespace-pre'
-                                        } w-full`}
-                                        style={{ fontFamily: "'JetBrains Mono', 'Fira Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace" }}
+                                {jsonMode && (
+                                    <button 
+                                        className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline self-start" 
+                                        onClick={() => setWrapText(!wrapText)}
                                     >
-                                        {formattedJson}
-                                    </pre>
-                                ) : (
-                                    <MarkdownContent content={content} />
+                                        {wrapText ? <ArrowRightFromLineIcon size={16} /> : <WrapTextIcon size={16} />}
+                                        {wrapText ? 'Overflow' : 'Wrap'}
+                                    </button>
                                 )}
                             </div>
-                            <div className="flex justify-between items-center gap-6 mt-2">
-                                <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(false)}>
-                                    <ChevronUpIcon size={16} />
-                                    Hide
-                                </button>
-                                <div className="text-right text-xs">
-                                    {deltaDisplay}
-                                </div>
-                            </div>
-                        </>
-                    )}
+                        )}
+                        {isJsonContent && hasResponseKey && jsonMode ? (
+                            <pre
+                                className={`text-xs leading-snug bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-2 py-1 font-mono shadow-sm border border-zinc-100 dark:border-zinc-700 ${
+                                    wrapText ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto whitespace-pre'
+                                } w-full`}
+                                style={{ fontFamily: "'JetBrains Mono', 'Fira Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace" }}
+                            >
+                                {formattedJson}
+                            </pre>
+                        ) : (
+                            <MarkdownContent content={displayContent} />
+                        )}
+                    </div>
+                    <div className="flex justify-end items-center gap-6 mt-2">
+                        <div className="text-right text-xs">
+                            {deltaDisplay}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
