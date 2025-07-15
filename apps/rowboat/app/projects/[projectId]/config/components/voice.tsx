@@ -9,6 +9,8 @@ import { TwilioConfig } from "../../../../lib/types/voice_types";
 import { CheckCircleIcon, XCircleIcon, InfoIcon, EyeOffIcon, EyeIcon } from "lucide-react";
 import { Section } from './project';
 import { clsx } from 'clsx';
+import { WithStringId } from "../../../../lib/types/types";
+import { z } from 'zod';
 
 function PhoneNumberSection({ 
     value, 
@@ -149,7 +151,7 @@ export function VoiceSection({ projectId }: { projectId: string }) {
         authToken: '',
         label: ''
     });
-    const [existingConfig, setExistingConfig] = useState<TwilioConfig | null>(null);
+    const [existingConfig, setExistingConfig] = useState<WithStringId<z.infer<typeof TwilioConfig>> | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -207,7 +209,7 @@ export function VoiceSection({ projectId }: { projectId: string }) {
         setError(null);
 
         const configParams = {
-            phone_number: formState.phone,
+            phone_number: formState.phone.replaceAll(/[^0-9\+]/g, ''),
             account_sid: formState.accountSid,
             auth_token: formState.authToken,
             label: formState.label,

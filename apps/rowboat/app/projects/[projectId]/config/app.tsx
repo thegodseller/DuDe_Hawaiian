@@ -1,7 +1,7 @@
 'use client';
 
 import { Metadata } from "next";
-import { Spinner, Textarea, Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider } from "@heroui/react";
+import { Spinner, Textarea, Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider, Tab, Tabs } from "@heroui/react";
 import { ReactNode, useEffect, useState } from "react";
 import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret } from "../../../actions/project_actions";
 import { CopyButton } from "../../../../components/common/copy-button";
@@ -15,6 +15,7 @@ import { Label } from "../../../lib/components/label";
 import { FormSection } from "../../../lib/components/form-section";
 import { Panel } from "@/components/common/panel-common";
 import { ProjectSection } from './components/project';
+import { VoiceSection } from "./components/voice";
 
 export const metadata: Metadata = {
     title: "Project config",
@@ -446,7 +447,7 @@ export function DeleteProjectSection({
     const [projectName, setProjectName] = useState("");
     const [projectNameInput, setProjectNameInput] = useState("");
     const [confirmationInput, setConfirmationInput] = useState("");
-    
+
     const isValid = projectNameInput === projectName && confirmationInput === "delete project";
 
     useEffect(() => {
@@ -473,8 +474,8 @@ export function DeleteProjectSection({
                     This action cannot be undone.
                 </p>
                 <div>
-                    <Button 
-                        color="danger" 
+                    <Button
+                        color="danger"
                         size="sm"
                         onPress={onOpen}
                         isDisabled={loading}
@@ -510,8 +511,8 @@ export function DeleteProjectSection({
                             <Button variant="light" onPress={onClose}>
                                 Cancel
                             </Button>
-                            <Button 
-                                color="danger" 
+                            <Button
+                                color="danger"
                                 onPress={handleDelete}
                                 isDisabled={!isValid}
                             >
@@ -565,25 +566,39 @@ export function ConfigApp({
     useChatWidget: boolean;
     chatWidgetHost: string;
 }) {
+    const [selected, setSelected] = useState("general");
+
     return (
         <div className="h-full overflow-auto p-6">
-            <Panel
-                variant="projects"
-                title={
-                    <div className="font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-                        <Settings className="w-4 h-4" />
-                        <span>Project Settings</span>
-                    </div>
-                }
+            <Tabs
+                selectedKey={selected}
+                onSelectionChange={(key) => setSelected(key.toString())}
+                fullWidth
             >
-                <div className="space-y-6">
-                    <ProjectSection 
-                        projectId={projectId} 
-                        useChatWidget={useChatWidget} 
-                        chatWidgetHost={chatWidgetHost} 
-                    />
-                </div>
-            </Panel>
+                <Tab
+                    key="general"
+                    title="Project settings"
+                >
+                    <Panel title="Project settings">
+                        <ProjectSection
+                            projectId={projectId}
+                            useChatWidget={useChatWidget}
+                            chatWidgetHost={chatWidgetHost}
+                        />
+                    </Panel>
+                </Tab>
+
+                <Tab
+                    key="twilio"
+                    title="Twilio"
+                >
+                    <Panel title="Twilio settings">
+                        <VoiceSection
+                            projectId={projectId}
+                        />
+                    </Panel>
+                </Tab>
+            </Tabs>
         </div>
     );
 }
