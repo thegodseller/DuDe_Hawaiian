@@ -1209,7 +1209,7 @@ export async function getResponse(
         },
     };
     for await (const event of streamResponse(workflow, projectTools, messages)) {
-        if ('role' in event && event.role === 'assistant') {
+        if ('role' in event) {
             out.push(event);
         }
         if ('tokens' in event) {
