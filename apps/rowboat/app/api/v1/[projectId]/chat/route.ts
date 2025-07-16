@@ -51,6 +51,7 @@ export async function POST(
             return Response.json({ error: `Invalid request body: ${result.error.message}` }, { status: 400 });
         }
         const reqMessages = result.data.messages;
+        const mockToolOverrides = result.data.mockTools;
 
         // fetch published workflow id
         const project = await projectsCollection.findOne({
@@ -78,6 +79,11 @@ export async function POST(
         if (!workflow) {
             logger.log(`Workflow ${workflowId} not found for project ${projectId}`);
             return Response.json({ error: "Workflow not found" }, { status: 404 });
+        }
+
+        // override mock instructions
+        if (mockToolOverrides) {
+            workflow.mockTools = mockToolOverrides;
         }
 
         // check billing authorization
