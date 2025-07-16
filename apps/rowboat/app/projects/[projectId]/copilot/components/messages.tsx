@@ -413,9 +413,14 @@ function AssistantMessage({
     const [panelOpen, setPanelOpen] = useState(false); // collapsed by default
 
     // At the end of the render, call onStatusBarChange with the current status bar props
+    // Track the latest status bar info
+    const latestStatusBar = useRef<any>(null);
+
+    // Only call onStatusBarChange if the serializable status actually changes
+    const lastStatusRef = useRef<any>(null);
     useEffect(() => {
         if (onStatusBarChange) {
-            onStatusBarChange({
+            const status = {
                 allCardsLoaded,
                 allApplied,
                 appliedCount,
@@ -423,10 +428,18 @@ function AssistantMessage({
                 streamingLine,
                 completedSummary,
                 hasPanelWarning,
-                handleApplyAll,
-            });
+                // Exclude handleApplyAll from comparison
+            };
+            if (!lastStatusRef.current || JSON.stringify(lastStatusRef.current) !== JSON.stringify(status)) {
+                lastStatusRef.current = status;
+                onStatusBarChange({
+                    ...status,
+                    handleApplyAll, // pass the function, but don't compare it
+                });
+            }
         }
-    }, [allCardsLoaded, allApplied, appliedCount, pendingCount, streamingLine, completedSummary, hasPanelWarning, handleApplyAll, onStatusBarChange]);
+        // Only depend on the serializable values, not the function
+    }, [allCardsLoaded, allApplied, appliedCount, pendingCount, streamingLine, completedSummary, hasPanelWarning, onStatusBarChange, handleApplyAll]);
 
     // Render all cards inline, not in a panel
     return (

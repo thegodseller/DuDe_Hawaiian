@@ -184,6 +184,22 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
         handleUserMessage
     }), [handleCopyChat, handleUserMessage]);
 
+    // Memoized status bar change handler to prevent infinite update loop
+    const handleStatusBarChange = useCallback((status: any) => {
+        setStatusBar((prev: any) => {
+            // Shallow compare previous and next status
+            const next = { ...status, context: lockedContext };
+            const keys = Object.keys(next);
+            if (
+                prev &&
+                keys.every(key => prev[key] === next[key])
+            ) {
+                return prev;
+            }
+            return next;
+        });
+    }, [lockedContext]);
+
     return (
         <CopilotContext.Provider value={{ workflow: workflowRef.current, dispatch }}>
             <div className="h-full flex flex-col">
@@ -194,10 +210,7 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
                         loadingResponse={loadingResponse}
                         workflow={workflowRef.current}
                         dispatch={dispatch}
-                        onStatusBarChange={status => setStatusBar({
-                            ...status,
-                            context: lockedContext,
-                        })}
+                        onStatusBarChange={handleStatusBarChange}
                     />
                 </div>
                 <div className="shrink-0 px-1 pb-6">
