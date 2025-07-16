@@ -351,10 +351,14 @@ function createMockTool(
     return tool({
         name: config.name,
         description: config.description,
-        parameters: z.object({
-            query: z.string().describe("The query to search for")
-        }),
-        async execute(input: { query: string }) {
+        strict: false,
+        parameters: {
+            type: 'object',
+            properties: config.parameters.properties,
+            required: config.parameters.required || [],
+            additionalProperties: true,
+        },
+        async execute(input: any) {
             try {
                 const result = await invokeMockTool(
                     logger,
