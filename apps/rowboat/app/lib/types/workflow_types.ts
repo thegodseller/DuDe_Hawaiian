@@ -69,6 +69,7 @@ export const Workflow = z.object({
     createdAt: z.string().datetime(),
     lastUpdatedAt: z.string().datetime(),
     projectId: z.string(),
+    mockTools: z.record(z.string(), z.string()).optional(), // a dict of toolName => mockInstructions
 });
 export const WorkflowTemplate = Workflow
     .omit({

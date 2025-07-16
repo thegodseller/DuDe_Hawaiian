@@ -797,7 +797,13 @@ async function* emitGreetingTurn(logger: PrefixLogger, workflow: z.infer<typeof 
 function createTools(logger: PrefixLogger, workflow: z.infer<typeof Workflow>, toolConfig: Record<string, z.infer<typeof WorkflowTool>>): Record<string, Tool> {
     const tools: Record<string, Tool> = {};
     for (const [toolName, config] of Object.entries(toolConfig)) {
-        if (config.isMcp) {
+        if (workflow.mockTools?.[toolName]) {
+            tools[toolName] = createMockTool(logger, {
+                ...config,
+                mockInstructions: workflow.mockTools?.[toolName], // override mock instructions
+            });
+            logger.log(`created mock tool: ${toolName}`);
+        } else if (config.isMcp) {
             tools[toolName] = createMcpTool(logger, config, workflow.projectId);
             logger.log(`created mcp tool: ${toolName}`);
         } else if (config.isComposio) {

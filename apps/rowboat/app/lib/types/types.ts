@@ -160,6 +160,7 @@ export const ApiRequest = z.object({
     state: z.unknown(),
     workflowId: z.string().nullable().optional(),
     testProfileId: z.string().nullable().optional(),
+    mockTools: z.record(z.string(), z.string()).nullable().optional(),
 });
 
 export const ApiResponse = z.object({
