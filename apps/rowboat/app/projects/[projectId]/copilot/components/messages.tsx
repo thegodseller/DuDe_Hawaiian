@@ -223,7 +223,11 @@ function AssistantMessage({
         // Only apply, do not update appliedActions here
         if (action.action === 'create_new') {
             switch (action.config_type) {
-                case 'agent':
+                case 'agent': {
+                    // Prevent duplicate agent names
+                    if (workflow.agents.some((agent: any) => agent.name === action.name)) {
+                        return;
+                    }
                     dispatch({
                         type: 'add_agent',
                         agent: {
@@ -232,7 +236,12 @@ function AssistantMessage({
                         }
                     });
                     break;
-                case 'tool':
+                }
+                case 'tool': {
+                    // Prevent duplicate tool names
+                    if (workflow.tools.some((tool: any) => tool.name === action.name)) {
+                        return;
+                    }
                     dispatch({
                         type: 'add_tool',
                         tool: {
@@ -241,6 +250,7 @@ function AssistantMessage({
                         }
                     });
                     break;
+                }
                 case 'prompt':
                     dispatch({
                         type: 'add_prompt',
@@ -276,7 +286,7 @@ function AssistantMessage({
                     break;
             }
         }
-    }, [dispatch]);
+    }, [dispatch, workflow.agents, workflow.tools]);
 
     // Memoized handleApplyAll for useEffect dependencies
     const handleApplyAll = useCallback(() => {
