@@ -3,6 +3,7 @@ import React, { useReducer, Reducer, useState, useCallback, useEffect, useRef, c
 import { MCPServer, Message, WithStringId } from "../../../lib/types/types";
 import { Workflow, WorkflowTool, WorkflowPrompt, WorkflowAgent } from "../../../lib/types/workflow_types";
 import { DataSource } from "../../../lib/types/datasource_types";
+import { Project } from "../../../lib/types/project_types";
 import { produce, applyPatches, enablePatches, produceWithPatches, Patch } from 'immer';
 import { AgentConfig } from "../entities/agent_config";
 import { ToolConfig } from "../entities/tool_config";
@@ -142,6 +143,9 @@ export type Action = {
     type: "show_visualise";
 } | {
     type: "hide_visualise";
+} | {
+    type: "sync_workflow";
+    workflow: z.infer<typeof Workflow>;
 };
 
 function reducer(state: State, action: Action): State {
@@ -204,6 +208,13 @@ function reducer(state: State, action: Action): State {
                 draft.present.saving = action.saving;
                 draft.present.pendingChanges = action.saving;
                 draft.present.lastUpdatedAt = !action.saving ? new Date().toISOString() : state.present.workflow.lastUpdatedAt;
+            });
+            break;
+        }
+        case "sync_workflow": {
+            newState = produce(state, draft => {
+                draft.present.workflow = action.workflow;
+                draft.present.lastUpdatedAt = action.workflow.lastUpdatedAt;
             });
             break;
         }
@@ -579,10 +590,12 @@ export function WorkflowEditor({
     toolWebhookUrl,
     defaultModel,
     projectTools,
+    projectConfig,
     eligibleModels,
     isLive,
     onChangeMode,
     onRevertToLive,
+    onProjectToolsUpdated,
 }: {
     projectId: string;
     dataSources: WithStringId<z.infer<typeof DataSource>>[];
@@ -592,10 +605,12 @@ export function WorkflowEditor({
     toolWebhookUrl: string;
     defaultModel: string;
     projectTools: z.infer<typeof WorkflowTool>[];
+    projectConfig: z.infer<typeof Project>;
     eligibleModels: z.infer<typeof ModelsResponse> | "*";
     isLive: boolean;
     onChangeMode: (mode: 'draft' | 'live') => void;
     onRevertToLive: () => void;
+    onProjectToolsUpdated?: () => void;
 }) {
 
     const [state, dispatch] = useReducer(reducer, {
@@ -615,6 +630,12 @@ export function WorkflowEditor({
             isLive,
         }
     });
+
+    // Sync workflow prop changes with reducer state (e.g., when composio tools are updated)
+    useEffect(() => {
+        dispatch({ type: "sync_workflow", workflow });
+    }, [workflow]);
+
     const [chatMessages, setChatMessages] = useState<z.infer<typeof Message>[]>([]);
     const updateChatMessages = useCallback((messages: z.infer<typeof Message>[]) => {
         setChatMessages(messages);
@@ -980,6 +1001,7 @@ export function WorkflowEditor({
                                 tools={state.present.workflow.tools}
                                 projectTools={projectTools}
                                 prompts={state.present.workflow.prompts}
+                                workflow={state.present.workflow}
                                 selectedEntity={
                                     state.present.selection &&
                                     (state.present.selection.type === "agent" ||
@@ -1002,6 +1024,8 @@ export function WorkflowEditor({
                                 onDeletePrompt={handleDeletePrompt}
                                 onShowVisualise={handleShowVisualise}
                                 projectId={projectId}
+                                onProjectToolsUpdated={onProjectToolsUpdated}
+                                projectConfig={projectConfig}
                                 onReorderAgents={handleReorderAgents}
                             />
                         </div>

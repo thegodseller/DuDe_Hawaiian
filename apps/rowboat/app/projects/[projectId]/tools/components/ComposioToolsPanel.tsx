@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { PictureImg } from '@/components/ui/picture-img';
 import { Button, Checkbox } from '@heroui/react';
 import { ChevronLeft, ChevronRight, LinkIcon, Loader2, UnlinkIcon } from 'lucide-react';
-import { listTools, deleteConnectedAccount } from '@/app/actions/composio_actions';
+import { listTools, deleteConnectedAccount, getComposioToolsFromWorkflow } from '@/app/actions/composio_actions';
 import { z } from 'zod';
 import { ZTool, ZListResponse } from '@/app/lib/composio/composio';
 import { SlidePanel } from '@/components/ui/slide-panel';
@@ -57,6 +57,7 @@ export function ComposioToolsPanel({
   const [hasChanges, setHasChanges] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isProcessingAuth, setIsProcessingAuth] = useState(false);
+  const [composioSelectedTools, setComposioSelectedTools] = useState<ToolType[]>([]);
 
   const loadToolsForToolkit = useCallback(async (toolkitSlug: string, cursor: string | null = null) => {
     try {
@@ -77,6 +78,15 @@ export function ComposioToolsPanel({
       setTools([]);
     } finally {
       setToolsLoading(false);
+    }
+  }, [projectId]);
+
+  const loadComposioSelectedTools = useCallback(async () => {
+    try {
+      const tools = await getComposioToolsFromWorkflow(projectId);
+      setComposioSelectedTools(tools);
+    } catch (err: any) {
+      console.error('Error fetching composio selected tools:', err);
     }
   }, [projectId]);
 
@@ -164,14 +174,21 @@ export function ComposioToolsPanel({
     }
   }, [onClose, hasChanges]);
 
-  // Initialize selected tools from project config when opening the panel
+  // Initialize selected tools from workflow when opening the panel
   useEffect(() => {
-    if (toolkit && isOpen && projectConfig?.composioSelectedTools) {
-      const toolSlugs = new Set(projectConfig.composioSelectedTools.map(tool => tool.slug));
+    if (toolkit && isOpen) {
+      loadComposioSelectedTools();
+    }
+  }, [toolkit, isOpen, loadComposioSelectedTools]);
+
+  // Set selected tools when composioSelectedTools is loaded
+  useEffect(() => {
+    if (toolkit && composioSelectedTools.length > 0) {
+      const toolSlugs = new Set(composioSelectedTools.map(tool => tool.slug));
       setSelectedTools(toolSlugs);
       setHasChanges(false);
     }
-  }, [toolkit, isOpen, projectConfig]);
+  }, [toolkit, composioSelectedTools]);
 
   useEffect(() => {
     if (toolkit && isOpen) {
@@ -210,44 +227,46 @@ export function ComposioToolsPanel({
             <div className={`mb-6 p-4 rounded-lg border-2 ${
               isToolkitConnected 
                 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
-                : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
             }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-3 h-3 rounded-full ${
-                    isToolkitConnected ? 'bg-emerald-500' : 'bg-orange-500'
+                    isToolkitConnected ? 'bg-emerald-500' : 'bg-blue-500'
                   }`}></div>
                   <div>
                     <h3 className={`font-semibold text-sm ${
                       isToolkitConnected 
                         ? 'text-emerald-800 dark:text-emerald-200' 
-                        : 'text-orange-800 dark:text-orange-200'
+                        : 'text-blue-800 dark:text-blue-200'
                     }`}>
                       {isToolkitConnected ? 'Toolkit Connected' : 'Authentication Required'}
                     </h3>
                     <p className={`text-xs mt-0.5 ${
                       isToolkitConnected 
                         ? 'text-emerald-700 dark:text-emerald-300' 
-                        : 'text-orange-700 dark:text-orange-300'
+                        : 'text-blue-700 dark:text-blue-300'
                     }`}>
                       {isToolkitConnected 
                         ? 'You can select and use tools from this toolkit'
-                        : 'Connect your account to access and use tools'
+                        : 'You can select tools now. Authentication will be required in the build view to use them.'
                       }
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="solid"
-                  size="sm"
-                  onPress={isToolkitConnected ? handleDisconnect : handleConnect}
-                  disabled={isProcessingAuth}
-                  color={isToolkitConnected ? "danger" : "primary"}
-                  isLoading={isProcessingAuth}
-                  startContent={isToolkitConnected ? <UnlinkIcon className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
-                >
-                  {isToolkitConnected ? 'Disconnect' : 'Connect Now'}
-                </Button>
+                {isToolkitConnected && (
+                  <Button
+                    variant="solid"
+                    size="sm"
+                    onPress={handleDisconnect}
+                    disabled={isProcessingAuth}
+                    color="danger"
+                    isLoading={isProcessingAuth}
+                    startContent={<UnlinkIcon className="h-4 w-4" />}
+                  >
+                    Disconnect
+                  </Button>
+                )}
               </div>
             </div>
           )}
@@ -263,7 +282,7 @@ export function ComposioToolsPanel({
                     size="sm"
                     color="primary"
                     onPress={handleSaveTools}
-                    disabled={isSaving || !isToolkitConnected}
+                    disabled={isSaving}
                     isLoading={isSaving}
                   >
                     Save Changes
@@ -283,17 +302,12 @@ export function ComposioToolsPanel({
             ) : (
               <div className="space-y-4">
                 {tools.map((tool) => (
-                  <div key={tool.slug} className={`group p-4 rounded-lg transition-all duration-200 border border-transparent ${
-                    isToolkitConnected 
-                      ? 'bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600' 
-                      : 'bg-gray-100/50 dark:bg-gray-900/50 opacity-60'
-                  }`}>
+                  <div key={tool.slug} className="group p-4 rounded-lg transition-all duration-200 border border-transparent bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600">
                     <div className="flex items-start gap-3">
                       <Checkbox
                         isSelected={selectedTools.has(tool.slug)}
                         onValueChange={(selected) => handleToolSelectionChange(tool.slug, selected)}
                         size="sm"
-                        isDisabled={!isToolkitConnected}
                       />
                       <div className="flex-1">
                         <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">

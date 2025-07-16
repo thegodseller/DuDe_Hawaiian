@@ -33,28 +33,8 @@ export async function collectProjectTools(projectId: string): Promise<z.infer<ty
         }
     }
 
-    // Add Composio tools
-    if (project.composioSelectedTools) {
-        for (const tool of project.composioSelectedTools) {
-            tools.push({
-                name: tool.slug,
-                description: tool.description || "",
-                parameters: {
-                    type: 'object' as const,
-                    properties: tool.input_parameters?.properties || {},
-                    required: tool.input_parameters?.required || []
-                },
-                isComposio: true,
-                composioData: {
-                    slug: tool.slug,
-                    noAuth: tool.no_auth,
-                    toolkitName: tool.toolkit.name,
-                    toolkitSlug: tool.toolkit.slug,
-                    logo: tool.toolkit.logo,
-                },
-            });
-        }
-    }
+    // Note: Composio tools are now stored in workflow.tools array with isComposio: true
+    // This function now only collects MCP tools since composio tools are managed in workflow
 
     return tools;
 }

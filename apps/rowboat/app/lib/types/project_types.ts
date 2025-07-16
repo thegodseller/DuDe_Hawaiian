@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { MCPServer } from "./types";
 import { Workflow, WorkflowTool } from "./workflow_types";
-import { ZTool } from "../composio/composio";
 
 export const ComposioConnectedAccount = z.object({
     id: z.string(),
@@ -30,7 +29,6 @@ export const Project = z.object({
     testRunCounter: z.number().default(0),
     mcpServers: z.array(MCPServer).optional(),
     composioConnectedAccounts: z.record(z.string(), ComposioConnectedAccount).optional(),
-    composioSelectedTools: z.array(ZTool).optional(),
 });
 
 export const ProjectMember = z.object({

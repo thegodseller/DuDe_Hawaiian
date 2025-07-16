@@ -67,6 +67,14 @@ export const Workflow = z.object({
     startAgent: z.string(),
     lastUpdatedAt: z.string().datetime(),
     mockTools: z.record(z.string(), z.string()).optional(), // a dict of toolName => mockInstructions
+    composioMockToolkitStates: z.record(z.string(), z.object({
+        toolkitSlug: z.string(),
+        isMocked: z.boolean(),
+        mockInstructions: z.string().optional(),
+        autoSubmitMockedResponse: z.boolean().default(false),
+        createdAt: z.string().datetime(),
+        lastUpdatedAt: z.string().datetime(),
+    })).optional(),
 });
 export const WorkflowTemplate = Workflow
     .omit({

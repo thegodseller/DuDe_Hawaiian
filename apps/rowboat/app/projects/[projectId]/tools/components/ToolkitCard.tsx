@@ -52,9 +52,8 @@ export function ToolkitCard({
   }, [onManageTools]);
 
   // Calculate selected tools count for this toolkit
-  const selectedToolsCount = projectConfig?.composioSelectedTools?.filter(tool => 
-    tool.toolkit.slug === toolkit.slug
-  ).length || 0;
+  // TODO: Update to use workflow-based tools count
+  const selectedToolsCount = 0;
 
   return (
     <div className={toolkitCardStyles.base} onClick={handleCardClick}>

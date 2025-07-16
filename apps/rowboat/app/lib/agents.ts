@@ -17,6 +17,7 @@ import { dataSourceDocsCollection, dataSourcesCollection, projectsCollection } f
 import { qdrantClient } from '../lib/qdrant';
 import { EmbeddingRecord } from "./types/datasource_types";
 import { ConnectedEntity, sanitizeTextWithMentions, Workflow, WorkflowAgent, WorkflowPrompt, WorkflowTool } from "./types/workflow_types";
+import { Project } from "./types/project_types";
 import { CHILD_TRANSFER_RELATED_INSTRUCTIONS, CONVERSATION_TYPE_INSTRUCTIONS, RAG_INSTRUCTIONS, TASK_TYPE_INSTRUCTIONS } from "./agent_instructions";
 import { PrefixLogger } from "./utils";
 import { Message, AssistantMessage, AssistantMessageWithToolCalls, ToolMessage } from "./types/types";
@@ -280,6 +281,8 @@ async function invokeComposioTool(
     name: string,
     composioData: z.infer<typeof WorkflowTool>['composioData'] & {},
     input: any,
+    workflow: z.infer<typeof Workflow>,
+    toolDescription?: string,
 ) {
     logger = logger.child(`invokeComposioTool`);
     logger.log(`projectId: ${projectId}`);
@@ -288,12 +291,36 @@ async function invokeComposioTool(
 
     const { slug, toolkitSlug, noAuth } = composioData;
 
+    // Get project configuration to check for connected accounts (still stored in project)
+    const project = await projectsCollection.findOne({ _id: projectId });
+    if (!project) {
+        throw new Error(`project ${projectId} not found`);
+    }
+
+    // Check if toolkit is in mock mode (now from workflow)
+    const mockState = workflow.composioMockToolkitStates?.[toolkitSlug];
+    if (mockState?.isMocked) {
+        logger.log(`toolkit ${toolkitSlug} is in mock mode, using mock response`);
+        
+        // Use the existing invokeMockTool function to generate a mock response
+        const mockInstructions = mockState.mockInstructions || 'Mock responses using GPT-4.1 based on tool descriptions.';
+        const description = toolDescription || `${name} tool from ${toolkitSlug} toolkit`;
+        
+        const mockResponse = await invokeMockTool(
+            logger,
+            name,
+            JSON.stringify(input),
+            description,
+            mockInstructions
+        );
+        
+        logger.log(`mock tool result: ${mockResponse}`);
+        return mockResponse;
+    }
+
+    // Normal execution path - check for authentication
     let connectedAccountId: string | undefined = undefined;
     if (!noAuth) {
-        const project = await projectsCollection.findOne({ _id: projectId });
-        if (!project) {
-            throw new Error(`project ${projectId} not found`);
-        }
         connectedAccountId = project.composioConnectedAccounts?.[toolkitSlug]?.id;
         if (!connectedAccountId) {
             throw new Error(`connected account id not found for project ${projectId} and toolkit ${toolkitSlug}`);
@@ -452,7 +479,8 @@ function createMcpTool(
 function createComposioTool(
     logger: PrefixLogger,
     config: z.infer<typeof WorkflowTool>,
-    projectId: string
+    projectId: string,
+    workflow: z.infer<typeof Workflow>
 ): Tool {
     const { name, description, parameters, composioData } = config;
 
@@ -472,7 +500,7 @@ function createComposioTool(
         },
         async execute(input: any) {
             try {
-                const result = await invokeComposioTool(logger, projectId, name, composioData, input);
+                const result = await invokeComposioTool(logger, projectId, name, composioData, input, workflow, description);
                 return JSON.stringify({
                     result,
                 });
@@ -813,7 +841,7 @@ function createTools(
             tools[toolName] = createMcpTool(logger, config, projectId);
             logger.log(`created mcp tool: ${toolName}`);
         } else if (config.isComposio) {
-            tools[toolName] = createComposioTool(logger, config, projectId);
+            tools[toolName] = createComposioTool(logger, config, projectId, workflow);
             logger.log(`created composio tool: ${toolName}`);
         } else if (config.mockTool) {
             tools[toolName] = createMockTool(logger, config);

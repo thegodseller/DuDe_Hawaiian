@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Info, RefreshCw, Search } from 'lucide-react';
 import clsx from 'clsx';
@@ -10,17 +9,19 @@ import { getProjectConfig } from '@/app/actions/project_actions';
 import { z } from 'zod';
 import { ZToolkit, ZListResponse, ZTool } from '@/app/lib/composio/composio';
 import { Project } from '@/app/lib/types/project_types';
-import { ComposioToolsPanel } from './ComposioToolsPanel';
-import { ToolkitCard } from './ToolkitCard';
+import { ComposioToolsPanel } from '../../tools/components/ComposioToolsPanel';
+import { ToolkitCard } from '../../tools/components/ToolkitCard';
 
 type ToolkitType = z.infer<typeof ZToolkit>;
 type ToolkitListResponse = z.infer<ReturnType<typeof ZListResponse<typeof ZToolkit>>>;
 type ProjectType = z.infer<typeof Project>;
 
-export function Composio() {
-  const params = useParams();
-  const projectId = typeof params.projectId === 'string' ? params.projectId : params.projectId?.[0];
-  if (!projectId) throw new Error('Project ID is required');
+interface ComposioWithCallbackProps {
+  projectId: string;
+  onToolsUpdated?: () => void;
+}
+
+export function ComposioWithCallback({ projectId, onToolsUpdated }: ComposioWithCallbackProps) {
   
   const [toolkits, setToolkits] = useState<ToolkitType[]>([]);
   const [projectConfig, setProjectConfig] = useState<ProjectType | null>(null);
@@ -63,16 +64,6 @@ export function Composio() {
         allToolkits = [...allToolkits, ...response.items];
         cursor = response.next_cursor;
       } while (cursor !== null);
-      
-      // // Only show those toolkits that
-      // // - either do not require authentication, OR
-      // // - have oauth2 managed by Composio
-      // const filteredToolkits = allToolkits.filter(toolkit => {
-      //   const noAuth = toolkit.no_auth;
-      //   const hasOAuth2 = toolkit.auth_schemes.includes('OAUTH2');
-      //   const hasComposioManagedOAuth2 = toolkit.composio_managed_auth_schemes.includes('OAUTH2');
-      //   return noAuth || hasOAuth2;
-      // });
       
       setToolkits(allToolkits);
       setError(null);
@@ -123,12 +114,17 @@ export function Composio() {
       
       // Refresh data to get updated tools
       await loadComposioSelectedTools();
+      
+      // Notify parent component that tools were updated
+      if (onToolsUpdated) {
+        onToolsUpdated();
+      }
     } catch (error) {
       console.error('Error saving tool selection:', error);
     } finally {
       setSavingTools(false);
     }
-  }, [projectId, composioSelectedTools, loadComposioSelectedTools]);
+  }, [projectId, composioSelectedTools, loadComposioSelectedTools, onToolsUpdated]);
 
   const handleRemoveToolkitTools = useCallback(async (toolkitSlug: string) => {
     if (!projectId) return;
@@ -147,21 +143,26 @@ export function Composio() {
       
       // Refresh data to get updated tools
       await loadComposioSelectedTools();
+      
+      // Notify parent component that tools were updated
+      if (onToolsUpdated) {
+        onToolsUpdated();
+      }
     } catch (error) {
       console.error('Error removing toolkit tools:', error);
     } finally {
       setSavingTools(false);
     }
-  }, [projectId, composioSelectedTools, loadComposioSelectedTools]);
+  }, [projectId, composioSelectedTools, loadComposioSelectedTools, onToolsUpdated]);
 
   useEffect(() => {
     loadProjectConfig();
-    loadComposioSelectedTools();
-  }, [loadProjectConfig, loadComposioSelectedTools]);
+  }, [loadProjectConfig]);
 
   useEffect(() => {
     loadAllToolkits();
-  }, [loadAllToolkits]);
+    loadComposioSelectedTools();
+  }, [loadAllToolkits, loadComposioSelectedTools]);
 
   const filteredToolkits = toolkits.filter(toolkit => {
     const searchLower = searchQuery.toLowerCase();
@@ -212,76 +213,55 @@ export function Composio() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1 flex items-center gap-4">
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search toolkits..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md 
-                  bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 
-                  placeholder-gray-400 dark:placeholder-gray-500
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
-                  hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
-              />
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-              {filteredToolkits.length} {filteredToolkits.length === 1 ? 'toolkit' : 'toolkits'}
-            </div>
-            <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+    <div className="h-full flex flex-col">
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search toolkits..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+              bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 
+              placeholder-gray-500 dark:placeholder-gray-400 
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Toolkits Grid */}
+      <div className="flex-1 overflow-y-auto">
+        {filteredToolkits.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500 dark:text-gray-400">
+              {searchQuery ? 'No toolkits found matching your search.' : 'No toolkits available.'}
+            </p>
           </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              loadProjectConfig();
-              loadAllToolkits();
-            }}
-            disabled={loading}
-          >
-            <div className="inline-flex items-center">
-              <RefreshCw className={clsx("h-4 w-4", loading && "animate-spin")} />
-              <span className="ml-2">Refresh</span>
-            </div>
-          </Button>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredToolkits.map((toolkit) => {
+              const isConnected = toolkit.no_auth || projectConfig?.composioConnectedAccounts?.[toolkit.slug]?.status === 'ACTIVE';
+              const connectedAccountId = projectConfig?.composioConnectedAccounts?.[toolkit.slug]?.id;
+              
+              return (
+                <ToolkitCard 
+                  key={toolkit.slug} 
+                  toolkit={toolkit} 
+                  projectId={projectId}
+                  isConnected={isConnected}
+                  connectedAccountId={connectedAccountId}
+                  projectConfig={projectConfig}
+                  onManageTools={() => handleManageTools(toolkit)}
+                  onProjectConfigUpdate={handleProjectConfigUpdate}
+                  onRemoveToolkitTools={handleRemoveToolkitTools}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredToolkits.map((toolkit) => {
-          const isConnected = toolkit.no_auth || projectConfig?.composioConnectedAccounts?.[toolkit.slug]?.status === 'ACTIVE';
-          const connectedAccountId = projectConfig?.composioConnectedAccounts?.[toolkit.slug]?.id;
-          
-          return (
-            <ToolkitCard 
-              key={toolkit.slug} 
-              toolkit={toolkit} 
-              projectId={projectId}
-              isConnected={isConnected}
-              connectedAccountId={connectedAccountId}
-              projectConfig={projectConfig}
-              onManageTools={() => handleManageTools(toolkit)}
-              onProjectConfigUpdate={handleProjectConfigUpdate}
-              onRemoveToolkitTools={handleRemoveToolkitTools}
-            />
-          );
-        })}
-      </div>
-
-      {filteredToolkits.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">
-            {searchQuery ? 'No toolkits found matching your search.' : 'No toolkits available.'}
-          </p>
-        </div>
-      )}
 
       {/* Tools Panel */}
       <ComposioToolsPanel
@@ -296,4 +276,4 @@ export function Composio() {
       />
     </div>
   );
-} 
+}
