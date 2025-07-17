@@ -23,10 +23,13 @@ import { Copilot } from "../copilot/app";
 import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
 import { PublishedBadge } from "./published_badge";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
-import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon } from "lucide-react";
+import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, XIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
 import { ProductTour } from "@/components/common/product-tour";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
+import { AgentGraphVisualizer } from "../entities/AgentGraphVisualizer";
+import { Panel } from "@/components/common/panel-common";
+import { Button as CustomButton } from "@/components/ui/button";
 
 enablePatches();
 
@@ -41,7 +44,7 @@ interface StateItem {
     publishedWorkflowId: string | null;
     publishing: boolean;
     selection: {
-        type: "agent" | "tool" | "prompt";
+        type: "agent" | "tool" | "prompt" | "visualise";
         name: string;
     } | null;
     saving: boolean;
@@ -138,6 +141,10 @@ export type Action = {
 } | {
     type: "reorder_agents";
     agents: z.infer<typeof WorkflowAgent>[];
+} | {
+    type: "show_visualise";
+} | {
+    type: "hide_visualise";
 };
 
 function reducer(state: State, action: Action): State {
@@ -231,6 +238,18 @@ function reducer(state: State, action: Action): State {
                 inversePatches: [...state.inversePatches.slice(0, state.currentIndex), inversePatches],
                 currentIndex: state.currentIndex + 1,
             };
+        }
+        case "show_visualise": {
+            newState = produce(state, draft => {
+                draft.present.selection = { type: "visualise", name: "visualise" };
+            });
+            break;
+        }
+        case "hide_visualise": {
+            newState = produce(state, draft => {
+                draft.present.selection = null;
+            });
+            break;
         }
         default: {
             const [nextState, patches, inversePatches] = produceWithPatches(
@@ -700,6 +719,14 @@ export function WorkflowEditor({
     function handleUnselectPrompt() {
         dispatch({ type: "unselect_prompt" });
     }
+    
+    function handleShowVisualise() {
+        dispatch({ type: "show_visualise" });
+    }
+    
+    function handleHideVisualise() {
+        dispatch({ type: "hide_visualise" });
+    }
 
     function handleAddAgent(agent: Partial<z.infer<typeof WorkflowAgent>> = {}) {
         const agentWithModel = {
@@ -993,7 +1020,14 @@ export function WorkflowEditor({
                                 tools={state.present.workflow.tools}
                                 projectTools={projectTools}
                                 prompts={state.present.workflow.prompts}
-                                selectedEntity={state.present.selection}
+                                selectedEntity={
+                                    state.present.selection &&
+                                    (state.present.selection.type === "agent" ||
+                                     state.present.selection.type === "tool" ||
+                                     state.present.selection.type === "prompt")
+                                      ? state.present.selection
+                                      : null
+                                }
                                 startAgentName={state.present.workflow.startAgent}
                                 onSelectAgent={handleSelectAgent}
                                 onSelectTool={handleSelectTool}
@@ -1006,6 +1040,7 @@ export function WorkflowEditor({
                                 onDeleteAgent={handleDeleteAgent}
                                 onDeleteTool={handleDeleteTool}
                                 onDeletePrompt={handleDeletePrompt}
+                                onShowVisualise={handleShowVisualise}
                                 projectId={state.present.workflow.projectId}
                                 onReorderAgents={handleReorderAgents}
                             />
@@ -1074,6 +1109,30 @@ export function WorkflowEditor({
                             handleUpdate={handleUpdatePrompt.bind(null, state.present.selection.name)}
                             handleClose={handleUnselectPrompt}
                         />}
+                        {state.present.selection?.type === "visualise" && (
+                            <Panel 
+                                title={
+                                    <div className="flex items-center justify-between w-full">
+                                        <div className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                                            Agent Graph Visualizer
+                                        </div>
+                                        <CustomButton
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={handleHideVisualise}
+                                            showHoverContent={true}
+                                            hoverContent="Close"
+                                        >
+                                            <XIcon className="w-4 h-4" />
+                                        </CustomButton>
+                                    </div>
+                                }
+                            >
+                                <div className="h-full overflow-hidden">
+                                    <AgentGraphVisualizer workflow={state.present.workflow} />
+                                </div>
+                            </Panel>
+                        )}
                     </ResizablePanel>
                     {showCopilot && (
                         <>
@@ -1089,13 +1148,17 @@ export function WorkflowEditor({
                                     workflow={state.present.workflow}
                                     dispatch={dispatch}
                                     chatContext={
-                                        state.present.selection ? {
-                                            type: state.present.selection.type,
-                                            name: state.present.selection.name
-                                        } : chatMessages.length > 0 ? {
-                                            type: 'chat',
-                                            messages: chatMessages
-                                        } : undefined
+                                        state.present.selection &&
+                                        (state.present.selection.type === "agent" ||
+                                         state.present.selection.type === "tool" ||
+                                         state.present.selection.type === "prompt")
+                                          ? {
+                                              type: state.present.selection.type,
+                                              name: state.present.selection.name
+                                            }
+                                          : chatMessages.length > 0
+                                            ? { type: 'chat', messages: chatMessages }
+                                            : undefined
                                     }
                                     isInitialState={isInitialState}
                                     dataSources={dataSources}
