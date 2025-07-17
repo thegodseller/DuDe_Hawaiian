@@ -2,7 +2,7 @@ import { z } from "zod";
 import { WorkflowPrompt, WorkflowAgent, WorkflowTool } from "../../../lib/types/workflow_types";
 import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@heroui/react";
 import { useRef, useEffect, useState } from "react";
-import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Boxes, Wrench, PenLine, Library, ChevronDown, ChevronRight, ServerIcon, Component, ScrollText, GripVertical, Users, Cog, CheckCircle2 } from "lucide-react";
+import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Boxes, Wrench, PenLine, Library, ChevronDown, ChevronRight, ServerIcon, Component, ScrollText, GripVertical, Users, Cog, CheckCircle2, Eye } from "lucide-react";
 import { DndContext, DragEndEvent, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -36,7 +36,7 @@ interface EntityListProps {
     projectTools: z.infer<typeof WorkflowTool>[];
     prompts: z.infer<typeof WorkflowPrompt>[];
     selectedEntity: {
-        type: "agent" | "tool" | "prompt";
+        type: "agent" | "tool" | "prompt" | "visualise";
         name: string;
     } | null;
     startAgentName: string | null;
@@ -51,6 +51,7 @@ interface EntityListProps {
     onDeleteAgent: (name: string) => void;
     onDeleteTool: (name: string) => void;
     onDeletePrompt: (name: string) => void;
+    onShowVisualise: (name: string) => void;
 }
 
 interface EmptyStateProps {
@@ -99,7 +100,7 @@ const ListItemWithMenu = ({
         )}>
             {dragHandle}
             <button
-                ref={selectedRef}
+                ref={selectedRef as React.RefObject<HTMLButtonElement>}
                 className={clsx(
                     "flex-1 flex items-center gap-2 text-sm text-left",
                     {
@@ -143,7 +144,7 @@ interface ServerCardProps {
     serverName: string;
     tools: z.infer<typeof WorkflowTool>[];
     selectedEntity: {
-        type: "agent" | "tool" | "prompt";
+        type: "agent" | "tool" | "prompt" | "visualise";
         name: string;
     } | null;
     onSelectTool: (name: string) => void;
@@ -233,6 +234,7 @@ export function EntityList({
     onDeletePrompt,
     projectId,
     onReorderAgents,
+    onShowVisualise,
 }: EntityListProps & { 
     projectId: string,
     onReorderAgents: (agents: z.infer<typeof WorkflowAgent>[]) => void 
@@ -246,7 +248,7 @@ export function EntityList({
     };
     // Merge workflow tools with project tools
     const mergedTools = [...tools, ...projectTools];
-    const selectedRef = useRef<HTMLButtonElement | null>(null);
+    const selectedRef = useRef<HTMLButtonElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerHeight, setContainerHeight] = useState<number>(0);
 
@@ -390,20 +392,35 @@ export function EntityList({
                                     <Brain className="w-4 h-4" />
                                     <span>Agents</span>
                                 </div>
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setExpandedPanels(prev => ({ ...prev, agents: true }));
-                                        setShowAgentTypeModal(true);
-                                    }}
-                                    className={`group ${buttonClasses}`}
-                                    showHoverContent={true}
-                                    hoverContent="Add Agent"
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onShowVisualise("visualise");
+                                        }}
+                                        className={`group ${buttonClasses}`}
+                                        showHoverContent={true}
+                                        hoverContent="Visualise Agents"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setExpandedPanels(prev => ({ ...prev, agents: true }));
+                                            setShowAgentTypeModal(true);
+                                        }}
+                                        className={`group ${buttonClasses}`}
+                                        showHoverContent={true}
+                                        hoverContent="Add Agent"
+                                    >
+                                        <PlusIcon className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </button>
                         }
                     >
@@ -743,7 +760,7 @@ function EntityDropdown({
 interface ComposioCardProps {
     card: ComposioToolkit;
     selectedEntity: {
-        type: "agent" | "tool" | "prompt";
+        type: "agent" | "tool" | "prompt" | "visualise";
         name: string;
     } | null;
     onSelectTool: (name: string) => void;
