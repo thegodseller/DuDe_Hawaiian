@@ -489,6 +489,7 @@ function createComposioTool(
 // Helper to create an agent
 function createAgent(
     logger: PrefixLogger,
+    projectId: string,
     config: z.infer<typeof WorkflowAgent>,
     tools: Record<string, Tool>,
     projectTools: z.infer<typeof WorkflowTool>[],
@@ -539,7 +540,7 @@ ${CHILD_TRANSFER_RELATED_INSTRUCTIONS}
 
     // Add RAG tool if needed
     if (config.ragDataSources?.length) {
-        const ragTool = createRagTool(logger, config, workflow.projectId);
+        const ragTool = createRagTool(logger, config, projectId);
         agentTools.push(ragTool);
 
         // update instructions to include RAG instructions
@@ -794,7 +795,12 @@ async function* emitGreetingTurn(logger: PrefixLogger, workflow: z.infer<typeof 
     yield* emitEvent(logger, new UsageTracker().asEvent());
 }
 
-function createTools(logger: PrefixLogger, workflow: z.infer<typeof Workflow>, toolConfig: Record<string, z.infer<typeof WorkflowTool>>): Record<string, Tool> {
+function createTools(
+    logger: PrefixLogger,
+    projectId: string,
+    workflow: z.infer<typeof Workflow>,
+    toolConfig: Record<string, z.infer<typeof WorkflowTool>>,
+): Record<string, Tool> {
     const tools: Record<string, Tool> = {};
     for (const [toolName, config] of Object.entries(toolConfig)) {
         if (workflow.mockTools?.[toolName]) {
@@ -804,16 +810,16 @@ function createTools(logger: PrefixLogger, workflow: z.infer<typeof Workflow>, t
             });
             logger.log(`created mock tool: ${toolName}`);
         } else if (config.isMcp) {
-            tools[toolName] = createMcpTool(logger, config, workflow.projectId);
+            tools[toolName] = createMcpTool(logger, config, projectId);
             logger.log(`created mcp tool: ${toolName}`);
         } else if (config.isComposio) {
-            tools[toolName] = createComposioTool(logger, config, workflow.projectId);
+            tools[toolName] = createComposioTool(logger, config, projectId);
             logger.log(`created composio tool: ${toolName}`);
         } else if (config.mockTool) {
             tools[toolName] = createMockTool(logger, config);
             logger.log(`created mock tool: ${toolName}`);
         } else {
-            tools[toolName] = createWebhookTool(logger, config, workflow.projectId);
+            tools[toolName] = createWebhookTool(logger, config, projectId);
             logger.log(`created webhook tool: ${toolName}`);
         }
     }
@@ -822,6 +828,7 @@ function createTools(logger: PrefixLogger, workflow: z.infer<typeof Workflow>, t
 
 function createAgents(
     logger: PrefixLogger,
+    projectId: string,
     workflow: z.infer<typeof Workflow>,
     agentConfig: Record<string, z.infer<typeof WorkflowAgent>>,
     tools: Record<string, Tool>,
@@ -837,6 +844,7 @@ function createAgents(
     for (const [agentName, config] of Object.entries(agentConfig)) {
         const { agent, entities } = createAgent(
             logger,
+            projectId,
             config,
             tools,
             projectTools,
@@ -918,6 +926,7 @@ function maybeInjectGiveUpControlInstructions(
 // Main function to stream an agentic response
 // using OpenAI Agents SDK
 export async function* streamResponse(
+    projectId: string,
     workflow: z.infer<typeof Workflow>,
     projectTools: z.infer<typeof WorkflowTool>[],
     messages: z.infer<typeof Message>[],
@@ -926,8 +935,7 @@ export async function* streamResponse(
     console.log('-------------------- AGENT LOOP START --------------------');
     // set up logging
     let logger = new PrefixLogger(`agent-loop`)
-    logger.log('projectId', workflow.projectId);
-    logger.log('workflow', workflow.name);
+    logger.log('projectId', projectId);
 
     // ensure valid system message
     ensureSystemMessage(logger, messages);
@@ -946,10 +954,10 @@ export async function* streamResponse(
     logger.log(`initialized stack: ${JSON.stringify(stack)}`);
 
     // create tools
-    const tools = createTools(logger, workflow, toolConfig);
+    const tools = createTools(logger, projectId, workflow, toolConfig);
 
     // create agents
-    const { agents, originalInstructions, originalHandoffs } = createAgents(logger, workflow, agentConfig, tools, projectTools, promptConfig);
+    const { agents, originalInstructions, originalHandoffs } = createAgents(logger, projectId, workflow, agentConfig, tools, projectTools, promptConfig);
 
     // track agent to agent calls
     const transferCounter = new AgentTransferCounter();
@@ -1203,6 +1211,7 @@ export async function* streamResponse(
 
 // this is a sync version of streamResponse
 export async function getResponse(
+    projectId: string,
     workflow: z.infer<typeof Workflow>,
     projectTools: z.infer<typeof WorkflowTool>[],
     messages: z.infer<typeof Message>[],
@@ -1218,7 +1227,7 @@ export async function getResponse(
             completion: 0,
         },
     };
-    for await (const event of streamResponse(workflow, projectTools, messages)) {
+    for await (const event of streamResponse(projectId, workflow, projectTools, messages)) {
         if ('role' in event) {
             out.push(event);
         }

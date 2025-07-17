@@ -6,7 +6,6 @@ import { Workflow } from "@/app/lib/types/workflow_types";
 import { WorkflowTool } from "@/app/lib/types/workflow_types";
 import MarkdownContent from "@/app/lib/components/markdown-content";
 import { ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, CodeIcon, CheckCircleIcon, FileTextIcon, EyeIcon, EyeOffIcon, WrapTextIcon, ArrowRightFromLineIcon, BracesIcon, TextIcon, FlagIcon } from "lucide-react";
-import { TestProfile } from "@/app/lib/types/testing_types";
 import { ProfileContextBox } from "./profile-context-box";
 import { Message, ToolMessage, AssistantMessageWithToolCalls } from "@/app/lib/types/types";
 
@@ -214,7 +213,6 @@ function ToolCalls({
     messages,
     sender,
     workflow,
-    testProfile = null,
     systemMessage,
     delta,
     onFix,
@@ -227,7 +225,6 @@ function ToolCalls({
     messages: z.infer<typeof Message>[];
     sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
-    testProfile: z.infer<typeof TestProfile> | null;
     systemMessage: string | undefined;
     delta: number;
     onFix?: (message: string) => void;
@@ -576,7 +573,6 @@ export function Messages({
     toolCallResults,
     loadingAssistantResponse,
     workflow,
-    testProfile = null,
     systemMessage,
     onSystemMessageChange,
     showSystemMessage,
@@ -589,7 +585,6 @@ export function Messages({
     toolCallResults: Record<string, z.infer<typeof ToolMessage>>;
     loadingAssistantResponse: boolean;
     workflow: z.infer<typeof Workflow>;
-    testProfile: z.infer<typeof TestProfile> | null;
     systemMessage: string | undefined;
     onSystemMessageChange: (message: string) => void;
     showSystemMessage: boolean;
@@ -630,7 +625,6 @@ export function Messages({
                         messages={messages}
                         sender={message.agentName ?? ''}
                         workflow={workflow}
-                        testProfile={testProfile}
                         systemMessage={systemMessage}
                         delta={latency}
                         onFix={onFix}
@@ -694,9 +688,8 @@ export function Messages({
     if (showSystemMessage) {
         return (
             <ProfileContextBox
-                content={testProfile?.context || systemMessage || ''}
+                content={systemMessage || ''}
                 onChange={onSystemMessageChange}
-                locked={testProfile !== null}
             />
         );
     }

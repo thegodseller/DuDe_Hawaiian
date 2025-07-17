@@ -1,16 +1,8 @@
 import { getCustomerIdForProject, logUsage } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
 import { redisClient } from "@/app/lib/redis";
-import { Workflow, WorkflowTool } from "@/app/lib/types/workflow_types";
 import { streamResponse } from "@/app/lib/agents";
-import { Message } from "@/app/lib/types/types";
-import { z } from "zod";
-
-const PayloadSchema = z.object({
-  workflow: Workflow,
-  projectTools: z.array(WorkflowTool),
-  messages: z.array(Message),
-});
+import { ZStreamAgentResponsePayload } from "@/app/lib/types/types";
 
 export async function GET(request: Request, props: { params: Promise<{ streamId: string }> }) {
   const params = await props.params;
@@ -21,13 +13,13 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
   }
 
   // parse the payload
-  const { workflow, projectTools, messages } = PayloadSchema.parse(JSON.parse(payload));
+  const { projectId, workflow, projectTools, messages } = ZStreamAgentResponsePayload.parse(JSON.parse(payload));
   console.log('payload', payload);
 
   // fetch billing customer id
   let billingCustomerId: string | null = null;
   if (USE_BILLING) {
-    billingCustomerId = await getCustomerIdForProject(workflow.projectId);
+    billingCustomerId = await getCustomerIdForProject(projectId);
   }
 
   const encoder = new TextEncoder();
@@ -37,7 +29,7 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
     async start(controller) {
       try {
         // Iterate over the generator
-        for await (const event of streamResponse(workflow, projectTools, messages)) {
+        for await (const event of streamResponse(projectId, workflow, projectTools, messages)) {
           // Check if this is a message event (has role property)
           if ('role' in event) {
             if (event.role === 'assistant') {

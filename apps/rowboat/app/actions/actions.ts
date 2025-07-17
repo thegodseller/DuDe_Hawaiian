@@ -58,12 +58,13 @@ export async function scrapeWebpage(url: string): Promise<z.infer<typeof Webpage
 }
 
 export async function getAssistantResponseStreamId(
+    projectId: string,
     workflow: z.infer<typeof Workflow>,
     projectTools: z.infer<typeof WorkflowTool>[],
     messages: z.infer<typeof Message>[],
 ): Promise<{ streamId: string } | { billingError: string }> {
-    await projectAuthCheck(workflow.projectId);
-    if (!await check_query_limit(workflow.projectId)) {
+    await projectAuthCheck(projectId);
+    if (!await check_query_limit(projectId)) {
         throw new QueryLimitError();
     }
 
@@ -82,6 +83,6 @@ export async function getAssistantResponseStreamId(
         return { billingError: error || 'Billing error' };
     }
 
-    const response = await getAgenticResponseStreamId(workflow, projectTools, messages);
+    const response = await getAgenticResponseStreamId(projectId, workflow, projectTools, messages);
     return response;
 }

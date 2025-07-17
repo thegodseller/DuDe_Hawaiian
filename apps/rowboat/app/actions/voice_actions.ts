@@ -90,13 +90,12 @@ async function saveTwilioConfig(params: z.infer<typeof TwilioConfigParams>): Pro
         found: existingConfig
     });
 
-    const configToSave = {
+    const configToSave: z.infer<typeof TwilioConfig> = {
         phone_number: params.phone_number,
         account_sid: params.account_sid,
         auth_token: params.auth_token,
         label: params.label || '',  // Use empty string instead of undefined
         project_id: params.project_id,
-        workflow_id: params.workflow_id,
         createdAt: existingConfig?.createdAt || new Date(),
         status: 'active' as const
     };
@@ -108,7 +107,6 @@ async function saveTwilioConfig(params: z.infer<typeof TwilioConfigParams>): Pro
             params.phone_number,
             params.account_sid,
             params.auth_token,
-            params.workflow_id
         );
 
         // Then save/update the config in database
@@ -190,7 +188,6 @@ async function configureInboundCall(
     phone_number: string,
     account_sid: string,
     auth_token: string,
-    workflow_id: string
 ): Promise<InboundConfigResponse> {
     try {
         // Normalize phone number format
@@ -200,7 +197,6 @@ async function configureInboundCall(
 
         console.log('Configuring inbound call for:', {
             phone_number,
-            workflow_id
         });
 
         // Initialize Twilio client
@@ -262,7 +258,6 @@ async function configureInboundCall(
         return {
             status: wasPreviouslyConfigured ? 'reconfigured' : 'configured',
             phone_number: phone_number,
-            workflow_id: workflow_id,
             previous_webhook: wasPreviouslyConfigured ? currentVoiceUrl : undefined
         };
 

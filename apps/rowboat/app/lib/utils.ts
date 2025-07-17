@@ -3,27 +3,30 @@ import { generateObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { redisClient } from "./redis";
 import { Workflow, WorkflowTool } from "./types/workflow_types";
-import { Message } from "./types/types";
+import { Message, ZStreamAgentResponsePayload } from "./types/types";
 
 export async function getAgenticResponseStreamId(
+    projectId: string,
     workflow: z.infer<typeof Workflow>,
     projectTools: z.infer<typeof WorkflowTool>[],
     messages: z.infer<typeof Message>[],
 ): Promise<{
     streamId: string,
 }> {
-    // serialize the request
-    const payload = JSON.stringify({
+    const payload: z.infer<typeof ZStreamAgentResponsePayload> = {
+        projectId,
         workflow,
         projectTools,
         messages,
-    });
+    }
+    // serialize the request
+    const serialized = JSON.stringify(payload);
 
     // create a uuid for the stream
     const streamId = crypto.randomUUID();
 
     // store payload in redis
-    await redisClient.set(`chat-stream-${streamId}`, payload, 'EX', 60 * 10); // expire in 10 minutes
+    await redisClient.set(`chat-stream-${streamId}`, serialized, 'EX', 60 * 10); // expire in 10 minutes
 
     return {
         streamId,

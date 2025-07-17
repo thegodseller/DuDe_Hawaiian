@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { WorkflowTool } from "../lib/types/workflow_types";
 import { projectAuthCheck } from "./project_actions";
-import { projectsCollection, agentWorkflowsCollection } from "../lib/mongodb";
+import { projectsCollection } from "../lib/mongodb";
 import { Project } from "../lib/types/project_types";
 import { MCPServer, McpServerTool, convertMcpServerToolToWorkflowTool } from "../lib/types/types";
 import { getMcpClient } from "../lib/mcp";
@@ -167,72 +167,6 @@ export async function updateMcpServers(projectId: string, mcpServers: z.infer<ty
     await projectsCollection.updateOne({
         _id: projectId,
     }, { $set: { mcpServers } });
-}
-
-export async function listMcpServers(projectId: string): Promise<z.infer<typeof MCPServer>[]> {
-    await projectAuthCheck(projectId);
-    const project = await projectsCollection.findOne({
-        _id: projectId,
-    });
-    return project?.mcpServers ?? [];
-}
-
-export async function updateToolInAllWorkflows(
-    projectId: string, 
-    mcpServer: z.infer<typeof MCPServer>,
-    toolId: string, 
-    shouldAdd: boolean
-): Promise<void> {
-    await projectAuthCheck(projectId);
-
-    // 1. Get all workflows in the project
-    const workflows = await agentWorkflowsCollection.find({ projectId }).toArray();
-    
-    // 2. For each workflow
-    for (const workflow of workflows) {
-        // 3. Find if the tool already exists in this workflow
-        const existingTool = workflow.tools.find(t => 
-            t.isMcp && 
-            t.mcpServerName === mcpServer.name && 
-            t.name === toolId
-        );
-
-        if (shouldAdd && !existingTool) {
-            // 4a. If adding and tool doesn't exist, add it
-            const tool = mcpServer.tools.find(t => t.id === toolId);
-            if (tool) {
-                const workflowTool = convertMcpServerToolToWorkflowTool(
-                    {
-                        name: tool.name,
-                        description: tool.description,
-                        inputSchema: {
-                            type: 'object',
-                            properties: tool.parameters?.properties ?? {},
-                            required: tool.parameters?.required ?? [],
-                        },
-                    },
-                    mcpServer
-                );
-                workflow.tools.push(workflowTool);
-            }
-        } else if (!shouldAdd && existingTool) {
-            // 4b. If removing and tool exists, remove it
-            workflow.tools = workflow.tools.filter(t => 
-                !(t.isMcp && t.mcpServerName === mcpServer.name && t.name === toolId)
-            );
-        }
-
-        // 5. Update the workflow
-        await agentWorkflowsCollection.updateOne(
-            { _id: workflow._id },
-            { 
-                $set: { 
-                    tools: workflow.tools,
-                    lastUpdatedAt: new Date().toISOString()
-                } 
-            }
-        );
-    }
 }
 
 export async function toggleMcpTool(

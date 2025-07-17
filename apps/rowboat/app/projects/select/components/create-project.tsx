@@ -248,7 +248,7 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
         let parsed;
         try {
             const json = JSON.parse(importJson);
-            parsed = Workflow.omit({ projectId: true }).safeParse(json);
+            parsed = Workflow.safeParse(json);
             if (!parsed.success) {
                 setImportError('Invalid workflow JSON: ' + JSON.stringify(parsed.error.issues));
                 setImportModalOpen(true);

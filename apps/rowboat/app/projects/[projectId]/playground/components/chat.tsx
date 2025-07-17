@@ -7,10 +7,8 @@ import { MCPServer, Message, PlaygroundChat, ToolMessage } from "@/app/lib/types
 import { Workflow, WorkflowTool } from "@/app/lib/types/workflow_types";
 import { ComposeBoxPlayground } from "@/components/common/compose-box-playground";
 import { Button } from "@heroui/react";
-import { TestProfile } from "@/app/lib/types/testing_types";
 import { WithStringId } from "@/app/lib/types/types";
 import { ProfileContextBox } from "./profile-context-box";
-import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { FeedbackModal } from "./feedback-modal";
@@ -21,8 +19,6 @@ export function Chat({
     projectId,
     workflow,
     messageSubscriber,
-    testProfile = null,
-    onTestProfileChange,
     systemMessage,
     onSystemMessageChange,
     mcpServerUrls,
@@ -37,8 +33,6 @@ export function Chat({
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     messageSubscriber?: (messages: z.infer<typeof Message>[]) => void;
-    testProfile?: z.infer<typeof TestProfile> | null;
-    onTestProfileChange: (profile: WithStringId<z.infer<typeof TestProfile>> | null) => void;
     systemMessage: string;
     onSystemMessageChange: (message: string) => void;
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
@@ -186,6 +180,7 @@ export function Chat({
             let streamId: string | null = null;
             try {
                 const response = await getAssistantResponseStreamId(
+                    projectId,
                     workflow,
                     projectTools,
                     [
@@ -306,20 +301,12 @@ export function Chat({
         systemMessage,
         mcpServerUrls,
         toolWebhookUrl,
-        testProfile,
         fetchResponseError,
         projectTools,
     ]);
 
     return <div className="w-11/12 max-w-6xl mx-auto h-full flex flex-col relative">
         <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pt-4 pb-4">
-            {USE_TESTING_FEATURE && (
-                <ProfileContextBox
-                    content={testProfile?.context || systemMessage || ''}
-                    onChange={onSystemMessageChange}
-                    locked={testProfile !== null}
-                />
-            )}
         </div>
 
         <div
@@ -334,7 +321,6 @@ export function Chat({
                 toolCallResults={toolCallResults}
                 loadingAssistantResponse={loadingAssistantResponse}
                 workflow={workflow}
-                testProfile={testProfile}
                 systemMessage={systemMessage}
                 onSystemMessageChange={onSystemMessageChange}
                 showSystemMessage={false}

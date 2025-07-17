@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { WorkflowTool } from "./workflow_types";
+import { Workflow, WorkflowTool } from "./workflow_types";
 
 export const SystemMessage = z.object({
     role: z.literal("system"),
@@ -158,7 +158,6 @@ export type WithStringId<T> = T & { _id: string };
 export const ApiRequest = z.object({
     messages: z.array(Message),
     state: z.unknown(),
-    workflowId: z.string().nullable().optional(),
     testProfileId: z.string().nullable().optional(),
     mockTools: z.record(z.string(), z.string()).nullable().optional(),
 });
@@ -208,3 +207,9 @@ export function convertMcpServerToolToWorkflowTool(
 
     return converted;
 }
+export const ZStreamAgentResponsePayload = z.object({
+  projectId: z.string(),
+  workflow: Workflow,
+  projectTools: z.array(WorkflowTool),
+  messages: z.array(Message),
+});

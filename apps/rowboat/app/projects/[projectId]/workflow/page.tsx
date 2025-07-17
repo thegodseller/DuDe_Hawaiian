@@ -4,6 +4,7 @@ import { USE_RAG } from "@/app/lib/feature_flags";
 import { projectsCollection } from "@/app/lib/mongodb";
 import { notFound } from "next/navigation";
 import { requireActiveBillingSubscription } from '@/app/lib/billing';
+import { migrate_versioned_workflows } from "@/app/lib/migrate_versioned_workflows";
 
 const DEFAULT_MODEL = process.env.PROVIDER_DEFAULT_MODEL || "gpt-4.1";
 
@@ -24,6 +25,11 @@ export default async function Page(
     });
     if (!project) {
         notFound();
+    }
+
+    // migrate versioned workflows for this project
+    if (!project.draftWorkflow) {
+        await migrate_versioned_workflows(params.projectId);
     }
 
     return (

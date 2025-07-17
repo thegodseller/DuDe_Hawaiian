@@ -5,7 +5,7 @@ import { Spinner } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { configureTwilioNumber, getTwilioConfigs, deleteTwilioConfig } from "../../../../actions/voice_actions";
-import { TwilioConfig } from "../../../../lib/types/voice_types";
+import { TwilioConfig, TwilioConfigParams } from "../../../../lib/types/voice_types";
 import { CheckCircleIcon, XCircleIcon, InfoIcon, EyeOffIcon, EyeIcon } from "lucide-react";
 import { Section } from './project';
 import { clsx } from 'clsx';
@@ -198,23 +198,15 @@ export function VoiceSection({ projectId }: { projectId: string }) {
             return;
         }
 
-        const workflowId = localStorage.getItem(`lastWorkflowId_${projectId}`);
-        if (!workflowId) {
-            setError('No workflow selected. Please select a workflow first.');
-            setConfigurationValid(false);
-            return;
-        }
-
         setLoading(true);
         setError(null);
 
-        const configParams = {
+        const configParams: z.infer<typeof TwilioConfigParams> = {
             phone_number: formState.phone.replaceAll(/[^0-9\+]/g, ''),
             account_sid: formState.accountSid,
             auth_token: formState.authToken,
             label: formState.label,
             project_id: projectId,
-            workflow_id: workflowId,
         };
 
         const result = await configureTwilioNumber(configParams);

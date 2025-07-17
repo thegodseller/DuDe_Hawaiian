@@ -1,12 +1,11 @@
 import { NextRequest } from "next/server";
-import { agentWorkflowsCollection, db, projectsCollection, testProfilesCollection } from "../../../../lib/mongodb";
+import { projectsCollection } from "../../../../lib/mongodb";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { authCheck } from "../../utils";
 import { ApiRequest, ApiResponse } from "../../../../lib/types/types";
 import { check_query_limit } from "../../../../lib/rate_limiting";
 import { PrefixLogger } from "../../../../lib/utils";
-import { TestProfile } from "@/app/lib/types/testing_types";
 import { collectProjectTools } from "@/app/lib/project_tools";
 import { authorize, getCustomerIdForProject, logUsage } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
@@ -65,19 +64,10 @@ export async function POST(
         // fetch project tools
         const projectTools = await collectProjectTools(projectId);
 
-        // if workflow id is provided in the request, use it, else use the published workflow id
-        let workflowId = result.data.workflowId ?? project.publishedWorkflowId;
-        if (!workflowId) {
-            logger.log(`No workflow id provided in request or project has no published workflow`);
-            return Response.json({ error: "No workflow id provided in request or project has no published workflow" }, { status: 404 });
-        }
         // fetch workflow
-        const workflow = await agentWorkflowsCollection.findOne({
-            projectId: projectId,
-            _id: new ObjectId(workflowId),
-        });
+        const workflow = project.liveWorkflow;
         if (!workflow) {
-            logger.log(`Workflow ${workflowId} not found for project ${projectId}`);
+            logger.log(`Workflow not found for project ${projectId}`);
             return Response.json({ error: "Workflow not found" }, { status: 404 });
         }
 
@@ -103,21 +93,8 @@ export async function POST(
             }
         }
 
-        // if test profile is provided in the request, use it
-        let testProfile: z.infer<typeof TestProfile> | null = null;
-        if (result.data.testProfileId) {
-            testProfile = await testProfilesCollection.findOne({
-                projectId: projectId,
-                _id: new ObjectId(result.data.testProfileId),
-            });
-            if (!testProfile) {
-                logger.log(`Test profile ${result.data.testProfileId} not found for project ${projectId}`);
-                return Response.json({ error: "Test profile not found" }, { status: 404 });
-            }
-        }
-
         // get assistant response
-        const { messages } = await getResponse(workflow, projectTools, reqMessages);
+        const { messages } = await getResponse(projectId, workflow, projectTools, reqMessages);
 
         // log billing usage
         if (USE_BILLING && billingCustomerId) {

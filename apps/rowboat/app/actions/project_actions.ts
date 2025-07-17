@@ -1,7 +1,7 @@
 'use server';
 import { redirect } from "next/navigation";
 import { ObjectId } from "mongodb";
-import { dataSourcesCollection, embeddingsCollection, projectsCollection, agentWorkflowsCollection, testScenariosCollection, projectMembersCollection, apiKeysCollection, dataSourceDocsCollection, testProfilesCollection } from "../lib/mongodb";
+import { db, dataSourcesCollection, embeddingsCollection, projectsCollection, projectMembersCollection, apiKeysCollection, dataSourceDocsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import crypto from 'crypto';
 import { revalidatePath } from "next/cache";
@@ -33,7 +33,11 @@ export async function projectAuthCheck(projectId: string) {
     }
 }
 
-async function createBaseProject(name: string, user: WithStringId<z.infer<typeof User>>): Promise<{ id: string } | { billingError: string }> {
+async function createBaseProject(
+    name: string,
+    user: WithStringId<z.infer<typeof User>>,
+    workflow?: z.infer<typeof Workflow>
+): Promise<{ id: string } | { billingError: string }> {
     // fetch project count for this user
     const projectCount = await projectsCollection.countDocuments({
         createdByUserId: user._id,
@@ -60,9 +64,10 @@ async function createBaseProject(name: string, user: WithStringId<z.infer<typeof
         createdAt: (new Date()).toISOString(),
         lastUpdatedAt: (new Date()).toISOString(),
         createdByUserId: user._id,
+        draftWorkflow: workflow,
+        liveWorkflow: workflow,
         chatClientId,
         secret,
-        nextWorkflowNumber: 1,
         testRunCounter: 0,
     });
 
@@ -85,26 +90,19 @@ export async function createProject(formData: FormData): Promise<{ id: string } 
     const name = formData.get('name') as string;
     const templateKey = formData.get('template') as string;
 
-    const response = await createBaseProject(name, user);
+    const { agents, prompts, tools, startAgent } = templates[templateKey];
+    const response = await createBaseProject(name, user, {
+        agents,
+        prompts,
+        tools,
+        startAgent,
+        lastUpdatedAt: (new Date()).toISOString(),
+    });
     if ('billingError' in response) {
         return response;
     }
 
     const projectId = response.id;
-
-    // Add first workflow version with specified template
-    const { agents, prompts, tools, startAgent } = templates[templateKey];
-    await agentWorkflowsCollection.insertOne({
-        projectId,
-        agents,
-        prompts,
-        tools,
-        startAgent,
-        createdAt: (new Date()).toISOString(),
-        lastUpdatedAt: (new Date()).toISOString(),
-        name: `Version 1`,
-    });
-
     return { id: projectId };
 }
 
@@ -270,13 +268,13 @@ export async function deleteProject(projectId: string) {
         projectId,
     });
 
-    // delete workflows
-    await agentWorkflowsCollection.deleteMany({
+    // delete workflow versions
+    await db.collection('agent_workflows').deleteMany({
         projectId,
     });
 
     // delete scenarios
-    await testScenariosCollection.deleteMany({
+    await db.collection('test_scenarios').deleteMany({
         projectId,
     });
 
@@ -292,26 +290,19 @@ export async function createProjectFromPrompt(formData: FormData): Promise<{ id:
     const user = await authCheck();
     const name = formData.get('name') as string;
 
-    const response = await createBaseProject(name, user);
+    const { agents, prompts, tools, startAgent } = templates['default'];
+    const response = await createBaseProject(name, user, {
+        agents,
+        prompts,
+        tools,
+        startAgent,
+        lastUpdatedAt: (new Date()).toISOString(),
+    });
     if ('billingError' in response) {
         return response;
     }
 
     const projectId = response.id;
-
-    // Add first workflow version with default template
-    const { agents, prompts, tools, startAgent } = templates['default'];
-    await agentWorkflowsCollection.insertOne({
-        projectId,
-        agents,
-        prompts,
-        tools,
-        startAgent,
-        createdAt: (new Date()).toISOString(),
-        lastUpdatedAt: (new Date()).toISOString(),
-        name: `Version 1`,
-    });
-
     return { id: projectId };
 }
 
@@ -325,29 +316,69 @@ export async function createProjectFromWorkflowJson(formData: FormData): Promise
         throw new Error('Invalid JSON');
     }
     // Validate and parse with zod
-    const parsed = Workflow.omit({ projectId: true }).safeParse(workflowData);
+    const parsed = Workflow.safeParse(workflowData);
     if (!parsed.success) {
         throw new Error('Invalid workflow JSON: ' + JSON.stringify(parsed.error.issues));
     }
     const workflow = parsed.data;
-    const name = workflow.name || 'Imported Project';
-    const response = await createBaseProject(name, user);
+    const name = 'Imported Project';
+    const response = await createBaseProject(name, user, workflow);
     if ('billingError' in response) {
         return response;
     }
     const projectId = response.id;
-    const now = new Date().toISOString();
-    await agentWorkflowsCollection.insertOne({
-        ...workflow,
-        projectId,
-        createdAt: now,
-        lastUpdatedAt: now,
-        name: workflow.name || 'Version 1',
-    });
     return { id: projectId };
 }
 
 export async function collectProjectTools(projectId: string): Promise<z.infer<typeof WorkflowTool>[]> {
     await projectAuthCheck(projectId);
     return libCollectProjectTools(projectId);
+}
+
+export async function saveWorkflow(projectId: string, workflow: z.infer<typeof Workflow>) {
+    await projectAuthCheck(projectId);
+
+    // update the project's draft workflow
+    workflow.lastUpdatedAt = new Date().toISOString();
+    await projectsCollection.updateOne({
+        _id: projectId,
+    }, {
+        $set: {
+            draftWorkflow: workflow,
+        },
+    });
+}
+
+export async function publishWorkflow(projectId: string, workflow: z.infer<typeof Workflow>) {
+    await projectAuthCheck(projectId);
+
+    // update the project's draft workflow
+    workflow.lastUpdatedAt = new Date().toISOString();
+    await projectsCollection.updateOne({
+        _id: projectId,
+    }, {
+        $set: {
+            liveWorkflow: workflow,
+        },
+    });
+}
+
+export async function revertToLiveWorkflow(projectId: string) {
+    await projectAuthCheck(projectId);
+
+    const project = await getProjectConfig(projectId);
+    const workflow = project.liveWorkflow;
+
+    if (!workflow) {
+        throw new Error('No live workflow found');
+    }
+
+    workflow.lastUpdatedAt = new Date().toISOString();
+    await projectsCollection.updateOne({
+        _id: projectId,
+    }, {
+        $set: {
+            draftWorkflow: workflow,
+        },
+    });
 }

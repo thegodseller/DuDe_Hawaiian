@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { apiV1 } from "rowboat-shared";
-import { agentWorkflowsCollection, projectsCollection, chatsCollection, chatMessagesCollection } from "../../../../../../lib/mongodb";
+import { projectsCollection, chatsCollection, chatMessagesCollection } from "../../../../../../lib/mongodb";
 import { z } from "zod";
 import { ObjectId, WithId } from "mongodb";
 import { authCheck } from "../../../utils";
@@ -185,10 +185,7 @@ export async function POST(
         const projectTools = await collectProjectTools(session.projectId);
 
         // fetch workflow
-        const workflow = await agentWorkflowsCollection.findOne({
-            projectId: session.projectId,
-            _id: new ObjectId(projectSettings.publishedWorkflowId),
-        });
+        const workflow = projectSettings.liveWorkflow;
         if (!workflow) {
             throw new Error("Workflow not found");
         }
@@ -214,7 +211,7 @@ export async function POST(
         const inMessages: z.infer<typeof Message>[] = convert(messages);
         inMessages.push(userMessage);
 
-        const { messages: responseMessages } = await getResponse(workflow, projectTools, [systemMessage, ...inMessages]);
+        const { messages: responseMessages } = await getResponse(session.projectId, workflow, projectTools, [systemMessage, ...inMessages]);
         const convertedResponseMessages = convertBack(responseMessages);
         const unsavedMessages = [
             userMessage,

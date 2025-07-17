@@ -1,9 +1,8 @@
 import { getResponse } from "@/app/lib/agents";
-import { agentWorkflowsCollection, twilioConfigsCollection, twilioInboundCallsCollection } from "@/app/lib/mongodb";
+import { projectsCollection, twilioInboundCallsCollection } from "@/app/lib/mongodb";
 import { collectProjectTools } from "@/app/lib/project_tools";
 import { PrefixLogger } from "@/app/lib/utils";
 import VoiceResponse from "twilio/lib/twiml/VoiceResponse";
-import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { hangup, XmlResponse, ZStandardRequestParams } from "../../utils";
 import { Message } from "@/app/lib/types/types";
@@ -35,15 +34,19 @@ export async function POST(
         logger.log('Call not found');
         return hangup();
     }
-    const { workflowId, projectId } = call;
+    const { projectId } = call;
 
-    // fetch workflow
-    const workflow = await agentWorkflowsCollection.findOne({
-        projectId: projectId,
-        _id: new ObjectId(workflowId),
+    // fetch project and extract live workflow
+    const project = await projectsCollection.findOne({
+        _id: projectId,
     });
+    if (!project) {
+        logger.log(`Project ${projectId} not found`);
+        return hangup();
+    }
+    const workflow = project.liveWorkflow;
     if (!workflow) {
-        logger.log(`Workflow ${workflowId} not found for project ${projectId}`);
+        logger.log(`Workflow not found for project ${projectId}`);
         return hangup();
     }
 
@@ -58,7 +61,7 @@ export async function POST(
             content: data.SpeechResult,
         }
     ];
-    const { messages } = await getResponse(workflow, projectTools, reqMessages);
+    const { messages } = await getResponse(projectId, workflow, projectTools, reqMessages);
     if (messages.length === 0) {
         logger.log('Agent response is empty');
         return hangup();

@@ -8,7 +8,7 @@ import { AgentConfig } from "../entities/agent_config";
 import { ToolConfig } from "../entities/tool_config";
 import { App as ChatApp } from "../playground/app";
 import { z } from "zod";
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip } from "@heroui/react";
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@heroui/react";
 import { PromptConfig } from "../entities/prompt_config";
 import { EditableField } from "../../../lib/components/editable-field";
 import { RelativeTime } from "@primer/react";
@@ -20,8 +20,8 @@ import {
     ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { Copilot } from "../copilot/app";
-import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
-import { PublishedBadge } from "./published_badge";
+import { publishWorkflow } from "@/app/actions/project_actions";
+import { saveWorkflow } from "@/app/actions/project_actions";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
 import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, XIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
@@ -40,8 +40,7 @@ const PANEL_RATIOS = {
 } as const;
 
 interface StateItem {
-    workflow: WithStringId<z.infer<typeof Workflow>>;
-    publishedWorkflowId: string | null;
+    workflow: z.infer<typeof Workflow>;
     publishing: boolean;
     selection: {
         type: "agent" | "tool" | "prompt" | "visualise";
@@ -53,6 +52,7 @@ interface StateItem {
     pendingChanges: boolean;
     chatKey: number;
     lastUpdatedAt: string;
+    isLive: boolean;
 }
 
 interface State {
@@ -68,9 +68,6 @@ export type Action = {
 } | {
     type: "set_publishing";
     publishing: boolean;
-} | {
-    type: "set_published_workflow_id";
-    workflowId: string;
 } | {
     type: "add_agent";
     agent: Partial<z.infer<typeof WorkflowAgent>>;
@@ -159,7 +156,7 @@ function reducer(state: State, action: Action): State {
         };
     }
 
-    const isLive = state.present.workflow._id == state.present.publishedWorkflowId;
+    const isLive = state.present.isLive;
 
     switch (action.type) {
         case "undo": {
@@ -184,21 +181,9 @@ function reducer(state: State, action: Action): State {
             });
             break;
         }
-        case "update_workflow_name": {
-            newState = produce(state, draft => {
-                draft.present.workflow.name = action.name;
-            });
-            break;
-        }
         case "set_publishing": {
             newState = produce(state, draft => {
                 draft.present.publishing = action.publishing;
-            });
-            break;
-        }
-        case "set_published_workflow_id": {
-            newState = produce(state, draft => {
-                draft.present.publishedWorkflowId = action.workflowId;
             });
             break;
         }
@@ -586,29 +571,31 @@ export function useEntitySelection() {
 }
 
 export function WorkflowEditor({
+    projectId,
     dataSources,
     workflow,
-    publishedWorkflowId,
-    handleShowSelector,
-    handleCloneVersion,
     useRag,
     mcpServerUrls,
     toolWebhookUrl,
     defaultModel,
     projectTools,
     eligibleModels,
+    isLive,
+    onChangeMode,
+    onRevertToLive,
 }: {
+    projectId: string;
     dataSources: WithStringId<z.infer<typeof DataSource>>[];
-    workflow: WithStringId<z.infer<typeof Workflow>>;
-    publishedWorkflowId: string | null;
-    handleShowSelector: () => void;
-    handleCloneVersion: (workflowId: string) => void;
+    workflow: z.infer<typeof Workflow>;
     useRag: boolean;
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
     toolWebhookUrl: string;
     defaultModel: string;
     projectTools: z.infer<typeof WorkflowTool>[];
     eligibleModels: z.infer<typeof ModelsResponse> | "*";
+    isLive: boolean;
+    onChangeMode: (mode: 'draft' | 'live') => void;
+    onRevertToLive: () => void;
 }) {
 
     const [state, dispatch] = useReducer(reducer, {
@@ -619,13 +606,13 @@ export function WorkflowEditor({
             publishing: false,
             selection: null,
             workflow: workflow,
-            publishedWorkflowId: publishedWorkflowId,
             saving: false,
             publishError: null,
             publishSuccess: false,
             pendingChanges: false,
             chatKey: 0,
             lastUpdatedAt: workflow.lastUpdatedAt,
+            isLive,
         }
     });
     const [chatMessages, setChatMessages] = useState<z.infer<typeof Message>[]>([]);
@@ -634,17 +621,20 @@ export function WorkflowEditor({
     }, []);
     const saveQueue = useRef<z.infer<typeof Workflow>[]>([]);
     const saving = useRef(false);
-    const isLive = state.present.workflow._id == state.present.publishedWorkflowId;
     const [showCopySuccess, setShowCopySuccess] = useState(false);
     const [showCopilot, setShowCopilot] = useState(true);
     const [copilotWidth, setCopilotWidth] = useState<number>(PANEL_RATIOS.copilot);
     const [isInitialState, setIsInitialState] = useState(true);
     const [showTour, setShowTour] = useState(true);
     const copilotRef = useRef<{ handleUserMessage: (message: string) => void }>(null);
+    
+    // Modal state for revert confirmation
+    const { isOpen: isRevertModalOpen, onOpen: onRevertModalOpen, onClose: onRevertModalClose } = useDisclosure();
 
     // Load agent order from localStorage on mount
     useEffect(() => {
-        const storedOrder = localStorage.getItem(`workflow_${workflow._id}_agent_order`);
+        const mode = isLive ? 'live' : 'draft';
+        const storedOrder = localStorage.getItem(`${mode}_workflow_${projectId}_agent_order`);
         if (storedOrder) {
             try {
                 const orderMap = JSON.parse(storedOrder);
@@ -660,7 +650,7 @@ export function WorkflowEditor({
                 console.error("Error loading agent order:", e);
             }
         }
-    }, [workflow._id, workflow.agents]);
+    }, [workflow.agents, isLive, projectId]);
 
     // Function to trigger copilot chat
     const triggerCopilotChat = useCallback((message: string) => {
@@ -675,12 +665,12 @@ export function WorkflowEditor({
 
     // Auto-show copilot and increment key when prompt is present
     useEffect(() => {
-        const prompt = localStorage.getItem(`project_prompt_${state.present.workflow.projectId}`);
+        const prompt = localStorage.getItem(`project_prompt_${projectId}`);
         console.log('init project prompt', prompt);
         if (prompt) {
             setShowCopilot(true);
         }
-    }, [state.present.workflow.projectId]);
+    }, [projectId]);
 
     // Reset initial state when user interacts with copilot or opens other menus
     useEffect(() => {
@@ -788,32 +778,35 @@ export function WorkflowEditor({
             acc[agent.name] = index;
             return acc;
         }, {} as Record<string, number>);
-        localStorage.setItem(`workflow_${workflow._id}_agent_order`, JSON.stringify(orderMap));
+        const mode = isLive ? 'live' : 'draft';
+        localStorage.setItem(`${mode}_workflow_${projectId}_agent_order`, JSON.stringify(orderMap));
         
         dispatch({ type: "reorder_agents", agents });
     }
 
-    async function handleRenameWorkflow(name: string) {
-        await renameWorkflow(state.present.workflow.projectId, state.present.workflow._id, name);
-        dispatch({ type: "update_workflow_name", name });
+    async function handlePublishWorkflow() {
+        await publishWorkflow(projectId, state.present.workflow);
+        onChangeMode('live');
     }
 
-    async function handlePublishWorkflow() {
-        dispatch({ type: "set_publishing", publishing: true });
-        await publishWorkflow(state.present.workflow.projectId, state.present.workflow._id);
-        dispatch({ type: "set_publishing", publishing: false });
-        dispatch({ type: "set_published_workflow_id", workflowId: state.present.workflow._id });
+    function handleRevertToLive() {
+        onRevertModalOpen();
+    }
+
+    function handleConfirmRevert() {
+        onRevertToLive();
+        onRevertModalClose();
     }
 
     // Remove handleCopyJSON and add handleDownloadJSON
     function handleDownloadJSON() {
-        const { _id, projectId, ...workflow } = state.present.workflow;
+        const workflow = state.present.workflow;
         const json = JSON.stringify(workflow, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${state.present.workflow.name || 'workflow'}.json`;
+        a.download = 'workflow.json';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -831,7 +824,7 @@ export function WorkflowEditor({
             if (isLive) {
                 return;
             } else {
-                await saveWorkflow(state.present.workflow.projectId, state.present.workflow._id, workflowToSave);
+                await saveWorkflow(projectId, workflowToSave);
             }
         } finally {
             saving.current = false;
@@ -841,7 +834,7 @@ export function WorkflowEditor({
                 dispatch({ type: "set_saving", saving: false });
             }
         }
-    }, [isLive]);
+    }, [isLive, projectId]);
 
     useEffect(() => {
         if (state.present.pendingChanges && state.present.workflow) {
@@ -869,28 +862,45 @@ export function WorkflowEditor({
                 <div className="shrink-0 flex justify-between items-center pb-6">
                     <div className="workflow-version-selector flex items-center gap-4 px-2 text-gray-800 dark:text-gray-100">
                         <WorkflowIcon size={16} />
-                        <Tooltip content="Click to edit">
-                            <div>
-                                <EditableField
-                                    key={state.present.workflow._id}
-                                    value={state.present.workflow?.name || ''}
-                                    onChange={handleRenameWorkflow}
-                                    placeholder="Name this version"
-                                    className="text-sm font-semibold"
-                                    inline={true}
-                                />
-                            </div>
-                        </Tooltip>
                         <div className="flex items-center gap-2">
                             {state.present.publishing && <Spinner size="sm" />}
                             {isLive && <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
                                 <RadioIcon size={16} />
-                                Live
+                                Live workflow
                             </div>}
                             {!isLive && <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
                                 <PenLine size={16} />
-                                Draft
+                                Draft workflow
                             </div>}
+                            {/* Hamburger menu for workflow version switching */}
+                            <Dropdown>
+                                <DropdownTrigger>
+                                    <button
+                                        className="p-1.5 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                                        aria-label="Workflow version menu"
+                                        type="button"
+                                    >
+                                        <HamburgerIcon size={16} />
+                                    </button>
+                                </DropdownTrigger>
+                                <DropdownMenu aria-label="Workflow version options">
+                                    <DropdownItem
+                                        key="switch-version"
+                                        onClick={() => onChangeMode(isLive ? 'draft' : 'live')}
+                                    >
+                                        {isLive ? "View Draft workflow" : "View Live workflow"}
+                                    </DropdownItem>
+                                    {!isLive ? (
+                                        <DropdownItem
+                                            key="revert-to-live"
+                                            onClick={handleRevertToLive}
+                                            className="text-red-600 dark:text-red-400"
+                                        >
+                                            Revert to Live workflow
+                                        </DropdownItem>
+                                    ) : null}
+                                </DropdownMenu>
+                            </Dropdown>
                             {/* Download JSON icon button, with tooltip, to the left of the menu */}
                             <Tooltip content="Download Assistant JSON">
                                 <button
@@ -902,47 +912,6 @@ export function WorkflowEditor({
                                     <DownloadIcon size={20} />
                                 </button>
                             </Tooltip>
-                            <Dropdown>
-                                <DropdownTrigger>
-                                    <div>
-                                        <Tooltip content="Version Menu">
-                                            <button className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors">
-                                                <HamburgerIcon size={20} />
-                                            </button>
-                                        </Tooltip>
-                                    </div>
-                                </DropdownTrigger>
-                                <DropdownMenu
-                                    disabledKeys={[
-                                        ...(state.present.pendingChanges ? ['switch', 'clone'] : []),
-                                        ...(isLive ? ['mcp'] : []),
-                                    ]}
-                                    onAction={(key) => {
-                                        if (key === 'switch') {
-                                            handleShowSelector();
-                                        }
-                                        if (key === 'clone') {
-                                            handleCloneVersion(state.present.workflow._id);
-                                        }
-                                    }}
-                                >
-                                    <DropdownItem
-                                        key="switch"
-                                        startContent={<div className="text-gray-500"><BackIcon size={16} /></div>}
-                                        className="gap-x-2"
-                                    >
-                                        View versions
-                                    </DropdownItem>
-
-                                    <DropdownItem
-                                        key="clone"
-                                        startContent={<div className="text-gray-500"><Layers2Icon size={16} /></div>}
-                                        className="gap-x-2"
-                                    >
-                                        Clone this version
-                                    </DropdownItem>
-                                </DropdownMenu>
-                            </Dropdown>
                         </div>
                     </div>
                     {showCopySuccess && <div className="flex items-center gap-2">
@@ -954,15 +923,6 @@ export function WorkflowEditor({
                                 <AlertTriangle size={16} />
                                 This version is locked. You cannot make changes. Changes applied through copilot will<b>not</b>be reflected.
                             </div>
-                            <Button
-                                variant="solid"
-                                size="md"
-                                onPress={() => handleCloneVersion(state.present.workflow._id)}
-                                className="gap-2 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm"
-                                startContent={<Layers2Icon size={16} />}
-                            >
-                                Clone this version
-                            </Button>
                             <Button
                                 variant="solid"
                                 size="md"
@@ -1041,7 +1001,7 @@ export function WorkflowEditor({
                                 onDeleteTool={handleDeleteTool}
                                 onDeletePrompt={handleDeletePrompt}
                                 onShowVisualise={handleShowVisualise}
-                                projectId={state.present.workflow.projectId}
+                                projectId={projectId}
                                 onReorderAgents={handleReorderAgents}
                             />
                         </div>
@@ -1055,7 +1015,7 @@ export function WorkflowEditor({
                         <ChatApp
                             key={'' + state.present.chatKey}
                             hidden={state.present.selection !== null}
-                            projectId={state.present.workflow.projectId}
+                            projectId={projectId}
                             workflow={state.present.workflow}
                             messageSubscriber={updateChatMessages}
                             mcpServerUrls={mcpServerUrls}
@@ -1067,7 +1027,7 @@ export function WorkflowEditor({
                         />
                         {state.present.selection?.type === "agent" && <AgentConfig
                             key={`agent-${state.present.workflow.agents.findIndex(agent => agent.name === state.present.selection!.name)}`}
-                            projectId={state.present.workflow.projectId}
+                            projectId={projectId}
                             workflow={state.present.workflow}
                             agent={state.present.workflow.agents.find((agent) => agent.name === state.present.selection!.name)!}
                             usedAgentNames={new Set(state.present.workflow.agents.filter((agent) => agent.name !== state.present.selection!.name).map((agent) => agent.name))}
@@ -1144,7 +1104,7 @@ export function WorkflowEditor({
                             >
                                 <Copilot
                                     ref={copilotRef}
-                                    projectId={state.present.workflow.projectId}
+                                    projectId={projectId}
                                     workflow={state.present.workflow}
                                     dispatch={dispatch}
                                     chatContext={
@@ -1169,10 +1129,32 @@ export function WorkflowEditor({
                 </ResizablePanelGroup>
                 {USE_PRODUCT_TOUR && showTour && (
                     <ProductTour
-                        projectId={state.present.workflow.projectId}
+                        projectId={projectId}
                         onComplete={() => setShowTour(false)}
                     />
                 )}
+                
+                {/* Revert to Live Confirmation Modal */}
+                <Modal isOpen={isRevertModalOpen} onClose={onRevertModalClose}>
+                    <ModalContent>
+                        <ModalHeader className="flex flex-col gap-1">
+                            Revert to Live Workflow
+                        </ModalHeader>
+                        <ModalBody>
+                            <p>
+                                Are you sure you want to revert to the live workflow? This will discard all your current draft changes and switch back to the live version.
+                            </p>
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button color="danger" variant="light" onPress={onRevertModalClose}>
+                                Cancel
+                            </Button>
+                            <Button color="danger" onPress={handleConfirmRevert}>
+                                Revert to Live
+                            </Button>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
             </div>
         </EntitySelectionContext.Provider>
     );

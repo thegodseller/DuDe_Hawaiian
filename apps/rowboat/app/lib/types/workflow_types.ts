@@ -61,21 +61,16 @@ export const WorkflowTool = z.object({
     }).optional(), // the data for the Composio tool, if it is a Composio tool
 });
 export const Workflow = z.object({
-    name: z.string().optional(),
     agents: z.array(WorkflowAgent),
     prompts: z.array(WorkflowPrompt),
     tools: z.array(WorkflowTool),
     startAgent: z.string(),
-    createdAt: z.string().datetime(),
     lastUpdatedAt: z.string().datetime(),
-    projectId: z.string(),
     mockTools: z.record(z.string(), z.string()).optional(), // a dict of toolName => mockInstructions
 });
 export const WorkflowTemplate = Workflow
     .omit({
-        projectId: true,
         lastUpdatedAt: true,
-        createdAt: true,
     })
     .extend({
         name: z.string(),

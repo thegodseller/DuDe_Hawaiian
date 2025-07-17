@@ -7,11 +7,8 @@ import { Chat } from "./components/chat";
 import { Panel } from "@/components/common/panel-common";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@heroui/react";
-import { TestProfile } from "@/app/lib/types/testing_types";
 import { WithStringId } from "@/app/lib/types/types";
-import { ProfileSelector } from "@/app/projects/[projectId]/test/[[...slug]]/components/selectors/profile-selector";
 import { CheckIcon, CopyIcon, PlusIcon, UserIcon, InfoIcon, BugIcon, BugOffIcon, CodeIcon } from "lucide-react";
-import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
 import { clsx } from "clsx";
 
 const defaultSystemMessage = '';
@@ -40,7 +37,6 @@ export function App({
     triggerCopilotChat?: (message: string) => void;
 }) {
     const [counter, setCounter] = useState<number>(0);
-    const [testProfile, setTestProfile] = useState<WithStringId<z.infer<typeof TestProfile>> | null>(null);
     const [systemMessage, setSystemMessage] = useState<string>(defaultSystemMessage);
     const [showDebugMessages, setShowDebugMessages] = useState<boolean>(true);
     const [chat, setChat] = useState<z.infer<typeof PlaygroundChat>>({
@@ -56,11 +52,6 @@ export function App({
 
     function handleSystemMessageChange(message: string) {
         setSystemMessage(message);
-        setCounter(counter + 1);
-    }
-
-    function handleTestProfileChange(profile: WithStringId<z.infer<typeof TestProfile>> | null) {
-        setTestProfile(profile);
         setCounter(counter + 1);
     }
 
@@ -138,17 +129,6 @@ export function App({
                 }
                 rightActions={
                     <div className="flex items-center gap-3">
-                        {USE_TESTING_FEATURE && (
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => setIsProfileSelectorOpen(true)}
-                                showHoverContent={true}
-                                hoverContent={testProfile?.name || 'Select test profile'}
-                            >
-                                <UserIcon className="w-4 h-4" />
-                            </Button>
-                        )}
                         <Button
                             variant="secondary"
                             size="sm"
@@ -166,22 +146,13 @@ export function App({
                 }
                 onClick={onPanelClick}
             >
-                <ProfileSelector
-                    projectId={projectId}
-                    isOpen={isProfileSelectorOpen}
-                    onOpenChange={setIsProfileSelectorOpen}
-                    onSelect={handleTestProfileChange}
-                    selectedProfileId={testProfile?._id}
-                />
                 <div className="h-full overflow-auto px-4 py-4">
                     <Chat
                         key={`chat-${counter}`}
                         chat={chat}
                         projectId={projectId}
                         workflow={workflow}
-                        testProfile={testProfile}
                         messageSubscriber={messageSubscriber}
-                        onTestProfileChange={handleTestProfileChange}
                         systemMessage={systemMessage}
                         onSystemMessageChange={handleSystemMessageChange}
                         mcpServerUrls={mcpServerUrls}

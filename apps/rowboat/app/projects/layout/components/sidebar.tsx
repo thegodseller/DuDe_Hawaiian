@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { getProjectConfig } from "@/app/actions/project_actions";
 import { useTheme } from "@/app/providers/theme-provider";
-import { USE_TESTING_FEATURE, USE_PRODUCT_TOUR } from '@/app/lib/feature_flags';
+import { USE_PRODUCT_TOUR } from '@/app/lib/feature_flags';
 import { useHelpModal } from "@/app/providers/help-modal-provider";
 
 interface SidebarProps {
@@ -63,12 +63,6 @@ export default function Sidebar({ projectId, useRag, useAuth, collapsed = false,
       icon: WorkflowIcon,
       requiresProject: true
     },
-    ...(USE_TESTING_FEATURE ? [{
-      href: 'test',
-      label: 'Test',
-      icon: PlayIcon,
-      requiresProject: true
-    }] : []),
     ...(useRag ? [{
       href: 'sources',
       label: 'RAG',
