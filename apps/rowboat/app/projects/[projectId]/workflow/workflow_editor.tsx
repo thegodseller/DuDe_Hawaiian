@@ -1,6 +1,6 @@
 "use client";
 import React, { useReducer, Reducer, useState, useCallback, useEffect, useRef, createContext, useContext } from "react";
-import { MCPServer, WithStringId } from "../../../lib/types/types";
+import { MCPServer, Message, WithStringId } from "../../../lib/types/types";
 import { Workflow, WorkflowTool, WorkflowPrompt, WorkflowAgent } from "../../../lib/types/workflow_types";
 import { DataSource } from "../../../lib/types/datasource_types";
 import { produce, applyPatches, enablePatches, produceWithPatches, Patch } from 'immer';
@@ -20,14 +20,16 @@ import {
     ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { Copilot } from "../copilot/app";
-import { apiV1 } from "rowboat-shared";
 import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
 import { PublishedBadge } from "./published_badge";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
-import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle } from "lucide-react";
+import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, XIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
 import { ProductTour } from "@/components/common/product-tour";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
+import { AgentGraphVisualizer } from "../entities/AgentGraphVisualizer";
+import { Panel } from "@/components/common/panel-common";
+import { Button as CustomButton } from "@/components/ui/button";
 
 enablePatches();
 
@@ -42,7 +44,7 @@ interface StateItem {
     publishedWorkflowId: string | null;
     publishing: boolean;
     selection: {
-        type: "agent" | "tool" | "prompt";
+        type: "agent" | "tool" | "prompt" | "visualise";
         name: string;
     } | null;
     saving: boolean;
@@ -139,6 +141,10 @@ export type Action = {
 } | {
     type: "reorder_agents";
     agents: z.infer<typeof WorkflowAgent>[];
+} | {
+    type: "show_visualise";
+} | {
+    type: "hide_visualise";
 };
 
 function reducer(state: State, action: Action): State {
@@ -232,6 +238,18 @@ function reducer(state: State, action: Action): State {
                 inversePatches: [...state.inversePatches.slice(0, state.currentIndex), inversePatches],
                 currentIndex: state.currentIndex + 1,
             };
+        }
+        case "show_visualise": {
+            newState = produce(state, draft => {
+                draft.present.selection = { type: "visualise", name: "visualise" };
+            });
+            break;
+        }
+        case "hide_visualise": {
+            newState = produce(state, draft => {
+                draft.present.selection = null;
+            });
+            break;
         }
         default: {
             const [nextState, patches, inversePatches] = produceWithPatches(
@@ -554,6 +572,19 @@ function reducer(state: State, action: Action): State {
     return newState;
 }
 
+// Context for entity selection
+export const EntitySelectionContext = createContext<{
+    onSelectAgent: (name: string) => void;
+    onSelectTool: (name: string) => void;
+    onSelectPrompt: (name: string) => void;
+} | null>(null);
+
+export function useEntitySelection() {
+    const ctx = useContext(EntitySelectionContext);
+    if (!ctx) throw new Error('useEntitySelection must be used within EntitySelectionContext');
+    return ctx;
+}
+
 export function WorkflowEditor({
     dataSources,
     workflow,
@@ -580,7 +611,7 @@ export function WorkflowEditor({
     eligibleModels: z.infer<typeof ModelsResponse> | "*";
 }) {
 
-    const [state, dispatch] = useReducer<Reducer<State, Action>>(reducer, {
+    const [state, dispatch] = useReducer(reducer, {
         patches: [],
         inversePatches: [],
         currentIndex: 0,
@@ -597,8 +628,8 @@ export function WorkflowEditor({
             lastUpdatedAt: workflow.lastUpdatedAt,
         }
     });
-    const [chatMessages, setChatMessages] = useState<z.infer<typeof apiV1.ChatMessage>[]>([]);
-    const updateChatMessages = useCallback((messages: z.infer<typeof apiV1.ChatMessage>[]) => {
+    const [chatMessages, setChatMessages] = useState<z.infer<typeof Message>[]>([]);
+    const updateChatMessages = useCallback((messages: z.infer<typeof Message>[]) => {
         setChatMessages(messages);
     }, []);
     const saveQueue = useRef<z.infer<typeof Workflow>[]>([]);
@@ -688,6 +719,14 @@ export function WorkflowEditor({
     function handleUnselectPrompt() {
         dispatch({ type: "unselect_prompt" });
     }
+    
+    function handleShowVisualise() {
+        dispatch({ type: "show_visualise" });
+    }
+    
+    function handleHideVisualise() {
+        dispatch({ type: "hide_visualise" });
+    }
 
     function handleAddAgent(agent: Partial<z.infer<typeof WorkflowAgent>> = {}) {
         const agentWithModel = {
@@ -766,14 +805,19 @@ export function WorkflowEditor({
         dispatch({ type: "set_published_workflow_id", workflowId: state.present.workflow._id });
     }
 
-    function handleCopyJSON() {
+    // Remove handleCopyJSON and add handleDownloadJSON
+    function handleDownloadJSON() {
         const { _id, projectId, ...workflow } = state.present.workflow;
         const json = JSON.stringify(workflow, null, 2);
-        navigator.clipboard.writeText(json);
-        setShowCopySuccess(true);
-        setTimeout(() => {
-            setShowCopySuccess(false);
-        }, 1500);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${state.present.workflow.name || 'workflow'}.json`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     }
 
     const processQueue = useCallback(async (state: State, dispatch: React.Dispatch<Action>) => {
@@ -815,288 +859,321 @@ export function WorkflowEditor({
         setIsInitialState(false);
     }
 
-    return <div className="flex flex-col h-full relative">
-        <div className="shrink-0 flex justify-between items-center pb-6">
-            <div className="workflow-version-selector flex items-center gap-4 px-2 text-gray-800 dark:text-gray-100">
-                <WorkflowIcon size={16} />
-                <Tooltip content="Click to edit">
-                    <div>
-                        <EditableField
-                            key={state.present.workflow._id}
-                            value={state.present.workflow?.name || ''}
-                            onChange={handleRenameWorkflow}
-                            placeholder="Name this version"
-                            className="text-sm font-semibold"
-                            inline={true}
-                        />
-                    </div>
-                </Tooltip>
-                <div className="flex items-center gap-2">
-                    {state.present.publishing && <Spinner size="sm" />}
-                    {isLive && <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
-                        <RadioIcon size={16} />
-                        Live
-                    </div>}
-                    {!isLive && <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
-                        <PenLine size={16} />
-                        Draft
-                    </div>}
-                </div>
-                <Dropdown>
-                    <DropdownTrigger>
-                        <div>
-                            <Tooltip content="Version Menu">
-                                <button className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors">
-                                    <HamburgerIcon size={20} />
+    return (
+        <EntitySelectionContext.Provider value={{
+            onSelectAgent: handleSelectAgent,
+            onSelectTool: handleSelectTool,
+            onSelectPrompt: handleSelectPrompt,
+        }}>
+            <div className="flex flex-col h-full relative">
+                <div className="shrink-0 flex justify-between items-center pb-6">
+                    <div className="workflow-version-selector flex items-center gap-4 px-2 text-gray-800 dark:text-gray-100">
+                        <WorkflowIcon size={16} />
+                        <Tooltip content="Click to edit">
+                            <div>
+                                <EditableField
+                                    key={state.present.workflow._id}
+                                    value={state.present.workflow?.name || ''}
+                                    onChange={handleRenameWorkflow}
+                                    placeholder="Name this version"
+                                    className="text-sm font-semibold"
+                                    inline={true}
+                                />
+                            </div>
+                        </Tooltip>
+                        <div className="flex items-center gap-2">
+                            {state.present.publishing && <Spinner size="sm" />}
+                            {isLive && <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+                                <RadioIcon size={16} />
+                                Live
+                            </div>}
+                            {!isLive && <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+                                <PenLine size={16} />
+                                Draft
+                            </div>}
+                            {/* Download JSON icon button, with tooltip, to the left of the menu */}
+                            <Tooltip content="Download Assistant JSON">
+                                <button
+                                    onClick={handleDownloadJSON}
+                                    className="p-1.5 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                                    aria-label="Download JSON"
+                                    type="button"
+                                >
+                                    <DownloadIcon size={20} />
                                 </button>
                             </Tooltip>
+                            <Dropdown>
+                                <DropdownTrigger>
+                                    <div>
+                                        <Tooltip content="Version Menu">
+                                            <button className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors">
+                                                <HamburgerIcon size={20} />
+                                            </button>
+                                        </Tooltip>
+                                    </div>
+                                </DropdownTrigger>
+                                <DropdownMenu
+                                    disabledKeys={[
+                                        ...(state.present.pendingChanges ? ['switch', 'clone'] : []),
+                                        ...(isLive ? ['mcp'] : []),
+                                    ]}
+                                    onAction={(key) => {
+                                        if (key === 'switch') {
+                                            handleShowSelector();
+                                        }
+                                        if (key === 'clone') {
+                                            handleCloneVersion(state.present.workflow._id);
+                                        }
+                                    }}
+                                >
+                                    <DropdownItem
+                                        key="switch"
+                                        startContent={<div className="text-gray-500"><BackIcon size={16} /></div>}
+                                        className="gap-x-2"
+                                    >
+                                        View versions
+                                    </DropdownItem>
+
+                                    <DropdownItem
+                                        key="clone"
+                                        startContent={<div className="text-gray-500"><Layers2Icon size={16} /></div>}
+                                        className="gap-x-2"
+                                    >
+                                        Clone this version
+                                    </DropdownItem>
+                                </DropdownMenu>
+                            </Dropdown>
                         </div>
-                    </DropdownTrigger>
-                    <DropdownMenu
-                        disabledKeys={[
-                            ...(state.present.pendingChanges ? ['switch', 'clone'] : []),
-                            ...(isLive ? ['mcp'] : []),
-                        ]}
-                        onAction={(key) => {
-                            if (key === 'switch') {
-                                handleShowSelector();
-                            }
-                            if (key === 'clone') {
-                                handleCloneVersion(state.present.workflow._id);
-                            }
-                            if (key === 'clipboard') {
-                                handleCopyJSON();
-                            }
-                        }}
-                    >
-                        <DropdownItem
-                            key="switch"
-                            startContent={<div className="text-gray-500"><BackIcon size={16} /></div>}
-                            className="gap-x-2"
-                        >
-                            View versions
-                        </DropdownItem>
-
-                        <DropdownItem
-                            key="clone"
-                            startContent={<div className="text-gray-500"><Layers2Icon size={16} /></div>}
-                            className="gap-x-2"
-                        >
-                            Clone this version
-                        </DropdownItem>
-
-                        <DropdownItem
-                            key="clipboard"
-                            startContent={<div className="text-gray-500"><CopyIcon size={16} /></div>}
-                            className="gap-x-2"
-                        >
-                            Export as JSON
-                        </DropdownItem>
-                    </DropdownMenu>
-                </Dropdown>
-            </div>
-            {showCopySuccess && <div className="flex items-center gap-2">
-                <div className="text-green-500">Copied to clipboard</div>
-            </div>}
-            <div className="flex items-center gap-2">
-                {isLive && <div className="flex items-center gap-2">
-                    <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
-                        <AlertTriangle size={16} />
-                        This version is locked. You cannot make changes. Changes applied through copilot will<b>not</b>be reflected.
                     </div>
-                    <Button
-                        variant="solid"
-                        size="md"
-                        onPress={() => handleCloneVersion(state.present.workflow._id)}
-                        className="gap-2 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm"
-                        startContent={<Layers2Icon size={16} />}
-                    >
-                        Clone this version
-                    </Button>
-                    <Button
-                        variant="solid"
-                        size="md"
-                        onPress={() => setShowCopilot(!showCopilot)}
-                        className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
-                        startContent={showCopilot ? null : <Sparkles size={16} />}
-                    >
-                        {showCopilot ? "Hide Copilot" : "Copilot"}
-                    </Button>
-                </div>}
-                {!isLive && <div className="text-xs text-gray-400">
-                    {state.present.saving && <div className="flex items-center gap-1">
-                        <Spinner size="sm" />
-                        <div>Saving...</div>
+                    {showCopySuccess && <div className="flex items-center gap-2">
+                        <div className="text-green-500">Copied to clipboard</div>
                     </div>}
-                    {!state.present.saving && !state.present.pendingChanges && state.present.workflow && <div>
-                        Updated <RelativeTime date={new Date(state.present.lastUpdatedAt)} />
-                    </div>}
-                    {!state.present.saving && state.present.pendingChanges && state.present.workflow && <div>
-                        Unsaved changes
-                    </div>}
-                 </div>}
-                {!isLive && <>
-                    <button
-                        className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
-                        title="Undo"
-                        disabled={state.currentIndex <= 0}
-                        onClick={() => dispatch({ type: "undo" })}
-                    >
-                        <UndoIcon size={16} />
-                    </button>
-                    <button
-                        className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
-                        title="Redo"
-                        disabled={state.currentIndex >= state.patches.length}
-                        onClick={() => dispatch({ type: "redo" })}
-                    >
-                        <RedoIcon size={16} />
-                    </button>
-                    <Button
-                        variant="solid"
-                        size="md"
-                        onPress={handlePublishWorkflow}
-                        className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm"
-                        startContent={<RocketIcon size={16} />}
-                        data-tour-target="deploy"
-                    >
-                        Deploy
-                    </Button>
-                    <Button
-                        variant="solid"
-                        size="md"
-                        onPress={() => setShowCopilot(!showCopilot)}
-                        className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
-                        startContent={showCopilot ? null : <Sparkles size={16} />}
-                    >
-                        {showCopilot ? "Hide Copilot" : "Copilot"}
-                    </Button>
-                </>}
-            </div>
-        </div>
-        <ResizablePanelGroup direction="horizontal" className="grow flex overflow-auto gap-1">
-            <ResizablePanel minSize={10} defaultSize={PANEL_RATIOS.entityList}>
-                <div className="flex flex-col h-full">
-                    <EntityList
-                        agents={state.present.workflow.agents}
-                        tools={state.present.workflow.tools}
-                        projectTools={projectTools}
-                        prompts={state.present.workflow.prompts}
-                        selectedEntity={state.present.selection}
-                        startAgentName={state.present.workflow.startAgent}
-                        onSelectAgent={handleSelectAgent}
-                        onSelectTool={handleSelectTool}
-                        onSelectPrompt={handleSelectPrompt}
-                        onAddAgent={handleAddAgent}
-                        onAddTool={handleAddTool}
-                        onAddPrompt={handleAddPrompt}
-                        onToggleAgent={handleToggleAgent}
-                        onSetMainAgent={handleSetMainAgent}
-                        onDeleteAgent={handleDeleteAgent}
-                        onDeleteTool={handleDeleteTool}
-                        onDeletePrompt={handleDeletePrompt}
-                        projectId={state.present.workflow.projectId}
-                        onReorderAgents={handleReorderAgents}
-                    />
+                    <div className="flex items-center gap-2">
+                        {isLive && <div className="flex items-center gap-2">
+                            <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+                                <AlertTriangle size={16} />
+                                This version is locked. You cannot make changes. Changes applied through copilot will<b>not</b>be reflected.
+                            </div>
+                            <Button
+                                variant="solid"
+                                size="md"
+                                onPress={() => handleCloneVersion(state.present.workflow._id)}
+                                className="gap-2 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm"
+                                startContent={<Layers2Icon size={16} />}
+                            >
+                                Clone this version
+                            </Button>
+                            <Button
+                                variant="solid"
+                                size="md"
+                                onPress={() => setShowCopilot(!showCopilot)}
+                                className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
+                                startContent={showCopilot ? null : <Sparkles size={16} />}
+                            >
+                                {showCopilot ? "Hide Skipper" : "Skipper"}
+                            </Button>
+                        </div>}
+                        {!isLive && <>
+                            <button
+                                className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
+                                title="Undo"
+                                disabled={state.currentIndex <= 0}
+                                onClick={() => dispatch({ type: "undo" })}
+                            >
+                                <UndoIcon size={16} />
+                            </button>
+                            <button
+                                className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
+                                title="Redo"
+                                disabled={state.currentIndex >= state.patches.length}
+                                onClick={() => dispatch({ type: "redo" })}
+                            >
+                                <RedoIcon size={16} />
+                            </button>
+                            <Button
+                                variant="solid"
+                                size="md"
+                                onPress={handlePublishWorkflow}
+                                className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm"
+                                startContent={<RocketIcon size={16} />}
+                                data-tour-target="deploy"
+                            >
+                                Deploy
+                            </Button>
+                            <Button
+                                variant="solid"
+                                size="md"
+                                onPress={() => setShowCopilot(!showCopilot)}
+                                className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
+                                startContent={showCopilot ? null : <Sparkles size={16} />}
+                            >
+                                {showCopilot ? "Hide Skipper" : "Skipper"}
+                            </Button>
+                        </>}
+                    </div>
                 </div>
-            </ResizablePanel>
-            <ResizableHandle withHandle className="w-[3px] bg-transparent" />
-            <ResizablePanel
-                minSize={20}
-                defaultSize={showCopilot ? PANEL_RATIOS.chatApp : PANEL_RATIOS.chatApp + PANEL_RATIOS.copilot}
-                className="overflow-auto"
-            >
-                <ChatApp
-                    key={'' + state.present.chatKey}
-                    hidden={state.present.selection !== null}
-                    projectId={state.present.workflow.projectId}
-                    workflow={state.present.workflow}
-                    messageSubscriber={updateChatMessages}
-                    mcpServerUrls={mcpServerUrls}
-                    toolWebhookUrl={toolWebhookUrl}
-                    isInitialState={isInitialState}
-                    onPanelClick={handlePlaygroundClick}
-                    projectTools={projectTools}
-                />
-                {state.present.selection?.type === "agent" && <AgentConfig
-                    key={state.present.selection.name}
-                    projectId={state.present.workflow.projectId}
-                    workflow={state.present.workflow}
-                    agent={state.present.workflow.agents.find((agent) => agent.name === state.present.selection!.name)!}
-                    usedAgentNames={new Set(state.present.workflow.agents.filter((agent) => agent.name !== state.present.selection!.name).map((agent) => agent.name))}
-                    agents={state.present.workflow.agents}
-                    tools={state.present.workflow.tools}
-                    projectTools={projectTools}
-                    prompts={state.present.workflow.prompts}
-                    dataSources={dataSources}
-                    handleUpdate={handleUpdateAgent.bind(null, state.present.selection.name)}
-                    handleClose={handleUnselectAgent}
-                    useRag={useRag}
-                    triggerCopilotChat={triggerCopilotChat}
-                    eligibleModels={eligibleModels === "*" ? "*" : eligibleModels.agentModels}
-                />}
-                {state.present.selection?.type === "tool" && (() => {
-                    const selectedTool = state.present.workflow.tools.find(
-                        (tool) => tool.name === state.present.selection!.name
-                    ) || projectTools.find(
-                        (tool) => tool.name === state.present.selection!.name
-                    );
-                    return <ToolConfig
-                        key={state.present.selection.name}
-                        tool={selectedTool!}
-                        usedToolNames={new Set([
-                            ...state.present.workflow.tools.filter((tool) => tool.name !== state.present.selection!.name).map((tool) => tool.name),
-                            ...projectTools.filter((tool) => tool.name !== state.present.selection!.name).map((tool) => tool.name)
-                        ])}
-                        handleUpdate={handleUpdateTool.bind(null, state.present.selection.name)}
-                        handleClose={handleUnselectTool}
-                    />;
-                })()}
-                {state.present.selection?.type === "prompt" && <PromptConfig
-                    key={state.present.selection.name}
-                    prompt={state.present.workflow.prompts.find((prompt) => prompt.name === state.present.selection!.name)!}
-                    agents={state.present.workflow.agents}
-                    tools={state.present.workflow.tools}
-                    prompts={state.present.workflow.prompts}
-                    usedPromptNames={new Set(state.present.workflow.prompts.filter((prompt) => prompt.name !== state.present.selection!.name).map((prompt) => prompt.name))}
-                    handleUpdate={handleUpdatePrompt.bind(null, state.present.selection.name)}
-                    handleClose={handleUnselectPrompt}
-                />}
-            </ResizablePanel>
-            {showCopilot && (
-                <>
+                <ResizablePanelGroup direction="horizontal" className="grow flex overflow-auto gap-1">
+                    <ResizablePanel minSize={10} defaultSize={PANEL_RATIOS.entityList}>
+                        <div className="flex flex-col h-full">
+                            <EntityList
+                                agents={state.present.workflow.agents}
+                                tools={state.present.workflow.tools}
+                                projectTools={projectTools}
+                                prompts={state.present.workflow.prompts}
+                                selectedEntity={
+                                    state.present.selection &&
+                                    (state.present.selection.type === "agent" ||
+                                     state.present.selection.type === "tool" ||
+                                     state.present.selection.type === "prompt")
+                                      ? state.present.selection
+                                      : null
+                                }
+                                startAgentName={state.present.workflow.startAgent}
+                                onSelectAgent={handleSelectAgent}
+                                onSelectTool={handleSelectTool}
+                                onSelectPrompt={handleSelectPrompt}
+                                onAddAgent={handleAddAgent}
+                                onAddTool={handleAddTool}
+                                onAddPrompt={handleAddPrompt}
+                                onToggleAgent={handleToggleAgent}
+                                onSetMainAgent={handleSetMainAgent}
+                                onDeleteAgent={handleDeleteAgent}
+                                onDeleteTool={handleDeleteTool}
+                                onDeletePrompt={handleDeletePrompt}
+                                onShowVisualise={handleShowVisualise}
+                                projectId={state.present.workflow.projectId}
+                                onReorderAgents={handleReorderAgents}
+                            />
+                        </div>
+                    </ResizablePanel>
                     <ResizableHandle withHandle className="w-[3px] bg-transparent" />
                     <ResizablePanel
-                        minSize={10}
-                        defaultSize={PANEL_RATIOS.copilot}
-                        onResize={(size) => setCopilotWidth(size)}
+                        minSize={20}
+                        defaultSize={showCopilot ? PANEL_RATIOS.chatApp : PANEL_RATIOS.chatApp + PANEL_RATIOS.copilot}
+                        className="overflow-auto"
                     >
-                        <Copilot
-                            ref={copilotRef}
+                        <ChatApp
+                            key={'' + state.present.chatKey}
+                            hidden={state.present.selection !== null}
                             projectId={state.present.workflow.projectId}
                             workflow={state.present.workflow}
-                            dispatch={dispatch}
-                            chatContext={
-                                state.present.selection ? {
-                                    type: state.present.selection.type,
-                                    name: state.present.selection.name
-                                } : chatMessages.length > 0 ? {
-                                    type: 'chat',
-                                    messages: chatMessages
-                                } : undefined
-                            }
+                            messageSubscriber={updateChatMessages}
+                            mcpServerUrls={mcpServerUrls}
+                            toolWebhookUrl={toolWebhookUrl}
                             isInitialState={isInitialState}
-                            dataSources={dataSources}
+                            onPanelClick={handlePlaygroundClick}
+                            projectTools={projectTools}
+                            triggerCopilotChat={triggerCopilotChat}
                         />
+                        {state.present.selection?.type === "agent" && <AgentConfig
+                            key={`agent-${state.present.workflow.agents.findIndex(agent => agent.name === state.present.selection!.name)}`}
+                            projectId={state.present.workflow.projectId}
+                            workflow={state.present.workflow}
+                            agent={state.present.workflow.agents.find((agent) => agent.name === state.present.selection!.name)!}
+                            usedAgentNames={new Set(state.present.workflow.agents.filter((agent) => agent.name !== state.present.selection!.name).map((agent) => agent.name))}
+                            agents={state.present.workflow.agents}
+                            tools={state.present.workflow.tools}
+                            projectTools={projectTools}
+                            prompts={state.present.workflow.prompts}
+                            dataSources={dataSources}
+                            handleUpdate={handleUpdateAgent.bind(null, state.present.selection.name)}
+                            handleClose={handleUnselectAgent}
+                            useRag={useRag}
+                            triggerCopilotChat={triggerCopilotChat}
+                            eligibleModels={eligibleModels === "*" ? "*" : eligibleModels.agentModels}
+                        />}
+                        {state.present.selection?.type === "tool" && (() => {
+                            const selectedTool = state.present.workflow.tools.find(
+                                (tool) => tool.name === state.present.selection!.name
+                            ) || projectTools.find(
+                                (tool) => tool.name === state.present.selection!.name
+                            );
+                            return <ToolConfig
+                                key={state.present.selection.name}
+                                tool={selectedTool!}
+                                usedToolNames={new Set([
+                                    ...state.present.workflow.tools.filter((tool) => tool.name !== state.present.selection!.name).map((tool) => tool.name),
+                                    ...projectTools.filter((tool) => tool.name !== state.present.selection!.name).map((tool) => tool.name)
+                                ])}
+                                handleUpdate={handleUpdateTool.bind(null, state.present.selection.name)}
+                                handleClose={handleUnselectTool}
+                            />;
+                        })()}
+                        {state.present.selection?.type === "prompt" && <PromptConfig
+                            key={state.present.selection.name}
+                            prompt={state.present.workflow.prompts.find((prompt) => prompt.name === state.present.selection!.name)!}
+                            agents={state.present.workflow.agents}
+                            tools={state.present.workflow.tools}
+                            prompts={state.present.workflow.prompts}
+                            usedPromptNames={new Set(state.present.workflow.prompts.filter((prompt) => prompt.name !== state.present.selection!.name).map((prompt) => prompt.name))}
+                            handleUpdate={handleUpdatePrompt.bind(null, state.present.selection.name)}
+                            handleClose={handleUnselectPrompt}
+                        />}
+                        {state.present.selection?.type === "visualise" && (
+                            <Panel 
+                                title={
+                                    <div className="flex items-center justify-between w-full">
+                                        <div className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                                            Agent Graph Visualizer
+                                        </div>
+                                        <CustomButton
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={handleHideVisualise}
+                                            showHoverContent={true}
+                                            hoverContent="Close"
+                                        >
+                                            <XIcon className="w-4 h-4" />
+                                        </CustomButton>
+                                    </div>
+                                }
+                            >
+                                <div className="h-full overflow-hidden">
+                                    <AgentGraphVisualizer workflow={state.present.workflow} />
+                                </div>
+                            </Panel>
+                        )}
                     </ResizablePanel>
-                </>
-            )}
-        </ResizablePanelGroup>
-        {USE_PRODUCT_TOUR && showTour && (
-            <ProductTour
-                projectId={state.present.workflow.projectId}
-                onComplete={() => setShowTour(false)}
-            />
-        )}
-    </div>;
+                    {showCopilot && (
+                        <>
+                            <ResizableHandle withHandle className="w-[3px] bg-transparent" />
+                            <ResizablePanel
+                                minSize={10}
+                                defaultSize={PANEL_RATIOS.copilot}
+                                onResize={(size) => setCopilotWidth(size)}
+                            >
+                                <Copilot
+                                    ref={copilotRef}
+                                    projectId={state.present.workflow.projectId}
+                                    workflow={state.present.workflow}
+                                    dispatch={dispatch}
+                                    chatContext={
+                                        state.present.selection &&
+                                        (state.present.selection.type === "agent" ||
+                                         state.present.selection.type === "tool" ||
+                                         state.present.selection.type === "prompt")
+                                          ? {
+                                              type: state.present.selection.type,
+                                              name: state.present.selection.name
+                                            }
+                                          : chatMessages.length > 0
+                                            ? { type: 'chat', messages: chatMessages }
+                                            : undefined
+                                    }
+                                    isInitialState={isInitialState}
+                                    dataSources={dataSources}
+                                />
+                            </ResizablePanel>
+                        </>
+                    )}
+                </ResizablePanelGroup>
+                {USE_PRODUCT_TOUR && showTour && (
+                    <ProductTour
+                        projectId={state.present.workflow.projectId}
+                        onComplete={() => setShowTour(false)}
+                    />
+                )}
+            </div>
+        </EntitySelectionContext.Provider>
+    );
 }

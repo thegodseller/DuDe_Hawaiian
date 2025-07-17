@@ -1,54 +1,29 @@
-import { AgenticAPIChatResponse, AgenticAPIChatRequest, AgenticAPIChatMessage, AgenticAPIInitStreamResponse } from "./types/agents_api_types";
 import { z } from "zod";
 import { generateObject } from "ai";
-import { ApiMessage } from "./types/types";
 import { openai } from "@ai-sdk/openai";
 import { redisClient } from "./redis";
-
-export async function getAgenticApiResponse(
-    request: z.infer<typeof AgenticAPIChatRequest>,
-): Promise<{
-    messages: z.infer<typeof AgenticAPIChatMessage>[],
-    state: unknown,
-    rawAPIResponse: unknown,
-}> {
-    // call agentic api
-    console.log(`sending agentic api request`, JSON.stringify(request));
-    const response = await fetch(process.env.AGENTS_API_URL + '/chat', {
-        method: 'POST',
-        body: JSON.stringify(request),
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.AGENTS_API_KEY || 'test'}`,
-        },
-    });
-    if (!response.ok) {
-        console.error('Failed to call agentic api', response);
-        throw new Error(`Failed to call agentic api: ${response.statusText}`);
-    }
-    const responseJson = await response.json();
-    console.log(`received agentic api response`, JSON.stringify(responseJson));
-    const result: z.infer<typeof AgenticAPIChatResponse> = responseJson;
-    return {
-        messages: result.messages,
-        state: result.state,
-        rawAPIResponse: result,
-    };
-}
+import { Workflow, WorkflowTool } from "./types/workflow_types";
+import { Message } from "./types/types";
 
 export async function getAgenticResponseStreamId(
-    request: z.infer<typeof AgenticAPIChatRequest>,
-): Promise<z.infer<typeof AgenticAPIInitStreamResponse>> {
+    workflow: z.infer<typeof Workflow>,
+    projectTools: z.infer<typeof WorkflowTool>[],
+    messages: z.infer<typeof Message>[],
+): Promise<{
+    streamId: string,
+}> {
     // serialize the request
-    const payload = JSON.stringify(request);
+    const payload = JSON.stringify({
+        workflow,
+        projectTools,
+        messages,
+    });
 
     // create a uuid for the stream
     const streamId = crypto.randomUUID();
 
     // store payload in redis
-    await redisClient.set(`chat-stream-${streamId}`, payload, {
-        EX: 60 * 10, // expire in 10 minutes
-    });
+    await redisClient.set(`chat-stream-${streamId}`, payload, 'EX', 60 * 10); // expire in 10 minutes
 
     return {
         streamId,
@@ -82,7 +57,7 @@ export class PrefixLogger {
     }
 }
 
-export async function mockToolResponse(toolId: string, messages: z.infer<typeof ApiMessage>[], mockInstructions: string): Promise<string> {
+export async function mockToolResponse(toolId: string, messages: z.infer<typeof Message>[], mockInstructions: string): Promise<string> {
     const prompt = `Given below is a chat between a user and a customer support assistant.
 The assistant has requested a tool call with ID {{toolID}}.
 

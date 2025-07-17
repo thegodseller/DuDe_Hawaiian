@@ -37,7 +37,7 @@ export function SectionRow({ children, className }: { children: ReactNode; class
 
 export function SectionLabel({ children, className }: { children: ReactNode; className?: string }) {
     return (
-        <div className={`w-24 flex-shrink-0 text-sm text-gray-500 dark:text-gray-400 ${className || ''}`}>
+        <div className={`w-24 shrink-0 text-sm text-gray-500 dark:text-gray-400 ${className || ''}`}>
             {children}
         </div>
     );

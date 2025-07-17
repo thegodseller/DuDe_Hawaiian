@@ -21,6 +21,8 @@ import {
   ToolManagementPanel,
 } from './MCPServersCommon';
 import { BillingUpgradeModal } from '@/components/common/billing-upgrade-modal';
+import { AuthTokenModal } from './AuthTokenModal';
+import { SERVER_URL_PARAMS } from '@/app/lib/constants/klavis';
 
 type McpServerType = z.infer<typeof MCPServer>;
 type McpToolType = z.infer<typeof MCPServer>['tools'][number];
@@ -140,6 +142,8 @@ export function HostedServers({ onSwitchTab }: HostedServersProps) {
   const [serverToolCounts, setServerToolCounts] = useState<Map<string, number>>(new Map());
   const [syncingServers, setSyncingServers] = useState<Set<string>>(new Set());
   const [billingError, setBillingError] = useState<string | null>(null);
+  const [showAuthTokenModal, setShowAuthTokenModal] = useState(false);
+  const [selectedServerForAuth, setSelectedServerForAuth] = useState<McpServerType | null>(null);
 
   const fetchServers = useCallback(async () => {
     try {
@@ -362,63 +366,74 @@ export function HostedServers({ onSwitchTab }: HostedServersProps) {
       if (!server.instanceId) {
         throw new Error('Server instance ID not found');
       }
-      const authUrl = await generateServerAuthUrl(server.name, projectId, server.instanceId);
-      const authWindow = window.open(
-        authUrl,
-        '_blank',
-        'width=600,height=700'
-      );
 
-      if (authWindow) {
-        const checkInterval = setInterval(async () => {
-          if (authWindow.closed) {
-            clearInterval(checkInterval);
-            
-            try {
-              setServerOperations(prev => {
-                const next = new Map(prev);
-                next.set(server.name, 'checking-auth');
-                return next;
-              });
+      // Check if this server uses OAuth (in SERVER_URL_PARAMS) or auth token
+      const usesOAuth = SERVER_URL_PARAMS[server.name];
+      
+      if (usesOAuth) {
+        // Use existing OAuth flow
+        const authUrl = await generateServerAuthUrl(server.name, projectId, server.instanceId);
+        const authWindow = window.open(
+          authUrl,
+          '_blank',
+          'width=600,height=700'
+        );
+
+        if (authWindow) {
+          const checkInterval = setInterval(async () => {
+            if (authWindow.closed) {
+              clearInterval(checkInterval);
               
-              await updateProjectServers(projectId, server.name);
-              
-              const response = await listAvailableMcpServers(projectId);
-              if (response.data) {
-                const updatedServer = response.data.find(us => us.name === server.name);
-                if (updatedServer) {
-                  setServers(prevServers => {
-                    return prevServers.map(s => {
-                      if (s.name === server.name) {
-                        return { ...updatedServer, serverType: 'hosted' as const };
-                      }
-                      return s;
+              try {
+                setServerOperations(prev => {
+                  const next = new Map(prev);
+                  next.set(server.name, 'checking-auth');
+                  return next;
+                });
+                
+                await updateProjectServers(projectId, server.name);
+                
+                const response = await listAvailableMcpServers(projectId);
+                if (response.data) {
+                  const updatedServer = response.data.find(us => us.name === server.name);
+                  if (updatedServer) {
+                    setServers(prevServers => {
+                      return prevServers.map(s => {
+                        if (s.name === server.name) {
+                          return { ...updatedServer, serverType: 'hosted' as const };
+                        }
+                        return s;
+                      });
                     });
-                  });
 
-                  if (selectedServer?.name === server.name) {
-                    setSelectedServer({ ...updatedServer, serverType: 'hosted' as const });
-                  }
+                    if (selectedServer?.name === server.name) {
+                      setSelectedServer({ ...updatedServer, serverType: 'hosted' as const });
+                    }
 
-                  if (!server.authNeeded || updatedServer.isAuthenticated) {
-                    await handleSyncServer(updatedServer);
+                    if (!server.authNeeded || updatedServer.isAuthenticated) {
+                      await handleSyncServer(updatedServer);
+                    }
                   }
                 }
+              } finally {
+                setServerOperations(prev => {
+                  const next = new Map(prev);
+                  next.delete(server.name);
+                  return next;
+                });
               }
-            } finally {
-              setServerOperations(prev => {
-                const next = new Map(prev);
-                next.delete(server.name);
-                return next;
-              });
             }
-          }
-        }, 500);
+          }, 500);
+        } else {
+          window.alert('Failed to open authentication window. Please check your popup blocker settings.');
+        }
       } else {
-        window.alert('Failed to open authentication window. Please check your popup blocker settings.');
+        // Use auth token modal
+        setSelectedServerForAuth(server);
+        setShowAuthTokenModal(true);
       }
     } catch (error) {
-      console.error('[Auth] Error initiating OAuth:', error);
+      console.error('[Auth] Error initiating authentication:', error);
       window.alert('Failed to setup authentication');
     }
   };
@@ -515,6 +530,49 @@ export function HostedServers({ onSwitchTab }: HostedServersProps) {
     }
   };
 
+  const handleAuthTokenSuccess = async () => {
+    if (!selectedServerForAuth) return;
+    
+    try {
+      setServerOperations(prev => {
+        const next = new Map(prev);
+        next.set(selectedServerForAuth.name, 'checking-auth');
+        return next;
+      });
+      
+      await updateProjectServers(projectId, selectedServerForAuth.name);
+      
+      const response = await listAvailableMcpServers(projectId);
+      if (response.data) {
+        const updatedServer = response.data.find(us => us.name === selectedServerForAuth.name);
+        if (updatedServer) {
+          setServers(prevServers => {
+            return prevServers.map(s => {
+              if (s.name === selectedServerForAuth.name) {
+                return { ...updatedServer, serverType: 'hosted' as const };
+              }
+              return s;
+            });
+          });
+
+          if (selectedServer?.name === selectedServerForAuth.name) {
+            setSelectedServer({ ...updatedServer, serverType: 'hosted' as const });
+          }
+
+          if (!selectedServerForAuth.authNeeded || updatedServer.isAuthenticated) {
+            await handleSyncServer(updatedServer);
+          }
+        }
+      }
+    } finally {
+      setServerOperations(prev => {
+        const next = new Map(prev);
+        next.delete(selectedServerForAuth.name);
+        return next;
+      });
+    }
+  };
+
   const filteredServers = sortServers(servers.filter(server => {
     const searchLower = searchQuery.toLowerCase();
     const serverTools = server.tools || [];
@@ -578,7 +636,7 @@ export function HostedServers({ onSwitchTab }: HostedServersProps) {
     <div className="space-y-6">
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-4">
         <div className="flex gap-3">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <p className="text-sm text-blue-700 dark:text-blue-300">
@@ -712,6 +770,16 @@ export function HostedServers({ onSwitchTab }: HostedServersProps) {
         isOpen={!!billingError}
         onClose={() => setBillingError(null)}
         errorMessage={billingError || ''}
+      />
+
+      <AuthTokenModal
+        isOpen={showAuthTokenModal}
+        onClose={() => {
+          setShowAuthTokenModal(false);
+          setSelectedServerForAuth(null);
+        }}
+        server={selectedServerForAuth}
+        onSuccess={handleAuthTokenSuccess}
       />
     </div>
   );

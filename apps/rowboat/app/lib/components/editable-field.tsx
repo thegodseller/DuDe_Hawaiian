@@ -7,6 +7,8 @@ import { Label } from "./label";
 import dynamic from "next/dynamic";
 import { Match } from "./mentions_editor";
 import { SparklesIcon } from "lucide-react";
+import { EntitySelectionContext } from "../../projects/[projectId]/workflow/workflow_editor";
+import { useContext } from "react";
 const MentionsEditor = dynamic(() => import('./mentions_editor'), { ssr: false });
 
 interface EditableFieldProps {
@@ -30,6 +32,7 @@ interface EditableFieldProps {
         show: boolean;
         setShow: (show: boolean) => void;
     };
+    onMentionNavigate?: (type: 'agent' | 'tool' | 'prompt', name: string) => void;
 }
 
 export function EditableField({
@@ -50,10 +53,14 @@ export function EditableField({
     error,
     inline = false,
     showGenerateButton,
+    onMentionNavigate,
 }: EditableFieldProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [localValue, setLocalValue] = useState(value);
     const ref = useRef<HTMLDivElement>(null);
+
+    // Use the context directly, will be undefined if not in provider
+    const entitySelection = useContext(EntitySelectionContext);
 
     const validationResult = validate?.(localValue);
     const isValid = !validate || validationResult?.valid;
@@ -71,6 +78,14 @@ export function EditableField({
             }
         }
         setIsEditing(false);
+    });
+
+    const handleMentionNavigate = onMentionNavigate || ((type, name) => {
+        if (entitySelection) {
+            if (type === 'agent') entitySelection.onSelectAgent(name);
+            else if (type === 'tool') entitySelection.onSelectTool(name);
+            else if (type === 'prompt') entitySelection.onSelectPrompt(name);
+        }
     });
 
     const commonProps = {
@@ -178,19 +193,19 @@ export function EditableField({
                     {...commonProps}
                     minRows={3}
                     maxRows={20}
-                    className="w-full"
+                    className="w-full text-sm focus-visible:ring-0 focus:ring-0 outline-none"
                     classNames={{
                         ...commonProps.classNames,
-                        input: "rounded-md py-2",
+                        input: "rounded-md py-2 text-base focus-visible:ring-0 focus:ring-0 outline-none",
                         inputWrapper: "rounded-md border-medium py-1"
                     }}
                 />}
                 {!multiline && <Input 
                     {...commonProps} 
-                    className="w-full"
+                    className="w-full text-sm focus-visible:ring-0 focus:ring-0 outline-none"
                     classNames={{
                         ...commonProps.classNames,
-                        input: clsx("rounded-md py-2", {
+                        input: clsx("rounded-md py-2 text-base focus-visible:ring-0 focus:ring-0 outline-none", {
                             "border-0 focus:outline-none pl-2": inline
                         }),
                         inputWrapper: clsx("rounded-md border-medium py-1", {
@@ -221,8 +236,10 @@ export function EditableField({
             )}
             <div
                 className={clsx(
+                    "rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 min-h-[40px] text-sm",
                     {
-                        "border border-gray-300 dark:border-gray-600 rounded px-3 py-3": !inline,
+                        "whitespace-pre-wrap": multiline,
+                        "flex items-center": !multiline,
                         "bg-transparent focus:outline-none focus:ring-0 border-0 rounded-none text-gray-900 dark:text-gray-100": inline,
                     }
                 )}
@@ -236,10 +253,10 @@ export function EditableField({
                 {value ? (
                     <>
                         {markdown && <div>
-                            <MarkdownContent content={value} atValues={mentionsAtValues} />
+                            <MarkdownContent content={value} atValues={mentionsAtValues} onMentionNavigate={handleMentionNavigate} />
                         </div>}
                         {!markdown && <div className={multiline ? 'whitespace-pre-wrap' : 'flex items-center'}>
-                            <MarkdownContent content={value} atValues={mentionsAtValues} />
+                            <MarkdownContent content={value} atValues={mentionsAtValues} onMentionNavigate={handleMentionNavigate} />
                         </div>}
                     </>
                 ) : (

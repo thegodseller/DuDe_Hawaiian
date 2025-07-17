@@ -1,23 +1,21 @@
 'use client';
-import { TypewriterEffect } from "./lib/components/typewriter";
 import Image from 'next/image';
 import logo from "@/public/logo.png";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@heroui/react";
-import { LogInIcon } from "lucide-react";
 
 export function App() {
     const router = useRouter();
-    const { user, error, isLoading } = useUser();
+    const { user, isLoading } = useUser();
 
     if (user) {
         router.push("/projects");
     }
 
     // Add auto-redirect for non-authenticated users
-    if (!isLoading && !user && !error) {
-        router.push("/api/auth/login");
+    if (!isLoading && !user) {
+        router.push("/auth/login");
     }
 
     return (
@@ -30,8 +28,7 @@ export function App() {
                         alt="RowBoat Logo"
                         height={40}
                     />
-                    {(isLoading || (!user && !error)) && <Spinner size="sm" />}
-                    {error && <div className="text-red-500">{error.message}</div>}
+                    {(isLoading || !user) && <Spinner size="sm" />}
                     {user && <div className="flex items-center gap-2">
                         <Spinner size="sm" />
                         <div className="text-sm text-gray-400">Welcome, {user.name}</div>

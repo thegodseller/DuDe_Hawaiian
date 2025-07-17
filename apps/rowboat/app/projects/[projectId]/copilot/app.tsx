@@ -14,6 +14,7 @@ import { Messages } from "./components/messages";
 import { CopyIcon, CheckIcon, PlusIcon, XIcon, InfoIcon } from "lucide-react";
 import { useCopilot } from "./use-copilot";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
+import { WithStringId } from "@/app/lib/types/types";
 
 const CopilotContext = createContext<{
     workflow: z.infer<typeof Workflow> | null;
@@ -32,7 +33,7 @@ interface AppProps {
     onCopyJson?: (data: { messages: any[] }) => void;
     onMessagesChange?: (messages: z.infer<typeof CopilotMessage>[]) => void;
     isInitialState?: boolean;
-    dataSources?: z.infer<typeof DataSource>[];
+    dataSources?: WithStringId<z.infer<typeof DataSource>>[];
 }
 
 const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message: string) => void }, AppProps>(function App({
@@ -51,13 +52,20 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
     const workflowRef = useRef(workflow);
     const startRef = useRef<any>(null);
     const cancelRef = useRef<any>(null);
+    const [statusBar, setStatusBar] = useState<any>(null);
+
+    // Always use effectiveContext for the user's current selection
+    const effectiveContext = discardContext ? null : chatContext;
+
+    // Context locking state
+    const [lockedContext, setLockedContext] = useState<any>(effectiveContext);
+    const [pendingContext, setPendingContext] = useState<any>(effectiveContext);
+    const [isStreaming, setIsStreaming] = useState(false);
 
     // Keep workflow ref up to date
     workflowRef.current = workflow;
 
-    // Get the effective context based on user preference
-    const effectiveContext = discardContext ? null : chatContext;
-
+    // Copilot streaming state
     const {
         streamingResponse,
         loading: loadingResponse,
@@ -100,13 +108,16 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
         setDiscardContext(false);
     }, [chatContext]);
 
-    function handleUserMessage(prompt: string) {
+    // Memoized handleUserMessage for useImperativeHandle and hooks
+    const handleUserMessage = useCallback((prompt: string) => {
+        // Before starting streaming, lock the context to the current pendingContext
+        setLockedContext(pendingContext);
         setMessages(currentMessages => [...currentMessages, {
             role: 'user',
             content: prompt
         }]);
         setIsLastInteracted(true);
-    }
+    }, [setMessages, setIsLastInteracted, pendingContext, setLockedContext]);
 
     // Effect for getting copilot response
     useEffect(() => {
@@ -132,6 +143,34 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
         return () => currentCancel();
     }, [messages, responseError]);
 
+    // --- CONTEXT LOCKING LOGIC ---
+    // Always update pendingContext to the latest effectiveContext
+    useEffect(() => {
+        setPendingContext(effectiveContext);
+    }, [effectiveContext]);
+
+    // Lock/unlock context based on streaming state
+    useEffect(() => {
+        if (loadingResponse) {
+            // Streaming started: lock context to the value at the start
+            setIsStreaming(true);
+            setLockedContext((prev: any) => prev ?? pendingContext); // lock to previous if already set, else to pending
+        } else {
+            // Streaming ended: update lockedContext to the last pendingContext
+            setIsStreaming(false);
+            setLockedContext(pendingContext);
+        }
+    }, [loadingResponse, pendingContext]);
+
+    // After streaming ends, update lockedContext live as effectiveContext changes
+    useEffect(() => {
+        if (!isStreaming) {
+            setLockedContext(effectiveContext);
+        }
+        // If streaming, do not update lockedContext
+    }, [effectiveContext, isStreaming]);
+    // --- END CONTEXT LOCKING LOGIC ---
+
     const handleCopyChat = useCallback(() => {
         if (onCopyJson) {
             onCopyJson({
@@ -143,7 +182,23 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
     useImperativeHandle(ref, () => ({
         handleCopyChat,
         handleUserMessage
-    }), [handleCopyChat]);
+    }), [handleCopyChat, handleUserMessage]);
+
+    // Memoized status bar change handler to prevent infinite update loop
+    const handleStatusBarChange = useCallback((status: any) => {
+        setStatusBar((prev: any) => {
+            // Shallow compare previous and next status
+            const next = { ...status, context: lockedContext };
+            const keys = Object.keys(next);
+            if (
+                prev &&
+                keys.every(key => prev[key] === next[key])
+            ) {
+                return prev;
+            }
+            return next;
+        });
+    }, [lockedContext]);
 
     return (
         <CopilotContext.Provider value={{ workflow: workflowRef.current, dispatch }}>
@@ -155,6 +210,7 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
                         loadingResponse={loadingResponse}
                         workflow={workflowRef.current}
                         dispatch={dispatch}
+                        onStatusBarChange={handleStatusBarChange}
                     />
                 </div>
                 <div className="shrink-0 px-1 pb-6">
@@ -180,22 +236,6 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
                             </Button>
                         </div>
                     )}
-                    {effectiveContext && <div className="flex items-start mb-2">
-                        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 text-sm px-2 py-1 rounded-sm shadow-sm">
-                            <div>
-                                {effectiveContext.type === 'chat' && "Chat"}
-                                {effectiveContext.type === 'agent' && `Agent: ${effectiveContext.name}`}
-                                {effectiveContext.type === 'tool' && `Tool: ${effectiveContext.name}`}
-                                {effectiveContext.type === 'prompt' && `Prompt: ${effectiveContext.name}`}
-                            </div>
-                            <button
-                                className="text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
-                                onClick={() => setDiscardContext(true)}
-                            >
-                                <XIcon size={16} />
-                            </button>
-                        </div>
-                    </div>}
                     <ComposeBoxCopilot
                         handleUserMessage={handleUserMessage}
                         messages={messages}
@@ -204,6 +244,7 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
                         shouldAutoFocus={isLastInteracted}
                         onFocus={() => setIsLastInteracted(true)}
                         onCancel={cancel}
+                        statusBar={statusBar || { context: lockedContext }}
                     />
                 </div>
             </div>
@@ -224,7 +265,7 @@ export const Copilot = forwardRef<{ handleUserMessage: (message: string) => void
     chatContext?: z.infer<typeof CopilotChatContext>;
     dispatch: (action: WorkflowDispatch) => void;
     isInitialState?: boolean;
-    dataSources?: z.infer<typeof DataSource>[];
+    dataSources?: WithStringId<z.infer<typeof DataSource>>[];
 }>(({
     projectId,
     workflow,
@@ -272,10 +313,10 @@ export const Copilot = forwardRef<{ handleUserMessage: (message: string) => void
                 title={
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
-                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                COPILOT
+                            <div className="font-semibold text-zinc-700 dark:text-zinc-300">
+                                Skipper
                             </div>
-                            <Tooltip content="Ask copilot to help you build and modify your workflow">
+                            <Tooltip content="A copilot to help you build and modify your workflow">
                                 <InfoIcon className="w-4 h-4 text-gray-400 cursor-help" />
                             </Tooltip>
                         </div>

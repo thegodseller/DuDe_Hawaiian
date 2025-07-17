@@ -1,5 +1,5 @@
 'use client';
-import { Project } from "@/types/project_types";
+import { Project } from "@/app/lib/types/project_types";
 import { z } from "zod";
 import { useState } from "react";
 import clsx from 'clsx';

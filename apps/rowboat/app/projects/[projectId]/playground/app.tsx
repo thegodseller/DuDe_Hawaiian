@@ -1,17 +1,16 @@
 'use client';
 import { useState, useCallback, useRef } from "react";
 import { z } from "zod";
-import { MCPServer, PlaygroundChat } from "@/app/lib/types/types";
+import { MCPServer, Message, PlaygroundChat } from "@/app/lib/types/types";
 import { Workflow, WorkflowTool } from "@/app/lib/types/workflow_types";
 import { Chat } from "./components/chat";
 import { Panel } from "@/components/common/panel-common";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@heroui/react";
-import { apiV1 } from "rowboat-shared";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { WithStringId } from "@/app/lib/types/types";
 import { ProfileSelector } from "@/app/projects/[projectId]/test/[[...slug]]/components/selectors/profile-selector";
-import { CheckIcon, CopyIcon, PlusIcon, UserIcon, InfoIcon, BugIcon, BugOffIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, PlusIcon, UserIcon, InfoIcon, BugIcon, BugOffIcon, CodeIcon } from "lucide-react";
 import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
 import { clsx } from "clsx";
 
@@ -27,16 +26,18 @@ export function App({
     isInitialState = false,
     onPanelClick,
     projectTools,
+    triggerCopilotChat,
 }: {
     hidden?: boolean;
     projectId: string;
     workflow: z.infer<typeof Workflow>;
-    messageSubscriber?: (messages: z.infer<typeof apiV1.ChatMessage>[]) => void;
+    messageSubscriber?: (messages: z.infer<typeof Message>[]) => void;
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
     toolWebhookUrl: string;
     isInitialState?: boolean;
     onPanelClick?: () => void;
     projectTools: z.infer<typeof WorkflowTool>[];
+    triggerCopilotChat?: (message: string) => void;
 }) {
     const [counter, setCounter] = useState<number>(0);
     const [testProfile, setTestProfile] = useState<WithStringId<z.infer<typeof TestProfile>> | null>(null);
@@ -102,8 +103,8 @@ export function App({
                 title={
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
-                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                PLAYGROUND
+                            <div className="font-semibold text-zinc-700 dark:text-zinc-300">
+                                Playground
                             </div>
                             <Tooltip content="Test your workflow and chat with your agents in real-time">
                                 <InfoIcon className="w-4 h-4 text-gray-400 cursor-help" />
@@ -188,6 +189,7 @@ export function App({
                         onCopyClick={(fn) => { getCopyContentRef.current = fn; }}
                         showDebugMessages={showDebugMessages}
                         projectTools={projectTools}
+                        triggerCopilotChat={triggerCopilotChat}
                     />
                 </div>
             </Panel>

@@ -23,6 +23,7 @@ export function createAtMentions({ agents, prompts, tools, currentAgentName }: C
         atMentions.push({
             id,
             value: id,
+            label: `Agent: ${a.name}`,
             denotationChar: "@",    // Add required properties for Match type
             link: id,
             target: "_self"
@@ -35,6 +36,7 @@ export function createAtMentions({ agents, prompts, tools, currentAgentName }: C
         atMentions.push({
             id,
             value: id,
+            label: `Prompt: ${prompt.name}`,
             denotationChar: "@",
             link: id,
             target: "_self"
@@ -47,6 +49,7 @@ export function createAtMentions({ agents, prompts, tools, currentAgentName }: C
         atMentions.push({
             id,
             value: id,
+            label: `Tool: ${tool.name}`,
             denotationChar: "@",
             link: id,
             target: "_self"

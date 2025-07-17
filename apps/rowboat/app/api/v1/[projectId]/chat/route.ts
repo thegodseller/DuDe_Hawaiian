@@ -4,14 +4,13 @@ import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { authCheck } from "../../utils";
 import { ApiRequest, ApiResponse } from "../../../../lib/types/types";
-import { AgenticAPIChatRequest, convertFromAgenticApiToApiMessages, convertFromApiToAgenticApiMessages, convertWorkflowToAgenticAPI } from "../../../../lib/types/agents_api_types";
-import { getAgenticApiResponse } from "../../../../lib/utils";
 import { check_query_limit } from "../../../../lib/rate_limiting";
 import { PrefixLogger } from "../../../../lib/utils";
 import { TestProfile } from "@/app/lib/types/testing_types";
-import { fetchProjectMcpTools } from "@/app/lib/project_tools";
+import { collectProjectTools } from "@/app/lib/project_tools";
 import { authorize, getCustomerIdForProject, logUsage } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
+import { getResponse } from "@/app/lib/agents";
 
 // get next turn / agent response
 export async function POST(
@@ -52,7 +51,7 @@ export async function POST(
             return Response.json({ error: `Invalid request body: ${result.error.message}` }, { status: 400 });
         }
         const reqMessages = result.data.messages;
-        const reqState = result.data.state;
+        const mockToolOverrides = result.data.mockTools;
 
         // fetch published workflow id
         const project = await projectsCollection.findOne({
@@ -64,7 +63,7 @@ export async function POST(
         }
 
         // fetch project tools
-        const projectTools = await fetchProjectMcpTools(projectId);
+        const projectTools = await collectProjectTools(projectId);
 
         // if workflow id is provided in the request, use it, else use the published workflow id
         let workflowId = result.data.workflowId ?? project.publishedWorkflowId;
@@ -80,6 +79,11 @@ export async function POST(
         if (!workflow) {
             logger.log(`Workflow ${workflowId} not found for project ${projectId}`);
             return Response.json({ error: "Workflow not found" }, { status: 404 });
+        }
+
+        // override mock instructions
+        if (mockToolOverrides) {
+            workflow.mockTools = mockToolOverrides;
         }
 
         // check billing authorization
@@ -112,34 +116,12 @@ export async function POST(
             }
         }
 
-        let currentState: unknown = reqState ?? { last_agent_name: workflow.agents[0].name };
-
         // get assistant response
-        const { agents, tools, prompts, startAgent } = convertWorkflowToAgenticAPI(workflow, projectTools);
-        const request: z.infer<typeof AgenticAPIChatRequest> = {
-            projectId,
-            messages: convertFromApiToAgenticApiMessages(reqMessages),
-            state: currentState,
-            agents,
-            tools,
-            prompts,
-            startAgent,
-            testProfile: testProfile ?? undefined,
-            mcpServers: (project.mcpServers ?? []).map(server => ({
-                name: server.name,
-                serverUrl: server.serverUrl ?? '',
-                isReady: server.isReady ?? false
-            })),
-            toolWebhookUrl: project.webhookUrl ?? '',
-        };
-
-        const { messages: agenticMessages, state } = await getAgenticApiResponse(request);
-        const newMessages = convertFromAgenticApiToApiMessages(agenticMessages);
-        const newState = state;
+        const { messages } = await getResponse(workflow, projectTools, reqMessages);
 
         // log billing usage
         if (USE_BILLING && billingCustomerId) {
-            const agentMessageCount = newMessages.filter(m => m.role === 'assistant').length;
+            const agentMessageCount = messages.filter(m => m.role === 'assistant').length;
             await logUsage(billingCustomerId, {
                 type: 'agent_messages',
                 amount: agentMessageCount,
@@ -147,8 +129,7 @@ export async function POST(
         }
 
         const responseBody: z.infer<typeof ApiResponse> = {
-            messages: newMessages,
-            state: newState,
+            messages,
         };
         return Response.json(responseBody);
     });

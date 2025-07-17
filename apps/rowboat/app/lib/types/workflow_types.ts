@@ -2,10 +2,10 @@ import { z } from "zod";
 export const WorkflowAgent = z.object({
     name: z.string(),
     order: z.number().int().optional(),
-    type: z.union([
-        z.literal('conversation'),
-        z.literal('post_process'),
-        z.literal('escalation'),
+    type: z.enum([
+        'conversation',
+        'post_process',
+        'escalation',
     ]),
     description: z.string(),
     disabled: z.boolean().default(false).optional(),
@@ -16,18 +16,22 @@ export const WorkflowAgent = z.object({
     toggleAble: z.boolean().default(true).describe('Whether this agent can be enabled or disabled').optional(),
     global: z.boolean().default(false).describe('Whether this agent is a global agent, in which case it cannot be connected to other agents').optional(),
     ragDataSources: z.array(z.string()).optional(),
-    ragReturnType: z.union([z.literal('chunks'), z.literal('content')]).default('chunks'),
+    ragReturnType: z.enum(['chunks', 'content']).default('chunks'),
     ragK: z.number().default(3),
-    outputVisibility: z.union([z.literal('user_facing'), z.literal('internal')]).default('user_facing').optional(),
-    controlType: z.union([z.literal('retain'), z.literal('relinquish_to_parent'), z.literal('relinquish_to_start')]).default('retain').describe('Whether this agent retains control after a turn, relinquishes to the parent agent, or relinquishes to the start agent'),
+    outputVisibility: z.enum(['user_facing', 'internal']).default('user_facing').optional(),
+    controlType: z.enum([
+        'retain',
+        'relinquish_to_parent',
+        'relinquish_to_start',
+    ]).default('retain').describe('Whether this agent retains control after a turn, relinquishes to the parent agent, or relinquishes to the start agent'),
     maxCallsPerParentAgent: z.number().default(3).describe('Maximum number of times this agent can be called by a parent agent in a single turn').optional(),
 });
 export const WorkflowPrompt = z.object({
     name: z.string(),
-    type: z.union([
-        z.literal('base_prompt'),
-        z.literal('style_prompt'),
-        z.literal('greeting'),
+    type: z.enum([
+        'base_prompt',
+        'style_prompt',
+        'greeting',
     ]),
     prompt: z.string(),
 });
@@ -39,34 +43,22 @@ export const WorkflowTool = z.object({
     mockInstructions: z.string().optional(),
     parameters: z.object({
         type: z.literal('object'),
-        properties: z.record(z.object({
-            type: z.string(),
-            description: z.string(),
-            enum: z.array(z.any()).optional(),
-            default: z.any().optional(),
-            minimum: z.number().optional(),
-            maximum: z.number().optional(),
-            items: z.any().optional(),  // For array types
-            format: z.string().optional(),
-            pattern: z.string().optional(),
-            minLength: z.number().optional(),
-            maxLength: z.number().optional(),
-            minItems: z.number().optional(),
-            maxItems: z.number().optional(),
-            uniqueItems: z.boolean().optional(),
-            multipleOf: z.number().optional(),
-            examples: z.array(z.any()).optional(),
-        })),
-        required: z.array(z.string()).default([]),
-    }).default({
-        type: 'object',
-        properties: {},
-        required: [],
+        properties: z.record(z.string(), z.any()),
+        required: z.array(z.string()).optional(),
+        additionalProperties: z.boolean().optional(),
     }),
     isMcp: z.boolean().default(false).optional(),
     isLibrary: z.boolean().default(false).optional(),
     mcpServerName: z.string().optional(),
     mcpServerURL: z.string().optional(),
+    isComposio: z.boolean().optional(), // whether this is a Composio tool
+    composioData: z.object({
+        slug: z.string(), // the slug for the Composio tool e.g. "GITHUB_CREATE_AN_ISSUE"
+        noAuth: z.boolean(), // whether the tool requires no authentication
+        toolkitName: z.string(), // the name for the Composio toolkit e.g. "GITHUB"
+        toolkitSlug: z.string(), // the slug for the Composio toolkit e.g. "GITHUB"
+        logo: z.string(), // the logo for the Composio tool
+    }).optional(), // the data for the Composio tool, if it is a Composio tool
 });
 export const Workflow = z.object({
     name: z.string().optional(),
@@ -77,6 +69,7 @@ export const Workflow = z.object({
     createdAt: z.string().datetime(),
     lastUpdatedAt: z.string().datetime(),
     projectId: z.string(),
+    mockTools: z.record(z.string(), z.string()).optional(), // a dict of toolName => mockInstructions
 });
 export const WorkflowTemplate = Workflow
     .omit({
@@ -90,7 +83,7 @@ export const WorkflowTemplate = Workflow
     });
 
 export const ConnectedEntity = z.object({
-    type: z.union([z.literal('tool'), z.literal('prompt'), z.literal('agent')]),
+    type: z.enum(['tool', 'prompt', 'agent']),
     name: z.string(),
 });
 

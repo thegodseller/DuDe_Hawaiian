@@ -1,3 +1,5 @@
+@import "../../globals.css";
+
 /* Target both edit mode and view mode mentions */
 .mention,
 .ql-editor p span[class*="bg-[#e"],  /* Matches both #e8f2fe and #e0f2fe */
@@ -15,12 +17,12 @@ span[class*="bg-[#e"] {  /* For view mode */
 }
 
 /* Handle Next.js dark mode class if needed */
-:global(.dark) .mention,
+/* :global(.dark) .mention,
 :global(.dark) .ql-editor p span[class*="bg-[#e"],
 :global(.dark) span[class*="bg-[#e"] {
     background-color: rgb(31 41 55) !important;
     color: rgb(243 244 246) !important;
-}
+} */
 
 /* Override the inline styles */
 .ql-editor p span[class*="bg-[#e0f2fe]"],

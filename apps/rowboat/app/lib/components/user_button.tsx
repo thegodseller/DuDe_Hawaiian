@@ -1,5 +1,5 @@
 'use client';
-import { useUser } from '@auth0/nextjs-auth0/client';
+import { useUser } from '@auth0/nextjs-auth0';
 import { Avatar, Dropdown, DropdownItem, DropdownSection, DropdownTrigger, DropdownMenu } from "@heroui/react";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -24,7 +24,7 @@ export function UserButton({ useBilling }: { useBilling?: boolean }) {
         <DropdownMenu
             onAction={(key) => {
                 if (key === 'logout') {
-                    router.push('/api/auth/logout');
+                    router.push('/auth/logout');
                 }
                 if (key === 'billing') {
                     router.push('/billing');

@@ -11,6 +11,7 @@ export type Match = {
     id: string;
     value: string;
     invalid?: boolean;
+    label?: string;
     [key: string]: string | boolean | undefined;
 };
 
@@ -18,7 +19,7 @@ class CustomMentionBlot extends MentionBlot {
     static render(data: any) {
         const element = document.createElement('span');
         element.className = data.invalid ? 'invalid' : '';
-        element.textContent = data.invalid ? `${data.value} (!)` : data.value;
+        element.textContent = data.invalid ? `${data.label || data.value} (!)` : (data.label || data.value);
         return element;
     }
 }
@@ -154,7 +155,7 @@ export default function MentionEditor({
                         renderItem: (item: Match) => {
                             const div = document.createElement('div');
                             div.className = "px-2 py-1 bg-white text-blue-800 hover:bg-blue-100 cursor-pointer";
-                            div.textContent = item.id;
+                            div.textContent = item.label || item.id;
                             return div;
                         },
                     }

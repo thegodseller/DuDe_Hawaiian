@@ -1,5 +1,5 @@
 "use server";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "../lib/auth0";
 import { USE_AUTH } from "../lib/feature_flags";
 import { WithStringId, User } from "../lib/types/types";
 import { getUserFromSessionId, GUEST_DB_USER } from "../lib/auth";
@@ -12,7 +12,7 @@ export async function authCheck(): Promise<WithStringId<z.infer<typeof User>>> {
         return GUEST_DB_USER;
     }
 
-    const { user } = await getSession() || {};
+    const { user } = await auth0.getSession() || {};
     if (!user) {
         throw new Error('User not authenticated');
     }

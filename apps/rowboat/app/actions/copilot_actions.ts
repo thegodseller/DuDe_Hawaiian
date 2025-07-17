@@ -1,147 +1,29 @@
 'use server';
 import { 
-    convertToCopilotWorkflow, convertToCopilotMessage, convertToCopilotApiMessage,
-    convertToCopilotApiChatContext, CopilotAPIResponse, CopilotAPIRequest,
-    CopilotChatContext, CopilotMessage, CopilotAssistantMessage, CopilotWorkflow,
-    CopilotDataSource
+    CopilotAPIRequest,
+    CopilotChatContext, CopilotMessage,
 } from "../lib/types/copilot_types";
 import { 
     Workflow} from "../lib/types/workflow_types";
 import { DataSource } from "../lib/types/datasource_types";
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
-import { assert } from "node:console";
 import { check_query_limit } from "../lib/rate_limiting";
-import { QueryLimitError, validateConfigChanges } from "../lib/client_utils";
+import { QueryLimitError } from "../lib/client_utils";
 import { projectAuthCheck } from "./project_actions";
 import { redisClient } from "../lib/redis";
-import { fetchProjectMcpTools } from "../lib/project_tools";
+import { collectProjectTools } from "../lib/project_tools";
 import { mergeProjectTools } from "../lib/types/project_types";
 import { authorizeUserAction, logUsage } from "./billing_actions";
 import { USE_BILLING } from "../lib/feature_flags";
-
-export async function getCopilotResponse(
-    projectId: string,
-    messages: z.infer<typeof CopilotMessage>[],
-    current_workflow_config: z.infer<typeof Workflow>,
-    context: z.infer<typeof CopilotChatContext> | null,
-    dataSources?: z.infer<typeof DataSource>[]
-): Promise<{
-    message: z.infer<typeof CopilotAssistantMessage>;
-    rawRequest: unknown;
-    rawResponse: unknown;
-} | { billingError: string }> {
-    await projectAuthCheck(projectId);
-    if (!await check_query_limit(projectId)) {
-        throw new QueryLimitError();
-    }
-
-    // Check billing authorization
-    const authResponse = await authorizeUserAction({
-        type: 'copilot_request',
-        data: {},
-    });
-    if (!authResponse.success) {
-        return { billingError: authResponse.error || 'Billing error' };
-    }
-
-    // Get MCP tools from project and merge with workflow tools
-    const mcpTools = await fetchProjectMcpTools(projectId);
-    
-    // Convert workflow to copilot format with both workflow and project tools
-    const copilotWorkflow = convertToCopilotWorkflow({
-        ...current_workflow_config,
-        tools: await mergeProjectTools(current_workflow_config.tools, mcpTools)
-    });
-
-    // prepare request
-    const request: z.infer<typeof CopilotAPIRequest> = {
-        projectId: projectId,
-        messages: messages.map(convertToCopilotApiMessage),
-        workflow_schema: JSON.stringify(zodToJsonSchema(CopilotWorkflow)),
-        current_workflow_config: JSON.stringify(copilotWorkflow),
-        context: context ? convertToCopilotApiChatContext(context) : null,
-        dataSources: dataSources ? dataSources.map(ds => {
-            console.log('Original data source:', JSON.stringify(ds));
-            // First parse to validate, then ensure _id is included
-            CopilotDataSource.parse(ds); // validate but don't use the result
-            // Cast to any to handle the WithStringId type
-            const withId = ds as any;
-            const result = {
-                _id: withId._id,
-                name: withId.name,
-                description: withId.description,
-                active: withId.active,
-                status: withId.status,
-                error: withId.error,
-                data: withId.data
-            };
-            console.log('Processed data source:', JSON.stringify(result));
-            return result;
-        }) : undefined,
-    };
-    console.log(`sending copilot request`, JSON.stringify(request));
-
-    // call copilot api
-    const response = await fetch(process.env.COPILOT_API_URL + '/chat', {
-        method: 'POST',
-        body: JSON.stringify(request),
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.COPILOT_API_KEY || 'test'}`,
-        },
-    });
-    if (!response.ok) {
-        console.error('Failed to call copilot api', response);
-        throw new Error(`Failed to call copilot api: ${response.statusText}`);
-    }
-
-    // parse and return response
-    const json: z.infer<typeof CopilotAPIResponse> = await response.json();
-    console.log(`received copilot response`, JSON.stringify(json));
-    if ('error' in json) {
-        throw new Error(`Failed to call copilot api: ${json.error}`);
-    }
-    // remove leading ```json and trailing ```
-    const msg = convertToCopilotMessage({
-        role: 'assistant',
-        content: json.response.replace(/^```json\n/, '').replace(/\n```$/, ''),
-    });
-
-    // validate response schema
-    assert(msg.role === 'assistant');
-    if (msg.role === 'assistant') {
-        const content = JSON.parse(msg.content);
-        for (const part of content.response) {
-            if (part.type === 'action') {
-                const result = validateConfigChanges(
-                    part.content.config_type,
-                    part.content.config_changes,
-                    part.content.name
-                );
-                
-                if ('error' in result) {
-                    part.content.error = result.error;
-                } else {
-                    part.content.config_changes = result.changes;
-                }
-            }
-        }
-    }
-
-    return {
-        message: msg as z.infer<typeof CopilotAssistantMessage>,
-        rawRequest: request,
-        rawResponse: json,
-    };
-}
+import { WithStringId } from "../lib/types/types";
+import { getEditAgentInstructionsResponse } from "../lib/copilot/copilot";
 
 export async function getCopilotResponseStream(
     projectId: string,
     messages: z.infer<typeof CopilotMessage>[],
     current_workflow_config: z.infer<typeof Workflow>,
     context: z.infer<typeof CopilotChatContext> | null,
-    dataSources?: z.infer<typeof DataSource>[]
+    dataSources?: WithStringId<z.infer<typeof DataSource>>[]
 ): Promise<{
     streamId: string;
 } | { billingError: string }> {
@@ -164,22 +46,21 @@ export async function getCopilotResponseStream(
     }
 
     // Get MCP tools from project and merge with workflow tools
-    const mcpTools = await fetchProjectMcpTools(projectId);
+    const projectTools = await collectProjectTools(projectId);
     
     // Convert workflow to copilot format with both workflow and project tools
-    const copilotWorkflow = convertToCopilotWorkflow({
+    const wflow = {
         ...current_workflow_config,
-        tools: await mergeProjectTools(current_workflow_config.tools, mcpTools)
-    });
+        tools: mergeProjectTools(current_workflow_config.tools, projectTools)
+    };
 
     // prepare request
     const request: z.infer<typeof CopilotAPIRequest> = {
-        projectId: projectId,
-        messages: messages.map(convertToCopilotApiMessage),
-        workflow_schema: JSON.stringify(zodToJsonSchema(CopilotWorkflow)),
-        current_workflow_config: JSON.stringify(copilotWorkflow),
-        context: context ? convertToCopilotApiChatContext(context) : null,
-        dataSources: dataSources ? dataSources.map(ds => CopilotDataSource.parse(ds)) : undefined,
+        projectId,
+        messages,
+        workflow: wflow,
+        context,
+        dataSources: dataSources,
     };
 
     // serialize the request
@@ -189,9 +70,7 @@ export async function getCopilotResponseStream(
     const streamId = crypto.randomUUID();
 
     // store payload in redis
-    await redisClient.set(`copilot-stream-${streamId}`, payload, {
-        EX: 60 * 10, // expire in 10 minutes
-    });
+    await redisClient.set(`copilot-stream-${streamId}`, payload, 'EX', 60 * 10); // expire in 10 minutes
 
     return {
         streamId,
@@ -219,59 +98,32 @@ export async function getCopilotAgentInstructions(
     }
 
     // Get MCP tools from project and merge with workflow tools
-    const mcpTools = await fetchProjectMcpTools(projectId);
+    const projectTools = await collectProjectTools(projectId);
     
     // Convert workflow to copilot format with both workflow and project tools
-    const copilotWorkflow = convertToCopilotWorkflow({
+    const wflow = {
         ...current_workflow_config,
-        tools: await mergeProjectTools(current_workflow_config.tools, mcpTools)
-    });
+        tools: mergeProjectTools(current_workflow_config.tools, projectTools)
+    };
 
     // prepare request
     const request: z.infer<typeof CopilotAPIRequest> = {
-        projectId: projectId,
-        messages: messages.map(convertToCopilotApiMessage),
-        workflow_schema: JSON.stringify(zodToJsonSchema(CopilotWorkflow)),
-        current_workflow_config: JSON.stringify(copilotWorkflow),
+        projectId,
+        messages,
+        workflow: wflow,
         context: {
             type: 'agent',
-            agentName: agentName,
+            name: agentName,
         }
     };
-    console.log(`sending copilot agent instructions request`, JSON.stringify(request));
 
     // call copilot api
-    const response = await fetch(process.env.COPILOT_API_URL + '/edit_agent_instructions', {
-        method: 'POST',
-        body: JSON.stringify(request),
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.COPILOT_API_KEY || 'test'}`,
-        },
-    });
-    if (!response.ok) {
-        console.error('Failed to call copilot api', response);
-        throw new Error(`Failed to call copilot api: ${response.statusText}`);
-    }
-
-    // parse and return response
-    const json = await response.json();
-
-    console.log(`received copilot agent instructions response`, JSON.stringify(json));
-    let copilotResponse: z.infer<typeof CopilotAPIResponse>;
-    let agent_instructions: string;
-    try {
-        copilotResponse = CopilotAPIResponse.parse(json);
-        const content = json.response.replace(/^```json\n/, '').replace(/\n```$/, '');
-        agent_instructions = JSON.parse(content).agent_instructions;
-
-    } catch (e) {
-        console.error('Failed to parse copilot response', e);
-        throw new Error(`Failed to parse copilot response: ${e}`);
-    }
-    if ('error' in copilotResponse) {
-        throw new Error(`Failed to call copilot api: ${copilotResponse.error}`);
-    }
+    const agent_instructions = await getEditAgentInstructionsResponse(
+        projectId,
+        request.context,
+        request.messages,
+        request.workflow,
+    );
 
     // log the billing usage
     if (USE_BILLING) {

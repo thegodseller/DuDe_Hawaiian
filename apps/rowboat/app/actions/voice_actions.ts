@@ -5,6 +5,8 @@ import { twilioConfigsCollection } from "../lib/mongodb";
 import { ObjectId } from "mongodb";
 import twilio from 'twilio';
 import { Twilio } from 'twilio';
+import { z } from "zod";
+import { WithStringId } from "../lib/types/types";
 
 // Helper function to serialize MongoDB documents
 function serializeConfig(config: any) {
@@ -16,7 +18,7 @@ function serializeConfig(config: any) {
 }
 
 // Real implementation for configuring Twilio number
-export async function configureTwilioNumber(params: TwilioConfigParams): Promise<TwilioConfigResponse> {
+export async function configureTwilioNumber(params: z.infer<typeof TwilioConfigParams>): Promise<TwilioConfigResponse> {
     console.log('configureTwilioNumber - Received params:', params);
     try {
         const client = twilio(params.account_sid, params.auth_token);
@@ -56,7 +58,7 @@ export async function configureTwilioNumber(params: TwilioConfigParams): Promise
 }
 
 // Save Twilio configuration to MongoDB
-export async function saveTwilioConfig(params: TwilioConfigParams): Promise<TwilioConfig> {
+async function saveTwilioConfig(params: z.infer<typeof TwilioConfigParams>): Promise<z.infer<typeof TwilioConfig>> {
     console.log('saveTwilioConfig - Incoming params:', {
         ...params,
         label: {
@@ -140,7 +142,7 @@ export async function saveTwilioConfig(params: TwilioConfigParams): Promise<Twil
 }
 
 // Get Twilio configuration for a workflow
-export async function getTwilioConfigs(projectId: string) {
+export async function getTwilioConfigs(projectId: string): Promise<WithStringId<z.infer<typeof TwilioConfig>>[]> {
     console.log('getTwilioConfigs - Fetching for projectId:', projectId);
     const configs = await twilioConfigsCollection
         .find({ 
@@ -174,13 +176,13 @@ export async function deleteTwilioConfig(projectId: string, configId: string) {
 }
 
 // Mock implementation for testing/development
-export async function mockConfigureTwilioNumber(params: TwilioConfigParams): Promise<TwilioConfigResponse> {
+export async function mockConfigureTwilioNumber(params: z.infer<typeof TwilioConfigParams>): Promise<TwilioConfigResponse> {
     await new Promise(resolve => setTimeout(resolve, 1000));
     await saveTwilioConfig(params);
     return { success: true };
 }
 
-export async function configureInboundCall(
+async function configureInboundCall(
     phone_number: string,
     account_sid: string,
     auth_token: string,
@@ -228,7 +230,7 @@ export async function configureInboundCall(
             throw new Error('Voice service must use a public URL, not localhost.');
         }
 
-        const inboundUrl = `${baseUrl}/inbound?workflow_id=${workflow_id}`;
+        const inboundUrl = `${baseUrl}/api/twilio/inbound_call`;
         console.log('Setting up webhooks:', {
             voiceUrl: inboundUrl,
             statusCallback: `${baseUrl}/call-status`,

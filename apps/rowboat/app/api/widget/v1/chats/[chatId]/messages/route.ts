@@ -6,10 +6,8 @@ import { Filter, ObjectId } from "mongodb";
 import { authCheck } from "../../../utils";
 
 // list messages
-export async function GET(
-    req: NextRequest,
-    { params }: { params: { chatId: string } }
-): Promise<Response> {
+export async function GET(req: NextRequest, props: { params: Promise<{ chatId: string }> }): Promise<Response> {
+    const params = await props.params;
     return await authCheck(req, async (session) => {
         const { chatId } = params;
 

@@ -2,12 +2,16 @@
 import { WorkflowTool } from "../../../lib/types/workflow_types";
 import { Checkbox, Select, SelectItem, RadioGroup, Radio } from "@heroui/react";
 import { z } from "zod";
-import { ImportIcon, XIcon, PlusIcon, FolderIcon } from "lucide-react";
+import { ImportIcon, XIcon, PlusIcon, FolderIcon} from "lucide-react";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/common/panel-common";
 import { Button } from "@/components/ui/button";
 import clsx from "clsx";
+import { SectionCard } from "@/components/common/section-card";
+import { ToolParamCard } from "@/components/common/tool-param-card";
+import { UserIcon, Settings, Settings2 } from "lucide-react";
+import { EditableField } from "@/app/lib/components/editable-field";
 
 // Update textarea styles with improved states
 const textareaStyles = "rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500";
@@ -16,7 +20,7 @@ const textareaStyles = "rounded-lg p-3 border border-gray-200 dark:border-gray-7
 const dividerStyles = "border-t border-gray-200 dark:border-gray-800";
 
 // Common section header styles
-const sectionHeaderStyles = "text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400";
+const sectionHeaderStyles = "block text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400";
 
 export function ParameterConfig({
     param,
@@ -170,7 +174,7 @@ export function ToolConfig({
     });
 
     const [selectedParams, setSelectedParams] = useState(new Set([]));
-    const isReadOnly = tool.isMcp || tool.isLibrary;
+    const isReadOnly = tool.isMcp || tool.isLibrary || tool.isComposio;
     const [nameError, setNameError] = useState<string | null>(null);
 
     // Log when parameters are being rendered
@@ -256,6 +260,9 @@ export function ToolConfig({
         if (value.length === 0) {
             return "Name cannot be empty";
         }
+        if (value !== tool.name && usedToolNames.has(value)) {
+            return "This name is already taken";
+        }
         return null;
     }
 
@@ -297,23 +304,23 @@ export function ToolConfig({
     };
 
     return (
-        <Panel 
+        <Panel
             title={
                 <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-3">
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <div className="text-base font-semibold text-gray-900 dark:text-gray-100">
                             {tool.name}
                         </div>
                         {tool.isMcp && (
-                            <div className="flex items-center gap-2 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
+                            <div className="flex items-center gap-2 text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
                                 <ImportIcon className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-                                <span className="text-xs">MCP: {tool.mcpServerName}</span>
+                                <span>MCP: {tool.mcpServerName}</span>
                             </div>
                         )}
                         {tool.isLibrary && (
-                            <div className="flex items-center gap-2 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
+                            <div className="flex items-center gap-2 text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
                                 <FolderIcon className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-                                <span className="text-xs">Library Tool</span>
+                                <span>Library Tool</span>
                             </div>
                         )}
                     </div>
@@ -329,114 +336,115 @@ export function ToolConfig({
                 </div>
             }
         >
-            <div className="flex flex-col gap-6 p-4">
-                {!isReadOnly && (
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <label className={sectionHeaderStyles}>
-                                Name
-                            </label>
-                            <div className={clsx(
-                                "border rounded-lg focus-within:ring-2",
-                                nameError 
-                                    ? "border-red-500 focus-within:ring-red-500/20" 
-                                    : "border-gray-200 dark:border-gray-700 focus-within:ring-indigo-500/20 dark:focus-within:ring-indigo-400/20"
-                            )}>
-                                <Textarea
+            <div className="flex flex-col gap-4 pb-4 pt-4 p-4">
+                {/* Identity Section */}
+                <SectionCard
+                    icon={<UserIcon className="w-5 h-5 text-indigo-500" />}
+                    title="Identity"
+                    labelWidth="md:w-32"
+                    className="mb-1"
+                >
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
+                            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Name</label>
+                            <div className="flex-1">
+                                <EditableField
                                     value={tool.name}
-                                    useValidation={true}
-                                    updateOnBlur={true}
+                                    onChange={(value) => {
+                                        setNameError(validateToolName(value));
+                                        if (!validateToolName(value)) {
+                                            handleUpdate({
+                                                ...tool,
+                                                name: value
+                                            });
+                                        }
+                                    }}
                                     validate={(value) => {
                                         const error = validateToolName(value);
                                         setNameError(error);
                                         return { valid: !error, errorMessage: error || undefined };
                                     }}
-                                    onValidatedChange={(value) => {
-                                        handleUpdate({
-                                            ...tool,
-                                            name: value
-                                        });
-                                    }}
-                                    placeholder="Enter tool name..."
-                                    className="w-full text-sm bg-transparent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors px-4 py-3"
-                                    autoResize
+                                    showSaveButton={true}
+                                    showDiscardButton={true}
+                                    error={nameError}
+                                    className="w-full"
                                 />
                             </div>
-                            {nameError && (
-                                <p className="text-sm text-red-500">{nameError}</p>
-                            )}
+                        </div>
+                        <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
+                            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Description</label>
+                            <div className="flex-1">
+                                <EditableField
+                                    value={tool.description || ""}
+                                    onChange={(value) => handleUpdate({ ...tool, description: value })}
+                                    multiline={true}
+                                    placeholder="Describe what this tool does..."
+                                    className="w-full"
+                                />
+                            </div>
                         </div>
                     </div>
-                )}
-
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <label className={sectionHeaderStyles}>
-                            Description
-                        </label>
-                        <Textarea
-                            value={tool.description}
-                            onChange={(e) => handleUpdate({
-                                ...tool,
-                                description: e.target.value
-                            })}
-                            placeholder="Describe what this tool does..."
-                            disabled={isReadOnly}
-                            className={textareaStyles}
-                            autoResize
-                        />
-                    </div>
-                </div>
-
-                {!isReadOnly && (
-                    <div className="space-y-4">
-                        <label className={sectionHeaderStyles}>
-                            Tool Mode
-                        </label>
-                        
-                        <RadioGroup
-                            defaultValue="mock"
-                            value={tool.mockTool ? "mock" : "api"}
-                            onValueChange={(value) => handleUpdate({
-                                ...tool,
-                                mockTool: value === "mock",
-                                autoSubmitMockedResponse: value === "mock" ? true : undefined
-                            })}
-                            orientation="horizontal"
-                            classNames={{
-                                wrapper: "flex gap-12 pl-3",
-                                label: "text-sm"
-                            }}
-                        >
-                            <Radio 
-                                value="mock"
-                                classNames={{
-                                    base: "p-0 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-950/50 rounded-lg transition-colors",
-                                    label: "text-base font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
-                                }}
-                            >
-                                Mock tool responses
-                            </Radio>
-                            <Radio 
-                                value="api"
-                                classNames={{
-                                    base: "p-0 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-900/50 rounded-lg transition-colors",
-                                    label: "text-base font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
-                                }}
-                            >
-                                Connect tool to your API
-                            </Radio>
-                        </RadioGroup>
-                    </div>
-                )}
-
-                {tool.mockTool && (
-                    <div className={`space-y-4 ${dividerStyles} pt-6`}>
-                        <div className="space-y-4">
-                            <label className={sectionHeaderStyles}>
-                                Mock Settings
-                            </label>
-                            <div className="pl-3 space-y-4">
+                </SectionCard>
+                {/* Behavior Section */}
+                <SectionCard
+                    icon={<Settings className="w-5 h-5 text-indigo-500" />}
+                    title="Behavior"
+                    labelWidth="md:w-32"
+                    className="mb-1"
+                >
+                    <div className="flex flex-col gap-4">
+                        {!isReadOnly && (
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Tool Mode</label>
+                                <RadioGroup
+                                    defaultValue="mock"
+                                    value={tool.mockTool ? "mock" : "api"}
+                                    onValueChange={(value) => handleUpdate({
+                                        ...tool,
+                                        mockTool: value === "mock",
+                                        autoSubmitMockedResponse: value === "mock" ? true : undefined
+                                    })}
+                                    orientation="horizontal"
+                                    classNames={{
+                                        wrapper: "flex flex-col md:flex-row gap-2 md:gap-8 pl-0 md:pl-3",
+                                        label: "text-sm"
+                                    }}
+                                >
+                                    <Radio
+                                        value="mock"
+                                        classNames={{
+                                            base: "px-2 py-1 rounded-lg transition-colors",
+                                            label: "text-sm font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
+                                        }}
+                                    >
+                                        Mock tool responses
+                                    </Radio>
+                                    <Radio
+                                        value="api"
+                                        classNames={{
+                                            base: "px-2 py-1 rounded-lg transition-colors",
+                                            label: "text-sm font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
+                                        }}
+                                    >
+                                        Connect tool to your API
+                                    </Radio>
+                                </RadioGroup>
+                            </div>
+                        )}
+                        {tool.mockTool && (
+                            <div className="flex flex-col gap-2 pl-0 md:pl-3 mt-2">
+                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Mock Response Schema</label>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">Describe the response the mock tool should return. This will be shown in the chat when the tool is called. You can also provide a JSON schema for the response.</span>
+                                <EditableField
+                                    value={tool.mockInstructions || ''}
+                                    onChange={(value) => handleUpdate({
+                                        ...tool,
+                                        mockInstructions: value
+                                    })}
+                                    multiline={true}
+                                    placeholder="Mock response instructions..."
+                                    className="w-full text-xs p-2 bg-white dark:bg-gray-900"
+                                />
                                 <Checkbox
                                     size="sm"
                                     isSelected={tool.autoSubmitMockedResponse ?? true}
@@ -444,37 +452,41 @@ export function ToolConfig({
                                         ...tool,
                                         autoSubmitMockedResponse: value
                                     })}
+                                    disabled={isReadOnly}
+                                    className="mt-2"
                                 >
                                     <span className="text-sm text-gray-600 dark:text-gray-300">
                                         Automatically send mock response in chat
                                     </span>
                                 </Checkbox>
-
-                                <Textarea
-                                    value={tool.mockInstructions || ''}
-                                    onChange={(e) => handleUpdate({
-                                        ...tool,
-                                        mockInstructions: e.target.value
-                                    })}
-                                    placeholder="Describe the response the mock tool should return..."
-                                    className={textareaStyles}
-                                    autoResize
-                                />
                             </div>
-                        </div>
+                        )}
                     </div>
-                )}
-
-                <div className={`space-y-4 ${dividerStyles} pt-6`}>
-                    <label className={sectionHeaderStyles}>
-                        Parameters
-                    </label>
-                    <div className="pl-3 space-y-3">
-                        {renderParameters()}
-                    </div>
-
-                    {!isReadOnly && (
-                        <div className="pl-3">
+                </SectionCard>
+                {/* Parameters Section */}
+                <SectionCard
+                    icon={<Settings2 className="w-5 h-5 text-indigo-500" />}
+                    title="Parameters"
+                    labelWidth="md:w-32"
+                    className="mb-1"
+                >
+                    <div className="flex flex-col gap-2">
+                        {tool.parameters?.properties && Object.entries(tool.parameters.properties).map(([paramName, param]) => (
+                            <ToolParamCard
+                                key={paramName}
+                                param={{
+                                    name: paramName,
+                                    description: param.description,
+                                    type: param.type,
+                                    required: tool.parameters?.required?.includes(paramName) ?? false
+                                }}
+                                handleUpdate={handleParamUpdate}
+                                handleDelete={handleParamDelete}
+                                handleRename={handleParamRename}
+                                readOnly={isReadOnly}
+                            />
+                        ))}
+                        {!isReadOnly && (
                             <Button
                                 variant="primary"
                                 size="sm"
@@ -488,7 +500,6 @@ export function ToolConfig({
                                             description: ''
                                         }
                                     };
-
                                     handleUpdate({
                                         ...tool,
                                         parameters: {
@@ -498,13 +509,13 @@ export function ToolConfig({
                                         }
                                     });
                                 }}
-                                className="hover:bg-indigo-100 dark:hover:bg-indigo-900 hover:shadow-indigo-500/20 dark:hover:shadow-indigo-400/20 hover:shadow-lg transition-all"
+                                className="hover:bg-indigo-100 dark:hover:bg-indigo-900 hover:shadow-indigo-500/20 dark:hover:shadow-indigo-400/20 hover:shadow-lg transition-all mt-2"
                             >
                                 Add Parameter
                             </Button>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                </SectionCard>
             </div>
         </Panel>
     );

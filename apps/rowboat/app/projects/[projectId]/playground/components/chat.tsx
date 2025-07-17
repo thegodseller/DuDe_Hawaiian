@@ -3,19 +3,18 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { getAssistantResponseStreamId } from "@/app/actions/actions";
 import { Messages } from "./messages";
 import z from "zod";
-import { MCPServer, PlaygroundChat } from "@/app/lib/types/types";
-import { AgenticAPIChatMessage, convertFromAgenticAPIChatMessages, convertToAgenticAPIChatMessages } from "@/app/lib/types/agents_api_types";
-import { convertWorkflowToAgenticAPI } from "@/app/lib/types/agents_api_types";
-import { AgenticAPIChatRequest } from "@/app/lib/types/agents_api_types";
+import { MCPServer, Message, PlaygroundChat, ToolMessage } from "@/app/lib/types/types";
 import { Workflow, WorkflowTool } from "@/app/lib/types/workflow_types";
 import { ComposeBoxPlayground } from "@/components/common/compose-box-playground";
 import { Button } from "@heroui/react";
-import { apiV1 } from "rowboat-shared";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { WithStringId } from "@/app/lib/types/types";
 import { ProfileContextBox } from "./profile-context-box";
 import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import { FeedbackModal } from "./feedback-modal";
+import { FIX_WORKFLOW_PROMPT, FIX_WORKFLOW_PROMPT_WITH_FEEDBACK } from "../copilot-prompts";
 
 export function Chat({
     chat,
@@ -30,12 +29,14 @@ export function Chat({
     toolWebhookUrl,
     onCopyClick,
     showDebugMessages = true,
+    showJsonMode = false,
     projectTools,
+    triggerCopilotChat,
 }: {
     chat: z.infer<typeof PlaygroundChat>;
     projectId: string;
     workflow: z.infer<typeof Workflow>;
-    messageSubscriber?: (messages: z.infer<typeof apiV1.ChatMessage>[]) => void;
+    messageSubscriber?: (messages: z.infer<typeof Message>[]) => void;
     testProfile?: z.infer<typeof TestProfile> | null;
     onTestProfileChange: (profile: WithStringId<z.infer<typeof TestProfile>> | null) => void;
     systemMessage: string;
@@ -44,19 +45,47 @@ export function Chat({
     toolWebhookUrl: string;
     onCopyClick: (fn: () => string) => void;
     showDebugMessages?: boolean;
+    showJsonMode?: boolean;
     projectTools: z.infer<typeof WorkflowTool>[];
+    triggerCopilotChat?: (message: string) => void;
 }) {
-    const [messages, setMessages] = useState<z.infer<typeof apiV1.ChatMessage>[]>(chat.messages);
+    const [messages, setMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
     const [loadingAssistantResponse, setLoadingAssistantResponse] = useState<boolean>(false);
-    const [agenticState, setAgenticState] = useState<unknown>(chat.agenticState || {
-        last_agent_name: workflow.startAgent,
-    });
     const [fetchResponseError, setFetchResponseError] = useState<string | null>(null);
     const [billingError, setBillingError] = useState<string | null>(null);
     const [lastAgenticRequest, setLastAgenticRequest] = useState<unknown | null>(null);
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
-    const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof apiV1.ChatMessage>[]>(chat.messages);
+    const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
     const [isLastInteracted, setIsLastInteracted] = useState(false);
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+    const [pendingFixMessage, setPendingFixMessage] = useState<string | null>(null);
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+    // --- Scroll/auto-scroll/unread bubble logic ---
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [autoScroll, setAutoScroll] = useState(true);
+    const [showUnreadBubble, setShowUnreadBubble] = useState(false);
+
+    const handleScroll = useCallback(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const atBottom = scrollHeight - scrollTop - clientHeight < 20;
+        setAutoScroll(atBottom);
+        if (atBottom) setShowUnreadBubble(false);
+    }, []);
+
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        if (autoScroll) {
+            container.scrollTop = container.scrollHeight;
+            setShowUnreadBubble(false);
+        } else {
+            setShowUnreadBubble(true);
+        }
+    }, [optimisticMessages, loadingAssistantResponse, autoScroll]);
+    // --- End scroll/auto-scroll logic ---
 
     const getCopyContent = useCallback(() => {
         return JSON.stringify({
@@ -79,21 +108,49 @@ export function Chat({
         setOptimisticMessages(messages);
     }, [messages]);
 
+    // Handle fix functionality
+    const handleFix = useCallback((message: string) => {
+        setPendingFixMessage(message);
+        setShowFeedbackModal(true);
+    }, []);
+
+    const handleFeedbackSubmit = useCallback((feedback: string) => {
+        if (!pendingFixMessage) return;
+
+        // Create the copilot prompt
+        const prompt = feedback.trim() 
+            ? FIX_WORKFLOW_PROMPT_WITH_FEEDBACK
+                .replace('{chat_turn}', pendingFixMessage)
+                .replace('{feedback}', feedback)
+            : FIX_WORKFLOW_PROMPT
+                .replace('{chat_turn}', pendingFixMessage);
+
+        // Use the triggerCopilotChat function if available, otherwise fall back to localStorage
+        if (triggerCopilotChat) {
+            triggerCopilotChat(prompt);
+            // Show a subtle success indication
+            setShowSuccessMessage(true);
+            setTimeout(() => setShowSuccessMessage(false), 3000);
+        } else {
+            // Fallback for standalone playground
+            localStorage.setItem(`project_prompt_${projectId}`, prompt);
+            alert('Fix request submitted! Redirecting to workflow editor...');
+            window.location.href = `/projects/${projectId}/workflow`;
+        }
+    }, [pendingFixMessage, projectId, triggerCopilotChat]);
+
     // collect published tool call results
-    const toolCallResults: Record<string, z.infer<typeof apiV1.ToolMessage>> = {};
+    const toolCallResults: Record<string, z.infer<typeof ToolMessage>> = {};
     optimisticMessages
         .filter((message) => message.role == 'tool')
         .forEach((message) => {
-            toolCallResults[message.tool_call_id] = message;
+            toolCallResults[message.toolCallId] = message;
         });
 
     function handleUserMessage(prompt: string) {
-        const updatedMessages: z.infer<typeof apiV1.ChatMessage>[] = [...messages, {
+        const updatedMessages: z.infer<typeof Message>[] = [...messages, {
             role: 'user',
             content: prompt,
-            version: 'v1',
-            chatId: '',
-            createdAt: new Date().toISOString(),
         }];
         setMessages(updatedMessages);
         setFetchResponseError(null);
@@ -103,9 +160,6 @@ export function Chat({
     // reset state when workflow changes
     useEffect(() => {
         setMessages([]);
-        setAgenticState({
-            last_agent_name: workflow.startAgent,
-        });
     }, [workflow]);
 
     // publish messages to subscriber
@@ -119,7 +173,7 @@ export function Chat({
     useEffect(() => {
         let ignore = false;
         let eventSource: EventSource | null = null;
-        let msgs: z.infer<typeof apiV1.ChatMessage>[] = [];
+        let msgs: z.infer<typeof Message>[] = [];
 
         async function process() {
             setLoadingAssistantResponse(true);
@@ -129,36 +183,19 @@ export function Chat({
             setLastAgenticRequest(null);
             setLastAgenticResponse(null);
             
-            const { agents, tools, prompts, startAgent } = convertWorkflowToAgenticAPI(workflow, projectTools);
-            const request: z.infer<typeof AgenticAPIChatRequest> = {
-                projectId,
-                messages: convertToAgenticAPIChatMessages([{
-                    role: 'system',
-                    content: systemMessage || '',
-                    version: 'v1' as const,
-                    chatId: '',
-                    createdAt: new Date().toISOString(),
-                }, ...messages]),
-                state: agenticState,
-                agents,
-                tools,
-                prompts,
-                startAgent,
-                mcpServers: mcpServerUrls.map(server => ({
-                    name: server.name,
-                    serverUrl: server.serverUrl || '',
-                    isReady: server.isReady
-                })),
-                toolWebhookUrl: toolWebhookUrl,
-                testProfile: testProfile ?? undefined,
-            };
-
-            // Store the full request object
-            setLastAgenticRequest(request);
-
             let streamId: string | null = null;
             try {
-                const response = await getAssistantResponseStreamId(request);
+                const response = await getAssistantResponseStreamId(
+                    workflow,
+                    projectTools,
+                    [
+                        {
+                            role: 'system',
+                            content: systemMessage || '',
+                        },
+                        ...messages,
+                    ],
+                );
                 if (ignore) {
                     return;
                 }
@@ -190,8 +227,7 @@ export function Chat({
 
                 try {
                     const data = JSON.parse(event.data);
-                    const msg = AgenticAPIChatMessage.parse(data);
-                    const parsedMsg = convertFromAgenticAPIChatMessages([msg])[0];
+                    const parsedMsg = Message.parse(data);
                     msgs.push(parsedMsg);
                     setOptimisticMessages(prev => [...prev, parsedMsg]);
                 } catch (err) {
@@ -207,7 +243,6 @@ export function Chat({
                 }
 
                 const parsed = JSON.parse(event.data);
-                setAgenticState(parsed.state);
 
                 // Combine state and collected messages in the response
                 setLastAgenticResponse({
@@ -267,7 +302,6 @@ export function Chat({
     }, [
         messages,
         projectId,
-        agenticState,
         workflow,
         systemMessage,
         mcpServerUrls,
@@ -277,7 +311,7 @@ export function Chat({
         projectTools,
     ]);
 
-    return <div className="relative max-w-3xl mx-auto h-full flex flex-col">
+    return <div className="w-11/12 max-w-6xl mx-auto h-full flex flex-col relative">
         <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pt-4 pb-4">
             {USE_TESTING_FEATURE && (
                 <ProfileContextBox
@@ -288,28 +322,58 @@ export function Chat({
             )}
         </div>
 
-        <div className="flex-1 overflow-auto pr-1 
-            [&::-webkit-scrollbar]{width:4px}
-            [&::-webkit-scrollbar-track]{background:transparent}
-            [&::-webkit-scrollbar-thumb]{background-color:rgb(156 163 175)}
-            dark:[&::-webkit-scrollbar-thumb]{background-color:#2a2d31}">
-            <div className="pr-4">
-                <Messages
-                    projectId={projectId}
-                    messages={optimisticMessages}
-                    toolCallResults={toolCallResults}
-                    loadingAssistantResponse={loadingAssistantResponse}
-                    workflow={workflow}
-                    testProfile={testProfile}
-                    systemMessage={systemMessage}
-                    onSystemMessageChange={onSystemMessageChange}
-                    showSystemMessage={false}
-                    showDebugMessages={showDebugMessages}
-                />
-            </div>
+        <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-auto pr-4 relative playground-scrollbar"
+            style={{ scrollBehavior: 'smooth' }}
+        >
+            <Messages
+                projectId={projectId}
+                messages={optimisticMessages}
+                toolCallResults={toolCallResults}
+                loadingAssistantResponse={loadingAssistantResponse}
+                workflow={workflow}
+                testProfile={testProfile}
+                systemMessage={systemMessage}
+                onSystemMessageChange={onSystemMessageChange}
+                showSystemMessage={false}
+                showDebugMessages={showDebugMessages}
+                showJsonMode={showJsonMode}
+                onFix={handleFix}
+            />
+            {showUnreadBubble && (
+                <button
+                    className="absolute bottom-4 right-4 z-20 bg-blue-100 text-blue-700 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200 transition-colors animate-pulse"
+                    onClick={() => {
+                        const container = scrollContainerRef.current;
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                        setAutoScroll(true);
+                        setShowUnreadBubble(false);
+                    }}
+                    aria-label="Scroll to latest message"
+                >
+                    <ChevronDownIcon className="w-5 h-5" strokeWidth={2.2} />
+                </button>
+            )}
         </div>
 
         <div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-4 pb-2">
+            {showSuccessMessage && (
+                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 
+                              rounded-lg flex gap-2 justify-between items-center">
+                    <p className="text-green-600 dark:text-green-400 text-sm">Skipper will suggest fixes for you now.</p>
+                    <Button
+                        size="sm"
+                        color="success"
+                        onPress={() => setShowSuccessMessage(false)}
+                    >
+                        Dismiss
+                    </Button>
+                </div>
+            )}
             {fetchResponseError && (
                 <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 
                               rounded-lg flex gap-2 justify-between items-center">
@@ -341,6 +405,12 @@ export function Chat({
             isOpen={!!billingError}
             onClose={() => setBillingError(null)}
             errorMessage={billingError || ''}
+        />
+        <FeedbackModal
+            isOpen={showFeedbackModal}
+            onClose={() => setShowFeedbackModal(false)}
+            onSubmit={handleFeedbackSubmit}
+            title="Fix Assistant"
         />
     </div>;
 }

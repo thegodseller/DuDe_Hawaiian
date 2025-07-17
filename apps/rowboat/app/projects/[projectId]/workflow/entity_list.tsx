@@ -1,17 +1,18 @@
 import { z } from "zod";
-import { AgenticAPITool } from "../../../lib/types/agents_api_types";
 import { WorkflowPrompt, WorkflowAgent, WorkflowTool } from "../../../lib/types/workflow_types";
 import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@heroui/react";
 import { useRef, useEffect, useState } from "react";
-import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Boxes, Wrench, PenLine, Library, ChevronDown, ChevronRight, ServerIcon, Component, ScrollText, GripVertical } from "lucide-react";
+import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Boxes, Wrench, PenLine, Library, ChevronDown, ChevronRight, ServerIcon, Component, ScrollText, GripVertical, Users, Cog, CheckCircle2, Eye } from "lucide-react";
 import { DndContext, DragEndEvent, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Panel } from "@/components/common/panel-common";
 import { Button } from "@/components/ui/button";
+import { PictureImg } from "@/components/ui/picture-img";
 import { clsx } from "clsx";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ServerLogo } from '../tools/components/MCPServersCommon';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 
 // Reduced gap size to match Cursor's UI
 const GAP_SIZE = 4; // 1 unit * 4px (tailwind's default spacing unit)
@@ -35,7 +36,7 @@ interface EntityListProps {
     projectTools: z.infer<typeof WorkflowTool>[];
     prompts: z.infer<typeof WorkflowPrompt>[];
     selectedEntity: {
-        type: "agent" | "tool" | "prompt";
+        type: "agent" | "tool" | "prompt" | "visualise";
         name: string;
     } | null;
     startAgentName: string | null;
@@ -50,6 +51,7 @@ interface EntityListProps {
     onDeleteAgent: (name: string) => void;
     onDeleteTool: (name: string) => void;
     onDeletePrompt: (name: string) => void;
+    onShowVisualise: (name: string) => void;
 }
 
 interface EmptyStateProps {
@@ -80,7 +82,7 @@ const ListItemWithMenu = ({
     isSelected?: boolean;
     onClick?: () => void;
     disabled?: boolean;
-    selectedRef?: React.RefObject<HTMLButtonElement>;
+    selectedRef?: React.RefObject<HTMLButtonElement | null>;
     menuContent: React.ReactNode;
     statusLabel?: React.ReactNode;
     icon?: React.ReactNode;
@@ -98,7 +100,7 @@ const ListItemWithMenu = ({
         )}>
             {dragHandle}
             <button
-                ref={selectedRef}
+                ref={selectedRef as React.RefObject<HTMLButtonElement>}
                 className={clsx(
                     "flex-1 flex items-center gap-2 text-sm text-left",
                     {
@@ -111,7 +113,7 @@ const ListItemWithMenu = ({
                 }}
                 disabled={disabled}
             >
-                <div className={clsx("flex-shrink-0 flex items-center justify-center w-4 h-4", iconClassName)}>
+                <div className={clsx("shrink-0 flex items-center justify-center w-4 h-4", iconClassName)}>
                     {mcpServerName ? (
                         <ServerLogo 
                             serverName={mcpServerName} 
@@ -142,12 +144,12 @@ interface ServerCardProps {
     serverName: string;
     tools: z.infer<typeof WorkflowTool>[];
     selectedEntity: {
-        type: "agent" | "tool" | "prompt";
+        type: "agent" | "tool" | "prompt" | "visualise";
         name: string;
     } | null;
     onSelectTool: (name: string) => void;
     onDeleteTool: (name: string) => void;
-    selectedRef: React.RefObject<HTMLButtonElement>;
+    selectedRef: React.RefObject<HTMLButtonElement | null>;
 }
 
 const ServerCard = ({
@@ -205,6 +207,13 @@ const ServerCard = ({
     );
 };
 
+type ComposioToolkit = {
+    slug: string;
+    name: string;
+    logo: string;
+    tools: z.infer<typeof WorkflowTool>[];
+}
+
 export function EntityList({
     agents,
     tools,
@@ -225,15 +234,39 @@ export function EntityList({
     onDeletePrompt,
     projectId,
     onReorderAgents,
+    onShowVisualise,
 }: EntityListProps & { 
     projectId: string,
     onReorderAgents: (agents: z.infer<typeof WorkflowAgent>[]) => void 
 }) {
+    const [showAgentTypeModal, setShowAgentTypeModal] = useState(false);
+
+    const handleAddAgentWithType = (agentType: 'internal' | 'user_facing') => {
+        onAddAgent({
+            outputVisibility: agentType
+        });
+    };
     // Merge workflow tools with project tools
     const mergedTools = [...tools, ...projectTools];
-    const selectedRef = useRef<HTMLButtonElement | null>(null);
+    const selectedRef = useRef<HTMLButtonElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerHeight, setContainerHeight] = useState<number>(0);
+
+    // collect composio tools
+    const composioTools: Record<string, ComposioToolkit> = {};
+    for (const tool of mergedTools) {
+        if (tool.isComposio) {
+            if (!composioTools[tool.composioData?.toolkitSlug || '']) {
+                composioTools[tool.composioData?.toolkitSlug || ''] = {
+                    name: tool.composioData?.toolkitName || '',
+                    slug: tool.composioData?.toolkitSlug || '',
+                    logo: tool.composioData?.logo || '',
+                    tools: []
+                };
+            }
+            composioTools[tool.composioData?.toolkitSlug || ''].tools.push(tool);
+        }
+    }
 
     // Panel expansion states
     const [expandedPanels, setExpandedPanels] = useState({
@@ -343,7 +376,7 @@ export function EntityList({
                         tourTarget="entity-agents"
                         className={clsx(
                             "h-full overflow-hidden",
-                            !expandedPanels.agents && "!h-[53px]"
+                            !expandedPanels.agents && "h-[53px]!"
                         )}
                         title={
                             <button 
@@ -359,20 +392,35 @@ export function EntityList({
                                     <Brain className="w-4 h-4" />
                                     <span>Agents</span>
                                 </div>
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setExpandedPanels(prev => ({ ...prev, agents: true }));
-                                        onAddAgent({});
-                                    }}
-                                    className={`group ${buttonClasses}`}
-                                    showHoverContent={true}
-                                    hoverContent="Add Agent"
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onShowVisualise("visualise");
+                                        }}
+                                        className={`group ${buttonClasses}`}
+                                        showHoverContent={true}
+                                        hoverContent="Visualise Agents"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setExpandedPanels(prev => ({ ...prev, agents: true }));
+                                            setShowAgentTypeModal(true);
+                                        }}
+                                        className={`group ${buttonClasses}`}
+                                        showHoverContent={true}
+                                        hoverContent="Add Agent"
+                                    >
+                                        <PlusIcon className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </button>
                         }
                     >
@@ -429,7 +477,7 @@ export function EntityList({
                         tourTarget="entity-tools"
                         className={clsx(
                             "h-full overflow-hidden",
-                            !expandedPanels.tools && "!h-[53px]"
+                            !expandedPanels.tools && "h-[53px]!"
                         )}
                         title={
                             <button 
@@ -470,7 +518,7 @@ export function EntityList({
                                             {/* Group tools by server */}
                                             {(() => {
                                                 // Get custom tools (non-MCP tools)
-                                                const customTools = mergedTools.filter(tool => !tool.isMcp);
+                                                const customTools = mergedTools.filter(tool => !tool.isMcp && !tool.isComposio);
                                                 
                                                 // Group MCP tools by server
                                                 const serverTools = mergedTools.reduce((acc, tool) => {
@@ -485,7 +533,19 @@ export function EntityList({
 
                                                 return (
                                                     <>
-                                                        {/* Show MCP server cards first */}
+                                                        {/* Show composio cards */}
+                                                        {Object.values(composioTools).map((card) => (
+                                                            <ComposioCard 
+                                                                key={card.slug} 
+                                                                card={card}
+                                                                selectedEntity={selectedEntity}
+                                                                onSelectTool={handleToolSelection}
+                                                                onDeleteTool={onDeleteTool}
+                                                                selectedRef={selectedRef}
+                                                            />
+                                                        ))}
+
+                                                        {/* Show MCP server cards */}
                                                         {Object.entries(serverTools).map(([serverName, tools]) => (
                                                             <ServerCard
                                                                 key={serverName}
@@ -549,7 +609,7 @@ export function EntityList({
                         tourTarget="entity-prompts"
                         className={clsx(
                             "h-full overflow-hidden",
-                            !expandedPanels.prompts && "!h-[53px]"
+                            !expandedPanels.prompts && "h-[53px]!"
                         )}
                         title={
                             <button 
@@ -613,6 +673,12 @@ export function EntityList({
                     </Panel>
                 </ResizablePanel>
             </ResizablePanelGroup>
+            
+            <AgentTypeModal
+                isOpen={showAgentTypeModal}
+                onClose={() => setShowAgentTypeModal(false)}
+                onConfirm={handleAddAgentWithType}
+            />
         </div>
     );
 }
@@ -691,12 +757,96 @@ function EntityDropdown({
     );
 }
 
+interface ComposioCardProps {
+    card: ComposioToolkit;
+    selectedEntity: {
+        type: "agent" | "tool" | "prompt" | "visualise";
+        name: string;
+    } | null;
+    onSelectTool: (name: string) => void;
+    onDeleteTool: (name: string) => void;
+    selectedRef: React.RefObject<HTMLButtonElement | null>;
+}
+
+const ComposioCard = ({
+    card,
+    selectedEntity,
+    onSelectTool,
+    onDeleteTool,
+    selectedRef,
+}: ComposioCardProps) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+        <div className="mb-2">
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md text-sm text-left"
+            >
+                {isExpanded ? (
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                ) : (
+                    <ChevronRight className="w-4 h-4 text-gray-500" />
+                )}
+                <div className="flex items-center gap-1">
+                    {card.logo ? (
+                        <div className="relative w-4 h-4">
+                            <PictureImg
+                                src={card.logo}
+                                alt={`${card.name} logo`}
+                                className="w-full h-full object-contain rounded"
+                            />
+                        </div>
+                    ) : (
+                        <ImportIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+                    )}
+                    <span>{card.name}</span>
+                </div>
+            </button>
+            {isExpanded && (
+                <div className="ml-6 mt-1 space-y-1">
+                    {card.tools.map((tool, index) => (
+                        <ListItemWithMenu
+                            key={`composio-tool-${index}`}
+                            name={tool.name}
+                            isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
+                            onClick={() => onSelectTool(tool.name)}
+                            disabled={tool.isLibrary}
+                            selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
+                            icon={
+                                card.logo ? (
+                                    <div className="relative w-4 h-4">
+                                        <PictureImg
+                                            src={card.logo}
+                                            alt={`${card.name} logo`}
+                                            className="w-full h-full object-contain rounded"
+                                        />
+                                    </div>
+                                ) : (
+                                    <ImportIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+                                )
+                            }
+                            menuContent={
+                                <EntityDropdown 
+                                    name={tool.name} 
+                                    onDelete={onDeleteTool}
+                                    isLocked={tool.isComposio}
+                                />
+                            }
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // Add SortableItem component for agents
 const SortableAgentItem = ({ agent, isSelected, onClick, selectedRef, statusLabel, onToggle, onSetMainAgent, onDelete, isStartAgent }: {
     agent: z.infer<typeof WorkflowAgent>;
     isSelected?: boolean;
     onClick?: () => void;
-    selectedRef?: React.RefObject<HTMLButtonElement>;
+    selectedRef?: React.RefObject<HTMLButtonElement | null>;
     statusLabel?: React.ReactNode;
     onToggle: (name: string) => void;
     onSetMainAgent: (name: string) => void;
@@ -746,3 +896,139 @@ const SortableAgentItem = ({ agent, isSelected, onClick, selectedRef, statusLabe
         </div>
     );
 }; 
+
+interface AgentTypeModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: (agentType: 'internal' | 'user_facing') => void;
+}
+
+function AgentTypeModal({ isOpen, onClose, onConfirm }: AgentTypeModalProps) {
+    const [selectedType, setSelectedType] = useState<'internal' | 'user_facing'>('internal');
+
+    const handleConfirm = () => {
+        onConfirm(selectedType);
+        onClose();
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} size="lg" className="max-w-3xl w-full">
+            <ModalContent className="max-w-3xl w-full">
+                <ModalHeader>
+                    <div className="flex items-center gap-2">
+                        <Brain className="w-5 h-5 text-indigo-600" />
+                        <span>Create New Agent</span>
+                    </div>
+                </ModalHeader>
+                <ModalBody>
+                    <div className="space-y-6">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Choose the type of agent you want to create:
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Task Agent (Internal) */}
+                            <button
+                                type="button"
+                                onClick={() => setSelectedType('internal')}
+                                className={clsx(
+                                    "relative group p-6 rounded-2xl border-2 flex flex-col items-start transition-all duration-200 text-left shadow-sm focus:outline-none",
+                                    selectedType === 'internal'
+                                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 shadow-lg scale-[1.03]"
+                                        : "border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:shadow-md bg-white dark:bg-gray-900"
+                                )}
+                            >
+                                <div className="flex items-center gap-4 w-full mb-2">
+                                    <div className={clsx(
+                                        "flex items-center justify-center w-12 h-12 rounded-lg transition-colors",
+                                        selectedType === 'internal'
+                                            ? "bg-indigo-100 dark:bg-indigo-900/60"
+                                            : "bg-gray-100 dark:bg-gray-800"
+                                    )}>
+                                        <Cog className={clsx(
+                                            "w-6 h-6 transition-colors",
+                                            selectedType === 'internal'
+                                                ? "text-indigo-600 dark:text-indigo-400"
+                                                : "text-gray-600 dark:text-gray-400"
+                                        )} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                            Task Agent
+                                        </h3>
+                                        <span className="inline-block align-middle">
+                                            <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/40 px-2 py-0.5 rounded">
+                                                Internal
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <ul className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mt-1 list-disc pl-5 space-y-1">
+                                  <li>Perform specific internal tasks, such as parts of workflows, pipelines, and data processing</li>
+                                  <li>Cannot put out user-facing responses directly</li>
+                                  <li>Can call other agents (both conversation and task agents)</li>
+                                </ul>
+                            </button>
+
+                            {/* Conversation Agent (User-facing) */}
+                            <button
+                                type="button"
+                                onClick={() => setSelectedType('user_facing')}
+                                className={clsx(
+                                    "relative group p-6 rounded-2xl border-2 flex flex-col items-start transition-all duration-200 text-left shadow-sm focus:outline-none",
+                                    selectedType === 'user_facing'
+                                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 shadow-lg scale-[1.03]"
+                                        : "border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:shadow-md bg-white dark:bg-gray-900"
+                                )}
+                            >
+                                <div className="flex items-center gap-4 w-full mb-2">
+                                    <div className={clsx(
+                                        "flex items-center justify-center w-12 h-12 rounded-lg transition-colors",
+                                        selectedType === 'user_facing'
+                                            ? "bg-indigo-100 dark:bg-indigo-900/60"
+                                            : "bg-gray-100 dark:bg-gray-800"
+                                    )}>
+                                        <Users className={clsx(
+                                            "w-6 h-6 transition-colors",
+                                            selectedType === 'user_facing'
+                                                ? "text-indigo-600 dark:text-indigo-400"
+                                                : "text-gray-600 dark:text-gray-400"
+                                        )} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                            Conversation Agent
+                                        </h3>
+                                        <span className="inline-block align-middle">
+                                            <span className="text-xs font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/40 px-2 py-0.5 rounded">
+                                                User-facing
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <ul className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mt-1 list-disc pl-5 space-y-1">
+                                  <li>Interact directly with users</li>
+                                  <li>Ideal for specific roles in customer support, chat interfaces, and other end-user interactions</li>
+                                  <li>Can call other agents (both conversation and task agents)</li>
+                                </ul>
+                            </button>
+                        </div>
+                    </div>
+                </ModalBody>
+                <ModalFooter>
+                    <Button
+                        variant="secondary"
+                        onClick={onClose}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={handleConfirm}
+                    >
+                        Create Agent
+                    </Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+    );
+} 

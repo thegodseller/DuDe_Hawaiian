@@ -78,8 +78,8 @@ export function ComposeBoxPlayground({
                         autoResize={true}
                         maxHeight={120}
                         className={`
-                            !min-h-0
-                            !border-0 !shadow-none !ring-0
+                            min-h-0!
+                            border-0! shadow-none! ring-0!
                             bg-transparent
                             resize-none
                             overflow-y-auto

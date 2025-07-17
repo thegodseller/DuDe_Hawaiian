@@ -1,14 +1,18 @@
 import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
-import { withMiddlewareAuthRequired } from "@auth0/nextjs-auth0/edge";
+import { auth0 } from "./app/lib/auth0";
 
 const corsOptions = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, x-client-id, Authorization',
 }
 
-const auth0MiddlewareHandler = withMiddlewareAuthRequired();
 
 export async function middleware(request: NextRequest, event: NextFetchEvent) {
+  // Check if the request path starts with /api/auth/
+  if (request.nextUrl.pathname.startsWith('/auth')) {
+    return await auth0.middleware(request);
+  }
+
   // Check if the request path starts with /api/
   if (request.nextUrl.pathname.startsWith('/api/')) {
     // Handle preflighted requests
@@ -37,10 +41,9 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     request.nextUrl.pathname.startsWith('/billing') ||
     request.nextUrl.pathname.startsWith('/onboarding')) {
     // Skip auth check if USE_AUTH is not enabled
-    if (process.env.USE_AUTH !== 'true') {
-      return NextResponse.next();
+    if (process.env.USE_AUTH === 'true') {
+      return await auth0.middleware(request);
     }
-    return auth0MiddlewareHandler(request, event);
   }
 
   return NextResponse.next();
@@ -48,10 +51,12 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
 
 export const config = {
   matcher: [
-    '/projects/:path*',
-    '/billing/:path*',
-    // '/onboarding/:path*',
-    '/api/v1/:path*',
-    '/api/widget/v1/:path*',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+     */
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 };

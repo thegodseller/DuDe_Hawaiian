@@ -7,7 +7,7 @@ import { ProfileSelector } from "@/app/projects/[projectId]/test/[[...slug]]/com
 import { z } from "zod";
 
 interface SimulationFormProps {
-    formRef: React.RefObject<HTMLFormElement>;
+    formRef: React.RefObject<HTMLFormElement | null>;
     handleSubmit: (formData: FormData) => Promise<void>;
     scenario: WithStringId<z.infer<typeof TestScenario>> | null;
     setScenario: (scenario: WithStringId<z.infer<typeof TestScenario>> | null) => void;

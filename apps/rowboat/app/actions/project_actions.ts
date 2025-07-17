@@ -13,6 +13,9 @@ import { Project } from "../lib/types/project_types";
 import { USE_AUTH } from "../lib/feature_flags";
 import { deleteMcpServerInstance, listActiveServerInstances } from "./klavis_actions";
 import { authorizeUserAction } from "./billing_actions";
+import { Workflow } from "../lib/types/workflow_types";
+import { WorkflowTool } from "../lib/types/workflow_types";
+import { collectProjectTools as libCollectProjectTools } from "../lib/project_tools";
 
 const KLAVIS_API_KEY = process.env.KLAVIS_API_KEY || '';
 
@@ -310,4 +313,41 @@ export async function createProjectFromPrompt(formData: FormData): Promise<{ id:
     });
 
     return { id: projectId };
+}
+
+export async function createProjectFromWorkflowJson(formData: FormData): Promise<{ id: string } | { billingError: string }> {
+    const user = await authCheck();
+    const workflowJson = formData.get('workflowJson') as string;
+    let workflowData;
+    try {
+        workflowData = JSON.parse(workflowJson);
+    } catch (e) {
+        throw new Error('Invalid JSON');
+    }
+    // Validate and parse with zod
+    const parsed = Workflow.omit({ projectId: true }).safeParse(workflowData);
+    if (!parsed.success) {
+        throw new Error('Invalid workflow JSON: ' + JSON.stringify(parsed.error.issues));
+    }
+    const workflow = parsed.data;
+    const name = workflow.name || 'Imported Project';
+    const response = await createBaseProject(name, user);
+    if ('billingError' in response) {
+        return response;
+    }
+    const projectId = response.id;
+    const now = new Date().toISOString();
+    await agentWorkflowsCollection.insertOne({
+        ...workflow,
+        projectId,
+        createdAt: now,
+        lastUpdatedAt: now,
+        name: workflow.name || 'Version 1',
+    });
+    return { id: projectId };
+}
+
+export async function collectProjectTools(projectId: string): Promise<z.infer<typeof WorkflowTool>[]> {
+    await projectAuthCheck(projectId);
+    return libCollectProjectTools(projectId);
 }

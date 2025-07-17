@@ -1,14 +1,14 @@
 'use client';
 import { Spinner } from "@heroui/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import z from "zod";
 import { Workflow } from "@/app/lib/types/workflow_types";
 import { WorkflowTool } from "@/app/lib/types/workflow_types";
 import MarkdownContent from "@/app/lib/components/markdown-content";
-import { apiV1 } from "rowboat-shared";
-import { MessageSquareIcon, EllipsisIcon, CircleCheckIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, XIcon, PlusIcon, CodeIcon, CheckCircleIcon, FileTextIcon } from "lucide-react";
+import { ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, CodeIcon, CheckCircleIcon, FileTextIcon, EyeIcon, EyeOffIcon, WrapTextIcon, ArrowRightFromLineIcon, BracesIcon, TextIcon, FlagIcon } from "lucide-react";
 import { TestProfile } from "@/app/lib/types/testing_types";
 import { ProfileContextBox } from "./profile-context-box";
+import { Message, ToolMessage, AssistantMessageWithToolCalls } from "@/app/lib/types/types";
 
 function UserMessage({ content }: { content: string }) {
     return (
@@ -30,8 +30,28 @@ function UserMessage({ content }: { content: string }) {
     );
 }
 
-function InternalAssistantMessage({ content, sender, latency, delta }: { content: string, sender: string | null | undefined, latency: number, delta: number }) {
-    const [expanded, setExpanded] = useState(false);
+function InternalAssistantMessage({ content, sender, latency, delta, showJsonMode = false, onFix, showDebugMessages, isFirstAssistant }: { content: string, sender: string | null | undefined, latency: number, delta: number, showJsonMode?: boolean, onFix?: (message: string) => void, showDebugMessages?: boolean, isFirstAssistant?: boolean }) {
+    const isJsonContent = useMemo(() => {
+        try {
+            JSON.parse(content);
+            return true;
+        } catch {
+            return false;
+        }
+    }, [content]);
+    
+    const hasResponseKey = useMemo(() => {
+        if (!isJsonContent) return false;
+        try {
+            const parsed = JSON.parse(content);
+            return parsed && typeof parsed === 'object' && 'response' in parsed;
+        } catch {
+            return false;
+        }
+    }, [content, isJsonContent]);
+    
+    const [jsonMode, setJsonMode] = useState(false);
+    const [wrapText, setWrapText] = useState(true);
 
     // Show plus icon and duration
     const deltaDisplay = (
@@ -40,63 +60,121 @@ function InternalAssistantMessage({ content, sender, latency, delta }: { content
         </span>
     );
 
-    // Get first line preview
-    const firstLine = content.split('\n')[0].trim();
-    const preview = firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
+    // Extract response content for display
+    const displayContent = useMemo(() => {
+        if (!isJsonContent || !hasResponseKey) return content;
+        
+        try {
+            const parsed = JSON.parse(content);
+            return parsed.response || content;
+        } catch {
+            return content;
+        }
+    }, [content, isJsonContent, hasResponseKey]);
+
+    // Format JSON content
+    const formattedJson = useMemo(() => {
+        if (!isJsonContent) return content;
+        try {
+            return JSON.stringify(JSON.parse(content), null, 2);
+        } catch {
+            return content;
+        }
+    }, [content, isJsonContent]);
 
     return (
         <div className="self-start flex flex-col gap-1 my-5">
-            <div className="text-gray-500 dark:text-gray-400 text-xs pl-1">
-                {sender ?? 'Assistant'}
-            </div>
-            <div className={expanded ? 'max-w-[85%] inline-block' : 'inline-block'}>
-                <div className={expanded
-                  ? 'bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade flex flex-col items-stretch'
-                  : 'bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade w-fit'}>
-                    {!expanded ? (
-                        <div className="flex flex-col gap-2">
-                            <div className="text-gray-700 dark:text-gray-200">
-                                {preview}
-                            </div>
-                            <div className="flex justify-between items-center gap-6">
-                                <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(true)}>
-                                    <ChevronDownIcon size={16} />
-                                    Show internal message
-                                </button>
-                                <div className="text-right text-xs">
-                                    {deltaDisplay}
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="text-left mb-2">
-                                <MarkdownContent content={content} />
-                            </div>
-                            <div className="flex justify-between items-center gap-6 mt-2">
-                                <button className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline self-start" onClick={() => setExpanded(false)}>
-                                    <ChevronUpIcon size={16} />
-                                    Hide internal message
-                                </button>
-                                <div className="text-right text-xs">
-                                    {deltaDisplay}
-                                </div>
-                            </div>
-                        </>
+            <div className="max-w-[85%] inline-block">
+                <div className="text-gray-500 dark:text-gray-400 text-xs pl-1 flex justify-between items-center mb-2">
+                    <span>{sender ?? 'Assistant'}</span>
+                    {showDebugMessages && onFix && !isFirstAssistant && (
+                        <button
+                            onClick={() => onFix(content)}
+                            className="flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline"
+                            title="Fix this response"
+                        >
+                            <FlagIcon size={12} />
+                            Fix
+                        </button>
                     )}
+                </div>
+                <div className="bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade flex flex-col items-stretch">
+                    <div className="text-left mb-2">
+                        {isJsonContent && hasResponseKey && (
+                            <div className="mb-2 flex gap-4">
+                                <button 
+                                    className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 hover:underline self-start" 
+                                    onClick={() => setJsonMode(!jsonMode)}
+                                >
+                                    {jsonMode ? <TextIcon size={14} /> : <BracesIcon size={14} />}
+                                    {jsonMode ? 'View response text' : 'View complete JSON'}
+                                </button>
+                                {jsonMode && (
+                                    <button 
+                                        className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 hover:underline self-start" 
+                                        onClick={() => setWrapText(!wrapText)}
+                                    >
+                                        {wrapText ? <ArrowRightFromLineIcon size={14} /> : <WrapTextIcon size={14} />}
+                                        {wrapText ? 'Overflow' : 'Wrap'}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                        {isJsonContent && hasResponseKey && jsonMode ? (
+                            <pre
+                                className={`text-xs leading-snug bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-2 py-1 font-mono shadow-sm border border-zinc-100 dark:border-zinc-700 ${
+                                    wrapText ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto whitespace-pre'
+                                } w-full`}
+                                style={{ fontFamily: "'JetBrains Mono', 'Fira Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace" }}
+                            >
+                                {formattedJson}
+                            </pre>
+                        ) : (
+                            <MarkdownContent content={displayContent} />
+                        )}
+                    </div>
+                    <div className="flex justify-end items-center gap-6 mt-2">
+                        <div className="text-right text-xs">
+                            {deltaDisplay}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
 
-function AssistantMessage({ content, sender, latency }: { content: string, sender: string | null | undefined, latency: number }) {
+function AssistantMessage({ 
+    content, 
+    sender, 
+    latency, 
+    onFix, 
+    showDebugMessages,
+    isFirstAssistant
+}: { 
+    content: string, 
+    sender: string | null | undefined, 
+    latency: number,
+    onFix?: (message: string) => void,
+    showDebugMessages?: boolean,
+    isFirstAssistant?: boolean
+}) {
     return (
         <div className="self-start flex flex-col gap-1 my-5">
-            <div className="text-gray-500 dark:text-gray-400 text-xs pl-1">
-                {sender ?? 'Assistant'}
-            </div>
             <div className="max-w-[85%] inline-block">
+                <div className="text-gray-500 dark:text-gray-400 text-xs pl-1 flex justify-between items-center mb-2">
+                    <span>{sender ?? 'Assistant'}</span>
+                    {showDebugMessages && onFix && !isFirstAssistant && (
+                        <button
+                            onClick={() => onFix(content)}
+                            className="flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline"
+                            title="Fix this response"
+                        >
+                            <FlagIcon size={12} />
+                            Fix
+                        </button>
+                    )}
+                </div>
                 <div className="bg-purple-50 dark:bg-purple-900/30 px-4 py-2.5 
                     rounded-2xl rounded-bl-lg text-sm leading-relaxed
                     text-gray-800 dark:text-purple-100 
@@ -138,20 +216,26 @@ function ToolCalls({
     workflow,
     testProfile = null,
     systemMessage,
-    delta
+    delta,
+    onFix,
+    showDebugMessages,
+    isFirstAssistant
 }: {
-    toolCalls: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'];
-    results: Record<string, z.infer<typeof apiV1.ToolMessage>>;
+    toolCalls: z.infer<typeof AssistantMessageWithToolCalls>['toolCalls'];
+    results: Record<string, z.infer<typeof ToolMessage>>;
     projectId: string;
-    messages: z.infer<typeof apiV1.ChatMessage>[];
+    messages: z.infer<typeof Message>[];
     sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
     testProfile: z.infer<typeof TestProfile> | null;
     systemMessage: string | undefined;
     delta: number;
+    onFix?: (message: string) => void;
+    showDebugMessages?: boolean;
+    isFirstAssistant?: boolean;
 }) {
     return <div className="flex flex-col gap-4">
-        {toolCalls.map(toolCall => {
+        {toolCalls.map((toolCall, idx) => {
             return <ToolCall
                 key={toolCall.id}
                 toolCall={toolCall}
@@ -159,6 +243,9 @@ function ToolCalls({
                 sender={sender}
                 workflow={workflow}
                 delta={delta}
+                onFix={onFix}
+                showDebugMessages={showDebugMessages}
+                isFirstAssistant={isFirstAssistant && idx === 0}
             />
         })}
     </div>;
@@ -169,13 +256,19 @@ function ToolCall({
     result,
     sender,
     workflow,
-    delta
+    delta,
+    onFix,
+    showDebugMessages,
+    isFirstAssistant
 }: {
-    toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
-    result: z.infer<typeof apiV1.ToolMessage> | undefined;
+    toolCall: z.infer<typeof AssistantMessageWithToolCalls>['toolCalls'][number];
+    result: z.infer<typeof ToolMessage> | undefined;
     sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
     delta: number;
+    onFix?: (message: string) => void;
+    showDebugMessages?: boolean;
+    isFirstAssistant?: boolean;
 }) {
     let matchingWorkflowTool: z.infer<typeof WorkflowTool> | undefined;
     for (const tool of workflow.tools) {
@@ -198,6 +291,8 @@ function ToolCall({
         sender={sender ?? ''}
         workflow={workflow}
         delta={delta}
+        onFix={onFix}
+        showDebugMessages={showDebugMessages}
     />;
 }
 
@@ -206,7 +301,7 @@ function TransferToAgentToolCall({
     sender,
     delta
 }: {
-    result: z.infer<typeof apiV1.ToolMessage> | undefined;
+    result: z.infer<typeof ToolMessage> | undefined;
     sender: string | null | undefined;
     delta: number;
 }) {
@@ -236,41 +331,168 @@ function ClientToolCall({
     result: availableResult,
     sender,
     workflow,
-    delta
+    delta,
+    onFix,
+    showDebugMessages
 }: {
-    toolCall: z.infer<typeof apiV1.AssistantMessageWithToolCalls>['tool_calls'][number];
-    result: z.infer<typeof apiV1.ToolMessage> | undefined;
+    toolCall: z.infer<typeof AssistantMessageWithToolCalls>['toolCalls'][number];
+    result: z.infer<typeof ToolMessage> | undefined;
     sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
     delta: number;
+    onFix?: (message: string) => void;
+    showDebugMessages?: boolean;
 }) {
-    return (
-        <div className="self-start flex flex-col gap-1 mb-4">
-            {sender && (
-                <div className="text-gray-500 dark:text-gray-400 text-xs pl-1">
-                    {sender}
-                </div>
-            )}
-            <div className="min-w-[85%] inline-block">
-                <div className="border border-gray-200 dark:border-gray-700 p-3
-                    rounded-2xl rounded-bl-lg flex flex-col gap-2
-                    bg-gray-50 dark:bg-gray-800 shadow-sm dark:shadow-gray-950/20">
-                    <div className="flex flex-col gap-1">
-                        <div className="shrink-0 flex gap-2 items-center">
-                            {!availableResult && <Spinner size="sm" />}
-                            {availableResult && <CheckCircleIcon size={16} className="text-green-500" />}
-                            <div className="flex items-center font-semibold text-sm gap-2">
-                                <span>Function Call:</span>
-                                <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-100 font-bold text-sm align-middle">
-                                    {toolCall.function.name}
-                                </span>
+    const [wrapText, setWrapText] = useState(true);
+    const [paramsExpanded, setParamsExpanded] = useState(false);
+    const [resultsExpanded, setResultsExpanded] = useState(false);
+    const hasExpandedContent = paramsExpanded || resultsExpanded;
+    const isCompressed = !paramsExpanded && !resultsExpanded;
+
+    // Compressed state: stretch header, no wrapping
+    if (isCompressed) {
+        return (
+            <div className="self-start flex flex-col gap-1 my-5">
+                {sender && (
+                    <div className="text-gray-500 dark:text-gray-400 text-xs pl-1 flex justify-between items-center">
+                        <span>{sender}</span>
+                        {showDebugMessages && onFix && (
+                            <button
+                                onClick={() => onFix(`Tool call: ${toolCall.function.name}`)}
+                                className="flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline"
+                                title="Fix this tool call"
+                            >
+                                <FlagIcon size={12} />
+                                Fix
+                            </button>
+                        )}
+                    </div>
+                )}
+                <div className="min-w-[85%]">
+                    <div className="border border-gray-200 dark:border-gray-700 p-3
+                        rounded-2xl rounded-bl-lg flex flex-col gap-2
+                        bg-gray-50 dark:bg-gray-800 shadow-sm dark:shadow-gray-950/20">
+                        <div className="flex flex-col gap-1 min-w-0">
+                            <div className="shrink-0 flex gap-2 items-center flex-nowrap">
+                                <div className="flex items-center gap-2 min-w-0 flex-nowrap">
+                                    {!availableResult && <Spinner size="sm" />}
+                                    {availableResult && <CheckCircleIcon size={16} className="text-green-500" />}
+                                    <div className="flex items-center font-medium text-xs gap-2 min-w-0 flex-nowrap">
+                                        <span>Invoked Tool:</span>
+                                        <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-100 text-xs align-middle whitespace-nowrap">
+                                            {toolCall.function.name}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
+                            {hasExpandedContent && (
+                                <div className="flex justify-start mt-2">
+                                    <button 
+                                        className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline" 
+                                        onClick={() => setWrapText(!wrapText)}
+                                    >
+                                        {wrapText ? <ArrowRightFromLineIcon size={16} /> : <WrapTextIcon size={16} />}
+                                        {wrapText ? 'Overflow' : 'Wrap'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex flex-col gap-2 min-w-0">
+                            <ExpandableContent 
+                                label="Params" 
+                                content={toolCall.function.arguments} 
+                                expanded={false} 
+                                icon={<CodeIcon size={14} />}
+                                wrapText={wrapText}
+                                onExpandedChange={setParamsExpanded}
+                            />
+                            {availableResult && (
+                                <div className={(paramsExpanded ? 'mt-4 ' : '') + 'flex flex-col gap-2 min-w-0'}>
+                                    <ExpandableContent 
+                                        label="Result" 
+                                        content={availableResult.content} 
+                                        expanded={false} 
+                                        icon={<FileTextIcon size={14} className="text-blue-500" />}
+                                        wrapText={wrapText}
+                                        onExpandedChange={setResultsExpanded}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
+                </div>
+            </div>
+        );
+    }
 
-                    <div className="flex flex-col gap-2">
-                        <ExpandableContent label="Params" content={toolCall.function.arguments} expanded={false} icon={<CodeIcon size={14} />} />
-                        {availableResult && <ExpandableContent label="Result" content={availableResult.content} expanded={false} icon={<FileTextIcon size={14} className="text-blue-500" />} />}
+    // Expanded state: respect 85% max width, prevent overshoot
+    return (
+        <div className="self-start flex flex-col gap-1 my-5">
+            {sender && (
+                <div className="text-gray-500 dark:text-gray-400 text-xs pl-1 flex justify-between items-center">
+                    <span>{sender}</span>
+                    {showDebugMessages && onFix && (
+                        <button
+                            onClick={() => onFix(`Tool call: ${toolCall.function.name}`)}
+                            className="flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline"
+                            title="Fix this tool call"
+                        >
+                            <FlagIcon size={12} />
+                            Fix
+                        </button>
+                    )}
+                </div>
+            )}
+            <div className="w-full">
+                <div className="border border-gray-200 dark:border-gray-700 p-3
+                    rounded-2xl rounded-bl-lg flex flex-col gap-2
+                    bg-gray-50 dark:bg-gray-800 shadow-sm dark:shadow-gray-950/20 w-full">
+                    <div className="flex flex-col gap-1 w-full">
+                        <div className="shrink-0 flex gap-2 items-center w-full flex-nowrap">
+                            <div className="flex items-center gap-2 min-w-0 flex-nowrap">
+                                {!availableResult && <Spinner size="sm" />}
+                                {availableResult && <CheckCircleIcon size={16} className="text-green-500" />}
+                                <div className="flex items-center font-medium text-xs gap-2 min-w-0 flex-nowrap">
+                                    <span>Invoked Tool:</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-100 text-xs align-middle truncate min-w-0 max-w-full">
+                                        {toolCall.function.name}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {hasExpandedContent && (
+                            <div className="flex justify-start mt-2">
+                                <button 
+                                    className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline" 
+                                    onClick={() => setWrapText(!wrapText)}
+                                >
+                                    {wrapText ? <ArrowRightFromLineIcon size={16} /> : <WrapTextIcon size={16} />}
+                                    {wrapText ? 'Overflow' : 'Wrap'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex flex-col gap-2 w-full">
+                        <ExpandableContent 
+                            label="Params" 
+                            content={toolCall.function.arguments} 
+                            expanded={paramsExpanded} 
+                            icon={<CodeIcon size={14} />}
+                            wrapText={wrapText}
+                            onExpandedChange={setParamsExpanded}
+                        />
+                        {availableResult && (
+                            <div className={(paramsExpanded ? 'mt-4 ' : '') + 'flex flex-col gap-2 w-full'}>
+                                <ExpandableContent 
+                                    label="Result" 
+                                    content={availableResult.content} 
+                                    expanded={resultsExpanded} 
+                                    icon={<FileTextIcon size={14} className="text-blue-500" />}
+                                    wrapText={wrapText}
+                                    onExpandedChange={setResultsExpanded}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -282,12 +504,18 @@ function ExpandableContent({
     label,
     content,
     expanded = false,
-    icon
+    icon,
+    wrapText = false,
+    onExpandedChange,
+    rightButton
 }: {
     label: string,
     content: string | object | undefined,
     expanded?: boolean,
-    icon?: React.ReactNode
+    icon?: React.ReactNode,
+    wrapText?: boolean,
+    onExpandedChange?: (expanded: boolean) => void,
+    rightButton?: React.ReactNode
 }) {
     const [isExpanded, setIsExpanded] = useState(expanded);
 
@@ -308,26 +536,31 @@ function ExpandableContent({
     }, [content]);
 
     function toggleExpanded() {
-        setIsExpanded(!isExpanded);
+        const newExpanded = !isExpanded;
+        setIsExpanded(newExpanded);
+        onExpandedChange?.(newExpanded);
     }
 
     const isMarkdown = label === 'Result' && typeof content === 'string' && !content.startsWith('{');
 
-    return <div className='flex flex-col gap-2'>
-        <div className='flex gap-1 items-start cursor-pointer text-gray-500 dark:text-gray-400' onClick={toggleExpanded}>
+    return <div className='flex flex-col gap-2 min-w-0'>
+        <div className='flex gap-1 items-start cursor-pointer text-gray-500 dark:text-gray-400 min-w-0' onClick={toggleExpanded}>
             {!isExpanded && <ChevronRightIcon size={16} />}
             {isExpanded && <ChevronDownIcon size={16} />}
             {icon && <span className="mr-1">{icon}</span>}
             <div className='text-left break-all text-xs'>{label}</div>
+            {rightButton && <span className="ml-2">{rightButton}</span>}
         </div>
         {isExpanded && (
             isMarkdown ? (
-                <div className='text-sm bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-900 dark:text-gray-100'>
+                <div className='text-sm bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-900 dark:text-gray-100 min-w-0'>
                     <MarkdownContent content={content as string} />
                 </div>
             ) : (
                 <pre
-                  className="text-xs leading-snug bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-2 py-1 overflow-x-auto font-mono shadow-sm border border-zinc-100 dark:border-zinc-700"
+                  className={`text-xs leading-snug bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-2 py-1 font-mono shadow-sm border border-zinc-100 dark:border-zinc-700 ${
+                      wrapText ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto whitespace-pre'
+                  } min-w-0 max-w-full`}
                   style={{ fontFamily: "'JetBrains Mono', 'Fira Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace" }}
                 >
                     {formattedContent}
@@ -348,10 +581,12 @@ export function Messages({
     onSystemMessageChange,
     showSystemMessage,
     showDebugMessages = true,
+    showJsonMode = false,
+    onFix,
 }: {
     projectId: string;
-    messages: z.infer<typeof apiV1.ChatMessage>[];
-    toolCallResults: Record<string, z.infer<typeof apiV1.ToolMessage>>;
+    messages: z.infer<typeof Message>[];
+    toolCallResults: Record<string, z.infer<typeof ToolMessage>>;
     loadingAssistantResponse: boolean;
     workflow: z.infer<typeof Workflow>;
     testProfile: z.infer<typeof TestProfile> | null;
@@ -359,47 +594,54 @@ export function Messages({
     onSystemMessageChange: (message: string) => void;
     showSystemMessage: boolean;
     showDebugMessages?: boolean;
+    showJsonMode?: boolean;
+    onFix?: (message: string) => void;
 }) {
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    let lastUserMessageTimestamp = 0;
-    let userMessageSeen = false;
+    // Remove scroll/auto-scroll state and logic
+    // const scrollContainerRef = useRef<HTMLDivElement>(null);
+    // const [autoScroll, setAutoScroll] = useState(true);
+    // const [showUnreadBubble, setShowUnreadBubble] = useState(false);
+    // Remove handleScroll and useEffect for scroll
 
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, loadingAssistantResponse]);
+    // Find the index of the first assistant message
+    const firstAssistantIdx = messages.findIndex(m => m.role === 'assistant');
 
-    const renderMessage = (message: z.infer<typeof apiV1.ChatMessage>, index: number) => {
-        const isConsecutive = index > 0 && messages[index - 1].role === message.role;
-
+    const renderMessage = (message: z.infer<typeof Message>, index: number) => {
+        const isFirstAssistant = message.role === 'assistant' && index === firstAssistantIdx;
         if (message.role === 'assistant') {
-            let latency = new Date(message.createdAt).getTime() - lastUserMessageTimestamp;
-            if (!userMessageSeen) {
-                latency = 0;
-            }
+            // TODO: add latency support
+            // let latency = new Date(message.createdAt).getTime() - lastUserMessageTimestamp;
+            // if (!userMessageSeen) {
+            //     latency = 0;
+            // }
+            let latency = 0;
 
             // First check for tool calls
-            if ('tool_calls' in message && message.tool_calls) {
+            if ('toolCalls' in message) {
                 // Skip tool calls if debug mode is off
                 if (!showDebugMessages) {
                     return null;
                 }
                 return (
                     <ToolCalls
-                        toolCalls={message.tool_calls}
+                        toolCalls={message.toolCalls}
                         results={toolCallResults}
                         projectId={projectId}
                         messages={messages}
-                        sender={message.agenticSender ?? ''}
+                        sender={message.agentName ?? ''}
                         workflow={workflow}
                         testProfile={testProfile}
                         systemMessage={systemMessage}
                         delta={latency}
+                        onFix={onFix}
+                        showDebugMessages={showDebugMessages}
+                        isFirstAssistant={isFirstAssistant}
                     />
                 );
             }
 
             // Then check for internal messages
-            if (message.agenticResponseType === 'internal') {
+            if (message.content && message.responseType === 'internal') {
                 // Skip internal messages if debug mode is off
                 if (!showDebugMessages) {
                     return null;
@@ -407,9 +649,13 @@ export function Messages({
                 return (
                     <InternalAssistantMessage
                         content={message.content ?? ''}
-                        sender={message.agenticSender ?? ''}
+                        sender={message.agentName ?? ''}
                         latency={latency}
                         delta={latency}
+                        showJsonMode={showJsonMode}
+                        onFix={onFix}
+                        showDebugMessages={showDebugMessages}
+                        isFirstAssistant={isFirstAssistant}
                     />
                 );
             }
@@ -418,27 +664,31 @@ export function Messages({
             return (
                 <AssistantMessage
                     content={message.content ?? ''}
-                    sender={message.agenticSender ?? ''}
+                    sender={message.agentName ?? ''}
                     latency={latency}
+                    onFix={onFix}
+                    showDebugMessages={showDebugMessages}
+                    isFirstAssistant={isFirstAssistant}
                 />
             );
         }
 
-        if (message.role === 'user' && typeof message.content === 'string') {
-            lastUserMessageTimestamp = new Date(message.createdAt).getTime();
-            userMessageSeen = true;
+        if (message.role === 'user') {
+            // TODO: add latency support
+            // lastUserMessageTimestamp = new Date(message.createdAt).getTime();
+            // userMessageSeen = true;
             return <UserMessage content={message.content} />;
         }
 
         return null;
     };
 
-    const isAgentTransition = (message: z.infer<typeof apiV1.ChatMessage>) => {
-        return message.role === 'assistant' && 'tool_calls' in message && Array.isArray(message.tool_calls) && message.tool_calls.some(tc => tc.function.name.startsWith('transfer_to_'));
+    const isAgentTransition = (message: z.infer<typeof Message>) => {
+        return message.role === 'assistant' && 'toolCalls' in message && Array.isArray(message.toolCalls) && message.toolCalls.some(tc => tc.function.name.startsWith('transfer_to_'));
     };
 
-    const isAssistantMessage = (message: z.infer<typeof apiV1.ChatMessage>) => {
-        return message.role === 'assistant' && (!('tool_calls' in message) || !Array.isArray(message.tool_calls) || !message.tool_calls.some(tc => tc.function.name.startsWith('transfer_to_')));
+    const isAssistantMessage = (message: z.infer<typeof Message>) => {
+        return message.role === 'assistant' && (!('toolCalls' in message) || !Array.isArray(message.toolCalls) || !message.toolCalls.some(tc => tc.function.name.startsWith('transfer_to_')));
     };
 
     if (showSystemMessage) {
@@ -451,23 +701,21 @@ export function Messages({
         );
     }
 
+    // Just render the messages, no scroll container or unread bubble
     return (
-        <div className="max-w-[768px] mx-auto">
-            <div className="flex flex-col">
-                {messages.map((message, index) => {
-                    const renderedMessage = renderMessage(message, index);
-                    if (renderedMessage) {
-                        return (
-                            <div key={index}>
-                                {renderedMessage}
-                            </div>
-                        );
-                    }
-                    return null;
-                })}
-                {loadingAssistantResponse && <AssistantMessageLoading />}
-            </div>
-            <div ref={messagesEndRef} />
+        <div className="max-w-7xl mx-auto px-2 sm:px-8 relative">
+            {messages.map((message, index) => {
+                const renderedMessage = renderMessage(message, index);
+                if (renderedMessage) {
+                    return (
+                        <div key={index}>
+                            {renderedMessage}
+                        </div>
+                    );
+                }
+                return null;
+            })}
+            {loadingAssistantResponse && <AssistantMessageLoading />}
         </div>
     );
 }

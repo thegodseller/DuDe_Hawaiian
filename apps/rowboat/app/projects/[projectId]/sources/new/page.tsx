@@ -8,11 +8,12 @@ export const metadata: Metadata = {
     title: "Add data source"
 }
 
-export default async function Page({
-    params
-}: {
-    params: { projectId: string }
-}) {
+export default async function Page(
+    props: {
+        params: Promise<{ projectId: string }>
+    }
+) {
+    const params = await props.params;
     await requireActiveBillingSubscription();
     if (!USE_RAG) {
         redirect(`/projects/${params.projectId}`);

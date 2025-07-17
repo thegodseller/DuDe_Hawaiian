@@ -1,43 +1,11 @@
 "use server";
 import { z } from "zod";
 import { WorkflowTool } from "../lib/types/workflow_types";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { projectAuthCheck } from "./project_actions";
 import { projectsCollection, agentWorkflowsCollection } from "../lib/mongodb";
 import { Project } from "../lib/types/project_types";
 import { MCPServer, McpServerTool, convertMcpServerToolToWorkflowTool } from "../lib/types/types";
-
-async function getMcpClient(serverUrl: string, serverName: string): Promise<Client> {
-    let client: Client | undefined = undefined;
-    const baseUrl = new URL(serverUrl);
-
-    // Try to connect using Streamable HTTP transport
-    try {
-        client = new Client({
-            name: 'streamable-http-client',
-            version: '1.0.0'
-        });
-        const transport = new StreamableHTTPClientTransport(
-            new URL(baseUrl)
-        );
-        await client.connect(transport);
-        console.log(`[MCP] Connected using Streamable HTTP transport to ${serverName}`);
-        return client;
-    } catch (error) {
-        // If that fails with a 4xx error, try the older SSE transport
-        console.log(`[MCP] Streamable HTTP connection failed, falling back to SSE transport for ${serverName}`);
-        client = new Client({
-            name: 'sse-client',
-            version: '1.0.0'
-        });
-        const sseTransport = new SSEClientTransport(baseUrl);
-        await client.connect(sseTransport);
-        console.log(`[MCP] Connected using SSE transport to ${serverName}`);
-        return client;
-    }
-}
+import { getMcpClient } from "../lib/mcp";
 
 export async function fetchMcpTools(projectId: string): Promise<z.infer<typeof WorkflowTool>[]> {
     await projectAuthCheck(projectId);
@@ -326,37 +294,6 @@ export async function getSelectedMcpTools(projectId: string, serverName: string)
     if (!server) return [];
 
     return server.tools.map(t => t.id);
-}
-
-export async function listProjectMcpTools(projectId: string): Promise<z.infer<typeof WorkflowTool>[]> {
-    await projectAuthCheck(projectId);
-    
-    try {
-        // Get project's MCP servers and their tools
-        const project = await projectsCollection.findOne({ _id: projectId });
-        if (!project?.mcpServers) return [];
-
-        // Convert MCP tools to workflow tools format, but only from ready servers
-        return project.mcpServers
-            .filter(server => server.isReady) // Only include tools from ready servers
-            .flatMap(server => {
-                return server.tools.map(tool => ({
-                    name: tool.name,
-                    description: tool.description || "",
-                    parameters: {
-                        type: 'object' as const,
-                        properties: tool.parameters?.properties || {},
-                        required: tool.parameters?.required || []
-                    },
-                    isMcp: true,
-                    mcpServerName: server.name,
-                    mcpServerURL: server.serverUrl,
-                }));
-            });
-    } catch (error) {
-        console.error('Error fetching project tools:', error);
-        return [];
-    }
 }
 
 export async function testMcpTool(

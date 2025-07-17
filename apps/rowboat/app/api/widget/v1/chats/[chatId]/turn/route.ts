@@ -4,16 +4,108 @@ import { agentWorkflowsCollection, projectsCollection, chatsCollection, chatMess
 import { z } from "zod";
 import { ObjectId, WithId } from "mongodb";
 import { authCheck } from "../../../utils";
-import { convertFromAgenticAPIChatMessages } from "../../../../../../lib/types/agents_api_types";
-import { convertToAgenticAPIChatMessages } from "../../../../../../lib/types/agents_api_types";
-import { convertWorkflowToAgenticAPI } from "../../../../../../lib/types/agents_api_types";
-import { AgenticAPIChatRequest } from "../../../../../../lib/types/agents_api_types";
-import { getAgenticApiResponse } from "../../../../../../lib/utils";
 import { check_query_limit } from "../../../../../../lib/rate_limiting";
 import { PrefixLogger } from "../../../../../../lib/utils";
-import { fetchProjectMcpTools } from "@/app/lib/project_tools";
+import { collectProjectTools } from "@/app/lib/project_tools";
 import { authorize, getCustomerIdForProject, logUsage } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
+import { getResponse } from "@/app/lib/agents";
+import { Message, AssistantMessage, AssistantMessageWithToolCalls, ToolMessage } from "@/app/lib/types/types";
+
+function convert(messages: z.infer<typeof apiV1.ChatMessage>[]): z.infer<typeof Message>[] {
+    const result: z.infer<typeof Message>[] = [];
+    for (const m of messages) {
+        if (m.role === 'assistant') {
+            if ('tool_calls' in m) {
+                result.push({
+                    role: 'assistant',
+                    content: null,
+                    agentName: m.agenticSender ?? '',
+                    toolCalls: m.tool_calls.map((t: any) => ({
+                        function: {
+                            name: t.function.name,
+                            arguments: t.function.arguments,
+                        },
+                        type: 'function',
+                        id: t.id,
+                    })),
+                });
+            } else {
+                result.push({
+                    role: 'assistant',
+                    content: m.content,
+                    agentName: m.agenticSender ?? '',
+                    responseType: m.agenticResponseType,
+                });
+            }
+        } else if (m.role === 'tool') {
+            result.push({
+                role: 'tool',
+                content: m.content,
+                toolCallId: m.tool_call_id,
+                toolName: m.tool_name,
+            });
+        } else if (m.role === 'system') {
+            result.push({
+                role: 'system',
+                content: m.content,
+            });
+        } else if (m.role === 'user') {
+            result.push({
+                role: 'user',
+                content: m.content,
+            });
+        }
+    }
+    return result;
+}
+
+function convertBack(messages: z.infer<typeof AssistantMessage | typeof AssistantMessageWithToolCalls | typeof ToolMessage>[]): z.infer<typeof apiV1.ChatMessage>[] {
+    const result: z.infer<typeof apiV1.ChatMessage>[] = [];
+    for (const m of messages) {
+        if (m.role === 'assistant') {
+            if ('toolCalls' in m) {
+                result.push({
+                    version: 'v1',
+                    chatId: '',
+                    createdAt: new Date().toISOString(),
+                    role: 'assistant',
+                    agenticSender: m.agentName,
+                    agenticResponseType: 'external',
+                    tool_calls: m.toolCalls.map((t: any) => ({
+                        function: {
+                            name: t.function.name,
+                            arguments: t.function.arguments,
+                        },
+                        type: 'function',
+                        id: t.id,
+                    })),
+                });
+            } else {
+                result.push({
+                    version: 'v1',
+                    chatId: '',
+                    createdAt: new Date().toISOString(),
+                    role: 'assistant',
+                    content: m.content,
+                    agenticSender: m.agentName,
+                    agenticResponseType: m.responseType,
+                });
+            }
+        } else if (m.role === 'tool') {
+            result.push({
+                version: 'v1',
+                chatId: '',
+                createdAt: new Date().toISOString(),
+                role: 'tool',
+                content: m.content,
+                tool_call_id: m.toolCallId,
+                tool_name: m.toolName,
+            });
+        }
+    }
+    return result;
+}
 
 // get next turn / agent response
 export async function POST(
@@ -90,7 +182,7 @@ export async function POST(
         }
 
         // fetch project tools
-        const projectTools = await fetchProjectMcpTools(session.projectId);
+        const projectTools = await collectProjectTools(session.projectId);
 
         // fetch workflow
         const workflow = await agentWorkflowsCollection.findOne({
@@ -119,47 +211,23 @@ export async function POST(
         }
 
         // get assistant response
-        const { agents, tools, prompts, startAgent } = convertWorkflowToAgenticAPI(workflow, projectTools);
-        const unsavedMessages: z.infer<typeof apiV1.ChatMessage>[] = [userMessage];
-        let state: unknown = chat.agenticState ?? { last_agent_name: startAgent };
+        const inMessages: z.infer<typeof Message>[] = convert(messages);
+        inMessages.push(userMessage);
 
-        const request: z.infer<typeof AgenticAPIChatRequest> = {
-            projectId: session.projectId,
-            messages: convertToAgenticAPIChatMessages([systemMessage, ...messages, ...unsavedMessages]),
-            state,
-            agents,
-            tools,
-            prompts,
-            startAgent,
-            mcpServers: (projectSettings.mcpServers ?? []).map(server => ({
-                name: server.name,
-                serverUrl: server.serverUrl || '',
-                isReady: server.isReady
-            })),
-            toolWebhookUrl: projectSettings.webhookUrl ?? '',
-            testProfile: undefined,
-        };
-        logger.log(`Sending agentic request`);
-        const response = await getAgenticApiResponse(request);
-        state = response.state;
-        if (response.messages.length === 0) {
-            throw new Error("No messages returned from assistant");
-        }
-        const convertedMessages = convertFromAgenticAPIChatMessages(response.messages);
-        unsavedMessages.push(...convertedMessages.map(m => ({
-            ...m,
-            version: 'v1' as const,
-            chatId,
-            createdAt: new Date().toISOString(),
-        })));
+        const { messages: responseMessages } = await getResponse(workflow, projectTools, [systemMessage, ...inMessages]);
+        const convertedResponseMessages = convertBack(responseMessages);
+        const unsavedMessages = [
+            userMessage,
+            ...convertedResponseMessages,
+        ];
 
         logger.log(`Saving ${unsavedMessages.length} new messages and updating chat state`);
         await chatMessagesCollection.insertMany(unsavedMessages);
-        await chatsCollection.updateOne({ _id: new ObjectId(chatId) }, { $set: { agenticState: state } });
+        await chatsCollection.updateOne({ _id: new ObjectId(chatId) }, { $set: { agenticState: chat.agenticState } });
 
         // log billing usage
         if (USE_BILLING && billingCustomerId) {
-            const agentMessageCount = convertedMessages.filter(m => m.role === 'assistant').length;
+            const agentMessageCount = convertedResponseMessages.filter(m => m.role === 'assistant').length;
             await logUsage(billingCustomerId, {
                 type: 'agent_messages',
                 amount: agentMessageCount,

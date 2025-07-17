@@ -29,7 +29,7 @@ export function Nav({
         setCollapsed(!collapsed);
     }
 
-    return <div className={clsx("shrink-0 flex flex-col gap-2 border-r border-border relative p-2", {
+    return <div className={clsx("shrink-0 flex flex-col gap-2 border-r border relative p-2", {
         "w-40": !collapsed,
         "w-10": collapsed
     })}>

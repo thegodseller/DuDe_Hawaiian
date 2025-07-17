@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from "react";
-import { createProject, createProjectFromPrompt } from "@/app/actions/project_actions";
+import { createProject, createProjectFromPrompt, createProjectFromWorkflowJson } from "@/app/actions/project_actions";
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { starting_copilot_prompts } from "@/app/lib/project_templates";
@@ -14,6 +14,10 @@ import { USE_MULTIPLE_PROJECTS } from "@/app/lib/feature_flags";
 import { HorizontalDivider } from "@/components/ui/horizontal-divider";
 import { Tooltip } from "@heroui/react";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
+import { z } from 'zod';
+import { Workflow } from '@/app/lib/types/workflow_types';
+import { Modal } from '@/components/ui/modal';
+import { PlusIcon } from "lucide-react";
 
 // Add glow animation styles
 const glowStyles = `
@@ -61,7 +65,8 @@ const glowStyles = `
 const TabType = {
     Describe: 'describe',
     Blank: 'blank',
-    Example: 'example'
+    Example: 'example',
+    Import: 'import',
 } as const;
 
 type TabState = typeof TabType[keyof typeof TabType];
@@ -139,7 +144,11 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
     const [name, setName] = useState(defaultName);
     const [promptError, setPromptError] = useState<string | null>(null);
     const [billingError, setBillingError] = useState<string | null>(null);
+    const [importJson, setImportJson] = useState("");
+    const [importError, setImportError] = useState<string | null>(null);
+    const [importModalOpen, setImportModalOpen] = useState(false);
     const router = useRouter();
+    const [importLoading, setImportLoading] = useState(false);
 
     // Add this effect to update name when defaultName changes
     useEffect(() => {
@@ -177,11 +186,13 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
     const handleTabChange = (tab: TabState) => {
         setSelectedTab(tab);
         setIsExamplesDropdownOpen(false);
-
+        setImportError(null);
         if (tab === TabType.Blank) {
             setCustomPrompt('');
         } else if (tab === TabType.Describe) {
             setCustomPrompt('');
+        } else if (tab === TabType.Import) {
+            setImportJson('');
         }
     };
 
@@ -230,6 +241,43 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
         }
     }
 
+    async function handleImportSubmit(e?: React.FormEvent) {
+        if (e) e.preventDefault();
+        setImportError(null);
+        setImportLoading(true);
+        let parsed;
+        try {
+            const json = JSON.parse(importJson);
+            parsed = Workflow.omit({ projectId: true }).safeParse(json);
+            if (!parsed.success) {
+                setImportError('Invalid workflow JSON: ' + JSON.stringify(parsed.error.issues));
+                setImportModalOpen(true);
+                setImportLoading(false);
+                return;
+            }
+        } catch (err) {
+            setImportError('Invalid JSON: ' + (err instanceof Error ? err.message : String(err)));
+            setImportModalOpen(true);
+            setImportLoading(false);
+            return;
+        }
+        try {
+            const formData = new FormData();
+            formData.append('workflowJson', importJson);
+            const response = await createProjectFromWorkflowJson(formData);
+            if ('id' in response) {
+                router.push(`/projects/${response.id}/workflow`);
+            } else {
+                setBillingError(response.billingError);
+            }
+        } catch (err) {
+            setImportError('Failed to import: ' + (err instanceof Error ? err.message : String(err)));
+            setImportModalOpen(true);
+        } finally {
+            setImportLoading(false);
+        }
+    }
+
     return (
         <>
             <div className={clsx(
@@ -265,7 +313,7 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                     
                     <form
                         id="create-project-form"
-                        action={handleSubmit}
+                        action={selectedTab !== TabType.Import ? handleSubmit : undefined}
                         className="pt-6 pb-16 space-y-12"
                     >
                         {/* Tab Section */}
@@ -341,8 +389,60 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                                         </div>
                                     )}
                                 </div>
+                                <Button
+                                    variant={selectedTab === TabType.Import ? 'primary' : 'tertiary'}
+                                    size="md"
+                                    onClick={() => handleTabChange(TabType.Import)}
+                                    type="button"
+                                    className={selectedTab === TabType.Import ? selectedTabStyles : unselectedTabStyles}
+                                >
+                                    Import JSON
+                                </Button>
                             </div>
                         </div>
+
+                        {/* Import JSON Section */}
+                        {selectedTab === TabType.Import && (
+                            <div className="space-y-4">
+                                <div className="flex flex-col gap-4">
+                                    <label className="text-base font-medium text-gray-900 dark:text-gray-100">
+                                        🗂️ Paste JSON Contents
+                                    </label>
+                                    <Textarea
+                                        value={importJson}
+                                        onChange={e => setImportJson(e.target.value)}
+                                        placeholder="Paste your workflow JSON here..."
+                                        className={clsx(
+                                            textareaStyles,
+                                            "text-base",
+                                            "text-gray-900 dark:text-gray-100",
+                                            !importJson && emptyTextareaStyles
+                                        )}
+                                        style={{ minHeight: "180px" }}
+                                        autoFocus
+                                        autoResize
+                                        required
+                                    />
+                                    <div className="flex flex-col items-start gap-2">
+                                        {importLoading && (
+                                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                Please hold on while we set up your project&hellip;
+                                            </div>
+                                        )}
+                                        <Button
+                                            variant="primary"
+                                            size="lg"
+                                            onClick={handleImportSubmit}
+                                            type="button"
+                                            isLoading={importLoading}
+                                            startContent={<PlusIcon size={16} />}
+                                        >
+                                            Import and create assistant
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Custom Prompt Section - Only show when needed */}
                         {(selectedTab === TabType.Describe || selectedTab === TabType.Example) && (
@@ -400,7 +500,7 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                         )}
 
                         {/* Name Section */}
-                        {USE_MULTIPLE_PROJECTS && (
+                        {USE_MULTIPLE_PROJECTS && selectedTab !== TabType.Import && (
                             <div className="space-y-4">
                                 <div className="flex flex-col gap-4">
                                     <label className={largeSectionHeaderStyles}>
@@ -424,9 +524,11 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                         )}
 
                         {/* Submit Button */}
-                        <div className="pt-1 w-full -mt-4">
-                            <Submit />
-                        </div>
+                        {selectedTab !== TabType.Import && (
+                            <div className="pt-1 w-full -mt-4">
+                                <Submit />
+                            </div>
+                        )}
                     </form>
                 </section>
             </div>
@@ -435,6 +537,15 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                 onClose={() => setBillingError(null)}
                 errorMessage={billingError || ''}
             />
+            <Modal
+                isOpen={importModalOpen}
+                onClose={() => setImportModalOpen(false)}
+                title="Import Error"
+            >
+                <div className="text-red-500 text-sm whitespace-pre-wrap">
+                    {importError}
+                </div>
+            </Modal>
         </>
     );
 }
