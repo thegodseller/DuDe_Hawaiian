@@ -7,6 +7,7 @@ import twilio from 'twilio';
 import { Twilio } from 'twilio';
 import { z } from "zod";
 import { WithStringId } from "../lib/types/types";
+import { projectAuthCheck } from "./project_actions";
 
 // Helper function to serialize MongoDB documents
 function serializeConfig(config: any) {
@@ -19,6 +20,7 @@ function serializeConfig(config: any) {
 
 // Real implementation for configuring Twilio number
 export async function configureTwilioNumber(params: z.infer<typeof TwilioConfigParams>): Promise<TwilioConfigResponse> {
+    await projectAuthCheck(params.project_id);
     console.log('configureTwilioNumber - Received params:', params);
     try {
         const client = twilio(params.account_sid, params.auth_token);
@@ -143,6 +145,7 @@ async function saveTwilioConfig(params: z.infer<typeof TwilioConfigParams>): Pro
 
 // Get Twilio configuration for a workflow
 export async function getTwilioConfigs(projectId: string): Promise<WithStringId<z.infer<typeof TwilioConfig>>[]> {
+    await projectAuthCheck(projectId);
     console.log('getTwilioConfigs - Fetching for projectId:', projectId);
     const configs = await twilioConfigsCollection
         .find({ 
@@ -161,6 +164,7 @@ export async function getTwilioConfigs(projectId: string): Promise<WithStringId<
 
 // Delete a Twilio configuration (soft delete)
 export async function deleteTwilioConfig(projectId: string, configId: string) {
+    await projectAuthCheck(projectId);
     console.log('deleteTwilioConfig - Deleting config:', { projectId, configId });
     const result = await twilioConfigsCollection.updateOne(
         {
