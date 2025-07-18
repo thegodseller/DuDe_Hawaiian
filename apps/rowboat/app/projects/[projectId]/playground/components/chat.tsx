@@ -213,9 +213,11 @@ export function Chat({
                 return;
             }
 
+            console.log(`chat.tsx: got streamid: ${streamId}`);
             eventSource = new EventSource(`/api/stream-response/${streamId}`);
 
             eventSource.addEventListener("message", (event) => {
+                console.log(`chat.tsx: got message: ${event.data}`);
                 if (ignore) {
                     return;
                 }
@@ -233,6 +235,7 @@ export function Chat({
             });
 
             eventSource.addEventListener('done', (event) => {
+                console.log(`chat.tsx: got done event: ${event.data}`);
                 if (eventSource) {
                     eventSource.close();
                 }
@@ -250,6 +253,7 @@ export function Chat({
             });
 
             eventSource.addEventListener('stream_error', (event) => {
+                console.log(`chat.tsx: got stream_error event: ${event.data}`);
                 if (eventSource) {
                     eventSource.close();
                 }
