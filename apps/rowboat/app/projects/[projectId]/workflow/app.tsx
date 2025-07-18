@@ -1,5 +1,5 @@
 "use client";
-import { WithStringId } from "../../../lib/types/types";
+import { MCPServer, WithStringId } from "../../../lib/types/types";
 import { DataSource } from "../../../lib/types/datasource_types";
 import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
@@ -28,6 +28,8 @@ export function App({
     const [projectTools, setProjectTools] = useState<z.infer<typeof WorkflowTool>[] | null>(null);
     const [loading, setLoading] = useState(false);
     const [eligibleModels, setEligibleModels] = useState<z.infer<typeof ModelsResponse> | "*">("*");
+    const [projectMcpServers, setProjectMcpServers] = useState<Array<z.infer<typeof MCPServer>>>([]);
+    const [webhookUrl, setWebhookUrl] = useState<string>('');
 
     console.log('workflow app.tsx render');
 
@@ -55,6 +57,12 @@ export function App({
         setDataSources(dataSources);
         setProjectTools(projectTools);
         setEligibleModels(eligibleModels);
+        if (project.mcpServers) {
+            setProjectMcpServers(project.mcpServers);
+        }
+        if (project.webhookUrl) {
+            setWebhookUrl(project.webhookUrl);
+        }
         setLoading(false);
     }, [projectId]);
 
@@ -88,8 +96,8 @@ export function App({
             dataSources={dataSources}
             projectTools={projectTools}
             useRag={useRag}
-            mcpServerUrls={project.mcpServers || []}
-            toolWebhookUrl={project.webhookUrl || ''}
+            mcpServerUrls={projectMcpServers}
+            toolWebhookUrl={webhookUrl}
             defaultModel={defaultModel}
             eligibleModels={eligibleModels}
             onChangeMode={handleSetMode}
