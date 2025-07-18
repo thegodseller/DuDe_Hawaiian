@@ -80,7 +80,6 @@ export function App({
         </div>}
         {!loading && !workflow && <div>No workflow found!</div>}
         {!loading && project && workflow && (dataSources !== null) && (projectTools !== null) && <WorkflowEditor
-            key={project._id}
             projectId={projectId}
             isLive={mode == 'live'}
             workflow={workflow}
