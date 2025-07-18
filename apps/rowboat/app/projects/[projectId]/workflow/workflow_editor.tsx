@@ -632,25 +632,25 @@ export function WorkflowEditor({
     const { isOpen: isRevertModalOpen, onOpen: onRevertModalOpen, onClose: onRevertModalClose } = useDisclosure();
 
     // Load agent order from localStorage on mount
-    useEffect(() => {
-        const mode = isLive ? 'live' : 'draft';
-        const storedOrder = localStorage.getItem(`${mode}_workflow_${projectId}_agent_order`);
-        if (storedOrder) {
-            try {
-                const orderMap = JSON.parse(storedOrder);
-                const orderedAgents = [...workflow.agents].sort((a, b) => {
-                    const orderA = orderMap[a.name] ?? Number.MAX_SAFE_INTEGER;
-                    const orderB = orderMap[b.name] ?? Number.MAX_SAFE_INTEGER;
-                    return orderA - orderB;
-                });
-                if (JSON.stringify(orderedAgents) !== JSON.stringify(workflow.agents)) {
-                    dispatch({ type: "reorder_agents", agents: orderedAgents });
-                }
-            } catch (e) {
-                console.error("Error loading agent order:", e);
-            }
-        }
-    }, [workflow.agents, isLive, projectId]);
+    // useEffect(() => {
+    //     const mode = isLive ? 'live' : 'draft';
+    //     const storedOrder = localStorage.getItem(`${mode}_workflow_${projectId}_agent_order`);
+    //     if (storedOrder) {
+    //         try {
+    //             const orderMap = JSON.parse(storedOrder);
+    //             const orderedAgents = [...workflow.agents].sort((a, b) => {
+    //                 const orderA = orderMap[a.name] ?? Number.MAX_SAFE_INTEGER;
+    //                 const orderB = orderMap[b.name] ?? Number.MAX_SAFE_INTEGER;
+    //                 return orderA - orderB;
+    //             });
+    //             if (JSON.stringify(orderedAgents) !== JSON.stringify(workflow.agents)) {
+    //                 dispatch({ type: "reorder_agents", agents: orderedAgents });
+    //             }
+    //         } catch (e) {
+    //             console.error("Error loading agent order:", e);
+    //         }
+    //     }
+    // }, [workflow.agents, isLive, projectId]);
 
     // Function to trigger copilot chat
     const triggerCopilotChat = useCallback((message: string) => {
