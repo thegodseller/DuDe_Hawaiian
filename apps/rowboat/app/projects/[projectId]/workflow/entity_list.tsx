@@ -379,16 +379,15 @@ export function EntityList({
                             !expandedPanels.agents && "h-[53px]!"
                         )}
                         title={
-                            <button 
-                                onClick={() => setExpandedPanels(prev => ({ ...prev, agents: !prev.agents }))}
-                                className={`${headerClasses} hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors h-full`}
-                            >
+                            <div className={`${headerClasses} rounded-md transition-colors h-full`}>
                                 <div className="flex items-center gap-2 h-full">
-                                    {expandedPanels.agents ? (
-                                        <ChevronDown className="w-4 h-4" />
-                                    ) : (
-                                        <ChevronRight className="w-4 h-4" />
-                                    )}
+                                    <button onClick={() => setExpandedPanels(prev => ({ ...prev, agents: !prev.agents }))}>
+                                        {expandedPanels.agents ? (
+                                            <ChevronDown className="w-4 h-4" />
+                                        ) : (
+                                            <ChevronRight className="w-4 h-4" />
+                                        )}
+                                    </button>
                                     <Brain className="w-4 h-4" />
                                     <span>Agents</span>
                                 </div>
@@ -421,7 +420,7 @@ export function EntityList({
                                         <PlusIcon className="w-4 h-4" />
                                     </Button>
                                 </div>
-                            </button>
+                            </div>
                         }
                     >
                         {expandedPanels.agents && (
@@ -480,16 +479,15 @@ export function EntityList({
                             !expandedPanels.tools && "h-[53px]!"
                         )}
                         title={
-                            <button 
-                                onClick={() => setExpandedPanels(prev => ({ ...prev, tools: !prev.tools }))}
-                                className={`${headerClasses} hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors h-full`}
-                            >
+                            <div className={`${headerClasses} rounded-md transition-colors h-full`}>
                                 <div className="flex items-center gap-2 h-full">
-                                    {expandedPanels.tools ? (
-                                        <ChevronDown className="w-4 h-4" />
-                                    ) : (
-                                        <ChevronRight className="w-4 h-4" />
-                                    )}
+                                    <button onClick={() => setExpandedPanels(prev => ({ ...prev, tools: !prev.tools }))}>
+                                        {expandedPanels.tools ? (
+                                            <ChevronDown className="w-4 h-4" />
+                                        ) : (
+                                            <ChevronRight className="w-4 h-4" />
+                                        )}
+                                    </button>
                                     <Wrench className="w-4 h-4" />
                                     <span>Tools</span>
                                 </div>
@@ -507,7 +505,7 @@ export function EntityList({
                                 >
                                     <PlusIcon className="w-4 h-4" />
                                 </Button>
-                            </button>
+                            </div>
                         }
                     >
                         {expandedPanels.tools && (
@@ -612,16 +610,15 @@ export function EntityList({
                             !expandedPanels.prompts && "h-[53px]!"
                         )}
                         title={
-                            <button 
-                                onClick={() => setExpandedPanels(prev => ({ ...prev, prompts: !prev.prompts }))}
-                                className={`${headerClasses} hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors h-full`}
-                            >
+                            <div className={`${headerClasses} rounded-md transition-colors h-full`}>
                                 <div className="flex items-center gap-2 h-full">
-                                    {expandedPanels.prompts ? (
-                                        <ChevronDown className="w-4 h-4" />
-                                    ) : (
-                                        <ChevronRight className="w-4 h-4" />
-                                    )}
+                                    <button onClick={() => setExpandedPanels(prev => ({ ...prev, prompts: !prev.prompts }))}>
+                                        {expandedPanels.prompts ? (
+                                            <ChevronDown className="w-4 h-4" />
+                                        ) : (
+                                            <ChevronRight className="w-4 h-4" />
+                                        )}
+                                    </button>
                                     <PenLine className="w-4 h-4" />
                                     <span>Prompts</span>
                                 </div>
@@ -639,7 +636,7 @@ export function EntityList({
                                 >
                                     <PlusIcon className="w-4 h-4" />
                                 </Button>
-                            </button>
+                            </div>
                         }
                     >
                         {expandedPanels.prompts && (
