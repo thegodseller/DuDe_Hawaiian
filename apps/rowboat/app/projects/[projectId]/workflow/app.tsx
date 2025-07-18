@@ -29,6 +29,8 @@ export function App({
     const [loading, setLoading] = useState(false);
     const [eligibleModels, setEligibleModels] = useState<z.infer<typeof ModelsResponse> | "*">("*");
 
+    console.log('workflow app.tsx render');
+
     // choose which workflow to display
     let workflow: z.infer<typeof Workflow> | undefined = project?.draftWorkflow;
     if (mode == 'live') {

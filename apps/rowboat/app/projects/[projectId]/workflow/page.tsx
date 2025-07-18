@@ -32,6 +32,8 @@ export default async function Page(
         await migrate_versioned_workflows(params.projectId);
     }
 
+    console.log('/workflow page.tsx serve');
+
     return (
         <App
             projectId={params.projectId}
