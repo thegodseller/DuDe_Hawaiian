@@ -1,20 +1,16 @@
 'use client';
 
-import { useEffect, useState, useRef } from "react";
-import { createProject, createProjectFromPrompt, createProjectFromWorkflowJson } from "@/app/actions/project_actions";
+import { useEffect, useState } from "react";
+import { createProjectFromPrompt, createProjectFromWorkflowJson } from "@/app/actions/project_actions";
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
-import { starting_copilot_prompts } from "@/app/lib/project_templates";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { Textarea } from "@/components/ui/textarea";
-import { Submit } from "./submit-button";
 import { Button } from "@/components/ui/button";
 import { FolderOpenIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { USE_MULTIPLE_PROJECTS } from "@/app/lib/feature_flags";
 import { HorizontalDivider } from "@/components/ui/horizontal-divider";
 import { Tooltip } from "@heroui/react";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
-import { z } from 'zod';
 import { Workflow } from '@/app/lib/types/workflow_types';
 import { Modal } from '@/components/ui/modal';
 import { FileDown, Send } from "lucide-react";
