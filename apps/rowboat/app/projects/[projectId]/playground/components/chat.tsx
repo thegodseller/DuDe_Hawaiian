@@ -57,6 +57,7 @@ export function Chat({
 
     // --- Scroll/auto-scroll/unread bubble logic ---
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const eventSourceRef = useRef<EventSource | null>(null);
     const [autoScroll, setAutoScroll] = useState(true);
     const [showUnreadBubble, setShowUnreadBubble] = useState(false);
 
@@ -215,6 +216,7 @@ export function Chat({
 
             console.log(`chat.tsx: got streamid: ${streamId}`);
             eventSource = new EventSource(`/api/stream-response/${streamId}`);
+            eventSourceRef.current = eventSource;
 
             eventSource.addEventListener("message", (event) => {
                 console.log(`chat.tsx: got message: ${event.data}`);
@@ -238,6 +240,7 @@ export function Chat({
                 console.log(`chat.tsx: got done event: ${event.data}`);
                 if (eventSource) {
                     eventSource.close();
+                    eventSourceRef.current = null;
                 }
 
                 const parsed = JSON.parse(event.data);
@@ -256,6 +259,7 @@ export function Chat({
                 console.log(`chat.tsx: got stream_error event: ${event.data}`);
                 if (eventSource) {
                     eventSource.close();
+                    eventSourceRef.current = null;
                 }
 
                 console.error('SSE Error:', event);
@@ -296,6 +300,7 @@ export function Chat({
             ignore = true;
             if (eventSource) {
                 eventSource.close();
+                eventSourceRef.current = null;
             }
         };
     }, [
@@ -308,6 +313,15 @@ export function Chat({
         fetchResponseError,
         projectTools,
     ]);
+
+    // Add a stop handler function
+    const handleStop = useCallback(() => {
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+            setLoadingAssistantResponse(false);
+        }
+    }, []);
 
     return <div className="w-11/12 max-w-6xl mx-auto h-full flex flex-col relative">
         <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pt-4 pb-4">
@@ -387,6 +401,7 @@ export function Chat({
                 loading={loadingAssistantResponse}
                 shouldAutoFocus={isLastInteracted}
                 onFocus={() => setIsLastInteracted(true)}
+                onCancel={handleStop}
             />
         </div>
 
