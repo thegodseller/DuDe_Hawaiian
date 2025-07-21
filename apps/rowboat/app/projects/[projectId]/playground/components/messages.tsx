@@ -5,7 +5,8 @@ import z from "zod";
 import { Workflow } from "@/app/lib/types/workflow_types";
 import { WorkflowTool } from "@/app/lib/types/workflow_types";
 import MarkdownContent from "@/app/lib/components/markdown-content";
-import { ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, CodeIcon, CheckCircleIcon, FileTextIcon, EyeIcon, EyeOffIcon, WrapTextIcon, ArrowRightFromLineIcon, BracesIcon, TextIcon, FlagIcon } from "lucide-react";
+import { ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, CodeIcon, CheckCircleIcon, FileTextIcon, EyeIcon, EyeOffIcon, WrapTextIcon, ArrowRightFromLineIcon, BracesIcon, TextIcon, FlagIcon, HelpCircleIcon, MoreHorizontal } from "lucide-react";
+import { Dropdown, DropdownMenu, DropdownTrigger, DropdownItem } from "@heroui/react";
 import { ProfileContextBox } from "./profile-context-box";
 import { Message, ToolMessage, AssistantMessageWithToolCalls } from "@/app/lib/types/types";
 
@@ -29,7 +30,7 @@ function UserMessage({ content }: { content: string }) {
     );
 }
 
-function InternalAssistantMessage({ content, sender, latency, delta, showJsonMode = false, onFix, showDebugMessages, isFirstAssistant }: { content: string, sender: string | null | undefined, latency: number, delta: number, showJsonMode?: boolean, onFix?: (message: string) => void, showDebugMessages?: boolean, isFirstAssistant?: boolean }) {
+function InternalAssistantMessage({ content, sender, latency, delta, showJsonMode = false, onFix, onExplain, showDebugMessages, isFirstAssistant, index }: { content: string, sender: string | null | undefined, latency: number, delta: number, showJsonMode?: boolean, onFix?: (message: string, index: number) => void, onExplain?: (type: 'assistant', message: string, index: number) => void, showDebugMessages?: boolean, isFirstAssistant?: boolean, index: number }) {
     const isJsonContent = useMemo(() => {
         try {
             JSON.parse(content);
@@ -86,37 +87,30 @@ function InternalAssistantMessage({ content, sender, latency, delta, showJsonMod
             <div className="max-w-[85%] inline-block">
                 <div className="text-gray-500 dark:text-gray-400 text-xs pl-1 flex justify-between items-center mb-2">
                     <span>{sender ?? 'Assistant'}</span>
-                    {showDebugMessages && onFix && !isFirstAssistant && (
-                        <button
-                            onClick={() => onFix(content)}
-                            className="flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline"
-                            title="Fix this response"
-                        >
-                            <FlagIcon size={12} />
-                            Fix
-                        </button>
+                    {(Boolean(showDebugMessages && typeof onFix === 'function' && !isFirstAssistant)
+                      || Boolean(showDebugMessages && typeof onExplain === 'function' && !isFirstAssistant)
+                      || Boolean(isJsonContent && hasResponseKey)) && (
+                        <MessageActionsMenu
+                            showFix={Boolean(showDebugMessages && typeof onFix === 'function' && !isFirstAssistant)}
+                            showExplain={Boolean(showDebugMessages && typeof onExplain === 'function' && !isFirstAssistant)}
+                            showJson={Boolean(isJsonContent && hasResponseKey)}
+                            onFix={onFix ? () => onFix(content, index) : () => {}}
+                            onExplain={onExplain ? () => onExplain('assistant', content, index) : () => {}}
+                            onJson={() => {}}
+                        />
                     )}
                 </div>
                 <div className="bg-gray-50 dark:bg-zinc-800 px-4 py-2.5 rounded-2xl rounded-bl-lg text-sm leading-relaxed text-gray-700 dark:text-gray-200 border-none shadow-sm animate-slideUpAndFade flex flex-col items-stretch">
                     <div className="text-left mb-2">
-                        {isJsonContent && hasResponseKey && (
+                        {isJsonContent && hasResponseKey && jsonMode && (
                             <div className="mb-2 flex gap-4">
                                 <button 
                                     className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 hover:underline self-start" 
-                                    onClick={() => setJsonMode(!jsonMode)}
+                                    onClick={() => setWrapText(!wrapText)}
                                 >
-                                    {jsonMode ? <TextIcon size={14} /> : <BracesIcon size={14} />}
-                                    {jsonMode ? 'View response text' : 'View complete JSON'}
+                                    {wrapText ? <ArrowRightFromLineIcon size={14} /> : <WrapTextIcon size={14} />}
+                                    {wrapText ? 'Overflow' : 'Wrap'}
                                 </button>
-                                {jsonMode && (
-                                    <button 
-                                        className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 hover:underline self-start" 
-                                        onClick={() => setWrapText(!wrapText)}
-                                    >
-                                        {wrapText ? <ArrowRightFromLineIcon size={14} /> : <WrapTextIcon size={14} />}
-                                        {wrapText ? 'Overflow' : 'Wrap'}
-                                    </button>
-                                )}
                             </div>
                         )}
                         {isJsonContent && hasResponseKey && jsonMode ? (
@@ -148,30 +142,35 @@ function AssistantMessage({
     sender, 
     latency, 
     onFix, 
+    onExplain,
     showDebugMessages,
-    isFirstAssistant
+    isFirstAssistant,
+    index
 }: { 
     content: string, 
     sender: string | null | undefined, 
     latency: number,
-    onFix?: (message: string) => void,
+    onFix?: (message: string, index: number) => void,
+    onExplain?: (type: 'assistant', message: string, index: number) => void,
     showDebugMessages?: boolean,
-    isFirstAssistant?: boolean
+    isFirstAssistant?: boolean,
+    index: number
 }) {
     return (
         <div className="self-start flex flex-col gap-1 my-5">
             <div className="max-w-[85%] inline-block">
                 <div className="text-gray-500 dark:text-gray-400 text-xs pl-1 flex justify-between items-center mb-2">
                     <span>{sender ?? 'Assistant'}</span>
-                    {showDebugMessages && onFix && !isFirstAssistant && (
-                        <button
-                            onClick={() => onFix(content)}
-                            className="flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline"
-                            title="Fix this response"
-                        >
-                            <FlagIcon size={12} />
-                            Fix
-                        </button>
+                    {(Boolean(showDebugMessages && typeof onFix === 'function' && !isFirstAssistant)
+                      || Boolean(showDebugMessages && typeof onExplain === 'function' && !isFirstAssistant)) && (
+                        <MessageActionsMenu
+                            showFix={Boolean(showDebugMessages && typeof onFix === 'function' && !isFirstAssistant)}
+                            showExplain={Boolean(showDebugMessages && typeof onExplain === 'function' && !isFirstAssistant)}
+                            showJson={false}
+                            onFix={onFix ? () => onFix(content, index) : () => {}}
+                            onExplain={onExplain ? () => onExplain('assistant', content, index) : () => {}}
+                            onJson={() => {}}
+                        />
                     )}
                 </div>
                 <div className="bg-purple-50 dark:bg-purple-900/30 px-4 py-2.5 
@@ -216,8 +215,10 @@ function ToolCalls({
     systemMessage,
     delta,
     onFix,
+    onExplain,
     showDebugMessages,
-    isFirstAssistant
+    isFirstAssistant,
+    parentIndex
 }: {
     toolCalls: z.infer<typeof AssistantMessageWithToolCalls>['toolCalls'];
     results: Record<string, z.infer<typeof ToolMessage>>;
@@ -227,9 +228,11 @@ function ToolCalls({
     workflow: z.infer<typeof Workflow>;
     systemMessage: string | undefined;
     delta: number;
-    onFix?: (message: string) => void;
+    onFix?: (message: string, index: number) => void;
+    onExplain?: (type: 'tool' | 'transition', message: string, index: number) => void;
     showDebugMessages?: boolean;
     isFirstAssistant?: boolean;
+    parentIndex: number;
 }) {
     return <div className="flex flex-col gap-4">
         {toolCalls.map((toolCall, idx) => {
@@ -241,8 +244,11 @@ function ToolCalls({
                 workflow={workflow}
                 delta={delta}
                 onFix={onFix}
+                onExplain={onExplain}
                 showDebugMessages={showDebugMessages}
                 isFirstAssistant={isFirstAssistant && idx === 0}
+                parentIndex={parentIndex}
+                toolCallIndex={idx}
             />
         })}
     </div>;
@@ -255,17 +261,23 @@ function ToolCall({
     workflow,
     delta,
     onFix,
+    onExplain,
     showDebugMessages,
-    isFirstAssistant
+    isFirstAssistant,
+    parentIndex,
+    toolCallIndex
 }: {
     toolCall: z.infer<typeof AssistantMessageWithToolCalls>['toolCalls'][number];
     result: z.infer<typeof ToolMessage> | undefined;
     sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
     delta: number;
-    onFix?: (message: string) => void;
+    onFix?: (message: string, index: number) => void;
+    onExplain?: (type: 'tool' | 'transition', message: string, index: number) => void;
     showDebugMessages?: boolean;
     isFirstAssistant?: boolean;
+    parentIndex: number;
+    toolCallIndex: number;
 }) {
     let matchingWorkflowTool: z.infer<typeof WorkflowTool> | undefined;
     for (const tool of workflow.tools) {
@@ -280,6 +292,10 @@ function ToolCall({
             result={result}
             sender={sender ?? ''}
             delta={delta}
+            onExplain={onExplain}
+            showDebugMessages={showDebugMessages}
+            parentIndex={parentIndex}
+            toolCallIndex={toolCallIndex}
         />;
     }
     return <ClientToolCall
@@ -289,18 +305,29 @@ function ToolCall({
         workflow={workflow}
         delta={delta}
         onFix={onFix}
+        onExplain={onExplain}
         showDebugMessages={showDebugMessages}
+        parentIndex={parentIndex}
+        toolCallIndex={toolCallIndex}
     />;
 }
 
 function TransferToAgentToolCall({
     result: availableResult,
     sender,
-    delta
+    delta,
+    onExplain,
+    showDebugMessages,
+    parentIndex,
+    toolCallIndex
 }: {
     result: z.infer<typeof ToolMessage> | undefined;
     sender: string | null | undefined;
     delta: number;
+    onExplain?: (type: 'transition', message: string, index: number) => void;
+    showDebugMessages?: boolean;
+    parentIndex: number;
+    toolCallIndex: number;
 }) {
     const typedResult = availableResult ? JSON.parse(availableResult.content) as { assistant: string } : undefined;
     if (!typedResult) {
@@ -318,6 +345,16 @@ function TransferToAgentToolCall({
                 <ChevronRightIcon size={14} className="text-gray-400 dark:text-gray-300" />
                 <span className="text-gray-700 dark:text-gray-200">{typedResult.assistant}</span>
                 <span className="ml-2">{deltaDisplay}</span>
+                {Boolean(showDebugMessages && typeof onExplain === 'function') && (
+                    <MessageActionsMenu
+                        showFix={false}
+                        showExplain={true}
+                        showJson={false}
+                        onFix={() => {}}
+                        onExplain={onExplain ? () => onExplain('transition', `From: ${sender} To: ${typedResult.assistant}`, parentIndex) : () => {}}
+                        onJson={() => {}}
+                    />
+                )}
             </div>
         </div>
     );
@@ -330,15 +367,21 @@ function ClientToolCall({
     workflow,
     delta,
     onFix,
-    showDebugMessages
+    onExplain,
+    showDebugMessages,
+    parentIndex,
+    toolCallIndex
 }: {
     toolCall: z.infer<typeof AssistantMessageWithToolCalls>['toolCalls'][number];
     result: z.infer<typeof ToolMessage> | undefined;
     sender: string | null | undefined;
     workflow: z.infer<typeof Workflow>;
     delta: number;
-    onFix?: (message: string) => void;
+    onFix?: (message: string, index: number) => void;
+    onExplain?: (type: 'tool', message: string, index: number) => void;
     showDebugMessages?: boolean;
+    parentIndex: number;
+    toolCallIndex: number;
 }) {
     const [wrapText, setWrapText] = useState(true);
     const [paramsExpanded, setParamsExpanded] = useState(false);
@@ -350,19 +393,17 @@ function ClientToolCall({
     if (isCompressed) {
         return (
             <div className="self-start flex flex-col gap-1 my-5">
-                {sender && (
+                {(Boolean(showDebugMessages && typeof onFix === 'function') || Boolean(showDebugMessages && typeof onExplain === 'function')) && (
                     <div className="text-gray-500 dark:text-gray-400 text-xs pl-1 flex justify-between items-center">
                         <span>{sender}</span>
-                        {showDebugMessages && onFix && (
-                            <button
-                                onClick={() => onFix(`Tool call: ${toolCall.function.name}`)}
-                                className="flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline"
-                                title="Fix this tool call"
-                            >
-                                <FlagIcon size={12} />
-                                Fix
-                            </button>
-                        )}
+                        <MessageActionsMenu
+                            showFix={Boolean(showDebugMessages && typeof onFix === 'function')}
+                            showExplain={Boolean(showDebugMessages && typeof onExplain === 'function')}
+                            showJson={false}
+                            onFix={onFix ? () => onFix(`Tool call: ${toolCall.function.name}`, parentIndex) : () => {}}
+                            onExplain={onExplain ? () => onExplain('tool', `Tool call: ${toolCall.function.name}\nArguments: ${toolCall.function.arguments}`, parentIndex) : () => {}}
+                            onJson={() => {}}
+                        />
                     </div>
                 )}
                 <div className="min-w-[85%]">
@@ -425,19 +466,17 @@ function ClientToolCall({
     // Expanded state: respect 85% max width, prevent overshoot
     return (
         <div className="self-start flex flex-col gap-1 my-5">
-            {sender && (
+            {(Boolean(showDebugMessages && typeof onFix === 'function') || Boolean(showDebugMessages && typeof onExplain === 'function')) && (
                 <div className="text-gray-500 dark:text-gray-400 text-xs pl-1 flex justify-between items-center">
                     <span>{sender}</span>
-                    {showDebugMessages && onFix && (
-                        <button
-                            onClick={() => onFix(`Tool call: ${toolCall.function.name}`)}
-                            className="flex items-center gap-1 text-xs text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline"
-                            title="Fix this tool call"
-                        >
-                            <FlagIcon size={12} />
-                            Fix
-                        </button>
-                    )}
+                    <MessageActionsMenu
+                        showFix={Boolean(showDebugMessages && typeof onFix === 'function')}
+                        showExplain={Boolean(showDebugMessages && typeof onExplain === 'function')}
+                        showJson={false}
+                        onFix={onFix ? () => onFix(`Tool call: ${toolCall.function.name}`, parentIndex) : () => {}}
+                        onExplain={onExplain ? () => onExplain('tool', `Tool call: ${toolCall.function.name}\nArguments: ${toolCall.function.arguments}`, parentIndex) : () => {}}
+                        onJson={() => {}}
+                    />
                 </div>
             )}
             <div className="w-full">
@@ -567,6 +606,66 @@ function ExpandableContent({
     </div>;
 }
 
+// MessageActionsMenu: a reusable 3-dots menu for message actions
+type MessageActionsMenuProps = {
+  showFix: boolean;
+  showExplain: boolean;
+  showJson: boolean;
+  onFix: () => void;
+  onExplain: () => void;
+  onJson: () => void;
+  explainLabel?: string;
+  fixLabel?: string;
+  jsonLabel?: string;
+  disabledFix?: boolean;
+  disabledExplain?: boolean;
+  disabledJson?: boolean;
+};
+
+function MessageActionsMenu({
+  showFix,
+  showExplain,
+  showJson,
+  onFix,
+  onExplain,
+  onJson,
+  explainLabel = 'Explain',
+  fixLabel = 'Fix',
+  jsonLabel = 'View complete JSON',
+  disabledFix = false,
+  disabledExplain = false,
+  disabledJson = false,
+}: MessageActionsMenuProps) {
+  return (
+    <Dropdown>
+      <DropdownTrigger>
+        <button className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" aria-label="Message actions">
+          <MoreHorizontal size={18} />
+        </button>
+      </DropdownTrigger>
+      <DropdownMenu aria-label="Message actions menu">
+         {[
+             showExplain ? (
+                <DropdownItem key="explain" onClick={onExplain} isDisabled={disabledExplain} startContent={<HelpCircleIcon size={16} className="text-indigo-400 dark:text-indigo-300" />}>
+                  {explainLabel}
+                </DropdownItem>
+             ) : undefined,
+             showFix ? (
+                <DropdownItem key="fix" onClick={onFix} isDisabled={disabledFix} startContent={<FlagIcon size={16} className="text-orange-700 dark:text-orange-400" />}>
+                  {fixLabel}
+                </DropdownItem>
+             ) : undefined,
+             showJson ? (
+                <DropdownItem key="json" onClick={onJson} isDisabled={disabledJson} startContent={<BracesIcon size={16} className="text-slate-500 dark:text-slate-300" />}>
+                  {jsonLabel}
+                </DropdownItem>
+             ) : undefined,
+          ].filter((el): el is React.ReactElement => Boolean(el)) as any}
+      </DropdownMenu>
+    </Dropdown>
+  );
+}
+
 export function Messages({
     projectId,
     messages,
@@ -579,6 +678,7 @@ export function Messages({
     showDebugMessages = true,
     showJsonMode = false,
     onFix,
+    onExplain,
 }: {
     projectId: string;
     messages: z.infer<typeof Message>[];
@@ -590,7 +690,8 @@ export function Messages({
     showSystemMessage: boolean;
     showDebugMessages?: boolean;
     showJsonMode?: boolean;
-    onFix?: (message: string) => void;
+    onFix?: (message: string, index: number) => void;
+    onExplain?: (type: 'assistant' | 'tool' | 'transition', message: string, index: number) => void;
 }) {
     // Remove scroll/auto-scroll state and logic
     // const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -628,8 +729,10 @@ export function Messages({
                         systemMessage={systemMessage}
                         delta={latency}
                         onFix={onFix}
+                        onExplain={onExplain}
                         showDebugMessages={showDebugMessages}
                         isFirstAssistant={isFirstAssistant}
+                        parentIndex={index}
                     />
                 );
             }
@@ -648,8 +751,10 @@ export function Messages({
                         delta={latency}
                         showJsonMode={showJsonMode}
                         onFix={onFix}
+                        onExplain={onExplain}
                         showDebugMessages={showDebugMessages}
                         isFirstAssistant={isFirstAssistant}
+                        index={index}
                     />
                 );
             }
@@ -661,8 +766,10 @@ export function Messages({
                     sender={message.agentName ?? ''}
                     latency={latency}
                     onFix={onFix}
+                    onExplain={onExplain}
                     showDebugMessages={showDebugMessages}
                     isFirstAssistant={isFirstAssistant}
+                    index={index}
                 />
             );
         }
@@ -712,3 +819,7 @@ export function Messages({
         </div>
     );
 }
+
+// Add a utility class for icon-with-label-on-hover
+const iconWithLabelClass = "group relative flex items-center gap-1 text-xs cursor-pointer hover:underline";
+const iconLabelClass = "absolute left-full ml-2 px-2 py-1 rounded bg-zinc-800 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10";

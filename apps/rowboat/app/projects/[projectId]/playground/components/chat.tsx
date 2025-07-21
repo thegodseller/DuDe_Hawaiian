@@ -12,7 +12,7 @@ import { ProfileContextBox } from "./profile-context-box";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { FeedbackModal } from "./feedback-modal";
-import { FIX_WORKFLOW_PROMPT, FIX_WORKFLOW_PROMPT_WITH_FEEDBACK } from "../copilot-prompts";
+import { FIX_WORKFLOW_PROMPT, FIX_WORKFLOW_PROMPT_WITH_FEEDBACK, EXPLAIN_WORKFLOW_PROMPT_ASSISTANT, EXPLAIN_WORKFLOW_PROMPT_TOOL, EXPLAIN_WORKFLOW_PROMPT_TRANSITION } from "../copilot-prompts";
 
 export function Chat({
     chat,
@@ -54,6 +54,8 @@ export function Chat({
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
     const [pendingFixMessage, setPendingFixMessage] = useState<string | null>(null);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+    // Add state for explain (no modal needed, just direct trigger)
+    const [showExplainSuccess, setShowExplainSuccess] = useState(false);
 
     // --- Scroll/auto-scroll/unread bubble logic ---
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -104,20 +106,24 @@ export function Chat({
     }, [messages]);
 
     // Handle fix functionality
-    const handleFix = useCallback((message: string) => {
+    const [pendingFixIndex, setPendingFixIndex] = useState<number | null>(null);
+    const handleFix = useCallback((message: string, index: number) => {
         setPendingFixMessage(message);
+        setPendingFixIndex(index);
         setShowFeedbackModal(true);
     }, []);
 
     const handleFeedbackSubmit = useCallback((feedback: string) => {
-        if (!pendingFixMessage) return;
+        if (!pendingFixMessage || pendingFixIndex === null) return;
 
-        // Create the copilot prompt
-        const prompt = feedback.trim() 
+        // Create the copilot prompt with index
+        const prompt = feedback.trim()
             ? FIX_WORKFLOW_PROMPT_WITH_FEEDBACK
+                .replace('{index}', String(pendingFixIndex))
                 .replace('{chat_turn}', pendingFixMessage)
                 .replace('{feedback}', feedback)
             : FIX_WORKFLOW_PROMPT
+                .replace('{index}', String(pendingFixIndex))
                 .replace('{chat_turn}', pendingFixMessage);
 
         // Use the triggerCopilotChat function if available, otherwise fall back to localStorage
@@ -132,7 +138,28 @@ export function Chat({
             alert('Fix request submitted! Redirecting to workflow editor...');
             window.location.href = `/projects/${projectId}/workflow`;
         }
-    }, [pendingFixMessage, projectId, triggerCopilotChat]);
+    }, [pendingFixMessage, pendingFixIndex, projectId, triggerCopilotChat]);
+
+    // Handle explain functionality
+    const handleExplain = useCallback((type: 'assistant' | 'tool' | 'transition', message: string, index: number) => {
+        let prompt = '';
+        if (type === 'assistant') {
+            prompt = EXPLAIN_WORKFLOW_PROMPT_ASSISTANT.replace('{index}', String(index)).replace('{chat_turn}', message);
+        } else if (type === 'tool') {
+            prompt = EXPLAIN_WORKFLOW_PROMPT_TOOL.replace('{index}', String(index)).replace('{chat_turn}', message);
+        } else if (type === 'transition') {
+            prompt = EXPLAIN_WORKFLOW_PROMPT_TRANSITION.replace('{index}', String(index)).replace('{chat_turn}', message);
+        }
+        if (triggerCopilotChat) {
+            triggerCopilotChat(prompt);
+            setShowExplainSuccess(true);
+            setTimeout(() => setShowExplainSuccess(false), 3000);
+        } else {
+            localStorage.setItem(`project_prompt_${projectId}`, prompt);
+            alert('Explain request submitted! Redirecting to workflow editor...');
+            window.location.href = `/projects/${projectId}/workflow`;
+        }
+    }, [projectId, triggerCopilotChat]);
 
     // collect published tool call results
     const toolCallResults: Record<string, z.infer<typeof ToolMessage>> = {};
@@ -345,6 +372,7 @@ export function Chat({
                 showDebugMessages={showDebugMessages}
                 showJsonMode={showJsonMode}
                 onFix={handleFix}
+                onExplain={handleExplain}
             />
             {showUnreadBubble && (
                 <button
@@ -373,6 +401,19 @@ export function Chat({
                         size="sm"
                         color="success"
                         onPress={() => setShowSuccessMessage(false)}
+                    >
+                        Dismiss
+                    </Button>
+                </div>
+            )}
+            {showExplainSuccess && (
+                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 
+                              rounded-lg flex gap-2 justify-between items-center">
+                    <p className="text-blue-600 dark:text-blue-400 text-sm">Skipper will explain this for you now.</p>
+                    <Button
+                        size="sm"
+                        color="primary"
+                        onPress={() => setShowExplainSuccess(false)}
                     >
                         Dismiss
                     </Button>
