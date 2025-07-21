@@ -350,113 +350,117 @@ export function Chat({
         }
     }, []);
 
-    return <div className="w-11/12 max-w-6xl mx-auto h-full flex flex-col relative">
-        <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pt-4 pb-4">
-        </div>
+    return (
+        <div className="w-11/12 max-w-6xl mx-auto h-full flex flex-col relative">
+            <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pt-4 pb-4">
+            </div>
 
-        <div
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-            className="flex-1 overflow-auto pr-4 relative playground-scrollbar"
-            style={{ scrollBehavior: 'smooth' }}
-        >
-            <Messages
-                projectId={projectId}
-                messages={optimisticMessages}
-                toolCallResults={toolCallResults}
-                loadingAssistantResponse={loadingAssistantResponse}
-                workflow={workflow}
-                systemMessage={systemMessage}
-                onSystemMessageChange={onSystemMessageChange}
-                showSystemMessage={false}
-                showDebugMessages={showDebugMessages}
-                showJsonMode={showJsonMode}
-                onFix={handleFix}
-                onExplain={handleExplain}
-            />
-            {showUnreadBubble && (
-                <button
-                    className="absolute bottom-4 right-4 z-20 bg-blue-100 text-blue-700 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200 transition-colors animate-pulse"
-                    onClick={() => {
-                        const container = scrollContainerRef.current;
-                        if (container) {
-                            container.scrollTop = container.scrollHeight;
-                        }
-                        setAutoScroll(true);
-                        setShowUnreadBubble(false);
-                    }}
-                    aria-label="Scroll to latest message"
+            {/* Main chat area: flex column, messages area is flex-1 min-h-0 overflow-auto, compose box at bottom */}
+            <div className="flex flex-col flex-1 min-h-0 relative">
+                <div
+                    ref={scrollContainerRef}
+                    onScroll={handleScroll}
+                    className="flex-1 min-h-0 overflow-auto pr-4 playground-scrollbar"
+                    style={{ scrollBehavior: 'smooth' }}
                 >
-                    <ChevronDownIcon className="w-5 h-5" strokeWidth={2.2} />
-                </button>
-            )}
-        </div>
-
-        <div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-4 pb-2">
-            {showSuccessMessage && (
-                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 
-                              rounded-lg flex gap-2 justify-between items-center">
-                    <p className="text-green-600 dark:text-green-400 text-sm">Skipper will suggest fixes for you now.</p>
-                    <Button
-                        size="sm"
-                        color="success"
-                        onPress={() => setShowSuccessMessage(false)}
-                    >
-                        Dismiss
-                    </Button>
+                    <Messages
+                        projectId={projectId}
+                        messages={optimisticMessages}
+                        toolCallResults={toolCallResults}
+                        loadingAssistantResponse={loadingAssistantResponse}
+                        workflow={workflow}
+                        systemMessage={systemMessage}
+                        onSystemMessageChange={onSystemMessageChange}
+                        showSystemMessage={false}
+                        showDebugMessages={showDebugMessages}
+                        showJsonMode={showJsonMode}
+                        onFix={handleFix}
+                        onExplain={handleExplain}
+                    />
                 </div>
-            )}
-            {showExplainSuccess && (
-                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 
-                              rounded-lg flex gap-2 justify-between items-center">
-                    <p className="text-blue-600 dark:text-blue-400 text-sm">Skipper will explain this for you now.</p>
-                    <Button
-                        size="sm"
-                        color="primary"
-                        onPress={() => setShowExplainSuccess(false)}
-                    >
-                        Dismiss
-                    </Button>
-                </div>
-            )}
-            {fetchResponseError && (
-                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 
-                              rounded-lg flex gap-2 justify-between items-center">
-                    <p className="text-red-600 dark:text-red-400 text-sm">{fetchResponseError}</p>
-                    <Button
-                        size="sm"
-                        color="danger"
-                        onPress={() => {
-                            setFetchResponseError(null);
-                            setBillingError(null);
+                {showUnreadBubble && (
+                    <button
+                        className="absolute bottom-24 right-4 z-20 bg-blue-100 text-blue-700 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200 transition-colors animate-pulse shadow-lg"
+                        style={{ pointerEvents: 'auto' }}
+                        onClick={() => {
+                            const container = scrollContainerRef.current;
+                            if (container) {
+                                container.scrollTop = container.scrollHeight;
+                            }
+                            setAutoScroll(true);
+                            setShowUnreadBubble(false);
                         }}
+                        aria-label="Scroll to latest message"
                     >
-                        Retry
-                    </Button>
-                </div>
-            )}
+                        <ChevronDownIcon className="w-5 h-5" strokeWidth={2.2} />
+                    </button>
+                )}
+                <div className="bg-white dark:bg-zinc-900 pt-4 pb-2">
+                    {showSuccessMessage && (
+                        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 
+                                      rounded-lg flex gap-2 justify-between items-center">
+                            <p className="text-green-600 dark:text-green-400 text-sm">Skipper will suggest fixes for you now.</p>
+                            <Button
+                                size="sm"
+                                color="success"
+                                onPress={() => setShowSuccessMessage(false)}
+                            >
+                                Dismiss
+                            </Button>
+                        </div>
+                    )}
+                    {showExplainSuccess && (
+                        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 
+                                      rounded-lg flex gap-2 justify-between items-center">
+                            <p className="text-blue-600 dark:text-blue-400 text-sm">Skipper will explain this for you now.</p>
+                            <Button
+                                size="sm"
+                                color="primary"
+                                onPress={() => setShowExplainSuccess(false)}
+                            >
+                                Dismiss
+                            </Button>
+                        </div>
+                    )}
+                    {fetchResponseError && (
+                        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 
+                                      rounded-lg flex gap-2 justify-between items-center">
+                            <p className="text-red-600 dark:text-red-400 text-sm">{fetchResponseError}</p>
+                            <Button
+                                size="sm"
+                                color="danger"
+                                onPress={() => {
+                                    setFetchResponseError(null);
+                                    setBillingError(null);
+                                }}
+                            >
+                                Retry
+                            </Button>
+                        </div>
+                    )}
 
-            <ComposeBoxPlayground
-                handleUserMessage={handleUserMessage}
-                messages={messages.filter(msg => msg.content !== undefined) as any}
-                loading={loadingAssistantResponse}
-                shouldAutoFocus={isLastInteracted}
-                onFocus={() => setIsLastInteracted(true)}
-                onCancel={handleStop}
+                    <ComposeBoxPlayground
+                        handleUserMessage={handleUserMessage}
+                        messages={messages.filter(msg => msg.content !== undefined) as any}
+                        loading={loadingAssistantResponse}
+                        shouldAutoFocus={isLastInteracted}
+                        onFocus={() => setIsLastInteracted(true)}
+                        onCancel={handleStop}
+                    />
+                </div>
+            </div>
+
+            <BillingUpgradeModal
+                isOpen={!!billingError}
+                onClose={() => setBillingError(null)}
+                errorMessage={billingError || ''}
+            />
+            <FeedbackModal
+                isOpen={showFeedbackModal}
+                onClose={() => setShowFeedbackModal(false)}
+                onSubmit={handleFeedbackSubmit}
+                title="Fix Assistant"
             />
         </div>
-
-
-        <BillingUpgradeModal
-            isOpen={!!billingError}
-            onClose={() => setBillingError(null)}
-            errorMessage={billingError || ''}
-        />
-        <FeedbackModal
-            isOpen={showFeedbackModal}
-            onClose={() => setShowFeedbackModal(false)}
-            onSubmit={handleFeedbackSubmit}
-            title="Fix Assistant"
-        />
-    </div>;
+    );
 }
