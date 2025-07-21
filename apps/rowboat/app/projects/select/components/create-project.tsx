@@ -240,6 +240,7 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
             if (importedJson) {
                 // Use imported JSON
                 const formData = new FormData();
+                formData.append('name', name);
                 formData.append('workflowJson', importedJson);
                 const response = await createProjectFromWorkflowJson(formData);
                 if ('id' in response) {

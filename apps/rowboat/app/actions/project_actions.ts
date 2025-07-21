@@ -321,7 +321,7 @@ export async function createProjectFromWorkflowJson(formData: FormData): Promise
         throw new Error('Invalid workflow JSON: ' + JSON.stringify(parsed.error.issues));
     }
     const workflow = parsed.data;
-    const name = 'Imported Project';
+    const name = (formData.get('name') as string) || 'Imported Project';
     const response = await createBaseProject(name, user, workflow);
     if ('billingError' in response) {
         return response;
