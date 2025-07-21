@@ -17,7 +17,7 @@ import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
 import { z } from 'zod';
 import { Workflow } from '@/app/lib/types/workflow_types';
 import { Modal } from '@/components/ui/modal';
-import { PlusIcon } from "lucide-react";
+import { FileDown, Send } from "lucide-react";
 
 // Add glow animation styles
 const glowStyles = `
@@ -64,14 +64,12 @@ const glowStyles = `
 
 const TabType = {
     Describe: 'describe',
-    Blank: 'blank',
-    Example: 'example',
     Import: 'import',
 } as const;
 
 type TabState = typeof TabType[keyof typeof TabType];
 
-const isNotBlankTemplate = (tab: TabState): boolean => tab !== 'blank';
+const isNotBlankTemplate = (tab: TabState): boolean => true;
 
 const tabStyles = clsx(
     "px-4 py-2 text-sm font-medium",
@@ -138,8 +136,6 @@ interface CreateProjectProps {
 
 export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpen }: CreateProjectProps) {
     const [selectedTab, setSelectedTab] = useState<TabState>(TabType.Describe);
-    const [isExamplesDropdownOpen, setIsExamplesDropdownOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
     const [customPrompt, setCustomPrompt] = useState("");
     const [name, setName] = useState(defaultName);
     const [promptError, setPromptError] = useState<string | null>(null);
@@ -166,70 +162,30 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
         };
     }, []);
 
-    // Add click outside handler
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsExamplesDropdownOpen(false);
-            }
-        }
-
-        if (isExamplesDropdownOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isExamplesDropdownOpen]);
+    // Removed dropdownRef and isExamplesDropdownOpen effect
 
     const handleTabChange = (tab: TabState) => {
         setSelectedTab(tab);
-        setIsExamplesDropdownOpen(false);
         setImportError(null);
-        if (tab === TabType.Blank) {
-            setCustomPrompt('');
-        } else if (tab === TabType.Describe) {
+        if (tab === TabType.Describe) {
             setCustomPrompt('');
         } else if (tab === TabType.Import) {
             setImportJson('');
         }
     };
 
-    const handleBlankTemplateClick = (e: React.MouseEvent) => {
-        e.preventDefault();
-        handleTabChange(TabType.Blank);
-    };
-
-    const handleExampleSelect = (exampleName: string) => {
-        setSelectedTab(TabType.Example);
-        setCustomPrompt(starting_copilot_prompts[exampleName] || '');
-        setIsExamplesDropdownOpen(false);
-    };
-
     async function handleSubmit() {
         try {
-            if (selectedTab !== TabType.Blank && !customPrompt.trim()) {
+            if (!customPrompt.trim()) {
                 setPromptError("Prompt cannot be empty");
                 return;
             }
-
-            let response;
-            
-            if (selectedTab === TabType.Blank) {
-                const newFormData = new FormData();
-                newFormData.append('name', name);
-                newFormData.append('template', 'default');
-                response = await createProject(newFormData);
-            } else {
-                const newFormData = new FormData();
-                newFormData.append('name', name);
-                newFormData.append('prompt', customPrompt);
-                response = await createProjectFromPrompt(newFormData);
-            }
-
+            const newFormData = new FormData();
+            newFormData.append('name', name);
+            newFormData.append('prompt', customPrompt);
+            const response = await createProjectFromPrompt(newFormData);
             if ('id' in response) {
-                if (selectedTab !== TabType.Blank && customPrompt) {
+                if (customPrompt) {
                     localStorage.setItem(`project_prompt_${response.id}`, customPrompt);
                 }
                 router.push(`/projects/${response.id}/workflow`);
@@ -293,7 +249,7 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                     {USE_MULTIPLE_PROJECTS && (
                         <>
                             <div className="px-4 pt-4 pb-6 flex justify-between items-center">
-                                <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                                <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                                     Create new assistant
                                 </h1>
                                 {!isProjectPaneOpen && (
@@ -310,225 +266,136 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                             <HorizontalDivider />
                         </>
                     )}
-                    
                     <form
                         id="create-project-form"
                         action={selectedTab !== TabType.Import ? handleSubmit : undefined}
                         className="pt-6 pb-16 space-y-12"
                     >
-                        {/* Tab Section */}
-                        <div>
-                            <div className="mb-5">
-                                <SectionHeading>
-                                    ✨ Get started
-                                </SectionHeading>
-                            </div>
-
-                            {/* Tab Navigation */}
-                            <div className="flex gap-6 relative">
-                                <Button
-                                    variant={selectedTab === TabType.Describe ? 'primary' : 'tertiary'}
-                                    size="md"
-                                    onClick={() => handleTabChange(TabType.Describe)}
-                                    className={selectedTab === TabType.Describe ? selectedTabStyles : unselectedTabStyles}
-                                >
-                                    Describe your assistant
-                                </Button>
-                                <Button
-                                    variant={selectedTab === TabType.Blank ? 'primary' : 'tertiary'}
-                                    size="md"
-                                    onClick={handleBlankTemplateClick}
-                                    type="button"
-                                    className={selectedTab === TabType.Blank ? selectedTabStyles : unselectedTabStyles}
-                                >
-                                    Start from a blank template
-                                </Button>
-                                <div className="relative" ref={dropdownRef}>
-                                    <Button
-                                        variant={selectedTab === TabType.Example ? 'primary' : 'tertiary'}
-                                        size="md"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setIsExamplesDropdownOpen(!isExamplesDropdownOpen);
-                                        }}
-                                        type="button"
-                                        className={selectedTab === TabType.Example ? selectedTabStyles : unselectedTabStyles}
-                                        endContent={
-                                            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                            </svg>
-                                        }
-                                    >
-                                        Use an example
-                                    </Button>
-                                    
-                                    {isExamplesDropdownOpen && (
-                                        <div className="absolute z-10 mt-2 min-w-[200px] max-w-[240px] rounded-lg shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                            <div className="py-1">
-                                                {Object.entries(starting_copilot_prompts)
-                                                    .filter(([name]) => name !== 'Blank Template')
-                                                    .map(([name]) => (
-                                                        <Button
-                                                            key={name}
-                                                            variant="tertiary"
-                                                            size="sm"
-                                                            className="w-full justify-start text-left text-sm py-1.5"
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                e.stopPropagation();
-                                                                handleExampleSelect(name);
-                                                            }}
-                                                            type="button"
-                                                        >
-                                                            {name}
-                                                        </Button>
-                                                    ))
-                                                }
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                <Button
-                                    variant={selectedTab === TabType.Import ? 'primary' : 'tertiary'}
-                                    size="md"
-                                    onClick={() => handleTabChange(TabType.Import)}
-                                    type="button"
-                                    className={selectedTab === TabType.Import ? selectedTabStyles : unselectedTabStyles}
-                                >
-                                    Import JSON
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Import JSON Section */}
-                        {selectedTab === TabType.Import && (
-                            <div className="space-y-4">
-                                <div className="flex flex-col gap-4">
-                                    <label className="text-base font-medium text-gray-900 dark:text-gray-100">
-                                        🗂️ Paste JSON Contents
-                                    </label>
-                                    <Textarea
-                                        value={importJson}
-                                        onChange={e => setImportJson(e.target.value)}
-                                        placeholder="Paste your workflow JSON here..."
-                                        className={clsx(
-                                            textareaStyles,
-                                            "text-base",
-                                            "text-gray-900 dark:text-gray-100",
-                                            !importJson && emptyTextareaStyles
-                                        )}
-                                        style={{ minHeight: "180px" }}
-                                        autoFocus
-                                        autoResize
-                                        required
-                                    />
-                                    <div className="flex flex-col items-start gap-2">
-                                        {importLoading && (
-                                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                Please hold on while we set up your project&hellip;
-                                            </div>
-                                        )}
-                                        <Button
-                                            variant="primary"
-                                            size="lg"
-                                            onClick={handleImportSubmit}
-                                            type="button"
-                                            isLoading={importLoading}
-                                            startContent={<PlusIcon size={16} />}
-                                        >
-                                            Import and create assistant
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Custom Prompt Section - Only show when needed */}
-                        {(selectedTab === TabType.Describe || selectedTab === TabType.Example) && (
-                            <div className="space-y-4">
-                                <div className="flex flex-col gap-4">
+                        {/* Main Section: What do you want to build? and Import JSON */}
+                        <div className="flex flex-col gap-6">
+                            <div className="flex items-center gap-4">
+                                <div className="flex w-full items-center justify-between">
                                     <label className={largeSectionHeaderStyles}>
-                                        {selectedTab === TabType.Describe ? '✏️ What do you want to build?' : '✏️ Customize the description'}
+                                        ✏️ What do you want to build?
                                     </label>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                                            In the next step, our AI copilot will create agents for you, complete with mock-tools.
-                                        </p>
-                                        <Tooltip content={<div>If you already know the specific agents and tools you need, mention them below.<br /><br />Specify &apos;internal agents&apos; for task agents that will not interact with the user and &apos;user-facing agents&apos; for conversational agents that will interact with users.</div>} className="max-w-[560px]">
-                                            <InformationCircleIcon className="w-4 h-4 text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-help" />
-                                        </Tooltip>
+                                    <Button
+                                        variant="primary"
+                                        size="md"
+                                        onClick={() => handleTabChange(TabType.Import)}
+                                        type="button"
+                                        startContent={<FileDown size={16} />}
+                                    >
+                                        Import JSON
+                                    </Button>
+                                </div>
+                            </div>
+                            {selectedTab === TabType.Describe && (
+                                <div className="space-y-4">
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                                                In the next step, our AI copilot will create agents for you, complete with mock-tools.
+                                            </p>
+                                            <Tooltip content={<div>If you already know the specific agents and tools you need, mention them below.<br /><br />Specify &apos;internal agents&apos; for task agents that will not interact with the user and &apos;user-facing agents&apos; for conversational agents that will interact with users.</div>} className="max-w-[560px]">
+                                                <InformationCircleIcon className="w-4 h-4 text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-help" />
+                                            </Tooltip>
+                                        </div>
+                                        {/* Compose box with send button */}
+                                        <div className="relative group">
+                                            <Textarea
+                                                value={customPrompt}
+                                                onChange={(e) => {
+                                                    setCustomPrompt(e.target.value);
+                                                    setPromptError(null);
+                                                }}
+                                                placeholder="Example: Create a customer support assistant that can handle product inquiries and returns"
+                                                className={clsx(
+                                                    textareaStyles,
+                                                    "text-base",
+                                                    "text-gray-900 dark:text-gray-100",
+                                                    promptError && "border-red-500 focus:ring-red-500/20",
+                                                    !customPrompt && emptyTextareaStyles,
+                                                    "pr-12" // space for send button
+                                                )}
+                                                style={{ minHeight: "120px" }}
+                                                autoFocus
+                                                autoResize
+                                                required
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleSubmit();
+                                                    }
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleSubmit}
+                                                disabled={!customPrompt.trim()}
+                                                className={clsx(
+                                                    "absolute right-3 bottom-3",
+                                                    "rounded-full p-2",
+                                                    customPrompt.trim()
+                                                        ? "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:hover:bg-indigo-800/60 dark:text-indigo-300"
+                                                        : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500",
+                                                    "transition-all duration-200 scale-100 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-95 hover:shadow-md dark:hover:shadow-indigo-950/10"
+                                                )}
+                                            >
+                                                <Send size={18} />
+                                            </button>
+                                            {promptError && (
+                                                <p className="text-sm text-red-500 mt-2">
+                                                    {promptError}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
+                                </div>
+                            )}
+                            {selectedTab === TabType.Import && (
+                                <div className="space-y-4">
+                                    <div className="flex flex-col gap-4">
+                                        <label className="text-base font-medium text-gray-900 dark:text-gray-100">
+                                            🗂️ Paste JSON Contents
+                                        </label>
                                         <Textarea
-                                            value={customPrompt}
-                                            onChange={(e) => {
-                                                setCustomPrompt(e.target.value);
-                                                setPromptError(null);
-                                            }}
-                                            placeholder="Example: Create a customer support assistant that can handle product inquiries and returns"
+                                            value={importJson}
+                                            onChange={e => setImportJson(e.target.value)}
+                                            placeholder="Paste your workflow JSON here..."
                                             className={clsx(
                                                 textareaStyles,
                                                 "text-base",
                                                 "text-gray-900 dark:text-gray-100",
-                                                promptError && "border-red-500 focus:ring-red-500/20",
-                                                !customPrompt && emptyTextareaStyles
+                                                !importJson && emptyTextareaStyles
                                             )}
-                                            style={{ minHeight: "120px" }}
+                                            style={{ minHeight: "180px" }}
                                             autoFocus
                                             autoResize
-                                            required={isNotBlankTemplate(selectedTab)}
+                                            required
                                         />
-                                        {promptError && (
-                                            <p className="text-sm text-red-500">
-                                                {promptError}
-                                            </p>
-                                        )}
+                                        <div className="flex flex-col items-start gap-2">
+                                            {importLoading && (
+                                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                    Please hold on while we set up your project&hellip;
+                                                </div>
+                                            )}
+                                            <Button
+                                                variant="primary"
+                                                size="lg"
+                                                onClick={handleImportSubmit}
+                                                type="button"
+                                                isLoading={importLoading}
+                                            >
+                                                Import and create assistant
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-
-                        {selectedTab === TabType.Blank && (
-                            <div className="space-y-4">
-                                <div className="flex flex-col gap-4">
-                                    <p className="text-gray-600 dark:text-gray-400 text-sm">
-                                        👇 Click &ldquo;Create assistant&rdquo; below to get started
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
+                            )}
+                        </div>
                         {/* Name Section */}
-                        {USE_MULTIPLE_PROJECTS && selectedTab !== TabType.Import && (
-                            <div className="space-y-4">
-                                <div className="flex flex-col gap-4">
-                                    <label className={largeSectionHeaderStyles}>
-                                        🏷️ Name the project
-                                    </label>
-                                    <Textarea
-                                        required
-                                        name="name"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        className={clsx(
-                                            textareaStyles,
-                                            "min-h-[60px]",
-                                            "text-base",
-                                            "text-gray-900 dark:text-gray-100"
-                                        )}
-                                        placeholder={defaultName}
-                                    />
-                                </div>
-                            </div>
-                        )}
-
+                        {/* Project name input removed, but naming logic is preserved in state and form submission */}
                         {/* Submit Button */}
-                        {selectedTab !== TabType.Import && (
-                            <div className="pt-1 w-full -mt-4">
-                                <Submit />
-                            </div>
-                        )}
                     </form>
                 </section>
             </div>

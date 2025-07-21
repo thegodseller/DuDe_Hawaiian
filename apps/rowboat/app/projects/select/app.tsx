@@ -44,6 +44,10 @@ export default function App() {
                 const nextNumber = getNextAssistantNumber(sortedProjects);
                 const newDefaultName = `Assistant ${nextNumber}`;
                 setDefaultName(newDefaultName);
+                // Default open project pane if there is at least one project
+                if (sortedProjects.length > 0) {
+                    setIsProjectPaneOpen(true);
+                }
             }
         }
 

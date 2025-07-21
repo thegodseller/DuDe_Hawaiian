@@ -26,7 +26,7 @@ export function SearchProjects({
         <div className={clsx("card", className)}>
             <div className="px-4 pt-4 pb-6 flex-none">
                 <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                    <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                         {heading}
                     </h1>
                     {onClose && (
