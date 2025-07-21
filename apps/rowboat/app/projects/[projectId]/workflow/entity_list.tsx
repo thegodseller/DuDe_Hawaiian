@@ -60,7 +60,10 @@ interface EmptyStateProps {
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({ entity, hasFilteredItems }) => (
-    <div className="flex items-center justify-center h-24 text-sm text-zinc-400 dark:text-zinc-500">
+    <div className={clsx(
+        "flex items-center justify-center h-24 text-sm text-zinc-400 dark:text-zinc-500",
+        entity === "prompts" && "pb-6"
+    )}>
         {hasFilteredItems ? "No tools to show" : `No ${entity} created`}
     </div>
 );
@@ -359,10 +362,10 @@ export function EntityList({
     };
 
     return (
-        <div ref={containerRef} className="flex flex-col h-full">
+        <div ref={containerRef} className="flex flex-col h-full min-h-0">
             <ResizablePanelGroup 
                 direction="vertical" 
-                className="h-full"
+                className="flex-1 min-h-0 flex flex-col"
                 style={{ gap: `${GAP_SIZE}px` }}
             >
                 {/* Agents Panel */}
@@ -370,12 +373,13 @@ export function EntityList({
                     defaultSize={getPanelSize('agents')}
                     minSize={expandedPanels.agents ? 20 : 8}
                     maxSize={100}
+                    className="flex flex-col min-h-0 h-full"
                 >
                     <Panel 
                         variant="entity-list"
                         tourTarget="entity-agents"
                         className={clsx(
-                            "h-full overflow-hidden",
+                            "flex flex-col min-h-0 h-full overflow-hidden",
                             !expandedPanels.agents && "h-[53px]!"
                         )}
                         title={
@@ -470,12 +474,13 @@ export function EntityList({
                     defaultSize={getPanelSize('tools')}
                     minSize={expandedPanels.tools ? 20 : 8}
                     maxSize={100}
+                    className="flex flex-col min-h-0 h-full"
                 >
                     <Panel 
                         variant="entity-list"
                         tourTarget="entity-tools"
                         className={clsx(
-                            "h-full overflow-hidden",
+                            "flex flex-col min-h-0 h-full overflow-hidden",
                             !expandedPanels.tools && "h-[53px]!"
                         )}
                         title={
@@ -601,12 +606,13 @@ export function EntityList({
                     defaultSize={getPanelSize('prompts')}
                     minSize={expandedPanels.prompts ? 20 : 8}
                     maxSize={100}
+                    className="flex flex-col min-h-0 h-full"
                 >
                     <Panel 
                         variant="entity-list"
                         tourTarget="entity-prompts"
                         className={clsx(
-                            "h-full overflow-hidden",
+                            "h-full",
                             !expandedPanels.prompts && "h-[53px]!"
                         )}
                         title={

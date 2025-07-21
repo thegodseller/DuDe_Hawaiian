@@ -42,6 +42,7 @@ interface PanelProps {
     className?: string;
     onClick?: () => void;
     tourTarget?: string;
+    overflow?: 'hidden' | 'visible' | 'auto' | 'scroll' | undefined;
 }
 
 export function Panel({
@@ -55,19 +56,23 @@ export function Panel({
     className,
     onClick,
     tourTarget,
+    overflow,
 }: PanelProps) {
     const isEntityList = variant === 'entity-list';
     
     return <div 
         className={clsx(
-            "flex flex-col overflow-hidden rounded-xl border relative w-full",
+            "flex flex-col rounded-xl border relative w-full",
+            // Only apply overflow-hidden if no custom overflow is set (for backward compatibility)
+            overflow ? undefined : "overflow-hidden",
             variant === 'copilot' ? "border-blue-200 dark:border-blue-800" : "border-zinc-200 dark:border-zinc-800",
             "bg-white dark:bg-zinc-900",
             maxHeight ? "max-h-(--panel-height)" : "h-full",
             className
         )}
         style={{ 
-            '--panel-height': maxHeight
+            '--panel-height': maxHeight,
+            ...(overflow ? { overflow } : {})
         } as React.CSSProperties}
         onClick={onClick}
         data-tour-target={tourTarget}
