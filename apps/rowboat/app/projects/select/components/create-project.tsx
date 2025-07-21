@@ -317,7 +317,7 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                     >
                         {/* Main Section: What do you want to build? and Import JSON */}
                         <div className="flex flex-col gap-6">
-                            <div className="flex w-full items-center justify-between">
+                            <div className="flex w-full items-center">
                                 <label className={largeSectionHeaderStyles}>
                                     ✏️ What do you want to build?
                                 </label>
@@ -335,17 +335,18 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                                     {/* If a file is imported, show filename, cross button, and create button. Otherwise, show compose box. */}
                                     {importedJson ? (
                                         <div className="flex flex-col items-start gap-4">
-                                            <div className="flex items-center gap-2 bg-transparent border border-gray-300 dark:border-gray-700 rounded-full px-3 py-1.5 shadow-sm">
-                                                <Upload size={16} className="text-indigo-500 dark:text-indigo-400 mr-1" />
-                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[160px]">{importedFilename}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={handleRemoveImportedFile}
-                                                    className="ml-1 p-1 rounded-full transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none"
-                                                    aria-label="Remove imported file"
-                                                >
-                                                    <X size={16} />
-                                                </button>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center bg-transparent border border-gray-300 dark:border-gray-700 rounded-full px-3 h-8 shadow-sm">
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[160px]">{importedFilename}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleRemoveImportedFile}
+                                                        className="ml-1 p-1 rounded-full transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none"
+                                                        aria-label="Remove imported file"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                </div>
                                             </div>
                                             <Button
                                                 type="submit"
@@ -357,64 +358,70 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                                             </Button>
                                         </div>
                                     ) : (
-                                        <div className="relative group">
-                                            <Textarea
-                                                value={customPrompt}
-                                                onChange={(e) => {
-                                                    setCustomPrompt(e.target.value);
-                                                    setPromptError(null);
-                                                }}
-                                                placeholder="Example: Create a customer support assistant that can handle product inquiries and returns"
-                                                className={clsx(
-                                                    textareaStyles,
-                                                    "text-base",
-                                                    "text-gray-900 dark:text-gray-100",
-                                                    promptError && "border-red-500 focus:ring-red-500/20",
-                                                    !customPrompt && emptyTextareaStyles,
-                                                    "pr-12 pb-10" // space for send button and import pill
+                                        <>
+                                            <div className="relative group flex flex-col">
+                                                <div className="relative">
+                                                    <Textarea
+                                                        value={customPrompt}
+                                                        onChange={(e) => {
+                                                            setCustomPrompt(e.target.value);
+                                                            setPromptError(null);
+                                                        }}
+                                                        placeholder="Example: Create a customer support assistant that can handle product inquiries and returns"
+                                                        className={clsx(
+                                                            textareaStyles,
+                                                            "text-base",
+                                                            "text-gray-900 dark:text-gray-100",
+                                                            promptError && "border-red-500 focus:ring-red-500/20",
+                                                            !customPrompt && emptyTextareaStyles,
+                                                            "pr-14" // more space for send button
+                                                        )}
+                                                        style={{ minHeight: "120px" }}
+                                                        autoFocus
+                                                        autoResize
+                                                        required
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' && !e.shiftKey && !importedJson) {
+                                                                e.preventDefault();
+                                                                handleSubmit();
+                                                            }
+                                                        }}
+                                                    />
+                                                    <div className="absolute right-3 bottom-3 z-10">
+                                                        <button
+                                                            type="submit"
+                                                            disabled={importLoading || !customPrompt.trim()}
+                                                            className={clsx(
+                                                                "rounded-full p-2",
+                                                                customPrompt.trim()
+                                                                    ? "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:hover:bg-indigo-800/60 dark:text-indigo-300"
+                                                                    : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500",
+                                                                "transition-all duration-200 scale-100 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-95 hover:shadow-md dark:hover:shadow-indigo-950/10"
+                                                            )}
+                                                        >
+                                                            <Send size={18} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                {promptError && (
+                                                    <p className="text-sm text-red-500 m-0 mt-2">
+                                                        {promptError}
+                                                    </p>
                                                 )}
-                                                style={{ minHeight: "120px" }}
-                                                autoFocus
-                                                autoResize
-                                                required
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && !importedJson && !e.shiftKey) {
-                                                        e.preventDefault();
-                                                        handleSubmit();
-                                                    }
-                                                }}
-                                            />
-                                            {/* Import Assistant JSON pill inside textarea */}
-                                            <div className="absolute left-3 bottom-3 flex items-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={handleImportJsonClick}
-                                                    className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none"
-                                                >
-                                                    <Upload size={14} className="text-indigo-500 dark:text-indigo-400" />
-                                                    Import JSON instead
-                                                </button>
                                             </div>
-                                            <button
-                                                type="submit"
-                                                disabled={importLoading || !customPrompt.trim()}
-                                                className={clsx(
-                                                    "absolute right-3 bottom-3",
-                                                    "rounded-full p-2",
-                                                    customPrompt.trim()
-                                                        ? "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:hover:bg-indigo-800/60 dark:text-indigo-300"
-                                                        : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500",
-                                                    "transition-all duration-200 scale-100 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-95 hover:shadow-md dark:hover:shadow-indigo-950/10"
-                                                )}
-                                            >
-                                                <Send size={18} />
-                                            </button>
-                                            {promptError && (
-                                                <p className="text-sm text-red-500 mt-2">
-                                                    {promptError}
-                                                </p>
-                                            )}
-                                        </div>
+                                            {/* Import JSON button always below the main input, left-aligned, when no file is selected */}
+                                            <div className="mt-2">
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={handleImportJsonClick}
+                                                    type="button"
+                                                    startContent={<Upload size={16} />}
+                                                >
+                                                    Import JSON
+                                                </Button>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
                             </div>
