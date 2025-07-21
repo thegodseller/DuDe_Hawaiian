@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createProjectFromPrompt, createProjectFromWorkflowJson } from "@/app/actions/project_actions";
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
@@ -13,7 +13,7 @@ import { Tooltip } from "@heroui/react";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
 import { Workflow } from '@/app/lib/types/workflow_types';
 import { Modal } from '@/components/ui/modal';
-import { FileDown, Send } from "lucide-react";
+import { Upload, Send, X } from "lucide-react";
 
 // Add glow animation styles
 const glowStyles = `
@@ -136,9 +136,11 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
     const [name, setName] = useState(defaultName);
     const [promptError, setPromptError] = useState<string | null>(null);
     const [billingError, setBillingError] = useState<string | null>(null);
-    const [importJson, setImportJson] = useState("");
+    const [importedJson, setImportedJson] = useState<string | null>(null);
+    const [importedFilename, setImportedFilename] = useState<string | null>(null);
     const [importError, setImportError] = useState<string | null>(null);
     const [importModalOpen, setImportModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     const [importLoading, setImportLoading] = useState(false);
 
@@ -165,13 +167,88 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
         setImportError(null);
         if (tab === TabType.Describe) {
             setCustomPrompt('');
-        } else if (tab === TabType.Import) {
-            setImportJson('');
+            setImportedJson(null);
+            setImportedFilename(null);
         }
+    };
+
+    // Open file chooser when Import JSON is clicked
+    const handleImportJsonClick = () => {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setSelectedTab(TabType.Import);
+        setTimeout(() => {
+            fileInputRef.current?.click();
+        }, 0);
+    };
+
+    // Handle file selection
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) {
+            // If no file selected, revert to describe view
+            setSelectedTab(TabType.Describe);
+            return;
+        }
+        setImportLoading(true);
+        setImportError(null);
+        try {
+            const text = await file.text();
+            let parsed = Workflow.safeParse(JSON.parse(text));
+            if (!parsed.success) {
+                setImportError('Invalid workflow JSON: ' + JSON.stringify(parsed.error.issues));
+                setImportModalOpen(true);
+                setImportLoading(false);
+                setImportedJson(null);
+                setImportedFilename(null);
+                setSelectedTab(TabType.Describe);
+                return;
+            }
+            setImportedJson(text);
+            setImportedFilename(file.name);
+            setSelectedTab(TabType.Import);
+        } catch (err) {
+            setImportError('Invalid JSON: ' + (err instanceof Error ? err.message : String(err)));
+            setImportModalOpen(true);
+            setImportedJson(null);
+            setImportedFilename(null);
+            setSelectedTab(TabType.Describe);
+        } finally {
+            setImportLoading(false);
+        }
+    };
+
+    // Allow user to pick another file
+    const handleChooseAnother = () => {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setImportedJson(null);
+        setImportedFilename(null);
+        setTimeout(() => {
+            fileInputRef.current?.click();
+        }, 0);
+    };
+
+    // Remove imported file with X button
+    const handleRemoveImportedFile = () => {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setImportedJson(null);
+        setImportedFilename(null);
+        setSelectedTab(TabType.Describe);
     };
 
     async function handleSubmit() {
         try {
+            if (importedJson) {
+                // Use imported JSON
+                const formData = new FormData();
+                formData.append('workflowJson', importedJson);
+                const response = await createProjectFromWorkflowJson(formData);
+                if ('id' in response) {
+                    router.push(`/projects/${response.id}/workflow`);
+                } else {
+                    setBillingError(response.billingError);
+                }
+                return;
+            }
             if (!customPrompt.trim()) {
                 setPromptError("Prompt cannot be empty");
                 return;
@@ -193,45 +270,15 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
         }
     }
 
-    async function handleImportSubmit(e?: React.FormEvent) {
-        if (e) e.preventDefault();
-        setImportError(null);
-        setImportLoading(true);
-        let parsed;
-        try {
-            const json = JSON.parse(importJson);
-            parsed = Workflow.safeParse(json);
-            if (!parsed.success) {
-                setImportError('Invalid workflow JSON: ' + JSON.stringify(parsed.error.issues));
-                setImportModalOpen(true);
-                setImportLoading(false);
-                return;
-            }
-        } catch (err) {
-            setImportError('Invalid JSON: ' + (err instanceof Error ? err.message : String(err)));
-            setImportModalOpen(true);
-            setImportLoading(false);
-            return;
-        }
-        try {
-            const formData = new FormData();
-            formData.append('workflowJson', importJson);
-            const response = await createProjectFromWorkflowJson(formData);
-            if ('id' in response) {
-                router.push(`/projects/${response.id}/workflow`);
-            } else {
-                setBillingError(response.billingError);
-            }
-        } catch (err) {
-            setImportError('Failed to import: ' + (err instanceof Error ? err.message : String(err)));
-            setImportModalOpen(true);
-        } finally {
-            setImportLoading(false);
-        }
-    }
-
     return (
         <>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json"
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+            />
             <div className={clsx(
                 "overflow-auto",
                 !USE_MULTIPLE_PROJECTS && "max-w-none px-12 py-12",
@@ -264,39 +311,52 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                     )}
                     <form
                         id="create-project-form"
-                        action={selectedTab !== TabType.Import ? handleSubmit : undefined}
+                        action={undefined}
                         className="pt-6 pb-16 space-y-12"
+                        onSubmit={e => { e.preventDefault(); handleSubmit(); }}
                     >
                         {/* Main Section: What do you want to build? and Import JSON */}
                         <div className="flex flex-col gap-6">
-                            <div className="flex items-center gap-4">
-                                <div className="flex w-full items-center justify-between">
-                                    <label className={largeSectionHeaderStyles}>
-                                        ✏️ What do you want to build?
-                                    </label>
-                                    <Button
-                                        variant="primary"
-                                        size="md"
-                                        onClick={() => handleTabChange(TabType.Import)}
-                                        type="button"
-                                        startContent={<FileDown size={16} />}
-                                    >
-                                        Import JSON
-                                    </Button>
-                                </div>
+                            <div className="flex w-full items-center justify-between">
+                                <label className={largeSectionHeaderStyles}>
+                                    ✏️ What do you want to build?
+                                </label>
                             </div>
-                            {selectedTab === TabType.Describe && (
-                                <div className="space-y-4">
-                                    <div className="flex flex-col gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                                                In the next step, our AI copilot will create agents for you, complete with mock-tools.
-                                            </p>
-                                            <Tooltip content={<div>If you already know the specific agents and tools you need, mention them below.<br /><br />Specify &apos;internal agents&apos; for task agents that will not interact with the user and &apos;user-facing agents&apos; for conversational agents that will interact with users.</div>} className="max-w-[560px]">
-                                                <InformationCircleIcon className="w-4 h-4 text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-help" />
-                                            </Tooltip>
+                            <div className="space-y-4">
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                                            In the next step, our AI copilot will create agents for you, complete with mock-tools.
+                                        </p>
+                                        <Tooltip content={<div>If you already know the specific agents and tools you need, mention them below.<br /><br />Specify &apos;internal agents&apos; for task agents that will not interact with the user and &apos;user-facing agents&apos; for conversational agents that will interact with users.</div>} className="max-w-[560px]">
+                                            <InformationCircleIcon className="w-4 h-4 text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-help" />
+                                        </Tooltip>
+                                    </div>
+                                    {/* If a file is imported, show filename, cross button, and create button. Otherwise, show compose box. */}
+                                    {importedJson ? (
+                                        <div className="flex flex-col items-start gap-4">
+                                            <div className="flex items-center gap-2 bg-transparent border border-gray-300 dark:border-gray-700 rounded-full px-3 py-1.5 shadow-sm">
+                                                <Upload size={16} className="text-indigo-500 dark:text-indigo-400 mr-1" />
+                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[160px]">{importedFilename}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRemoveImportedFile}
+                                                    className="ml-1 p-1 rounded-full transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none"
+                                                    aria-label="Remove imported file"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                            <Button
+                                                type="submit"
+                                                variant="primary"
+                                                size="lg"
+                                                className="mt-2"
+                                            >
+                                                Create assistant
+                                            </Button>
                                         </div>
-                                        {/* Compose box with send button */}
+                                    ) : (
                                         <div className="relative group">
                                             <Textarea
                                                 value={customPrompt}
@@ -311,23 +371,33 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                                                     "text-gray-900 dark:text-gray-100",
                                                     promptError && "border-red-500 focus:ring-red-500/20",
                                                     !customPrompt && emptyTextareaStyles,
-                                                    "pr-12" // space for send button
+                                                    "pr-12 pb-10" // space for send button and import pill
                                                 )}
                                                 style={{ minHeight: "120px" }}
                                                 autoFocus
                                                 autoResize
                                                 required
                                                 onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                    if (e.key === 'Enter' && !importedJson && !e.shiftKey) {
                                                         e.preventDefault();
                                                         handleSubmit();
                                                     }
                                                 }}
                                             />
+                                            {/* Import Assistant JSON pill inside textarea */}
+                                            <div className="absolute left-3 bottom-3 flex items-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleImportJsonClick}
+                                                    className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none"
+                                                >
+                                                    <Upload size={14} className="text-indigo-500 dark:text-indigo-400" />
+                                                    Import JSON instead
+                                                </button>
+                                            </div>
                                             <button
-                                                type="button"
-                                                onClick={handleSubmit}
-                                                disabled={!customPrompt.trim()}
+                                                type="submit"
+                                                disabled={importLoading || !customPrompt.trim()}
                                                 className={clsx(
                                                     "absolute right-3 bottom-3",
                                                     "rounded-full p-2",
@@ -345,53 +415,10 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                                                 </p>
                                             )}
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
-                            )}
-                            {selectedTab === TabType.Import && (
-                                <div className="space-y-4">
-                                    <div className="flex flex-col gap-4">
-                                        <label className="text-base font-medium text-gray-900 dark:text-gray-100">
-                                            🗂️ Paste JSON Contents
-                                        </label>
-                                        <Textarea
-                                            value={importJson}
-                                            onChange={e => setImportJson(e.target.value)}
-                                            placeholder="Paste your workflow JSON here..."
-                                            className={clsx(
-                                                textareaStyles,
-                                                "text-base",
-                                                "text-gray-900 dark:text-gray-100",
-                                                !importJson && emptyTextareaStyles
-                                            )}
-                                            style={{ minHeight: "180px" }}
-                                            autoFocus
-                                            autoResize
-                                            required
-                                        />
-                                        <div className="flex flex-col items-start gap-2">
-                                            {importLoading && (
-                                                <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                    Please hold on while we set up your project&hellip;
-                                                </div>
-                                            )}
-                                            <Button
-                                                variant="primary"
-                                                size="lg"
-                                                onClick={handleImportSubmit}
-                                                type="button"
-                                                isLoading={importLoading}
-                                            >
-                                                Import and create assistant
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            </div>
                         </div>
-                        {/* Name Section */}
-                        {/* Project name input removed, but naming logic is preserved in state and form submission */}
-                        {/* Submit Button */}
                     </form>
                 </section>
             </div>
