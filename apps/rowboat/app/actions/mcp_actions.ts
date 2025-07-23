@@ -4,7 +4,7 @@ import { WorkflowTool } from "../lib/types/workflow_types";
 import { projectAuthCheck } from "./project_actions";
 import { projectsCollection } from "../lib/mongodb";
 import { Project } from "../lib/types/project_types";
-import { MCPServer, McpServerTool, convertMcpServerToolToWorkflowTool } from "../lib/types/types";
+import { McpServerTool, convertMcpServerToolToWorkflowTool } from "../lib/types/types";
 import { getMcpClient } from "../lib/mcp";
 
 export async function fetchMcpTools(projectId: string): Promise<z.infer<typeof WorkflowTool>[]> {

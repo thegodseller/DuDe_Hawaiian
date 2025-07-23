@@ -11,7 +11,6 @@ import { User, WithStringId } from "../lib/types/types";
 import { ApiKey } from "../lib/types/project_types";
 import { Project } from "../lib/types/project_types";
 import { USE_AUTH } from "../lib/feature_flags";
-import { deleteMcpServerInstance, listActiveServerInstances } from "./klavis_actions";
 import { authorizeUserAction } from "./billing_actions";
 import { Workflow } from "../lib/types/workflow_types";
 
@@ -188,52 +187,8 @@ interface McpServerDeletionError {
     error: string;
 }
 
-async function cleanupMcpServers(projectId: string): Promise<McpServerDeletionError[]> {
-    // Get all active instances directly from Klavis
-    const activeInstances = await listActiveServerInstances(projectId);
-    if (activeInstances.length === 0) return [];
-
-    console.log(`[Project Cleanup] Found ${activeInstances.length} active Klavis instances`);
-
-    // Track deletion errors
-    const deletionErrors: McpServerDeletionError[] = [];
-
-    // Delete each instance
-    const deletionPromises = activeInstances.map(async (instance) => {
-        if (!instance.id) return; // Skip if no instance ID
-
-        try {
-            await deleteMcpServerInstance(instance.id, projectId);
-            console.log(`[Project Cleanup] Deleted Klavis instance: ${instance.name} (${instance.id})`);
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.error(`[Project Cleanup] Failed to delete Klavis instance: ${instance.name}`, error);
-            deletionErrors.push({
-                serverName: instance.name,
-                error: errorMessage
-            });
-        }
-    });
-
-    // Wait for all deletions to complete
-    await Promise.all(deletionPromises);
-
-    return deletionErrors;
-}
-
 export async function deleteProject(projectId: string) {
     await projectAuthCheck(projectId);
-
-    // First cleanup any Klavis instances
-    if (KLAVIS_API_KEY) {
-        const deletionErrors = await cleanupMcpServers(projectId);
-
-        // If there were any errors deleting instances, throw an error
-        if (deletionErrors.length > 0) {
-            const failedServers = deletionErrors.map(e => `${e.serverName} (${e.error})`).join(', ');
-            throw new Error(`Cannot delete project because the following Klavis instances could not be deleted: ${failedServers}. Please try again or contact support if the issue persists.`);
-        }
-    }
 
     // delete api keys
     await apiKeysCollection.deleteMany({

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { WithId } from 'mongodb';
 import { Message } from './types';
 
 export const TwilioConfigParams = z.object({

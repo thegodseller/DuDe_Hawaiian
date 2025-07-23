@@ -10,7 +10,6 @@ import { WithStringId } from "../lib/types/types";
 import { DataSourceDoc } from "../lib/types/datasource_types";
 import { DataSource } from "../lib/types/datasource_types";
 import { uploadsS3Client } from "../lib/uploads_s3_client";
-import { USE_RAG_S3_UPLOADS } from "../lib/feature_flags";
 
 export async function getDataSource(projectId: string, sourceId: string): Promise<WithStringId<z.infer<typeof DataSource>>> {
     await projectAuthCheck(projectId);
