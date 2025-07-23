@@ -13,7 +13,7 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
   }
 
   // parse the payload
-  const { projectId, workflow, projectTools, messages } = ZStreamAgentResponsePayload.parse(JSON.parse(payload));
+  const { projectId, workflow, messages } = ZStreamAgentResponsePayload.parse(JSON.parse(payload));
   console.log('payload', payload);
 
   // fetch billing customer id
@@ -29,7 +29,7 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
     async start(controller) {
       try {
         // Iterate over the generator
-        for await (const event of streamResponse(projectId, workflow, projectTools, messages)) {
+        for await (const event of streamResponse(projectId, workflow, messages)) {
           // Check if this is a message event (has role property)
           if ('role' in event) {
             if (event.role === 'assistant') {

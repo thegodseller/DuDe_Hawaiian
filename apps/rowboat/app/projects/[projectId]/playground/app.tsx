@@ -19,10 +19,8 @@ export function App({
     workflow,
     messageSubscriber,
     mcpServerUrls,
-    toolWebhookUrl,
     isInitialState = false,
     onPanelClick,
-    projectTools,
     triggerCopilotChat,
 }: {
     hidden?: boolean;
@@ -30,10 +28,8 @@ export function App({
     workflow: z.infer<typeof Workflow>;
     messageSubscriber?: (messages: z.infer<typeof Message>[]) => void;
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
-    toolWebhookUrl: string;
     isInitialState?: boolean;
     onPanelClick?: () => void;
-    projectTools: z.infer<typeof WorkflowTool>[];
     triggerCopilotChat?: (message: string) => void;
 }) {
     const [counter, setCounter] = useState<number>(0);
@@ -153,10 +149,8 @@ export function App({
                         systemMessage={systemMessage}
                         onSystemMessageChange={handleSystemMessageChange}
                         mcpServerUrls={mcpServerUrls}
-                        toolWebhookUrl={toolWebhookUrl}
                         onCopyClick={(fn) => { getCopyContentRef.current = fn; }}
                         showDebugMessages={showDebugMessages}
-                        projectTools={projectTools}
                         triggerCopilotChat={triggerCopilotChat}
                     />
                 </div>

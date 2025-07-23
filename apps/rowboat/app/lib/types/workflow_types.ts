@@ -39,7 +39,6 @@ export const WorkflowTool = z.object({
     name: z.string(),
     description: z.string(),
     mockTool: z.boolean().default(false).optional(),
-    autoSubmitMockedResponse: z.boolean().default(false).optional(),
     mockInstructions: z.string().optional(),
     parameters: z.object({
         type: z.literal('object'),
@@ -48,10 +47,9 @@ export const WorkflowTool = z.object({
         additionalProperties: z.boolean().optional(),
     }),
     isMcp: z.boolean().default(false).optional(),
-    isLibrary: z.boolean().default(false).optional(),
     mcpServerName: z.string().optional(),
-    mcpServerURL: z.string().optional(),
     isComposio: z.boolean().optional(), // whether this is a Composio tool
+    isLibrary: z.boolean().default(false).optional(), // whether this is a library tool
     composioData: z.object({
         slug: z.string(), // the slug for the Composio tool e.g. "GITHUB_CREATE_AN_ISSUE"
         noAuth: z.boolean(), // whether the tool requires no authentication
@@ -89,7 +87,6 @@ export function sanitizeTextWithMentions(
         tools: z.infer<typeof WorkflowTool>[],
         prompts: z.infer<typeof WorkflowPrompt>[],
     },
-    projectTools: z.infer<typeof WorkflowTool>[] = []
 ): {
     sanitized: string;
     entities: z.infer<typeof ConnectedEntity>[];
@@ -119,8 +116,7 @@ export function sanitizeTextWithMentions(
             if (entity.type === 'agent') {
                 return workflow.agents.some(a => a.name === entity.name);
             } else if (entity.type === 'tool') {
-                return workflow.tools.some(t => t.name === entity.name) || 
-                       projectTools.some(t => t.name === entity.name);
+                return workflow.tools.some(t => t.name === entity.name);
             } else if (entity.type === 'prompt') {
                 return workflow.prompts.some(p => p.name === entity.name);
             }

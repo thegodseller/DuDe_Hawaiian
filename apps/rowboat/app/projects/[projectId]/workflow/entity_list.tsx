@@ -1,8 +1,10 @@
 import { z } from "zod";
-import { WorkflowPrompt, WorkflowAgent, WorkflowTool } from "../../../lib/types/workflow_types";
+import { WorkflowPrompt, WorkflowAgent, WorkflowTool, Workflow } from "../../../lib/types/workflow_types";
+import { Project } from "../../../lib/types/project_types";
 import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@heroui/react";
 import { useRef, useEffect, useState } from "react";
-import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Boxes, Wrench, PenLine, Library, ChevronDown, ChevronRight, ServerIcon, Component, ScrollText, GripVertical, Users, Cog, CheckCircle2, Eye } from "lucide-react";
+import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Boxes, Wrench, PenLine, Library, ChevronDown, ChevronRight, ServerIcon, Component, ScrollText, GripVertical, Users, Cog, CheckCircle2, LinkIcon, UnlinkIcon, MoreVertical, Eye } from "lucide-react";
+import { Tooltip } from "@heroui/react";
 import { DndContext, DragEndEvent, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -13,6 +15,10 @@ import { clsx } from "clsx";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ServerLogo } from '../tools/components/MCPServersCommon';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
+import { ToolsModal } from './components/ToolsModal';
+import { ToolkitAuthModal } from '../tools/components/ToolkitAuthModal';
+import { deleteConnectedAccount } from '@/app/actions/composio_actions';
+import { ProjectWideChangeConfirmationModal } from '@/components/common/project-wide-change-confirmation-modal';
 
 // Reduced gap size to match Cursor's UI
 const GAP_SIZE = 4; // 1 unit * 4px (tailwind's default spacing unit)
@@ -33,8 +39,8 @@ const buttonClasses = "text-sm px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text
 interface EntityListProps {
     agents: z.infer<typeof WorkflowAgent>[];
     tools: z.infer<typeof WorkflowTool>[];
-    projectTools: z.infer<typeof WorkflowTool>[];
     prompts: z.infer<typeof WorkflowPrompt>[];
+    workflow: z.infer<typeof Workflow>;
     selectedEntity: {
         type: "agent" | "tool" | "prompt" | "visualise";
         name: string;
@@ -52,6 +58,8 @@ interface EntityListProps {
     onDeleteTool: (name: string) => void;
     onDeletePrompt: (name: string) => void;
     onShowVisualise: (name: string) => void;
+    onProjectToolsUpdated?: () => void;
+    projectConfig?: z.infer<typeof Project>;
 }
 
 interface EmptyStateProps {
@@ -80,6 +88,7 @@ const ListItemWithMenu = ({
     iconClassName,
     mcpServerName,
     dragHandle,
+    isMocked,
 }: {
     name: string;
     isSelected?: boolean;
@@ -92,10 +101,11 @@ const ListItemWithMenu = ({
     iconClassName?: string;
     mcpServerName?: string;
     dragHandle?: React.ReactNode;
+    isMocked?: boolean;
 }) => {
     return (
         <div className={clsx(
-            "group flex items-center gap-2 px-2 py-1.5 rounded-md",
+            "group flex items-center gap-2 px-2 py-0.5 rounded-md min-h-[24px]",
             {
                 "bg-indigo-50 dark:bg-indigo-950/30": isSelected,
                 "hover:bg-zinc-50 dark:hover:bg-zinc-800": !isSelected
@@ -116,22 +126,27 @@ const ListItemWithMenu = ({
                 }}
                 disabled={disabled}
             >
-                <div className={clsx("shrink-0 flex items-center justify-center w-4 h-4", iconClassName)}>
+                <div className={clsx("shrink-0 flex items-center justify-center w-3 h-3", iconClassName)}>
                     {mcpServerName ? (
                         <ServerLogo 
                             serverName={mcpServerName} 
-                            className="h-4 w-4" 
-                            fallback={<ImportIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />} 
+                            className="h-3 w-3" 
+                            fallback={<ImportIcon className="w-3 h-3 text-blue-600 dark:text-blue-500" />} 
                         />
                     ) : icon}
                 </div>
-                {name}
+                <span className="text-xs">{name}</span>
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
                 {statusLabel}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    {menuContent}
-                </div>
+                {isMocked && (
+                    <Tooltip content="Mocked" size="sm" delay={500}>
+                        <div className="w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center text-xs font-medium text-white">
+                            M
+                        </div>
+                    </Tooltip>
+                )}
+                {menuContent}
             </div>
         </div>
     );
@@ -166,44 +181,58 @@ const ServerCard = ({
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div className="mb-2">
-            <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md text-sm text-left"
-            >
-                {isExpanded ? (
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
-                ) : (
-                    <ChevronRight className="w-4 h-4 text-gray-500" />
-                )}
-                <div className="flex items-center gap-1">
-                    <ServerLogo 
-                        serverName={serverName} 
-                        className="h-4 w-4" 
-                        fallback={<ImportIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />}
-                    />
-                    <span>{serverName}</span>
-                </div>
-            </button>
-            {isExpanded && (
-                <div className="ml-6 mt-1 space-y-1">
-                    {tools.map((tool, index) => (
-                        <ListItemWithMenu
-                            key={`tool-${index}`}
-                            name={tool.name}
-                            isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
-                            onClick={() => onSelectTool(tool.name)}
-                            selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
-                            mcpServerName={serverName}
-                            menuContent={
-                                <EntityDropdown 
-                                    name={tool.name} 
-                                    onDelete={onDeleteTool}
-                                    isLocked={tool.isMcp || tool.isLibrary}
-                                />
-                            }
+        <div className="mb-1 group">
+            <div className="flex items-center gap-2 px-2 py-1 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors">
+                <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="flex-1 flex items-center gap-2 text-sm text-left min-h-[28px]"
+                >
+                    {/* Chevron - only show when has tools and on hover */}
+                    <div className={`w-4 h-4 flex items-center justify-center transition-opacity ${
+                        tools.length > 0 ? 'group-hover:opacity-100 opacity-60' : 'opacity-0'
+                    }`}>
+                        {tools.length > 0 && (isExpanded ? (
+                            <ChevronDown className="w-3 h-3 text-gray-500" />
+                        ) : (
+                            <ChevronRight className="w-3 h-3 text-gray-500" />
+                        ))}
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                        <ServerLogo 
+                            serverName={serverName} 
+                            className="h-4 w-4" 
+                            fallback={<ImportIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />}
                         />
-                    ))}
+                        <span className="text-sm">{serverName}</span>
+                    </div>
+                </button>
+                
+            </div>
+            
+            {isExpanded && (
+                <div className="ml-6 mt-0.5 space-y-0.5 border-l border-gray-200 dark:border-gray-700 pl-3">
+                                                                        {tools.map((tool, index) => (
+                                                        <div key={`tool-${index}`} className="group/tool">
+                                                            <ListItemWithMenu
+                                                                name={tool.name}
+                                                                isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
+                                                                onClick={() => onSelectTool(tool.name)}
+                                                                selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
+                                                                mcpServerName={serverName}
+                                                                isMocked={tool.mockTool}
+                                                                menuContent={
+                                                                    <div className="opacity-0 group-hover/tool:opacity-100 transition-opacity">
+                                                                        <EntityDropdown 
+                                                                            name={tool.name} 
+                                                                            onDelete={onDeleteTool}
+                                                                            isLocked={tool.isMcp || tool.isLibrary}
+                                                                        />
+                                                                    </div>
+                                                                }
+                                                            />
+                                                        </div>
+                                                    ))}
                 </div>
             )}
         </div>
@@ -220,8 +249,8 @@ type ComposioToolkit = {
 export function EntityList({
     agents,
     tools,
-    projectTools,
     prompts,
+    workflow,
     selectedEntity,
     startAgentName,
     onSelectAgent,
@@ -235,7 +264,9 @@ export function EntityList({
     onDeleteAgent,
     onDeleteTool,
     onDeletePrompt,
+    onProjectToolsUpdated,
     projectId,
+    projectConfig,
     onReorderAgents,
     onShowVisualise,
 }: EntityListProps & { 
@@ -243,21 +274,20 @@ export function EntityList({
     onReorderAgents: (agents: z.infer<typeof WorkflowAgent>[]) => void 
 }) {
     const [showAgentTypeModal, setShowAgentTypeModal] = useState(false);
+    const [showToolsModal, setShowToolsModal] = useState(false);
 
     const handleAddAgentWithType = (agentType: 'internal' | 'user_facing') => {
         onAddAgent({
             outputVisibility: agentType
         });
     };
-    // Merge workflow tools with project tools
-    const mergedTools = [...tools, ...projectTools];
     const selectedRef = useRef<HTMLButtonElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerHeight, setContainerHeight] = useState<number>(0);
 
     // collect composio tools
     const composioTools: Record<string, ComposioToolkit> = {};
-    for (const tool of mergedTools) {
+    for (const tool of tools) {
         if (tool.isComposio) {
             if (!composioTools[tool.composioData?.toolkitSlug || '']) {
                 composioTools[tool.composioData?.toolkitSlug || ''] = {
@@ -496,35 +526,37 @@ export function EntityList({
                                     <Wrench className="w-4 h-4" />
                                     <span>Tools</span>
                                 </div>
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setExpandedPanels(prev => ({ ...prev, tools: true }));
-                                        onAddTool({});
-                                    }}
-                                    className={`group ${buttonClasses}`}
-                                    showHoverContent={true}
-                                    hoverContent="Add Tool"
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setExpandedPanels(prev => ({ ...prev, tools: true }));
+                                            setShowToolsModal(true);
+                                        }}
+                                        className={`group ${buttonClasses}`}
+                                        showHoverContent={true}
+                                        hoverContent="Add Tool"
+                                    >
+                                        <PlusIcon className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </div>
                         }
                     >
                         {expandedPanels.tools && (
                             <div className="h-full overflow-y-auto">
                                 <div className="p-2">
-                                    {mergedTools.length > 0 ? (
+                                    {tools.length > 0 ? (
                                         <div className="space-y-1">
                                             {/* Group tools by server */}
                                             {(() => {
                                                 // Get custom tools (non-MCP tools)
-                                                const customTools = mergedTools.filter(tool => !tool.isMcp && !tool.isComposio);
+                                                const customTools = tools.filter(tool => !tool.isMcp && !tool.isComposio);
                                                 
                                                 // Group MCP tools by server
-                                                const serverTools = mergedTools.reduce((acc, tool) => {
+                                                const serverTools = tools.reduce((acc, tool) => {
                                                     if (tool.isMcp && tool.mcpServerName) {
                                                         if (!acc[tool.mcpServerName]) {
                                                             acc[tool.mcpServerName] = [];
@@ -532,21 +564,26 @@ export function EntityList({
                                                         acc[tool.mcpServerName].push(tool);
                                                     }
                                                     return acc;
-                                                }, {} as Record<string, typeof mergedTools>);
+                                                }, {} as Record<string, typeof tools>);
 
                                                 return (
                                                     <>
-                                                        {/* Show composio cards */}
-                                                        {Object.values(composioTools).map((card) => (
-                                                            <ComposioCard 
-                                                                key={card.slug} 
-                                                                card={card}
-                                                                selectedEntity={selectedEntity}
-                                                                onSelectTool={handleToolSelection}
-                                                                onDeleteTool={onDeleteTool}
-                                                                selectedRef={selectedRef}
-                                                            />
-                                                        ))}
+                                                        {/* Show composio cards - ordered by status */}
+                                                        {Object.values(composioTools)
+                                                            .map((card) => (
+                                                                <ComposioCard 
+                                                                    key={card.slug} 
+                                                                    card={card}
+                                                                    selectedEntity={selectedEntity}
+                                                                    onSelectTool={handleToolSelection}
+                                                                    onDeleteTool={onDeleteTool}
+                                                                    selectedRef={selectedRef}
+                                                                    projectConfig={projectConfig}
+                                                                    projectId={projectId}
+                                                                    workflow={workflow}
+                                                                    onProjectToolsUpdated={onProjectToolsUpdated}
+                                                                />
+                                                            ))}
 
                                                         {/* Show MCP server cards */}
                                                         {Object.entries(serverTools).map(([serverName, tools]) => (
@@ -564,23 +601,24 @@ export function EntityList({
                                                         {/* Show custom tools */}
                                                         {customTools.length > 0 && (
                                                             <div className="mt-2">
-                                                                {customTools.map((tool, index) => (
-                                                                    <ListItemWithMenu
-                                                                        key={`custom-tool-${index}`}
-                                                                        name={tool.name}
-                                                                        isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
-                                                                        onClick={() => handleToolSelection(tool.name)}
-                                                                        selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
-                                                                        icon={<Boxes className="w-4 h-4 text-blue-600/70 dark:text-blue-500/70" />}
-                                                                        menuContent={
-                                                                            <EntityDropdown 
-                                                                                name={tool.name} 
-                                                                                onDelete={onDeleteTool}
-                                                                                isLocked={tool.isLibrary}
-                                                                            />
-                                                                        }
+                                                                                                                        {customTools.map((tool, index) => (
+                                                            <ListItemWithMenu
+                                                                key={`custom-tool-${index}`}
+                                                                name={tool.name}
+                                                                isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
+                                                                onClick={() => handleToolSelection(tool.name)}
+                                                                selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
+                                                                icon={<Boxes className="w-4 h-4 text-blue-600/70 dark:text-blue-500/70" />}
+                                                                isMocked={tool.mockTool}
+                                                                menuContent={
+                                                                    <EntityDropdown 
+                                                                        name={tool.name} 
+                                                                        onDelete={onDeleteTool}
+                                                                        isLocked={tool.isLibrary}
                                                                     />
-                                                                ))}
+                                                                }
+                                                            />
+                                                        ))}
                                                             </div>
                                                         )}
                                                     </>
@@ -682,6 +720,13 @@ export function EntityList({
                 onClose={() => setShowAgentTypeModal(false)}
                 onConfirm={handleAddAgentWithType}
             />
+            <ToolsModal
+                isOpen={showToolsModal}
+                onClose={() => setShowToolsModal(false)}
+                projectId={projectId}
+                tools={tools}
+                onAddTool={onAddTool}
+            />
         </div>
     );
 }
@@ -769,6 +814,10 @@ interface ComposioCardProps {
     onSelectTool: (name: string) => void;
     onDeleteTool: (name: string) => void;
     selectedRef: React.RefObject<HTMLButtonElement | null>;
+    projectConfig?: z.infer<typeof Project>;
+    projectId: string;
+    workflow: z.infer<typeof Workflow>;
+    onProjectToolsUpdated?: () => void;
 }
 
 const ComposioCard = ({
@@ -777,70 +826,215 @@ const ComposioCard = ({
     onSelectTool,
     onDeleteTool,
     selectedRef,
+    projectConfig,
+    projectId,
+    workflow,
+    onProjectToolsUpdated,
 }: ComposioCardProps) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showDisconnectModal, setShowDisconnectModal] = useState(false);
+    const [isProcessingAuth, setIsProcessingAuth] = useState(false);
+
+    // Check if the toolkit requires authentication
+    const hasToolkitWithAuth = card.tools.some(tool => tool.composioData && !tool.composioData.noAuth);
+    
+    // Check if toolkit is connected
+    const isToolkitConnected = !hasToolkitWithAuth || projectConfig?.composioConnectedAccounts?.[card.slug]?.status === 'ACTIVE';
+    
+
+
+    const handleConnect = () => {
+        setShowAuthModal(true);
+    };
+
+    const handleDisconnect = () => {
+        setShowDisconnectModal(true);
+    };
+
+    const handleConfirmDisconnect = async () => {
+        const connectedAccountId = projectConfig?.composioConnectedAccounts?.[card.slug]?.id;
+        
+        setIsProcessingAuth(true);
+        try {
+            if (connectedAccountId) {
+                await deleteConnectedAccount(projectId, card.slug, connectedAccountId);
+                onProjectToolsUpdated?.();
+            }
+        } catch (err: any) {
+            console.error('Disconnect failed:', err);
+        } finally {
+            setIsProcessingAuth(false);
+            setShowDisconnectModal(false);
+        }
+    };
+
+    const handleAuthComplete = () => {
+        setShowAuthModal(false);
+        onProjectToolsUpdated?.();
+    };
+
+
 
     return (
-        <div className="mb-2">
-            <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md text-sm text-left"
-            >
-                {isExpanded ? (
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
-                ) : (
-                    <ChevronRight className="w-4 h-4 text-gray-500" />
-                )}
-                <div className="flex items-center gap-1">
-                    {card.logo ? (
-                        <div className="relative w-4 h-4">
-                            <PictureImg
-                                src={card.logo}
-                                alt={`${card.name} logo`}
-                                className="w-full h-full object-contain rounded"
-                            />
+        <>
+            <div className="mb-1 group">
+                <div className="flex items-center gap-2 px-2 py-1 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors">
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="flex-1 flex items-center gap-2 text-sm text-left min-h-[28px]"
+                    >
+                        {/* Chevron - only show on hover or when has tools */}
+                        <div className={`w-4 h-4 flex items-center justify-center transition-opacity ${
+                            card.tools.length > 0 ? 'group-hover:opacity-100 opacity-60' : 'opacity-0'
+                        }`}>
+                            {card.tools.length > 0 && (isExpanded ? (
+                                <ChevronDown className="w-3 h-3 text-gray-500" />
+                            ) : (
+                                <ChevronRight className="w-3 h-3 text-gray-500" />
+                            ))}
                         </div>
-                    ) : (
-                        <ImportIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+                        
+                        <div className="flex items-center gap-2">
+                            {card.logo ? (
+                                <div className="relative w-4 h-4">
+                                    <PictureImg
+                                        src={card.logo}
+                                        alt={`${card.name} logo`}
+                                        className="w-full h-full object-contain rounded"
+                                    />
+                                </div>
+                            ) : (
+                                <ImportIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+                            )}
+                            <span className="text-sm">{card.name}</span>
+                        </div>
+                    </button>
+                    
+                    {/* Status Badge - only show orange when requires auth and not connected */}
+                    {hasToolkitWithAuth && !isToolkitConnected && (
+                        <Tooltip 
+                            content="Disconnected"
+                            size="sm"
+                            delay={500}
+                        >
+                            <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-xs font-medium text-white">
+                                ○
+                            </div>
+                        </Tooltip>
                     )}
-                    <span>{card.name}</span>
+                    
+                    {/* Actions Dropdown - only show when requires auth */}
+                    {hasToolkitWithAuth && (
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Dropdown>
+                            <DropdownTrigger>
+                                <button className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors">
+                                    <MoreVertical className="h-3 w-3 text-gray-500" />
+                                </button>
+                            </DropdownTrigger>
+                            <DropdownMenu
+                                onAction={(key) => {
+                                    switch (key) {
+                                        case 'connect':
+                                            handleConnect();
+                                            break;
+                                        case 'disconnect':
+                                            handleDisconnect();
+                                            break;
+                                    }
+                                }}
+                                disabledKeys={[
+                                    ...(isProcessingAuth ? ['connect', 'disconnect'] : []),
+                                    ...(hasToolkitWithAuth && isToolkitConnected ? [] : ['disconnect']),
+                                    ...(hasToolkitWithAuth && !isToolkitConnected ? [] : ['connect'])
+                                ]}
+                            >
+
+                                
+                                <DropdownItem
+                                    key="disconnect"
+                                    startContent={
+                                        isProcessingAuth ? (
+                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
+                                        ) : (
+                                            <UnlinkIcon className="h-3 w-3" />
+                                        )
+                                    }
+                                >
+                                    {isProcessingAuth ? 'Disconnecting...' : 'Disconnect'}
+                                </DropdownItem>
+                                
+                                <DropdownItem
+                                    key="connect"
+                                    startContent={
+                                        isProcessingAuth ? (
+                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
+                                        ) : (
+                                            <LinkIcon className="h-3 w-3" />
+                                        )
+                                    }
+                                >
+                                    {isProcessingAuth ? 'Connecting...' : 'Connect'}
+                                </DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
+                    </div>
+                    )}
                 </div>
-            </button>
             {isExpanded && (
-                <div className="ml-6 mt-1 space-y-1">
+                <div className="ml-6 mt-0.5 space-y-0.5 border-l border-gray-200 dark:border-gray-700 pl-3">
                     {card.tools.map((tool, index) => (
-                        <ListItemWithMenu
-                            key={`composio-tool-${index}`}
-                            name={tool.name}
-                            isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
-                            onClick={() => onSelectTool(tool.name)}
-                            disabled={tool.isLibrary}
-                            selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
-                            icon={
-                                card.logo ? (
-                                    <div className="relative w-4 h-4">
-                                        <PictureImg
-                                            src={card.logo}
-                                            alt={`${card.name} logo`}
-                                            className="w-full h-full object-contain rounded"
+                        <div key={`composio-tool-${index}`} className="group/tool">
+                            <ListItemWithMenu
+                                name={tool.name}
+                                isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
+                                onClick={() => onSelectTool(tool.name)}
+                                disabled={tool.isLibrary}
+                                selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
+                                icon={
+                                    <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+                                }
+                                isMocked={tool.mockTool}
+                                menuContent={
+                                    <div className="opacity-0 group-hover/tool:opacity-100 transition-opacity">
+                                        <EntityDropdown 
+                                            name={tool.name} 
+                                            onDelete={onDeleteTool}
+                                            isLocked={tool.isComposio}
                                         />
                                     </div>
-                                ) : (
-                                    <ImportIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
-                                )
-                            }
-                            menuContent={
-                                <EntityDropdown 
-                                    name={tool.name} 
-                                    onDelete={onDeleteTool}
-                                    isLocked={tool.isComposio}
-                                />
-                            }
-                        />
+                                }
+                            />
+                        </div>
                     ))}
                 </div>
             )}
-        </div>
+            </div>
+            
+            {/* Auth Modal */}
+            {hasToolkitWithAuth && (
+                <ToolkitAuthModal
+                    key={card.slug}
+                    isOpen={showAuthModal}
+                    onClose={() => setShowAuthModal(false)}
+                    toolkitSlug={card.slug}
+                    projectId={projectId}
+                    onComplete={handleAuthComplete}
+                />
+            )}
+
+            {/* Disconnect Confirmation Modal */}
+            <ProjectWideChangeConfirmationModal
+                isOpen={showDisconnectModal}
+                onClose={() => setShowDisconnectModal(false)}
+                onConfirm={handleConfirmDisconnect}
+                title={`Disconnect ${card.name}`}
+                confirmationQuestion={`Are you sure you want to disconnect the ${card.name} toolkit?`}
+                confirmButtonText="Disconnect"
+                isLoading={isProcessingAuth}
+            />
+        </>
     );
 };
 

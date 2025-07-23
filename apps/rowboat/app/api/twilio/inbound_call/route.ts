@@ -1,6 +1,5 @@
 import { getResponse } from "@/app/lib/agents";
 import { projectsCollection, twilioConfigsCollection, twilioInboundCallsCollection } from "@/app/lib/mongodb";
-import { collectProjectTools } from "@/app/lib/project_tools";
 import { PrefixLogger } from "@/app/lib/utils";
 import VoiceResponse from "twilio/lib/twiml/VoiceResponse";
 import { z } from "zod";
@@ -78,12 +77,9 @@ export async function POST(request: Request) {
         return reject('rejected');
     }
 
-    // fetch project tools
-    const projectTools = await collectProjectTools(projectId);
-
     // this is the first turn, get the initial assistant response
     // and validate it
-    const { messages } = await getResponse(projectId, workflow, projectTools, []);
+    const { messages } = await getResponse(projectId, workflow, []);
     if (messages.length === 0) {
         logger.log('Agent response is empty');
         return hangup();

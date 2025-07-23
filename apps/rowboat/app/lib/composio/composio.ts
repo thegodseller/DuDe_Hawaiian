@@ -278,11 +278,14 @@ export async function getToolkit(toolkitSlug: string): Promise<z.infer<typeof ZG
     return composioApiCall(ZGetToolkitResponse, url.toString());
 }
 
-export async function listTools(toolkitSlug: string, cursor: string | null = null): Promise<z.infer<ReturnType<typeof ZListResponse<typeof ZTool>>>> {
+export async function listTools(toolkitSlug: string, searchQuery: string | null = null, cursor: string | null = null): Promise<z.infer<ReturnType<typeof ZListResponse<typeof ZTool>>>> {
     const url = new URL(`${BASE_URL}/tools`);
 
     // set params
     url.searchParams.set("toolkit_slug", toolkitSlug);
+    if (searchQuery) {
+        url.searchParams.set("search", searchQuery);
+    }
     if (cursor) {
         url.searchParams.set("cursor", cursor);
     }

@@ -22,11 +22,9 @@ export function Chat({
     systemMessage,
     onSystemMessageChange,
     mcpServerUrls,
-    toolWebhookUrl,
     onCopyClick,
     showDebugMessages = true,
     showJsonMode = false,
-    projectTools,
     triggerCopilotChat,
 }: {
     chat: z.infer<typeof PlaygroundChat>;
@@ -36,11 +34,9 @@ export function Chat({
     systemMessage: string;
     onSystemMessageChange: (message: string) => void;
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
-    toolWebhookUrl: string;
     onCopyClick: (fn: () => string) => void;
     showDebugMessages?: boolean;
     showJsonMode?: boolean;
-    projectTools: z.infer<typeof WorkflowTool>[];
     triggerCopilotChat?: (message: string) => void;
 }) {
     const [messages, setMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
@@ -210,7 +206,6 @@ export function Chat({
                 const response = await getAssistantResponseStreamId(
                     projectId,
                     workflow,
-                    projectTools,
                     [
                         {
                             role: 'system',
@@ -336,9 +331,7 @@ export function Chat({
         workflow,
         systemMessage,
         mcpServerUrls,
-        toolWebhookUrl,
         fetchResponseError,
-        projectTools,
     ]);
 
     // Add a stop handler function

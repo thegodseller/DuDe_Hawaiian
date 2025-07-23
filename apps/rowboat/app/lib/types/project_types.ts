@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { MCPServer } from "./types";
 import { Workflow, WorkflowTool } from "./workflow_types";
-import { ZTool } from "../composio/composio";
 
 export const ComposioConnectedAccount = z.object({
     id: z.string(),
@@ -13,6 +12,10 @@ export const ComposioConnectedAccount = z.object({
     ]),
     createdAt: z.string().datetime(),
     lastUpdatedAt: z.string().datetime(),
+});
+
+export const CustomMcpServer = z.object({
+    serverUrl: z.string(),
 });
 
 export const Project = z.object({
@@ -30,7 +33,7 @@ export const Project = z.object({
     testRunCounter: z.number().default(0),
     mcpServers: z.array(MCPServer).optional(),
     composioConnectedAccounts: z.record(z.string(), ComposioConnectedAccount).optional(),
-    composioSelectedTools: z.array(ZTool).optional(),
+    customMcpServers: z.record(z.string(), CustomMcpServer).optional(),
 });
 
 export const ProjectMember = z.object({
@@ -46,19 +49,3 @@ export const ApiKey = z.object({
     createdAt: z.string().datetime(),
     lastUsedAt: z.string().datetime().optional(),
 });
-
-export function mergeProjectTools(
-    workflowTools: z.infer<typeof WorkflowTool>[],
-    projectTools: z.infer<typeof WorkflowTool>[]
-): z.infer<typeof WorkflowTool>[] {
-    // Filter out any existing MCP tools from workflow tools
-    const nonMcpTools = workflowTools.filter(t => !t.isMcp);
-
-    // Merge with project tools
-    const merged = [
-        ...nonMcpTools,
-        ...projectTools
-    ];
-
-    return merged;
-}

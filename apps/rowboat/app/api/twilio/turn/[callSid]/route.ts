@@ -1,6 +1,5 @@
 import { getResponse } from "@/app/lib/agents";
 import { projectsCollection, twilioInboundCallsCollection } from "@/app/lib/mongodb";
-import { collectProjectTools } from "@/app/lib/project_tools";
 import { PrefixLogger } from "@/app/lib/utils";
 import VoiceResponse from "twilio/lib/twiml/VoiceResponse";
 import { z } from "zod";
@@ -50,9 +49,6 @@ export async function POST(
         return hangup();
     }
 
-    // fetch project tools
-    const projectTools = await collectProjectTools(projectId);
-
     // add user speech as user message, and get assistant response
     const reqMessages: z.infer<typeof Message>[] = [
         ...call.messages,
@@ -61,7 +57,7 @@ export async function POST(
             content: data.SpeechResult,
         }
     ];
-    const { messages } = await getResponse(projectId, workflow, projectTools, reqMessages);
+    const { messages } = await getResponse(projectId, workflow, reqMessages);
     if (messages.length === 0) {
         logger.log('Agent response is empty');
         return hangup();

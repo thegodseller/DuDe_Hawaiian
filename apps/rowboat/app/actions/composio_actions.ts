@@ -42,9 +42,9 @@ export async function getToolkit(projectId: string, toolkitSlug: string): Promis
     return await libGetToolkit(toolkitSlug);
 }
 
-export async function listTools(projectId: string, toolkitSlug: string, cursor: string | null = null): Promise<z.infer<ReturnType<typeof ZListResponse<typeof ZTool>>>> {
+export async function listTools(projectId: string, toolkitSlug: string, searchQuery: string | null, cursor: string | null = null): Promise<z.infer<ReturnType<typeof ZListResponse<typeof ZTool>>>> {
     await projectAuthCheck(projectId);
-    return await libListTools(toolkitSlug, cursor);
+    return await libListTools(toolkitSlug, searchQuery, cursor);
 }
 
 export async function createComposioManagedOauth2ConnectedAccount(projectId: string, toolkitSlug: string, callbackUrl: string): Promise<z.infer<typeof ZCreateConnectedAccountResponse>> {
@@ -216,11 +216,4 @@ export async function deleteConnectedAccount(projectId: string, toolkitSlug: str
     await projectsCollection.updateOne({ _id: projectId }, { $unset: { [key]: "" } });
 
     return true;
-}
-
-export async function updateComposioSelectedTools(projectId: string, tools: z.infer<typeof ZTool>[]): Promise<void> {
-    await projectAuthCheck(projectId);
-
-    // update project with new selected tools
-    await projectsCollection.updateOne({ _id: projectId }, { $set: { composioSelectedTools: tools } });
 }

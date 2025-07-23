@@ -3,25 +3,30 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Info, RefreshCw, Search } from 'lucide-react';
+import { RefreshCw, Search } from 'lucide-react';
 import clsx from 'clsx';
-import { listToolkits, listTools, updateComposioSelectedTools } from '@/app/actions/composio_actions';
+import { listToolkits } from '@/app/actions/composio_actions';
 import { getProjectConfig } from '@/app/actions/project_actions';
 import { z } from 'zod';
 import { ZToolkit, ZListResponse, ZTool } from '@/app/lib/composio/composio';
 import { Project } from '@/app/lib/types/project_types';
 import { ComposioToolsPanel } from './ComposioToolsPanel';
 import { ToolkitCard } from './ToolkitCard';
+import { Workflow, WorkflowTool } from '@/app/lib/types/workflow_types';
 
 type ToolkitType = z.infer<typeof ZToolkit>;
 type ToolkitListResponse = z.infer<ReturnType<typeof ZListResponse<typeof ZToolkit>>>;
 type ProjectType = z.infer<typeof Project>;
 
-export function Composio() {
-  const params = useParams();
-  const projectId = typeof params.projectId === 'string' ? params.projectId : params.projectId?.[0];
-  if (!projectId) throw new Error('Project ID is required');
-  
+export function Composio({
+  projectId,
+  tools,
+  onAddTool
+}: {
+  projectId: string;
+  tools: z.infer<typeof Workflow.shape.tools>;
+  onAddTool: (tool: z.infer<typeof WorkflowTool>) => void;
+}) {
   const [toolkits, setToolkits] = useState<ToolkitType[]>([]);
   const [projectConfig, setProjectConfig] = useState<ProjectType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +34,6 @@ export function Composio() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedToolkit, setSelectedToolkit] = useState<ToolkitType | null>(null);
   const [isToolsPanelOpen, setIsToolsPanelOpen] = useState(false);
-  const [savingTools, setSavingTools] = useState(false);
 
   const loadProjectConfig = useCallback(async () => {
     try {
@@ -75,7 +79,7 @@ export function Composio() {
     }
   }, [projectId]);
 
-  const handleManageTools = useCallback((toolkit: ToolkitType) => {
+  const handleSelectToolkit = useCallback((toolkit: ToolkitType) => {
     setSelectedToolkit(toolkit);
     setIsToolsPanelOpen(true);
   }, []);
@@ -84,64 +88,6 @@ export function Composio() {
     setSelectedToolkit(null);
     setIsToolsPanelOpen(false);
   }, []);
-
-  const handleProjectConfigUpdate = useCallback(() => {
-    loadProjectConfig();
-  }, [loadProjectConfig]);
-
-  const handleUpdateToolsSelection = useCallback(async (selectedToolObjects: z.infer<typeof ZTool>[]) => {
-    if (!projectId) return;
-    
-    setSavingTools(true);
-    try {
-      // Get existing selected tools from project config
-      const existingSelectedTools = projectConfig?.composioSelectedTools || [];
-      
-      // Create a map of existing tools by slug for easy lookup
-      const existingToolsMap = new Map(existingSelectedTools.map(tool => [tool.slug, tool]));
-      
-      // Add or update the new selections
-      for (const tool of selectedToolObjects) {
-        existingToolsMap.set(tool.slug, tool);
-      }
-      
-      // Convert back to array
-      const mergedSelectedTools = Array.from(existingToolsMap.values());
-      
-      await updateComposioSelectedTools(projectId, mergedSelectedTools);
-      
-      // Refresh project config to get updated data
-      await loadProjectConfig();
-    } catch (error) {
-      console.error('Error saving tool selection:', error);
-    } finally {
-      setSavingTools(false);
-    }
-  }, [projectId, projectConfig, loadProjectConfig]);
-
-  const handleRemoveToolkitTools = useCallback(async (toolkitSlug: string) => {
-    if (!projectId) return;
-    
-    setSavingTools(true);
-    try {
-      // Get existing selected tools from project config
-      const existingSelectedTools = projectConfig?.composioSelectedTools || [];
-      
-      // Filter out all tools from the specified toolkit
-      const filteredSelectedTools = existingSelectedTools.filter(tool => 
-        tool.toolkit.slug !== toolkitSlug
-      );
-      
-      await updateComposioSelectedTools(projectId, filteredSelectedTools);
-      
-      // Refresh project config to get updated data
-      await loadProjectConfig();
-    } catch (error) {
-      console.error('Error removing toolkit tools:', error);
-    } finally {
-      setSavingTools(false);
-    }
-  }, [projectId, projectConfig, loadProjectConfig]);
 
   useEffect(() => {
     loadProjectConfig();
@@ -245,19 +191,14 @@ export function Composio() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredToolkits.map((toolkit) => {
           const isConnected = toolkit.no_auth || projectConfig?.composioConnectedAccounts?.[toolkit.slug]?.status === 'ACTIVE';
-          const connectedAccountId = projectConfig?.composioConnectedAccounts?.[toolkit.slug]?.id;
           
           return (
             <ToolkitCard 
               key={toolkit.slug} 
               toolkit={toolkit} 
-              projectId={projectId}
               isConnected={isConnected}
-              connectedAccountId={connectedAccountId}
-              projectConfig={projectConfig}
-              onManageTools={() => handleManageTools(toolkit)}
-              onProjectConfigUpdate={handleProjectConfigUpdate}
-              onRemoveToolkitTools={handleRemoveToolkitTools}
+              workflowTools={tools}
+              onSelectToolkit={() => handleSelectToolkit(toolkit)}
             />
           );
         })}
@@ -272,16 +213,13 @@ export function Composio() {
       )}
 
       {/* Tools Panel */}
-      <ComposioToolsPanel
+      {selectedToolkit && <ComposioToolsPanel
         toolkit={selectedToolkit}
         isOpen={isToolsPanelOpen}
         onClose={handleCloseToolsPanel}
-        projectConfig={projectConfig}
-        onUpdateToolsSelection={handleUpdateToolsSelection}
-        onProjectConfigUpdate={handleProjectConfigUpdate}
-        onRemoveToolkitTools={handleRemoveToolkitTools}
-        isSaving={savingTools}
-      />
+        tools={tools}
+        onAddTool={onAddTool}
+      />}
     </div>
   );
 } 

@@ -14,8 +14,6 @@ import { USE_AUTH } from "../lib/feature_flags";
 import { deleteMcpServerInstance, listActiveServerInstances } from "./klavis_actions";
 import { authorizeUserAction } from "./billing_actions";
 import { Workflow } from "../lib/types/workflow_types";
-import { WorkflowTool } from "../lib/types/workflow_types";
-import { collectProjectTools as libCollectProjectTools } from "../lib/project_tools";
 
 const KLAVIS_API_KEY = process.env.KLAVIS_API_KEY || '';
 
@@ -328,11 +326,6 @@ export async function createProjectFromWorkflowJson(formData: FormData): Promise
     }
     const projectId = response.id;
     return { id: projectId };
-}
-
-export async function collectProjectTools(projectId: string): Promise<z.infer<typeof WorkflowTool>[]> {
-    await projectAuthCheck(projectId);
-    return libCollectProjectTools(projectId);
 }
 
 export async function saveWorkflow(projectId: string, workflow: z.infer<typeof Workflow>) {

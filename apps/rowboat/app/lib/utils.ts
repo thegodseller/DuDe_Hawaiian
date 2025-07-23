@@ -8,7 +8,6 @@ import { Message, ZStreamAgentResponsePayload } from "./types/types";
 export async function getAgenticResponseStreamId(
     projectId: string,
     workflow: z.infer<typeof Workflow>,
-    projectTools: z.infer<typeof WorkflowTool>[],
     messages: z.infer<typeof Message>[],
 ): Promise<{
     streamId: string,
@@ -16,7 +15,6 @@ export async function getAgenticResponseStreamId(
     const payload: z.infer<typeof ZStreamAgentResponsePayload> = {
         projectId,
         workflow,
-        projectTools,
         messages,
     }
     // serialize the request
