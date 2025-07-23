@@ -1,9 +1,10 @@
 "use client";
 import { WorkflowTool } from "../../../lib/types/workflow_types";
-import { Checkbox, Select, SelectItem, RadioGroup, Radio } from "@heroui/react";
+import { Checkbox, Select, SelectItem, Switch } from "@heroui/react";
 import { z } from "zod";
-import { ImportIcon, XIcon, PlusIcon, FolderIcon} from "lucide-react";
+import { ImportIcon, XIcon, PlusIcon, FolderIcon, Globe, Zap, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/common/panel-common";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { SectionCard } from "@/components/common/section-card";
 import { ToolParamCard } from "@/components/common/tool-param-card";
 import { UserIcon, Settings, Settings2 } from "lucide-react";
 import { EditableField } from "@/app/lib/components/editable-field";
+import Link from "next/link";
 
 // Update textarea styles with improved states
 const textareaStyles = "rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500";
@@ -173,8 +175,11 @@ export function ToolConfig({
         required: tool.parameters?.required || []
     });
 
+    const params = useParams();
+    const projectId = params.projectId as string;
     const [selectedParams, setSelectedParams] = useState(new Set([]));
-    const isReadOnly = tool.isMcp || tool.isLibrary || tool.isComposio;
+    const isReadOnly = tool.isMcp || tool.isComposio;
+    const isWebhookTool = !tool.isMcp && !tool.isComposio;
     const [nameError, setNameError] = useState<string | null>(null);
 
     // Log when parameters are being rendered
@@ -337,6 +342,57 @@ export function ToolConfig({
             }
         >
             <div className="flex flex-col gap-4 pb-4 pt-4 p-4">
+                {/* Tool Type Section */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-1">
+                            {tool.isMcp ? (
+                                <ImportIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            ) : tool.isComposio ? (
+                                <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            ) : (
+                                <Globe className="w-5 h-5 text-green-600 dark:text-green-400" />
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                                How this tool runs
+                            </h3>
+                            {tool.isMcp ? (
+                                <div className="text-sm text-gray-700 dark:text-gray-300">
+                                    <p>This tool is powered by the <span className="font-medium text-blue-700 dark:text-blue-300">{tool.mcpServerName}</span> MCP server.</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                        MCP (Model Context Protocol) tools are external services that provide additional capabilities to your agent.
+                                    </p>
+                                </div>
+                            ) : tool.isComposio ? (
+                                <div className="text-sm text-gray-700 dark:text-gray-300">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <p>This tool is powered by <span className="font-medium text-purple-700 dark:text-purple-300">Composio</span></p>
+                                        {tool.composioData?.toolkitName && (
+                                            <span className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full">
+                                                {tool.composioData.toolkitName}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                        Composio provides pre-built integrations with popular services and APIs.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="text-sm text-gray-700 dark:text-gray-300">
+                                    <div className="flex items-center gap-1 mb-1">
+                                        <p>This tool is invoked using the webhook configured in <Link href={`/projects/${projectId}/config`} className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium underline decoration-green-300 hover:decoration-green-500 transition-colors">project settings</Link></p>
+                                    </div>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                        Webhook tools make HTTP requests to your configured endpoint when called by the agent.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
                 {/* Identity Section */}
                 <SectionCard
                     icon={<UserIcon className="w-5 h-5 text-indigo-500" />}
@@ -350,6 +406,7 @@ export function ToolConfig({
                             <div className="flex-1">
                                 <EditableField
                                     value={tool.name}
+                                    locked={isReadOnly}
                                     onChange={(value) => {
                                         setNameError(validateToolName(value));
                                         if (!validateToolName(value)) {
@@ -375,6 +432,7 @@ export function ToolConfig({
                             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Description</label>
                             <div className="flex-1">
                                 <EditableField
+                                    locked={isReadOnly}
                                     value={tool.description || ""}
                                     onChange={(value) => handleUpdate({ ...tool, description: value })}
                                     multiline={true}
@@ -385,56 +443,37 @@ export function ToolConfig({
                         </div>
                     </div>
                 </SectionCard>
-                {/* Behavior Section */}
+                {/* Mock Section */}
                 <SectionCard
                     icon={<Settings className="w-5 h-5 text-indigo-500" />}
-                    title="Behavior"
-                    labelWidth="md:w-32"
+                    title="Mock responses"
+                    labelWidth="md:w-64"
                     className="mb-1"
                 >
                     <div className="flex flex-col gap-4">
-                        {!isReadOnly && (
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Tool Mode</label>
-                                <RadioGroup
-                                    defaultValue="mock"
-                                    value={tool.mockTool ? "mock" : "api"}
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-3">
+                                <Switch
+                                    isSelected={tool.mockTool}
                                     onValueChange={(value) => handleUpdate({
                                         ...tool,
-                                        mockTool: value === "mock",
-                                        autoSubmitMockedResponse: value === "mock" ? true : undefined
+                                        mockTool: value,
                                     })}
-                                    orientation="horizontal"
-                                    classNames={{
-                                        wrapper: "flex flex-col md:flex-row gap-2 md:gap-8 pl-0 md:pl-3",
-                                        label: "text-sm"
-                                    }}
-                                >
-                                    <Radio
-                                        value="mock"
-                                        classNames={{
-                                            base: "px-2 py-1 rounded-lg transition-colors",
-                                            label: "text-sm font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
-                                        }}
-                                    >
-                                        Mock tool responses
-                                    </Radio>
-                                    <Radio
-                                        value="api"
-                                        classNames={{
-                                            base: "px-2 py-1 rounded-lg transition-colors",
-                                            label: "text-sm font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
-                                        }}
-                                    >
-                                        Connect tool to your API
-                                    </Radio>
-                                </RadioGroup>
+                                    size="sm"
+                                    color="primary"
+                                />
+                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+                                    Mock tool responses
+                                </label>
                             </div>
-                        )}
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-12">
+                                When enabled, this tool will be mocked.
+                            </span>
+                        </div>
                         {tool.mockTool && (
-                            <div className="flex flex-col gap-2 pl-0 md:pl-3 mt-2">
-                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Mock Response Schema</label>
-                                <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">Describe the response the mock tool should return. This will be shown in the chat when the tool is called. You can also provide a JSON schema for the response.</span>
+                            <div className="flex flex-col gap-2 ml-12">
+                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Mock Response Instructions</label>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">Describe the response the mock tool should return. This will be shown in the chat when the tool is called.</span>
                                 <EditableField
                                     value={tool.mockInstructions || ''}
                                     onChange={(value) => handleUpdate({
@@ -445,20 +484,6 @@ export function ToolConfig({
                                     placeholder="Mock response instructions..."
                                     className="w-full text-xs p-2 bg-white dark:bg-gray-900"
                                 />
-                                <Checkbox
-                                    size="sm"
-                                    isSelected={tool.autoSubmitMockedResponse ?? true}
-                                    onValueChange={(value) => handleUpdate({
-                                        ...tool,
-                                        autoSubmitMockedResponse: value
-                                    })}
-                                    disabled={isReadOnly}
-                                    className="mt-2"
-                                >
-                                    <span className="text-sm text-gray-600 dark:text-gray-300">
-                                        Automatically send mock response in chat
-                                    </span>
-                                </Checkbox>
                             </div>
                         )}
                     </div>

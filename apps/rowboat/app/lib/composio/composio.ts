@@ -278,11 +278,14 @@ export async function getToolkit(toolkitSlug: string): Promise<z.infer<typeof ZG
     return composioApiCall(ZGetToolkitResponse, url.toString());
 }
 
-export async function listTools(toolkitSlug: string, cursor: string | null = null): Promise<z.infer<ReturnType<typeof ZListResponse<typeof ZTool>>>> {
+export async function listTools(toolkitSlug: string, searchQuery: string | null = null, cursor: string | null = null): Promise<z.infer<ReturnType<typeof ZListResponse<typeof ZTool>>>> {
     const url = new URL(`${BASE_URL}/tools`);
 
     // set params
     url.searchParams.set("toolkit_slug", toolkitSlug);
+    if (searchQuery) {
+        url.searchParams.set("search", searchQuery);
+    }
     if (cursor) {
         url.searchParams.set("cursor", cursor);
     }
@@ -290,39 +293,6 @@ export async function listTools(toolkitSlug: string, cursor: string | null = nul
     // fetch
     return composioApiCall(ZListResponse(ZTool), url.toString());
 }
-
-export async function searchTools(searchQuery: string, cursor: string | null = null, limit: number = 50): Promise<z.infer<ReturnType<typeof ZListResponse<typeof ZTool>>>> {
-    const url = new URL(`${BASE_URL}/tools`);
-
-    // set params
-    url.searchParams.set("search", searchQuery);
-    if (cursor) {
-        url.searchParams.set("cursor", cursor);
-    }
-    url.searchParams.set("limit", limit.toString());
-
-    // fetch
-    return composioApiCall(ZListResponse(ZTool), url.toString());
-}
-
-export async function getToolsByIds(toolSlugs: string[], cursor: string | null = null): Promise<z.infer<ReturnType<typeof ZListResponse<typeof ZTool>>>> {
-    const url = new URL(`${BASE_URL}/tools`);
-
-    // set params - pass tool slugs as comma-separated string
-    url.searchParams.set("tool_slugs", toolSlugs.join(","));
-    if (cursor) {
-        url.searchParams.set("cursor", cursor);
-    }
-
-    // fetch
-    return composioApiCall(ZListResponse(ZTool), url.toString());
-}
-
-export async function getTool(toolSlug: string): Promise<z.infer<typeof ZTool>> {
-    const url = new URL(`${BASE_URL}/tools/${toolSlug}`);
-    return composioApiCall(ZTool, url.toString());
-}
-
 
 export async function listAuthConfigs(toolkitSlug: string, cursor: string | null = null, managedOnly: boolean = false): Promise<z.infer<ReturnType<typeof ZListResponse<typeof ZAuthConfig>>>> {
     const url = new URL(`${BASE_URL}/auth_configs`);

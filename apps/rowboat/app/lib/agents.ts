@@ -17,7 +17,6 @@ import { dataSourceDocsCollection, dataSourcesCollection, projectsCollection } f
 import { qdrantClient } from '../lib/qdrant';
 import { EmbeddingRecord } from "./types/datasource_types";
 import { ConnectedEntity, sanitizeTextWithMentions, Workflow, WorkflowAgent, WorkflowPrompt, WorkflowTool } from "./types/workflow_types";
-import { Project } from "./types/project_types";
 import { CHILD_TRANSFER_RELATED_INSTRUCTIONS, CONVERSATION_TYPE_INSTRUCTIONS, RAG_INSTRUCTIONS, TASK_TYPE_INSTRUCTIONS } from "./agent_instructions";
 import { PrefixLogger } from "./utils";
 import { Message, AssistantMessage, AssistantMessageWithToolCalls, ToolMessage } from "./types/types";
@@ -254,17 +253,27 @@ async function invokeMcpTool(
     projectId: string,
     name: string,
     input: any,
-    mcpServerURL: string,
     mcpServerName: string
 ) {
     logger = logger.child(`invokeMcpTool`);
     logger.log(`projectId: ${projectId}`);
     logger.log(`name: ${name}`);
     logger.log(`input: ${JSON.stringify(input)}`);
-    logger.log(`mcpServerURL: ${mcpServerURL}`);
     logger.log(`mcpServerName: ${mcpServerName}`);
 
-    const client = await getMcpClient(mcpServerURL, mcpServerName || '');
+    // Get project configuration
+    const project = await projectsCollection.findOne({ _id: projectId });
+    if (!project) {
+        throw new Error(`project ${projectId} not found`);
+    }
+
+    // get server url from project data
+    const mcpServerURL = project.customMcpServers?.[mcpServerName]?.serverUrl;
+    if (!mcpServerURL) {
+        throw new Error(`mcp server url not found for project ${projectId} and server ${mcpServerName}`);
+    }
+
+    const client = await getMcpClient(mcpServerURL, mcpServerName);
     const result = await client.callTool({
         name,
         arguments: input,
@@ -281,8 +290,6 @@ async function invokeComposioTool(
     name: string,
     composioData: z.infer<typeof WorkflowTool>['composioData'] & {},
     input: any,
-    workflow: z.infer<typeof Workflow>,
-    toolDescription?: string,
 ) {
     logger = logger.child(`invokeComposioTool`);
     logger.log(`projectId: ${projectId}`);
@@ -291,36 +298,12 @@ async function invokeComposioTool(
 
     const { slug, toolkitSlug, noAuth } = composioData;
 
-    // Get project configuration to check for connected accounts (still stored in project)
-    const project = await projectsCollection.findOne({ _id: projectId });
-    if (!project) {
-        throw new Error(`project ${projectId} not found`);
-    }
-
-    // Check if toolkit is in mock mode (now from workflow)
-    const mockState = workflow.composioMockToolkitStates?.[toolkitSlug];
-    if (mockState?.isMocked) {
-        logger.log(`toolkit ${toolkitSlug} is in mock mode, using mock response`);
-        
-        // Use the existing invokeMockTool function to generate a mock response
-        const mockInstructions = mockState.mockInstructions || 'Mock responses using GPT-4.1 based on tool descriptions.';
-        const description = toolDescription || `${name} tool from ${toolkitSlug} toolkit`;
-        
-        const mockResponse = await invokeMockTool(
-            logger,
-            name,
-            JSON.stringify(input),
-            description,
-            mockInstructions
-        );
-        
-        logger.log(`mock tool result: ${mockResponse}`);
-        return mockResponse;
-    }
-
-    // Normal execution path - check for authentication
     let connectedAccountId: string | undefined = undefined;
     if (!noAuth) {
+        const project = await projectsCollection.findOne({ _id: projectId });
+        if (!project) {
+            throw new Error(`project ${projectId} not found`);
+        }
         connectedAccountId = project.composioConnectedAccounts?.[toolkitSlug]?.id;
         if (!connectedAccountId) {
             throw new Error(`connected account id not found for project ${projectId} and toolkit ${toolkitSlug}`);
@@ -447,7 +430,7 @@ function createMcpTool(
     config: z.infer<typeof WorkflowTool>,
     projectId: string
 ): Tool {
-    const { name, description, parameters, mcpServerName, mcpServerURL } = config;
+    const { name, description, parameters, mcpServerName } = config;
 
     return tool({
         name,
@@ -461,7 +444,7 @@ function createMcpTool(
         },
         async execute(input: any) {
             try {
-                const result = await invokeMcpTool(logger, projectId, name, input, mcpServerURL || '', mcpServerName || '');
+                const result = await invokeMcpTool(logger, projectId, name, input, mcpServerName || '');
                 return JSON.stringify({
                     result,
                 });
@@ -479,8 +462,7 @@ function createMcpTool(
 function createComposioTool(
     logger: PrefixLogger,
     config: z.infer<typeof WorkflowTool>,
-    projectId: string,
-    workflow: z.infer<typeof Workflow>
+    projectId: string
 ): Tool {
     const { name, description, parameters, composioData } = config;
 
@@ -500,7 +482,7 @@ function createComposioTool(
         },
         async execute(input: any) {
             try {
-                const result = await invokeComposioTool(logger, projectId, name, composioData, input, workflow, description);
+                const result = await invokeComposioTool(logger, projectId, name, composioData, input);
                 return JSON.stringify({
                     result,
                 });
@@ -520,7 +502,6 @@ function createAgent(
     projectId: string,
     config: z.infer<typeof WorkflowAgent>,
     tools: Record<string, Tool>,
-    projectTools: z.infer<typeof WorkflowTool>[],
     workflow: z.infer<typeof Workflow>,
     promptConfig: Record<string, z.infer<typeof WorkflowPrompt>>,
 ): { agent: Agent, entities: z.infer<typeof ConnectedEntity>[] } {
@@ -550,7 +531,7 @@ ${'-'.repeat(100)}
 ${CHILD_TRANSFER_RELATED_INSTRUCTIONS}
 `;
 
-    let { sanitized, entities } = sanitizeTextWithMentions(instructions, workflow, projectTools);
+    let { sanitized, entities } = sanitizeTextWithMentions(instructions, workflow);
     agentLogger.log(`instructions: ${JSON.stringify(sanitized)}`);
     agentLogger.log(`mentions: ${JSON.stringify(entities)}`);
 
@@ -783,7 +764,7 @@ Basic context:
     }
 }
 
-function mapConfig(workflow: z.infer<typeof Workflow>, projectTools: z.infer<typeof WorkflowTool>[]): {
+function mapConfig(workflow: z.infer<typeof Workflow>): {
     agentConfig: Record<string, z.infer<typeof WorkflowAgent>>;
     toolConfig: Record<string, z.infer<typeof WorkflowTool>>;
     promptConfig: Record<string, z.infer<typeof WorkflowPrompt>>;
@@ -792,10 +773,7 @@ function mapConfig(workflow: z.infer<typeof Workflow>, projectTools: z.infer<typ
         ...acc,
         [agent.name]: agent
     }), {});
-    const toolConfig: Record<string, z.infer<typeof WorkflowTool>> = [
-        ...workflow.tools,
-        ...projectTools,
-    ].reduce((acc, tool) => ({
+    const toolConfig: Record<string, z.infer<typeof WorkflowTool>> = workflow.tools.reduce((acc, tool) => ({
         ...acc,
         [tool.name]: tool
     }), {});
@@ -837,15 +815,15 @@ function createTools(
                 mockInstructions: workflow.mockTools?.[toolName], // override mock instructions
             });
             logger.log(`created mock tool: ${toolName}`);
+        } else if (config.mockTool) {
+            tools[toolName] = createMockTool(logger, config);
+            logger.log(`created mock tool: ${toolName}`);
         } else if (config.isMcp) {
             tools[toolName] = createMcpTool(logger, config, projectId);
             logger.log(`created mcp tool: ${toolName}`);
         } else if (config.isComposio) {
-            tools[toolName] = createComposioTool(logger, config, projectId, workflow);
+            tools[toolName] = createComposioTool(logger, config, projectId);
             logger.log(`created composio tool: ${toolName}`);
-        } else if (config.mockTool) {
-            tools[toolName] = createMockTool(logger, config);
-            logger.log(`created mock tool: ${toolName}`);
         } else {
             tools[toolName] = createWebhookTool(logger, config, projectId);
             logger.log(`created webhook tool: ${toolName}`);
@@ -860,7 +838,6 @@ function createAgents(
     workflow: z.infer<typeof Workflow>,
     agentConfig: Record<string, z.infer<typeof WorkflowAgent>>,
     tools: Record<string, Tool>,
-    projectTools: z.infer<typeof WorkflowTool>[],
     promptConfig: Record<string, z.infer<typeof WorkflowPrompt>>,
 ): { agents: Record<string, Agent>, mentions: Record<string, z.infer<typeof ConnectedEntity>[]>, originalInstructions: Record<string, string>, originalHandoffs: Record<string, Agent[]> } {
     const agents: Record<string, Agent> = {};
@@ -875,7 +852,6 @@ function createAgents(
             projectId,
             config,
             tools,
-            projectTools,
             workflow,
             promptConfig,
         );
@@ -956,7 +932,6 @@ function maybeInjectGiveUpControlInstructions(
 export async function* streamResponse(
     projectId: string,
     workflow: z.infer<typeof Workflow>,
-    projectTools: z.infer<typeof WorkflowTool>[],
     messages: z.infer<typeof Message>[],
 ): AsyncIterable<z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage>> {
     // Divider log for tracking agent loop start
@@ -975,7 +950,7 @@ export async function* streamResponse(
     }
 
     // create map of agent, tool and prompt configs
-    const { agentConfig, toolConfig, promptConfig } = mapConfig(workflow, projectTools);
+    const { agentConfig, toolConfig, promptConfig } = mapConfig(workflow);
 
     
     const stack: string[] = [];
@@ -985,7 +960,7 @@ export async function* streamResponse(
     const tools = createTools(logger, projectId, workflow, toolConfig);
 
     // create agents
-    const { agents, originalInstructions, originalHandoffs } = createAgents(logger, projectId, workflow, agentConfig, tools, projectTools, promptConfig);
+    const { agents, originalInstructions, originalHandoffs } = createAgents(logger, projectId, workflow, agentConfig, tools, promptConfig);
 
     // track agent to agent calls
     const transferCounter = new AgentTransferCounter();
@@ -1241,7 +1216,6 @@ export async function* streamResponse(
 export async function getResponse(
     projectId: string,
     workflow: z.infer<typeof Workflow>,
-    projectTools: z.infer<typeof WorkflowTool>[],
     messages: z.infer<typeof Message>[],
 ): Promise<{
     messages: z.infer<typeof ZOutMessage>[],
@@ -1255,7 +1229,7 @@ export async function getResponse(
             completion: 0,
         },
     };
-    for await (const event of streamResponse(projectId, workflow, projectTools, messages)) {
+    for await (const event of streamResponse(projectId, workflow, messages)) {
         if ('role' in event) {
             out.push(event);
         }

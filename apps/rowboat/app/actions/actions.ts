@@ -60,7 +60,6 @@ export async function scrapeWebpage(url: string): Promise<z.infer<typeof Webpage
 export async function getAssistantResponseStreamId(
     projectId: string,
     workflow: z.infer<typeof Workflow>,
-    projectTools: z.infer<typeof WorkflowTool>[],
     messages: z.infer<typeof Message>[],
 ): Promise<{ streamId: string } | { billingError: string }> {
     await projectAuthCheck(projectId);
@@ -83,6 +82,6 @@ export async function getAssistantResponseStreamId(
         return { billingError: error || 'Billing error' };
     }
 
-    const response = await getAgenticResponseStreamId(projectId, workflow, projectTools, messages);
+    const response = await getAgenticResponseStreamId(projectId, workflow, messages);
     return response;
 }

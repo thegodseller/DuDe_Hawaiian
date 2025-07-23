@@ -5,12 +5,11 @@ import { PictureImg } from '@/components/ui/picture-img';
 import clsx from 'clsx';
 import { z } from 'zod';
 import { ZToolkit } from '@/app/lib/composio/composio';
-import { Project } from '@/app/lib/types/project_types';
 import { Chip } from '@heroui/react';
 import { LinkIcon } from 'lucide-react';
+import { Workflow } from '@/app/lib/types/workflow_types';
 
 type ToolkitType = z.infer<typeof ZToolkit>;
-type ProjectType = z.infer<typeof Project>;
 
 const toolkitCardStyles = {
     base: clsx(
@@ -28,32 +27,25 @@ const toolkitCardStyles = {
 
 interface ToolkitCardProps {
   toolkit: ToolkitType;
-  projectId: string;
   isConnected: boolean;
-  connectedAccountId?: string;
-  projectConfig: ProjectType | null;
-  onManageTools: () => void;
-  onProjectConfigUpdate: () => void;
-  onRemoveToolkitTools: (toolkitSlug: string) => void;
+  onSelectToolkit: () => void;
+  workflowTools: z.infer<typeof Workflow.shape.tools>;
 }
 
 export function ToolkitCard({ 
   toolkit, 
-  projectId,
   isConnected,
-  connectedAccountId,
-  projectConfig,
-  onManageTools,
-  onProjectConfigUpdate,
-  onRemoveToolkitTools
+  onSelectToolkit,
+  workflowTools,
 }: ToolkitCardProps) {
   const handleCardClick = useCallback(() => {
-    onManageTools();
-  }, [onManageTools]);
+    onSelectToolkit();
+  }, [onSelectToolkit]);
 
   // Calculate selected tools count for this toolkit
-  // TODO: Update to use workflow-based tools count
-  const selectedToolsCount = 0;
+  const selectedToolsCount = workflowTools
+    .filter(tool => tool.isComposio && tool.composioData?.toolkitSlug === toolkit.slug)
+    .length;
 
   return (
     <div className={toolkitCardStyles.base} onClick={handleCardClick}>

@@ -11,8 +11,6 @@ import { check_query_limit } from "../lib/rate_limiting";
 import { QueryLimitError } from "../lib/client_utils";
 import { projectAuthCheck } from "./project_actions";
 import { redisClient } from "../lib/redis";
-import { collectProjectTools } from "../lib/project_tools";
-import { mergeProjectTools } from "../lib/types/project_types";
 import { authorizeUserAction, logUsage } from "./billing_actions";
 import { USE_BILLING } from "../lib/feature_flags";
 import { WithStringId } from "../lib/types/types";
@@ -44,21 +42,12 @@ export async function getCopilotResponseStream(
     if (!await check_query_limit(projectId)) {
         throw new QueryLimitError();
     }
-
-    // Get MCP tools from project and merge with workflow tools
-    const projectTools = await collectProjectTools(projectId);
     
-    // Convert workflow to copilot format with both workflow and project tools
-    const wflow = {
-        ...current_workflow_config,
-        tools: mergeProjectTools(current_workflow_config.tools, projectTools)
-    };
-
     // prepare request
     const request: z.infer<typeof CopilotAPIRequest> = {
         projectId,
         messages,
-        workflow: wflow,
+        workflow: current_workflow_config,
         context,
         dataSources: dataSources,
     };
@@ -97,20 +86,11 @@ export async function getCopilotAgentInstructions(
         return { billingError: authResponse.error || 'Billing error' };
     }
 
-    // Get MCP tools from project and merge with workflow tools
-    const projectTools = await collectProjectTools(projectId);
-    
-    // Convert workflow to copilot format with both workflow and project tools
-    const wflow = {
-        ...current_workflow_config,
-        tools: mergeProjectTools(current_workflow_config.tools, projectTools)
-    };
-
     // prepare request
     const request: z.infer<typeof CopilotAPIRequest> = {
         projectId,
         messages,
-        workflow: wflow,
+        workflow: current_workflow_config,
         context: {
             type: 'agent',
             name: agentName,

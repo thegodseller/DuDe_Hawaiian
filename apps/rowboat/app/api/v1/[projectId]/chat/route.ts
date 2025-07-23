@@ -6,7 +6,6 @@ import { authCheck } from "../../utils";
 import { ApiRequest, ApiResponse } from "../../../../lib/types/types";
 import { check_query_limit } from "../../../../lib/rate_limiting";
 import { PrefixLogger } from "../../../../lib/utils";
-import { collectProjectTools } from "@/app/lib/project_tools";
 import { authorize, getCustomerIdForProject, logUsage } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
 import { getResponse } from "@/app/lib/agents";
@@ -61,9 +60,6 @@ export async function POST(
             return Response.json({ error: "Project not found" }, { status: 404 });
         }
 
-        // fetch project tools
-        const projectTools = await collectProjectTools(projectId);
-
         // fetch workflow
         const workflow = project.liveWorkflow;
         if (!workflow) {
@@ -94,7 +90,7 @@ export async function POST(
         }
 
         // get assistant response
-        const { messages } = await getResponse(projectId, workflow, projectTools, reqMessages);
+        const { messages } = await getResponse(projectId, workflow, reqMessages);
 
         // log billing usage
         if (USE_BILLING && billingCustomerId) {

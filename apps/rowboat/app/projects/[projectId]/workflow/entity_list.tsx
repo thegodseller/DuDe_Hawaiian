@@ -3,7 +3,7 @@ import { WorkflowPrompt, WorkflowAgent, WorkflowTool, Workflow } from "../../../
 import { Project } from "../../../lib/types/project_types";
 import { Dropdown, DropdownItem, DropdownTrigger, DropdownMenu } from "@heroui/react";
 import { useRef, useEffect, useState } from "react";
-import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Boxes, Wrench, PenLine, Library, ChevronDown, ChevronRight, ServerIcon, Component, ScrollText, GripVertical, Users, Cog, CheckCircle2, LinkIcon, UnlinkIcon, TestTube, Play, MoreVertical, Eye } from "lucide-react";
+import { EllipsisVerticalIcon, ImportIcon, PlusIcon, Brain, Boxes, Wrench, PenLine, Library, ChevronDown, ChevronRight, ServerIcon, Component, ScrollText, GripVertical, Users, Cog, CheckCircle2, LinkIcon, UnlinkIcon, MoreVertical, Eye } from "lucide-react";
 import { Tooltip } from "@heroui/react";
 import { DndContext, DragEndEvent, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -15,9 +15,10 @@ import { clsx } from "clsx";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ServerLogo } from '../tools/components/MCPServersCommon';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
-import { ComposioToolsModal } from './components/ComposioToolsModal';
+import { ToolsModal } from './components/ToolsModal';
 import { ToolkitAuthModal } from '../tools/components/ToolkitAuthModal';
-import { deleteConnectedAccount, toggleMockToolkitState } from '@/app/actions/composio_actions';
+import { deleteConnectedAccount } from '@/app/actions/composio_actions';
+import { ProjectWideChangeConfirmationModal } from '@/components/common/project-wide-change-confirmation-modal';
 
 // Reduced gap size to match Cursor's UI
 const GAP_SIZE = 4; // 1 unit * 4px (tailwind's default spacing unit)
@@ -38,7 +39,6 @@ const buttonClasses = "text-sm px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text
 interface EntityListProps {
     agents: z.infer<typeof WorkflowAgent>[];
     tools: z.infer<typeof WorkflowTool>[];
-    projectTools: z.infer<typeof WorkflowTool>[];
     prompts: z.infer<typeof WorkflowPrompt>[];
     workflow: z.infer<typeof Workflow>;
     selectedEntity: {
@@ -88,6 +88,7 @@ const ListItemWithMenu = ({
     iconClassName,
     mcpServerName,
     dragHandle,
+    isMocked,
 }: {
     name: string;
     isSelected?: boolean;
@@ -100,6 +101,7 @@ const ListItemWithMenu = ({
     iconClassName?: string;
     mcpServerName?: string;
     dragHandle?: React.ReactNode;
+    isMocked?: boolean;
 }) => {
     return (
         <div className={clsx(
@@ -137,6 +139,13 @@ const ListItemWithMenu = ({
             </button>
             <div className="flex items-center gap-1">
                 {statusLabel}
+                {isMocked && (
+                    <Tooltip content="Mocked" size="sm" delay={500}>
+                        <div className="w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center text-xs font-medium text-white">
+                            M
+                        </div>
+                    </Tooltip>
+                )}
                 {menuContent}
             </div>
         </div>
@@ -203,26 +212,27 @@ const ServerCard = ({
             
             {isExpanded && (
                 <div className="ml-6 mt-0.5 space-y-0.5 border-l border-gray-200 dark:border-gray-700 pl-3">
-                    {tools.map((tool, index) => (
-                        <div key={`tool-${index}`} className="group/tool">
-                            <ListItemWithMenu
-                                name={tool.name}
-                                isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
-                                onClick={() => onSelectTool(tool.name)}
-                                selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
-                                mcpServerName={serverName}
-                                menuContent={
-                                    <div className="opacity-0 group-hover/tool:opacity-100 transition-opacity">
-                                        <EntityDropdown 
-                                            name={tool.name} 
-                                            onDelete={onDeleteTool}
-                                            isLocked={tool.isMcp || tool.isLibrary}
-                                        />
-                                    </div>
-                                }
-                            />
-                        </div>
-                    ))}
+                                                                        {tools.map((tool, index) => (
+                                                        <div key={`tool-${index}`} className="group/tool">
+                                                            <ListItemWithMenu
+                                                                name={tool.name}
+                                                                isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
+                                                                onClick={() => onSelectTool(tool.name)}
+                                                                selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
+                                                                mcpServerName={serverName}
+                                                                isMocked={tool.mockTool}
+                                                                menuContent={
+                                                                    <div className="opacity-0 group-hover/tool:opacity-100 transition-opacity">
+                                                                        <EntityDropdown 
+                                                                            name={tool.name} 
+                                                                            onDelete={onDeleteTool}
+                                                                            isLocked={tool.isMcp || tool.isLibrary}
+                                                                        />
+                                                                    </div>
+                                                                }
+                                                            />
+                                                        </div>
+                                                    ))}
                 </div>
             )}
         </div>
@@ -239,7 +249,6 @@ type ComposioToolkit = {
 export function EntityList({
     agents,
     tools,
-    projectTools,
     prompts,
     workflow,
     selectedEntity,
@@ -265,22 +274,20 @@ export function EntityList({
     onReorderAgents: (agents: z.infer<typeof WorkflowAgent>[]) => void 
 }) {
     const [showAgentTypeModal, setShowAgentTypeModal] = useState(false);
-    const [showComposioToolsModal, setShowComposioToolsModal] = useState(false);
+    const [showToolsModal, setShowToolsModal] = useState(false);
 
     const handleAddAgentWithType = (agentType: 'internal' | 'user_facing') => {
         onAddAgent({
             outputVisibility: agentType
         });
     };
-    // Merge workflow tools with project tools
-    const mergedTools = [...tools, ...projectTools];
     const selectedRef = useRef<HTMLButtonElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerHeight, setContainerHeight] = useState<number>(0);
 
     // collect composio tools
     const composioTools: Record<string, ComposioToolkit> = {};
-    for (const tool of mergedTools) {
+    for (const tool of tools) {
         if (tool.isComposio) {
             if (!composioTools[tool.composioData?.toolkitSlug || '']) {
                 composioTools[tool.composioData?.toolkitSlug || ''] = {
@@ -519,28 +526,14 @@ export function EntityList({
                                     <Wrench className="w-4 h-4" />
                                     <span>Tools</span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
                                     <Button
                                         variant="secondary"
                                         size="sm"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setExpandedPanels(prev => ({ ...prev, tools: true }));
-                                            setShowComposioToolsModal(true);
-                                        }}
-                                        className={`group ${buttonClasses}`}
-                                        showHoverContent={true}
-                                        hoverContent="Composio Tools"
-                                    >
-                                        <Component className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setExpandedPanels(prev => ({ ...prev, tools: true }));
-                                            onAddTool({});
+                                            setShowToolsModal(true);
                                         }}
                                         className={`group ${buttonClasses}`}
                                         showHoverContent={true}
@@ -555,15 +548,15 @@ export function EntityList({
                         {expandedPanels.tools && (
                             <div className="h-full overflow-y-auto">
                                 <div className="p-2">
-                                    {mergedTools.length > 0 ? (
+                                    {tools.length > 0 ? (
                                         <div className="space-y-1">
                                             {/* Group tools by server */}
                                             {(() => {
                                                 // Get custom tools (non-MCP tools)
-                                                const customTools = mergedTools.filter(tool => !tool.isMcp && !tool.isComposio);
+                                                const customTools = tools.filter(tool => !tool.isMcp && !tool.isComposio);
                                                 
                                                 // Group MCP tools by server
-                                                const serverTools = mergedTools.reduce((acc, tool) => {
+                                                const serverTools = tools.reduce((acc, tool) => {
                                                     if (tool.isMcp && tool.mcpServerName) {
                                                         if (!acc[tool.mcpServerName]) {
                                                             acc[tool.mcpServerName] = [];
@@ -571,27 +564,12 @@ export function EntityList({
                                                         acc[tool.mcpServerName].push(tool);
                                                     }
                                                     return acc;
-                                                }, {} as Record<string, typeof mergedTools>);
+                                                }, {} as Record<string, typeof tools>);
 
                                                 return (
                                                     <>
                                                         {/* Show composio cards - ordered by status */}
                                                         {Object.values(composioTools)
-                                                            .sort((a, b) => {
-                                                                // Helper function to get toolkit status priority
-                                                                const getStatusPriority = (toolkit: ComposioToolkit) => {
-                                                                    const hasAuth = toolkit.tools.some(tool => tool.composioData && !tool.composioData.noAuth);
-                                                                    const isConnected = !hasAuth || projectConfig?.composioConnectedAccounts?.[toolkit.slug]?.status === 'ACTIVE';
-                                                                    const isMocked = workflow?.composioMockToolkitStates?.[toolkit.slug]?.isMocked || false;
-                                                                    
-                                                                    // Priority: Connected (1) > Mock (2) > Disconnected (3)
-                                                                    if (isMocked) return 2;
-                                                                    if (isConnected) return 1;
-                                                                    return 3;
-                                                                };
-                                                                
-                                                                return getStatusPriority(a) - getStatusPriority(b);
-                                                            })
                                                             .map((card) => (
                                                                 <ComposioCard 
                                                                     key={card.slug} 
@@ -623,23 +601,24 @@ export function EntityList({
                                                         {/* Show custom tools */}
                                                         {customTools.length > 0 && (
                                                             <div className="mt-2">
-                                                                {customTools.map((tool, index) => (
-                                                                    <ListItemWithMenu
-                                                                        key={`custom-tool-${index}`}
-                                                                        name={tool.name}
-                                                                        isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
-                                                                        onClick={() => handleToolSelection(tool.name)}
-                                                                        selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
-                                                                        icon={<Boxes className="w-4 h-4 text-blue-600/70 dark:text-blue-500/70" />}
-                                                                        menuContent={
-                                                                            <EntityDropdown 
-                                                                                name={tool.name} 
-                                                                                onDelete={onDeleteTool}
-                                                                                isLocked={tool.isLibrary}
-                                                                            />
-                                                                        }
+                                                                                                                        {customTools.map((tool, index) => (
+                                                            <ListItemWithMenu
+                                                                key={`custom-tool-${index}`}
+                                                                name={tool.name}
+                                                                isSelected={selectedEntity?.type === "tool" && selectedEntity.name === tool.name}
+                                                                onClick={() => handleToolSelection(tool.name)}
+                                                                selectedRef={selectedEntity?.type === "tool" && selectedEntity.name === tool.name ? selectedRef : undefined}
+                                                                icon={<Boxes className="w-4 h-4 text-blue-600/70 dark:text-blue-500/70" />}
+                                                                isMocked={tool.mockTool}
+                                                                menuContent={
+                                                                    <EntityDropdown 
+                                                                        name={tool.name} 
+                                                                        onDelete={onDeleteTool}
+                                                                        isLocked={tool.isLibrary}
                                                                     />
-                                                                ))}
+                                                                }
+                                                            />
+                                                        ))}
                                                             </div>
                                                         )}
                                                     </>
@@ -741,11 +720,12 @@ export function EntityList({
                 onClose={() => setShowAgentTypeModal(false)}
                 onConfirm={handleAddAgentWithType}
             />
-            <ComposioToolsModal
-                isOpen={showComposioToolsModal}
-                onClose={() => setShowComposioToolsModal(false)}
+            <ToolsModal
+                isOpen={showToolsModal}
+                onClose={() => setShowToolsModal(false)}
                 projectId={projectId}
-                onToolsUpdated={onProjectToolsUpdated}
+                tools={tools}
+                onAddTool={onAddTool}
             />
         </div>
     );
@@ -853,8 +833,8 @@ const ComposioCard = ({
 }: ComposioCardProps) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showDisconnectModal, setShowDisconnectModal] = useState(false);
     const [isProcessingAuth, setIsProcessingAuth] = useState(false);
-    const [isProcessingMock, setIsProcessingMock] = useState(false);
 
     // Check if the toolkit requires authentication
     const hasToolkitWithAuth = card.tools.some(tool => tool.composioData && !tool.composioData.noAuth);
@@ -862,14 +842,17 @@ const ComposioCard = ({
     // Check if toolkit is connected
     const isToolkitConnected = !hasToolkitWithAuth || projectConfig?.composioConnectedAccounts?.[card.slug]?.status === 'ACTIVE';
     
-    // Check if toolkit is mocked
-    const isToolkitMocked = workflow?.composioMockToolkitStates?.[card.slug]?.isMocked || false;
+
 
     const handleConnect = () => {
         setShowAuthModal(true);
     };
 
-    const handleDisconnect = async () => {
+    const handleDisconnect = () => {
+        setShowDisconnectModal(true);
+    };
+
+    const handleConfirmDisconnect = async () => {
         const connectedAccountId = projectConfig?.composioConnectedAccounts?.[card.slug]?.id;
         
         setIsProcessingAuth(true);
@@ -882,6 +865,7 @@ const ComposioCard = ({
             console.error('Disconnect failed:', err);
         } finally {
             setIsProcessingAuth(false);
+            setShowDisconnectModal(false);
         }
     };
 
@@ -890,17 +874,7 @@ const ComposioCard = ({
         onProjectToolsUpdated?.();
     };
 
-    const handleToggleMock = async () => {
-        setIsProcessingMock(true);
-        try {
-            await toggleMockToolkitState(projectId, card.slug, !isToolkitMocked);
-            onProjectToolsUpdated?.();
-        } catch (err: any) {
-            console.error('Mock toggle failed:', err);
-        } finally {
-            setIsProcessingMock(false);
-        }
-    };
+
 
     return (
         <>
@@ -937,25 +911,22 @@ const ComposioCard = ({
                         </div>
                     </button>
                     
-                    {/* Compact Status Badge */}
-                    <Tooltip 
-                        content={isToolkitMocked ? 'Mocked' : isToolkitConnected ? 'Connected' : 'Disconnected'}
-                        size="sm"
-                        delay={500}
-                    >
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium text-white ${
-                            isToolkitMocked 
-                                ? 'bg-purple-500' 
-                                : isToolkitConnected 
-                                    ? 'bg-emerald-500' 
-                                    : 'bg-orange-500'
-                        }`}>
-                            {isToolkitMocked ? 'M' : isToolkitConnected ? '●' : '○'}
-                        </div>
-                    </Tooltip>
+                    {/* Status Badge - only show orange when requires auth and not connected */}
+                    {hasToolkitWithAuth && !isToolkitConnected && (
+                        <Tooltip 
+                            content="Disconnected"
+                            size="sm"
+                            delay={500}
+                        >
+                            <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-xs font-medium text-white">
+                                ○
+                            </div>
+                        </Tooltip>
+                    )}
                     
-                    {/* Actions Dropdown - only show on hover */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Actions Dropdown - only show when requires auth */}
+                    {hasToolkitWithAuth && (
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <Dropdown>
                             <DropdownTrigger>
                                 <button className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors">
@@ -965,9 +936,6 @@ const ComposioCard = ({
                             <DropdownMenu
                                 onAction={(key) => {
                                     switch (key) {
-                                        case 'mock':
-                                            handleToggleMock();
-                                            break;
                                         case 'connect':
                                             handleConnect();
                                             break;
@@ -977,29 +945,12 @@ const ComposioCard = ({
                                     }
                                 }}
                                 disabledKeys={[
-                                    ...(isProcessingMock ? ['mock'] : []),
                                     ...(isProcessingAuth ? ['connect', 'disconnect'] : []),
-                                    ...(hasToolkitWithAuth && !isToolkitMocked && isToolkitConnected ? [] : ['disconnect']),
+                                    ...(hasToolkitWithAuth && isToolkitConnected ? [] : ['disconnect']),
                                     ...(hasToolkitWithAuth && !isToolkitConnected ? [] : ['connect'])
                                 ]}
                             >
-                                <DropdownItem
-                                    key="mock"
-                                    startContent={
-                                        isProcessingMock ? (
-                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
-                                        ) : isToolkitMocked ? (
-                                            <Play className="h-3 w-3" />
-                                        ) : (
-                                            <TestTube className="h-3 w-3" />
-                                        )
-                                    }
-                                >
-                                    {isProcessingMock 
-                                        ? (isToolkitMocked ? 'Disabling Mock...' : 'Enabling Mock...') 
-                                        : (isToolkitMocked ? 'Switch to Real Mode' : 'Switch to Mock Mode')
-                                    }
-                                </DropdownItem>
+
                                 
                                 <DropdownItem
                                     key="disconnect"
@@ -1029,6 +980,7 @@ const ComposioCard = ({
                             </DropdownMenu>
                         </Dropdown>
                     </div>
+                    )}
                 </div>
             {isExpanded && (
                 <div className="ml-6 mt-0.5 space-y-0.5 border-l border-gray-200 dark:border-gray-700 pl-3">
@@ -1043,6 +995,7 @@ const ComposioCard = ({
                                 icon={
                                     <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600"></div>
                                 }
+                                isMocked={tool.mockTool}
                                 menuContent={
                                     <div className="opacity-0 group-hover/tool:opacity-100 transition-opacity">
                                         <EntityDropdown 
@@ -1070,6 +1023,17 @@ const ComposioCard = ({
                     onComplete={handleAuthComplete}
                 />
             )}
+
+            {/* Disconnect Confirmation Modal */}
+            <ProjectWideChangeConfirmationModal
+                isOpen={showDisconnectModal}
+                onClose={() => setShowDisconnectModal(false)}
+                onConfirm={handleConfirmDisconnect}
+                title={`Disconnect ${card.name}`}
+                confirmationQuestion={`Are you sure you want to disconnect the ${card.name} toolkit?`}
+                confirmButtonText="Disconnect"
+                isLoading={isProcessingAuth}
+            />
         </>
     );
 };

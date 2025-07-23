@@ -143,9 +143,6 @@ export type Action = {
     type: "show_visualise";
 } | {
     type: "hide_visualise";
-} | {
-    type: "sync_workflow";
-    workflow: z.infer<typeof Workflow>;
 };
 
 function reducer(state: State, action: Action): State {
@@ -208,13 +205,6 @@ function reducer(state: State, action: Action): State {
                 draft.present.saving = action.saving;
                 draft.present.pendingChanges = action.saving;
                 draft.present.lastUpdatedAt = !action.saving ? new Date().toISOString() : state.present.workflow.lastUpdatedAt;
-            });
-            break;
-        }
-        case "sync_workflow": {
-            newState = produce(state, draft => {
-                draft.present.workflow = action.workflow;
-                draft.present.lastUpdatedAt = action.workflow.lastUpdatedAt;
             });
             break;
         }
@@ -326,7 +316,6 @@ function reducer(state: State, action: Action): State {
                                     required: []
                                 },
                                 mockTool: true,
-                                autoSubmitMockedResponse: true,
                                 ...action.tool
                             });
                             draft.selection = {
@@ -587,9 +576,7 @@ export function WorkflowEditor({
     workflow,
     useRag,
     mcpServerUrls,
-    toolWebhookUrl,
     defaultModel,
-    projectTools,
     projectConfig,
     eligibleModels,
     isLive,
@@ -602,9 +589,7 @@ export function WorkflowEditor({
     workflow: z.infer<typeof Workflow>;
     useRag: boolean;
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
-    toolWebhookUrl: string;
     defaultModel: string;
-    projectTools: z.infer<typeof WorkflowTool>[];
     projectConfig: z.infer<typeof Project>;
     eligibleModels: z.infer<typeof ModelsResponse> | "*";
     isLive: boolean;
@@ -630,11 +615,6 @@ export function WorkflowEditor({
             isLive,
         }
     });
-
-    // Sync workflow prop changes with reducer state (e.g., when composio tools are updated)
-    useEffect(() => {
-        dispatch({ type: "sync_workflow", workflow });
-    }, [workflow]);
 
     const [chatMessages, setChatMessages] = useState<z.infer<typeof Message>[]>([]);
     const updateChatMessages = useCallback((messages: z.infer<typeof Message>[]) => {
@@ -999,7 +979,6 @@ export function WorkflowEditor({
                             <EntityList
                                 agents={state.present.workflow.agents}
                                 tools={state.present.workflow.tools}
-                                projectTools={projectTools}
                                 prompts={state.present.workflow.prompts}
                                 workflow={state.present.workflow}
                                 selectedEntity={
@@ -1043,10 +1022,8 @@ export function WorkflowEditor({
                             workflow={state.present.workflow}
                             messageSubscriber={updateChatMessages}
                             mcpServerUrls={mcpServerUrls}
-                            toolWebhookUrl={toolWebhookUrl}
                             isInitialState={isInitialState}
                             onPanelClick={handlePlaygroundClick}
-                            projectTools={projectTools}
                             triggerCopilotChat={triggerCopilotChat}
                         />
                         {state.present.selection?.type === "agent" && <AgentConfig
@@ -1057,7 +1034,6 @@ export function WorkflowEditor({
                             usedAgentNames={new Set(state.present.workflow.agents.filter((agent) => agent.name !== state.present.selection!.name).map((agent) => agent.name))}
                             agents={state.present.workflow.agents}
                             tools={state.present.workflow.tools}
-                            projectTools={projectTools}
                             prompts={state.present.workflow.prompts}
                             dataSources={dataSources}
                             handleUpdate={handleUpdateAgent.bind(null, state.present.selection.name)}
@@ -1069,15 +1045,12 @@ export function WorkflowEditor({
                         {state.present.selection?.type === "tool" && (() => {
                             const selectedTool = state.present.workflow.tools.find(
                                 (tool) => tool.name === state.present.selection!.name
-                            ) || projectTools.find(
-                                (tool) => tool.name === state.present.selection!.name
                             );
                             return <ToolConfig
                                 key={state.present.selection.name}
                                 tool={selectedTool!}
                                 usedToolNames={new Set([
                                     ...state.present.workflow.tools.filter((tool) => tool.name !== state.present.selection!.name).map((tool) => tool.name),
-                                    ...projectTools.filter((tool) => tool.name !== state.present.selection!.name).map((tool) => tool.name)
                                 ])}
                                 handleUpdate={handleUpdateTool.bind(null, state.present.selection.name)}
                                 handleClose={handleUnselectTool}

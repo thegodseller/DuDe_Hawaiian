@@ -42,7 +42,6 @@ export function AgentConfig({
     usedAgentNames,
     agents,
     tools,
-    projectTools,
     prompts,
     dataSources,
     handleUpdate,
@@ -57,7 +56,6 @@ export function AgentConfig({
     usedAgentNames: Set<string>,
     agents: z.infer<typeof WorkflowAgent>[],
     tools: z.infer<typeof WorkflowTool>[],
-    projectTools: z.infer<typeof WorkflowTool>[],
     prompts: z.infer<typeof WorkflowPrompt>[],
     dataSources: WithStringId<z.infer<typeof DataSource>>[],
     handleUpdate: (agent: z.infer<typeof WorkflowAgent>) => void,
@@ -172,7 +170,7 @@ export function AgentConfig({
     const atMentions = createAtMentions({
         agents,
         prompts,
-        tools: [...tools, ...projectTools],
+        tools,
         currentAgentName: agent.name
     });
 

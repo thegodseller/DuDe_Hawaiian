@@ -14,15 +14,6 @@ import { USE_AUTH } from "../lib/feature_flags";
 import { deleteMcpServerInstance, listActiveServerInstances } from "./klavis_actions";
 import { authorizeUserAction } from "./billing_actions";
 import { Workflow } from "../lib/types/workflow_types";
-import { WorkflowTool } from "../lib/types/workflow_types";
-import { collectProjectTools as libCollectProjectTools } from "../lib/project_tools";
-import { 
-    searchTools as libSearchTools,
-    getToolsByIds as libGetToolsByIds,
-    getTool as libGetTool,
-    ZTool, 
-    ZToolkit 
-} from "../lib/composio/composio";
 
 const KLAVIS_API_KEY = process.env.KLAVIS_API_KEY || '';
 
@@ -313,113 +304,6 @@ export async function createProjectFromPrompt(formData: FormData): Promise<{ id:
     return { id: projectId };
 }
 
-async function detectAndAddComposioTools(projectId: string, workflow: z.infer<typeof Workflow>) {
-    // Extract tool mentions from agent instructions
-    const toolMentionPattern = /\[@tool:([^\]]+)\]\(#mention[^\)]*\)/g;
-    const mentionedToolNames = new Set<string>();
-    
-    // Scan all agent instructions for tool mentions
-    for (const agent of workflow.agents || []) {
-        const instructions = agent.instructions || "";
-        let match: RegExpExecArray | null;
-        while ((match = toolMentionPattern.exec(instructions))) {
-            mentionedToolNames.add(match[1]);
-        }
-    }
-    
-    if (mentionedToolNames.size === 0) {
-        return; // No tool mentions found
-    }
-    
-    console.log(`Found ${mentionedToolNames.size} tool mentions in workflow:`, Array.from(mentionedToolNames));
-    
-    // Search for these tools in Composio using the new efficient search methods
-    const foundTools: z.infer<typeof ZTool>[] = [];
-    
-    try {
-        // Method 1: Try to get tools directly by their exact slugs/names
-        const mentionedToolNamesArray = Array.from(mentionedToolNames);
-        
-        try {
-            const directToolsResponse = await libGetToolsByIds(mentionedToolNamesArray);
-            foundTools.push(...directToolsResponse.items);
-            console.log(`Found ${directToolsResponse.items.length} tools by direct lookup`);
-        } catch (error) {
-            console.log('Direct tool lookup failed, trying search approach');
-        }
-        
-        // Method 2: For any remaining tools, use search functionality
-        const foundToolSlugs = new Set(foundTools.map(tool => tool.slug));
-        const foundToolNames = new Set(foundTools.map(tool => tool.name));
-        const remainingToolNames = mentionedToolNamesArray.filter(name => 
-            !foundToolSlugs.has(name) && !foundToolNames.has(name)
-        );
-        
-        for (const toolName of remainingToolNames) {
-            try {
-                // Search for tools by name/description
-                const searchResponse = await libSearchTools(toolName, null, 10);
-                
-                // Find exact matches by name or slug
-                const exactMatches = searchResponse.items.filter(tool => 
-                    tool.name === toolName || 
-                    tool.slug === toolName ||
-                    tool.name.toLowerCase() === toolName.toLowerCase() ||
-                    tool.slug.toLowerCase() === toolName.toLowerCase()
-                );
-                
-                if (exactMatches.length > 0) {
-                    foundTools.push(...exactMatches);
-                    console.log(`Found ${exactMatches.length} tools for search term "${toolName}"`);
-                } else {
-                    console.log(`No exact matches found for tool "${toolName}"`);
-                }
-            } catch (error) {
-                console.error(`Error searching for tool "${toolName}":`, error);
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error searching for Composio tools:', error);
-        return;
-    }
-    
-    if (foundTools.length > 0) {
-        console.log(`Adding ${foundTools.length} Composio tools to workflow`);
-        
-        // Remove duplicates based on slug
-        const uniqueTools = foundTools.filter((tool, index, self) => 
-            index === self.findIndex(t => t.slug === tool.slug)
-        );
-        
-        // Convert Composio tools to workflow tool format
-        const composioWorkflowTools: z.infer<typeof WorkflowTool>[] = uniqueTools.map(tool => ({
-            name: tool.slug,
-            description: tool.description || "",
-            parameters: {
-                type: 'object' as const,
-                properties: tool.input_parameters?.properties || {},
-                required: tool.input_parameters?.required || []
-            },
-            isComposio: true,
-            composioData: {
-                slug: tool.slug,
-                noAuth: tool.no_auth,
-                toolkitName: tool.toolkit.name,
-                toolkitSlug: tool.toolkit.slug,
-                logo: tool.toolkit.logo,
-            },
-        }));
-        
-        // Add these tools to the workflow.tools array
-        workflow.tools = [...workflow.tools, ...composioWorkflowTools];
-        
-        console.log(`Added ${composioWorkflowTools.length} Composio tools to workflow`);
-    } else {
-        console.log('No matching Composio tools found for the mentioned tool names');
-    }
-}
-
 export async function createProjectFromWorkflowJson(formData: FormData): Promise<{ id: string } | { billingError: string }> {
     const user = await authCheck();
     const workflowJson = formData.get('workflowJson') as string;
@@ -441,21 +325,7 @@ export async function createProjectFromWorkflowJson(formData: FormData): Promise
         return response;
     }
     const projectId = response.id;
-    
-    // Automatically detect and add Composio tools mentioned in agent instructions
-    try {
-        await detectAndAddComposioTools(projectId, workflow);
-    } catch (error) {
-        // Log error but don't fail the import if tool detection fails
-        console.error('Failed to auto-detect Composio tools:', error);
-    }
-    
     return { id: projectId };
-}
-
-export async function collectProjectTools(projectId: string): Promise<z.infer<typeof WorkflowTool>[]> {
-    await projectAuthCheck(projectId);
-    return libCollectProjectTools(projectId);
 }
 
 export async function saveWorkflow(projectId: string, workflow: z.infer<typeof Workflow>) {

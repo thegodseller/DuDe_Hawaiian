@@ -2,23 +2,25 @@
 
 import { useState } from 'react';
 import { Tabs, Tab } from '@/components/ui/tabs';
-import { HostedServers } from './HostedServers';
-import { CustomServers } from './CustomServers';
-import { WebhookConfig } from './WebhookConfig';
+import { CustomMcpServers } from './CustomMcpServer';
 import { Composio } from './Composio';
+import { AddWebhookTool } from './AddWebhookTool';
 import type { Key } from 'react';
+import { Workflow, WorkflowTool } from '@/app/lib/types/workflow_types';
+import { z } from 'zod';
 
 export function ToolsConfig({
+  projectId,
   useComposioTools,
-  useKlavisTools
+  tools,
+  onAddTool,
 }: {
+  projectId: string;
   useComposioTools: boolean;
-  useKlavisTools: boolean;
+  tools: z.infer<typeof Workflow.shape.tools>;
+  onAddTool: (tool: Partial<z.infer<typeof WorkflowTool>>) => void;
 }) {
-  let defaultActiveTab = 'custom';
-  if (useKlavisTools) {
-    defaultActiveTab = 'hosted';
-  }
+  let defaultActiveTab = 'mcp';
   if (useComposioTools) {
     defaultActiveTab = 'composio';
   }
@@ -40,32 +42,28 @@ export function ToolsConfig({
         {useComposioTools && (
           <Tab key="composio" title="Composio">
             <div className="mt-4 p-6">
-              <Composio />
+              <Composio
+                projectId={projectId}
+                tools={tools}
+                onAddTool={onAddTool}
+              />
             </div>
           </Tab>
         )}
-        {useKlavisTools && (
-          <Tab key="hosted" title={
-            <div className="flex items-center gap-2">
-              <span>Klavis</span>
-              <span className="leading-none px-1.5 py-[2px] text-[9px] font-medium bg-linear-to-r from-pink-500 to-violet-500 text-white rounded-full">
-                BETA
-              </span>
-            </div>
-          }>
-            <div className="mt-4 p-6">
-              <HostedServers onSwitchTab={key => setActiveTab(key)} />
-            </div>
-          </Tab>
-        )}
-        <Tab key="custom" title="Custom MCP Servers">
+        <Tab key="mcp" title="Custom MCP Servers">
           <div className="mt-4 p-6">
-            <CustomServers />
+            <CustomMcpServers
+              tools={tools}
+              onAddTool={onAddTool}
+            />
           </div>
         </Tab>
         <Tab key="webhook" title="Webhook">
           <div className="mt-4 p-6">
-            <WebhookConfig />
+            <AddWebhookTool
+              projectId={projectId}
+              onAddTool={onAddTool}
+            />
           </div>
         </Tab>
       </Tabs>

@@ -6,7 +6,6 @@ import { ObjectId, WithId } from "mongodb";
 import { authCheck } from "../../../utils";
 import { check_query_limit } from "../../../../../../lib/rate_limiting";
 import { PrefixLogger } from "../../../../../../lib/utils";
-import { collectProjectTools } from "@/app/lib/project_tools";
 import { authorize, getCustomerIdForProject, logUsage } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
 import { getResponse } from "@/app/lib/agents";
@@ -181,9 +180,6 @@ export async function POST(
             throw new Error("Project settings not found");
         }
 
-        // fetch project tools
-        const projectTools = await collectProjectTools(session.projectId);
-
         // fetch workflow
         const workflow = projectSettings.liveWorkflow;
         if (!workflow) {
@@ -211,7 +207,7 @@ export async function POST(
         const inMessages: z.infer<typeof Message>[] = convert(messages);
         inMessages.push(userMessage);
 
-        const { messages: responseMessages } = await getResponse(session.projectId, workflow, projectTools, [systemMessage, ...inMessages]);
+        const { messages: responseMessages } = await getResponse(session.projectId, workflow, [systemMessage, ...inMessages]);
         const convertedResponseMessages = convertBack(responseMessages);
         const unsavedMessages = [
             userMessage,
