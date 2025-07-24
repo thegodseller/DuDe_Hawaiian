@@ -1,9 +1,9 @@
 'use client';
 
-import { Project } from "../../lib/types/project_types";
+import { Project } from "../lib/types/project_types";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { listProjects } from "../../actions/project_actions";
+import { listProjects } from "../actions/project_actions";
 import { USE_MULTIPLE_PROJECTS } from "@/app/lib/feature_flags";
 import { SearchProjects } from "./components/search-projects";
 import { CreateProject } from "./components/create-project";

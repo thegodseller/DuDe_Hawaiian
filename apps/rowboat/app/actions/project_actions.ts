@@ -50,6 +50,11 @@ async function createBaseProject(
         return { billingError: authResponse.error || 'Billing error' };
     }
 
+    // choose a fallback name
+    if (!name) {
+        name = `Assistant ${projectCount + 1}`;
+    }
+
     const projectId = crypto.randomUUID();
     const chatClientId = crypto.randomBytes(16).toString('base64url');
     const secret = crypto.randomBytes(32).toString('hex');
@@ -84,11 +89,32 @@ async function createBaseProject(
 
 export async function createProject(formData: FormData): Promise<{ id: string } | { billingError: string }> {
     const user = await authCheck();
-    const name = formData.get('name') as string;
-    const templateKey = formData.get('template') as string;
+    const name = formData.get('name') as string | null;
+    const templateKey = formData.get('template') as string | null;
 
-    const { agents, prompts, tools, startAgent } = templates[templateKey];
-    const response = await createBaseProject(name, user, {
+    const { agents, prompts, tools, startAgent } = templates[templateKey || 'default'];
+    const response = await createBaseProject(name || '', user, {
+        agents,
+        prompts,
+        tools,
+        startAgent,
+        lastUpdatedAt: (new Date()).toISOString(),
+    });
+    if ('billingError' in response) {
+        return response;
+    }
+
+    const projectId = response.id;
+    return { id: projectId };
+}
+
+export async function createProjectFromWorkflowJson(formData: FormData): Promise<{ id: string } | { billingError: string }> {
+    const user = await authCheck();
+    const name = formData.get('name') as string | null;
+
+    const workflowJson = formData.get('workflowJson') as string;
+    const { agents, prompts, tools, startAgent } = Workflow.parse(workflowJson);
+    const response = await createBaseProject(name || 'Imported project', user, {
         agents,
         prompts,
         tools,
@@ -237,50 +263,6 @@ export async function deleteProject(projectId: string) {
     });
 
     redirect('/projects');
-}
-
-export async function createProjectFromPrompt(formData: FormData): Promise<{ id: string } | { billingError: string }> {
-    const user = await authCheck();
-    const name = formData.get('name') as string;
-
-    const { agents, prompts, tools, startAgent } = templates['default'];
-    const response = await createBaseProject(name, user, {
-        agents,
-        prompts,
-        tools,
-        startAgent,
-        lastUpdatedAt: (new Date()).toISOString(),
-    });
-    if ('billingError' in response) {
-        return response;
-    }
-
-    const projectId = response.id;
-    return { id: projectId };
-}
-
-export async function createProjectFromWorkflowJson(formData: FormData): Promise<{ id: string } | { billingError: string }> {
-    const user = await authCheck();
-    const workflowJson = formData.get('workflowJson') as string;
-    let workflowData;
-    try {
-        workflowData = JSON.parse(workflowJson);
-    } catch (e) {
-        throw new Error('Invalid JSON');
-    }
-    // Validate and parse with zod
-    const parsed = Workflow.safeParse(workflowData);
-    if (!parsed.success) {
-        throw new Error('Invalid workflow JSON: ' + JSON.stringify(parsed.error.issues));
-    }
-    const workflow = parsed.data;
-    const name = (formData.get('name') as string) || 'Imported Project';
-    const response = await createBaseProject(name, user, workflow);
-    if ('billingError' in response) {
-        return response;
-    }
-    const projectId = response.id;
-    return { id: projectId };
 }
 
 export async function saveWorkflow(projectId: string, workflow: z.infer<typeof Workflow>) {

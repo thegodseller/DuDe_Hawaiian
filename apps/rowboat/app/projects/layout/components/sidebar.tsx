@@ -36,7 +36,7 @@ const COLLAPSED_ICON_SIZE = 20; // DO NOT CHANGE THIS
 export default function Sidebar({ projectId, useRag, useAuth, collapsed = false, onToggleCollapse, useBilling }: SidebarProps) {
   const pathname = usePathname();
   const [projectName, setProjectName] = useState<string>("Select Project");
-  const isProjectsRoute = pathname === '/projects' || pathname === '/projects/select';
+  const isProjectsRoute = pathname === '/projects';
   const { theme, toggleTheme } = useTheme();
   const { showHelpModal } = useHelpModal();
 
