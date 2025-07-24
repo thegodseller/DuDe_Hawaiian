@@ -6,6 +6,15 @@ const corsOptions = {
   'Access-Control-Allow-Headers': 'Content-Type, x-client-id, Authorization',
 }
 
+async function authCheck(request: NextRequest) {
+  const session = await auth0.getSession(request);
+  const loginUrl = new URL('/auth/login', request.url);
+  loginUrl.searchParams.set('returnTo', request.nextUrl.pathname + request.nextUrl.search);
+  if (!session) {
+    return NextResponse.redirect(loginUrl);
+  }
+  return auth0.middleware(request);
+}
 
 export async function middleware(request: NextRequest, event: NextFetchEvent) {
   // Check if the request path starts with /api/auth/
@@ -42,7 +51,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     request.nextUrl.pathname.startsWith('/onboarding')) {
     // Skip auth check if USE_AUTH is not enabled
     if (process.env.USE_AUTH === 'true') {
-      return await auth0.middleware(request);
+      return await authCheck(request);
     }
   }
 
