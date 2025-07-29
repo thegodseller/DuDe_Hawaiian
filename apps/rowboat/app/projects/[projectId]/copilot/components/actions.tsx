@@ -59,6 +59,7 @@ export function Action({
     const handleFieldChange = (field: string) => {
         const changes = { [field]: action.config_changes[field] };
         
+        // Dispatch the field change directly (this is for partial updates)
         switch (action.config_type) {
             case 'agent':
                 dispatch({
@@ -94,74 +95,16 @@ export function Action({
                 newApplied[getAppliedChangeKey(msgIndex, actionIndex, key)]
             );
             
-            // If all fields are applied, notify parent
-            if (allFieldsApplied) {
-                onApplied?.();
-            }
+            // If all fields are applied, mark as externally applied but don't call onApplied
+            // to avoid duplicate dispatch (the parent's onApplied would dispatch the full action again)
             
             return newApplied;
         });
     };
 
-    // Handle applying all changes
+    // Handle applying all changes - delegate to parent
     const handleApplyAll = () => {
-        if (action.action === 'create_new') {
-            switch (action.config_type) {
-                case 'agent':
-                    dispatch({
-                        type: 'add_agent',
-                        agent: {
-                            name: action.name,
-                            ...action.config_changes
-                        }
-                    });
-                    break;
-                case 'tool':
-                    dispatch({
-                        type: 'add_tool',
-                        tool: {
-                            name: action.name,
-                            ...action.config_changes
-                        }
-                    });
-                    break;
-                case 'prompt':
-                    dispatch({
-                        type: 'add_prompt',
-                        prompt: {
-                            name: action.name,
-                            ...action.config_changes
-                        }
-                    });
-                    break;
-            }
-        } else if (action.action === 'edit') {
-            switch (action.config_type) {
-                case 'agent':
-                    dispatch({
-                        type: 'update_agent',
-                        name: action.name,
-                        agent: action.config_changes
-                    });
-                    break;
-                case 'tool':
-                    dispatch({
-                        type: 'update_tool',
-                        name: action.name,
-                        tool: action.config_changes
-                    });
-                    break;
-                case 'prompt':
-                    dispatch({
-                        type: 'update_prompt',
-                        name: action.name,
-                        prompt: action.config_changes
-                    });
-                    break;
-            }
-        }
-
-        // Mark all fields as applied
+        // Mark all fields as applied locally for UI state
         const appliedKeys = Object.keys(action.config_changes).reduce((acc, key) => {
             acc[getAppliedChangeKey(msgIndex, actionIndex, key)] = true;
             return acc;
@@ -171,7 +114,7 @@ export function Action({
             ...appliedKeys
         }));
 
-        // Notify parent that this action has been applied
+        // Notify parent to handle the actual dispatching
         onApplied?.();
     };
 
