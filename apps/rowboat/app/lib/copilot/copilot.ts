@@ -1,6 +1,6 @@
 import z from "zod";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateObject, streamText } from "ai";
+import { generateObject, generateText, streamText } from "ai";
 import { WithStringId } from "../types/types";
 import { Workflow, WorkflowTool } from "../types/workflow_types";
 import { CopilotChatContext, CopilotMessage } from "../types/copilot_types";
@@ -96,10 +96,34 @@ ${JSON.stringify(simplifiedDataSources)}
     return prompt;
 }
 
-async function getDynamicToolsPrompt(userQuery: string, workflow: z.infer<typeof Workflow>): Promise<string> {
+async function getDynamicToolsPrompt(messages: z.infer<typeof CopilotMessage>[], workflow: z.infer<typeof Workflow>): Promise<string> {
     console.log('--- [Co-pilot] Entering Dynamic Tool Creation ---');
     if (!USE_COMPOSIO_TOOLS) {
         console.log('[Co-pilot] Dynamic tool creation is disabled.');
+        return '';
+    }
+
+    // first, check if we need to search for tools at all
+    const startTime = Date.now();
+    const { text } = await generateText({
+        model: openai(COPILOT_MODEL),
+        system: `Your task is to determine if a tool search is required based on the user's request. Respond with a single word: 'yes' or 'no'.
+
+Say 'yes' if:
+- The user explicitly mentions a tool or a capability that requires a tool (e.g., "send an email", "connect to an API").
+- The user describes a goal or workflow that implies the need for external actions or data (e.g., "build an agent to manage my files").
+- The user asks for a tool to be added to the workflow.
+- The user asks questions bout how to perform a task.
+
+Otherwise, say 'no'. Also important to remember if a tool has already been searched and is in context there is no need to search again.`,
+        messages,
+    });
+    console.log("[Co-pilot] Sending the following messages to the LLM for tool search check:", JSON.stringify(messages, null, 2));
+    const endTime = Date.now();
+    console.log(`[Co-pilot] Tool search check took ${endTime - startTime}ms`);
+    console.log("[Co-pilot] LLM response:", text);
+    if (text.toLowerCase() !== "yes") {
+        console.log('[Co-pilot] No tool search needed.');
         return '';
     }
 
@@ -109,7 +133,7 @@ async function getDynamicToolsPrompt(userQuery: string, workflow: z.infer<typeof
     console.log('[Co-pilot] 🚀 Searching for relevant tools...');
     const searchResult = await composio.tools.execute('COMPOSIO_SEARCH_TOOLS', {
         userId: '0000-0000-0000', // hmmmmm
-        arguments: { use_case: userQuery },
+        arguments: { use_case: messages[messages.length - 1].content }, // use last message
     });
 
     if (!searchResult.successful || !Array.isArray(searchResult.data?.results)) {
@@ -145,7 +169,7 @@ async function getDynamicToolsPrompt(userQuery: string, workflow: z.infer<typeof
     ).join('\n\n');
 
     const prompt = `## Tool Suggestions:
-The following tools are being suggested by the AI. You can use them in your workflow:
+The following are tools suggestions being made by the AI. These are composio tools and they must be added first to the workflow before they can be used.
 
 ${toolConfigs}
 
@@ -230,7 +254,7 @@ export async function* streamMultiAgentResponse(
     let dataSourcesPrompt = getDataSourcesPrompt(dataSources);
 
     // get dynamic tools prompt
-    const dynamicToolsPrompt = await getDynamicToolsPrompt(messages[messages.length - 1].content, workflow);
+    const dynamicToolsPrompt = await getDynamicToolsPrompt(messages, workflow);
 
     // add the above prompts to the last user message
     updateLastUserMessage(messages, currentWorkflowPrompt, contextPrompt, dataSourcesPrompt, dynamicToolsPrompt);
