@@ -1,6 +1,6 @@
 import z from "zod";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateObject, streamText } from "ai";
+import { generateObject, generateText, streamText } from "ai";
 import { WithStringId } from "../types/types";
 import { Workflow, WorkflowTool } from "../types/workflow_types";
 import { CopilotChatContext, CopilotMessage } from "../types/copilot_types";
@@ -96,10 +96,24 @@ ${JSON.stringify(simplifiedDataSources)}
     return prompt;
 }
 
-async function getDynamicToolsPrompt(userQuery: string, workflow: z.infer<typeof Workflow>): Promise<string> {
+async function getDynamicToolsPrompt(messages: z.infer<typeof CopilotMessage>[], workflow: z.infer<typeof Workflow>): Promise<string> {
     console.log('--- [Co-pilot] Entering Dynamic Tool Creation ---');
     if (!USE_COMPOSIO_TOOLS) {
         console.log('[Co-pilot] Dynamic tool creation is disabled.');
+        return '';
+    }
+
+    // first, check if we need to search for tools at all
+    const startTime = Date.now();
+    const { text } = await generateText({
+        model: openai(COPILOT_MODEL),
+        system: "Tell me if we need to search for tools for this conversation to proceed further. Response with a single word: yes or no",
+        messages,
+    });
+    const endTime = Date.now();
+    console.log(`[Co-pilot] Tool search check took ${endTime - startTime}ms`);
+    if (text.toLowerCase() !== "yes") {
+        console.log('[Co-pilot] No tool search needed.');
         return '';
     }
 
@@ -109,7 +123,7 @@ async function getDynamicToolsPrompt(userQuery: string, workflow: z.infer<typeof
     console.log('[Co-pilot] 🚀 Searching for relevant tools...');
     const searchResult = await composio.tools.execute('COMPOSIO_SEARCH_TOOLS', {
         userId: '0000-0000-0000', // hmmmmm
-        arguments: { use_case: userQuery },
+        arguments: { use_case: messages[messages.length - 1].content }, // use last message
     });
 
     if (!searchResult.successful || !Array.isArray(searchResult.data?.results)) {
@@ -230,7 +244,7 @@ export async function* streamMultiAgentResponse(
     let dataSourcesPrompt = getDataSourcesPrompt(dataSources);
 
     // get dynamic tools prompt
-    const dynamicToolsPrompt = await getDynamicToolsPrompt(messages[messages.length - 1].content, workflow);
+    const dynamicToolsPrompt = await getDynamicToolsPrompt(messages, workflow);
 
     // add the above prompts to the last user message
     updateLastUserMessage(messages, currentWorkflowPrompt, contextPrompt, dataSourcesPrompt, dynamicToolsPrompt);
