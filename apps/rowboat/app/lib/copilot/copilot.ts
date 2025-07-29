@@ -107,11 +107,21 @@ async function getDynamicToolsPrompt(messages: z.infer<typeof CopilotMessage>[],
     const startTime = Date.now();
     const { text } = await generateText({
         model: openai(COPILOT_MODEL),
-        system: "Tell me if we need to search for tools for this conversation to proceed further. Response with a single word: yes or no",
+        system: `Your task is to determine if a tool search is required based on the user's request. Respond with a single word: 'yes' or 'no'.
+
+Say 'yes' if:
+- The user explicitly mentions a tool or a capability that requires a tool (e.g., "send an email", "connect to an API").
+- The user describes a goal or workflow that implies the need for external actions or data (e.g., "build an agent to manage my files").
+- The user asks for a tool to be added to the workflow.
+- The user asks questions bout how to perform a task.
+
+Otherwise, say 'no'. Also important to remember if a tool has already been searched and is in context there is no need to search again.`,
         messages,
     });
+    console.log("[Co-pilot] Sending the following messages to the LLM for tool search check:", JSON.stringify(messages, null, 2));
     const endTime = Date.now();
     console.log(`[Co-pilot] Tool search check took ${endTime - startTime}ms`);
+    console.log("[Co-pilot] LLM response:", text);
     if (text.toLowerCase() !== "yes") {
         console.log('[Co-pilot] No tool search needed.');
         return '';
@@ -159,7 +169,7 @@ async function getDynamicToolsPrompt(messages: z.infer<typeof CopilotMessage>[],
     ).join('\n\n');
 
     const prompt = `## Tool Suggestions:
-The following tools are being suggested by the AI. You can use them in your workflow:
+The following are tools suggestions being made by the AI. These are composio tools and they must be added first to the workflow before they can be used.
 
 ${toolConfigs}
 
