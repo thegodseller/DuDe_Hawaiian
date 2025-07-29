@@ -11,7 +11,7 @@ import { App as ChatApp } from "../playground/app";
 import { z } from "zod";
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@heroui/react";
 import { PromptConfig } from "../entities/prompt_config";
-import { InputField } from "../../../lib/components/input-field";
+import { DataSourceConfig } from "../entities/datasource_config";
 import { RelativeTime } from "@primer/react";
 import { USE_PRODUCT_TOUR } from "@/app/lib/feature_flags";
 
@@ -44,7 +44,7 @@ interface StateItem {
     workflow: z.infer<typeof Workflow>;
     publishing: boolean;
     selection: {
-        type: "agent" | "tool" | "prompt" | "visualise";
+        type: "agent" | "tool" | "prompt" | "datasource" | "visualise";
         name: string;
     } | null;
     saving: boolean;
@@ -139,6 +139,11 @@ export type Action = {
 } | {
     type: "reorder_agents";
     agents: z.infer<typeof WorkflowAgent>[];
+} | {
+    type: "select_datasource";
+    id: string;
+} | {
+    type: "unselect_datasource";
 } | {
     type: "show_visualise";
 } | {
@@ -260,9 +265,16 @@ function reducer(state: State, action: Action): State {
                                 name: action.name
                             };
                             break;
+                        case "select_datasource":
+                            draft.selection = {
+                                type: "datasource",
+                                name: action.id
+                            };
+                            break;
                         case "unselect_agent":
                         case "unselect_tool":
                         case "unselect_prompt":
+                        case "unselect_datasource":
                             draft.selection = null;
                             break;
                         case "add_agent": {
@@ -575,6 +587,9 @@ export function WorkflowEditor({
     dataSources,
     workflow,
     useRag,
+    useRagUploads,
+    useRagS3Uploads,
+    useRagScraping,
     mcpServerUrls,
     defaultModel,
     projectConfig,
@@ -583,11 +598,15 @@ export function WorkflowEditor({
     onChangeMode,
     onRevertToLive,
     onProjectToolsUpdated,
+    onDataSourcesUpdated,
 }: {
     projectId: string;
     dataSources: WithStringId<z.infer<typeof DataSource>>[];
     workflow: z.infer<typeof Workflow>;
     useRag: boolean;
+    useRagUploads: boolean;
+    useRagS3Uploads: boolean;
+    useRagScraping: boolean;
     mcpServerUrls: Array<z.infer<typeof MCPServer>>;
     defaultModel: string;
     projectConfig: z.infer<typeof Project>;
@@ -596,6 +615,7 @@ export function WorkflowEditor({
     onChangeMode: (mode: 'draft' | 'live') => void;
     onRevertToLive: () => void;
     onProjectToolsUpdated?: () => void;
+    onDataSourcesUpdated?: () => void;
 }) {
 
     const [state, dispatch] = useReducer(reducer, {
@@ -628,6 +648,7 @@ export function WorkflowEditor({
     const [isInitialState, setIsInitialState] = useState(true);
     const [showTour, setShowTour] = useState(true);
     const copilotRef = useRef<{ handleUserMessage: (message: string) => void }>(null);
+    const entityListRef = useRef<{ openDataSourcesModal: () => void } | null>(null);
     
     // Modal state for revert confirmation
     const { isOpen: isRevertModalOpen, onOpen: onRevertModalOpen, onClose: onRevertModalClose } = useDisclosure();
@@ -660,6 +681,10 @@ export function WorkflowEditor({
         setTimeout(() => {
             copilotRef.current?.handleUserMessage(message);
         }, 100);
+    }, []);
+
+    const handleOpenDataSourcesModal = useCallback(() => {
+        entityListRef.current?.openDataSourcesModal();
     }, []);
 
     console.log(`workflow editor chat key: ${state.present.chatKey}`);
@@ -697,6 +722,9 @@ export function WorkflowEditor({
 
     function handleSelectPrompt(name: string) {
         dispatch({ type: "select_prompt", name });
+    }
+    function handleSelectDataSource(id: string) {
+        dispatch({ type: "select_datasource", id });
     }
 
     function handleUnselectAgent() {
@@ -977,15 +1005,18 @@ export function WorkflowEditor({
                     <ResizablePanel minSize={10} defaultSize={PANEL_RATIOS.entityList}>
                         <div className="flex flex-col h-full">
                             <EntityList
+                                ref={entityListRef}
                                 agents={state.present.workflow.agents}
                                 tools={state.present.workflow.tools}
                                 prompts={state.present.workflow.prompts}
+                                dataSources={dataSources}
                                 workflow={state.present.workflow}
                                 selectedEntity={
                                     state.present.selection &&
                                     (state.present.selection.type === "agent" ||
                                      state.present.selection.type === "tool" ||
-                                     state.present.selection.type === "prompt")
+                                     state.present.selection.type === "prompt" ||
+                                     state.present.selection.type === "datasource")
                                       ? state.present.selection
                                       : null
                                 }
@@ -993,6 +1024,7 @@ export function WorkflowEditor({
                                 onSelectAgent={handleSelectAgent}
                                 onSelectTool={handleSelectTool}
                                 onSelectPrompt={handleSelectPrompt}
+                                onSelectDataSource={handleSelectDataSource}
                                 onAddAgent={handleAddAgent}
                                 onAddTool={handleAddTool}
                                 onAddPrompt={handleAddPrompt}
@@ -1004,8 +1036,12 @@ export function WorkflowEditor({
                                 onShowVisualise={handleShowVisualise}
                                 projectId={projectId}
                                 onProjectToolsUpdated={onProjectToolsUpdated}
+                                onDataSourcesUpdated={onDataSourcesUpdated}
                                 projectConfig={projectConfig}
                                 onReorderAgents={handleReorderAgents}
+                                useRagUploads={useRagUploads}
+                                useRagS3Uploads={useRagS3Uploads}
+                                useRagScraping={useRagScraping}
                             />
                         </div>
                     </ResizablePanel>
@@ -1041,6 +1077,7 @@ export function WorkflowEditor({
                             useRag={useRag}
                             triggerCopilotChat={triggerCopilotChat}
                             eligibleModels={eligibleModels === "*" ? "*" : eligibleModels.agentModels}
+                            onOpenDataSourcesModal={handleOpenDataSourcesModal}
                         />}
                         {state.present.selection?.type === "tool" && (() => {
                             const selectedTool = state.present.workflow.tools.find(
@@ -1065,6 +1102,12 @@ export function WorkflowEditor({
                             usedPromptNames={new Set(state.present.workflow.prompts.filter((prompt) => prompt.name !== state.present.selection!.name).map((prompt) => prompt.name))}
                             handleUpdate={handleUpdatePrompt.bind(null, state.present.selection.name)}
                             handleClose={handleUnselectPrompt}
+                        />}
+                        {state.present.selection?.type === "datasource" && <DataSourceConfig
+                            key={state.present.selection.name}
+                            dataSourceId={state.present.selection.name}
+                            handleClose={() => dispatch({ type: "unselect_datasource" })}
+                            onDataSourceUpdate={onDataSourcesUpdated}
                         />}
                         {state.present.selection?.type === "visualise" && (
                             <Panel 

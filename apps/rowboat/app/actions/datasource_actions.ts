@@ -1,5 +1,4 @@
 'use server';
-import { redirect } from "next/navigation";
 import { ObjectId, WithId } from "mongodb";
 import { dataSourcesCollection, dataSourceDocsCollection } from "../lib/mongodb";
 import { z } from 'zod';
@@ -132,8 +131,6 @@ export async function deleteDataSource(projectId: string, sourceId: string) {
             version: 1,
         },
     });
-
-    redirect(`/projects/${projectId}/sources`);
 }
 
 export async function toggleDataSource(projectId: string, sourceId: string, active: boolean) {
