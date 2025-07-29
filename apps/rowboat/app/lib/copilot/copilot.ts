@@ -2,7 +2,7 @@ import z from "zod";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject, streamText } from "ai";
 import { WithStringId } from "../types/types";
-import { Workflow } from "../types/workflow_types";
+import { Workflow, WorkflowTool } from "../types/workflow_types";
 import { CopilotChatContext, CopilotMessage } from "../types/copilot_types";
 import { DataSource } from "../types/datasource_types";
 import { PrefixLogger } from "../utils";
@@ -11,6 +11,9 @@ import { COPILOT_INSTRUCTIONS_EDIT_AGENT } from "./copilot_edit_agent";
 import { COPILOT_INSTRUCTIONS_MULTI_AGENT } from "./copilot_multi_agent";
 import { COPILOT_MULTI_AGENT_EXAMPLE_1 } from "./example_multi_agent_1";
 import { CURRENT_WORKFLOW_PROMPT } from "./current_workflow";
+import { Composio } from '@composio/core';
+import { USE_COMPOSIO_TOOLS } from "../feature_flags";
+import { getTool } from "../composio/composio";
 
 const PROVIDER_API_KEY = process.env.PROVIDER_API_KEY || process.env.OPENAI_API_KEY || '';
 const PROVIDER_BASE_URL = process.env.PROVIDER_BASE_URL || undefined;
@@ -93,15 +96,74 @@ ${JSON.stringify(simplifiedDataSources)}
     return prompt;
 }
 
+async function getDynamicToolsPrompt(userQuery: string, workflow: z.infer<typeof Workflow>): Promise<string> {
+    console.log('--- [Co-pilot] Entering Dynamic Tool Creation ---');
+    if (!USE_COMPOSIO_TOOLS) {
+        console.log('[Co-pilot] Dynamic tool creation is disabled.');
+        return '';
+    }
+
+    const composio = new Composio();
+
+    // Step 1: Search for relevant tool slugs
+    console.log('[Co-pilot] 🚀 Searching for relevant tools...');
+    const searchResult = await composio.tools.execute('COMPOSIO_SEARCH_TOOLS', {
+        userId: '0000-0000-0000', // hmmmmm
+        arguments: { use_case: userQuery },
+    });
+
+    if (!searchResult.successful || !Array.isArray(searchResult.data?.results)) {
+        console.warn('[Co-pilot] ⚠️ Tool search was not successful or returned no results.');
+        return '';
+    }
+
+    const toolSlugs: string[] = searchResult.data.results.map((result: any) => result.tool);
+    console.log(`[Co-pilot] ✅ Found tool slugs: ${toolSlugs.join(', ')}`);
+
+    const composioTools = await Promise.all(toolSlugs.map(slug => getTool(slug)));
+    const workflowTools: z.infer<typeof WorkflowTool>[] = composioTools.map(tool => ({
+        name: tool.name,
+        description: tool.description,
+        parameters: {
+            type: 'object' as const,
+            properties: tool.input_parameters?.properties || {},
+            required: tool.input_parameters?.required || [],
+        },
+        isComposio: true,
+        composioData: {
+            slug: tool.slug,
+            noAuth: tool.no_auth,
+            toolkitName: tool.toolkit?.name || '',
+            toolkitSlug: tool.toolkit?.slug || '',
+            logo: tool.toolkit?.logo || '',
+        },
+    }));
+
+    console.log('--- [Co-pilot] Exiting Dynamic Tool Creation (Success) ---');
+    const toolConfigs = workflowTools.map(tool => 
+        `**${tool.name}**:\n\`\`\`json\n${JSON.stringify(tool, null, 2)}\n\`\`\``
+    ).join('\n\n');
+
+    const prompt = `## Tool Suggestions:
+The following tools are being suggested by the AI. You can use them in your workflow:
+
+${toolConfigs}
+
+To add any tool you can copy the above json as an add tool block`;
+    console.log(prompt);
+    return prompt;
+}
+
 function updateLastUserMessage(
     messages: z.infer<typeof CopilotMessage>[],
     currentWorkflowPrompt: string,
     contextPrompt: string,
     dataSourcesPrompt: string = '',
+    dynamicToolsPrompt: string = '',
 ): void {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage.role === 'user') {
-        lastMessage.content = `${currentWorkflowPrompt}\n\n${contextPrompt}\n\n${dataSourcesPrompt}\n\nUser: ${JSON.stringify(lastMessage.content)}`;
+        lastMessage.content = `${currentWorkflowPrompt}\n\n${contextPrompt}\n\n${dataSourcesPrompt}\n\n${dynamicToolsPrompt}\n\nUser: ${JSON.stringify(lastMessage.content)}`;
     }
 }
 
@@ -131,7 +193,7 @@ export async function getEditAgentInstructionsResponse(
         messages: messages,
     }));
     const { object } = await generateObject({
-        model: openai(COPILOT_MODEL), 
+        model: openai(COPILOT_MODEL),
         messages: [
             {
                 role: 'system',
@@ -167,8 +229,11 @@ export async function* streamMultiAgentResponse(
     // set data sources prompt
     let dataSourcesPrompt = getDataSourcesPrompt(dataSources);
 
+    // get dynamic tools prompt
+    const dynamicToolsPrompt = await getDynamicToolsPrompt(messages[messages.length - 1].content, workflow);
+
     // add the above prompts to the last user message
-    updateLastUserMessage(messages, currentWorkflowPrompt, contextPrompt, dataSourcesPrompt);
+    updateLastUserMessage(messages, currentWorkflowPrompt, contextPrompt, dataSourcesPrompt, dynamicToolsPrompt);
 
     // call model
     console.log("calling model", JSON.stringify({
@@ -177,7 +242,7 @@ export async function* streamMultiAgentResponse(
         messages: messages,
     }));
     const { textStream } = streamText({
-        model: openai(COPILOT_MODEL), 
+        model: openai(COPILOT_MODEL),
         messages: [
             {
                 role: 'system',
