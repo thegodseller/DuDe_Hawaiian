@@ -1158,8 +1158,6 @@ export function WorkflowEditor({
                             projectId={projectId}
                             workflow={state.present.workflow}
                             messageSubscriber={updateChatMessages}
-                            mcpServerUrls={mcpServerUrls}
-                            isInitialState={isInitialState}
                             onPanelClick={handlePlaygroundClick}
                             triggerCopilotChat={triggerCopilotChat}
                         />

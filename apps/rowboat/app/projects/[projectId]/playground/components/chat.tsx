@@ -3,49 +3,39 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { getAssistantResponseStreamId } from "@/app/actions/actions";
 import { Messages } from "./messages";
 import z from "zod";
-import { MCPServer, Message, PlaygroundChat, ToolMessage } from "@/app/lib/types/types";
-import { Workflow, WorkflowTool } from "@/app/lib/types/workflow_types";
+import { Message, ToolMessage } from "@/app/lib/types/types";
+import { Workflow } from "@/app/lib/types/workflow_types";
 import { ComposeBoxPlayground } from "@/components/common/compose-box-playground";
 import { Button } from "@heroui/react";
-import { WithStringId } from "@/app/lib/types/types";
-import { ProfileContextBox } from "./profile-context-box";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { FeedbackModal } from "./feedback-modal";
 import { FIX_WORKFLOW_PROMPT, FIX_WORKFLOW_PROMPT_WITH_FEEDBACK, EXPLAIN_WORKFLOW_PROMPT_ASSISTANT, EXPLAIN_WORKFLOW_PROMPT_TOOL, EXPLAIN_WORKFLOW_PROMPT_TRANSITION } from "../copilot-prompts";
 
 export function Chat({
-    chat,
     projectId,
     workflow,
     messageSubscriber,
-    systemMessage,
-    onSystemMessageChange,
-    mcpServerUrls,
     onCopyClick,
     showDebugMessages = true,
     showJsonMode = false,
     triggerCopilotChat,
 }: {
-    chat: z.infer<typeof PlaygroundChat>;
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     messageSubscriber?: (messages: z.infer<typeof Message>[]) => void;
-    systemMessage: string;
-    onSystemMessageChange: (message: string) => void;
-    mcpServerUrls: Array<z.infer<typeof MCPServer>>;
     onCopyClick: (fn: () => string) => void;
     showDebugMessages?: boolean;
     showJsonMode?: boolean;
     triggerCopilotChat?: (message: string) => void;
 }) {
-    const [messages, setMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
+    const [messages, setMessages] = useState<z.infer<typeof Message>[]>([]);
     const [loadingAssistantResponse, setLoadingAssistantResponse] = useState<boolean>(false);
     const [fetchResponseError, setFetchResponseError] = useState<string | null>(null);
     const [billingError, setBillingError] = useState<string | null>(null);
     const [lastAgenticRequest, setLastAgenticRequest] = useState<unknown | null>(null);
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
-    const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
+    const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof Message>[]>([]);
     const [isLastInteracted, setIsLastInteracted] = useState(false);
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
     const [pendingFixMessage, setPendingFixMessage] = useState<string | null>(null);
@@ -82,14 +72,11 @@ export function Chat({
 
     const getCopyContent = useCallback(() => {
         return JSON.stringify({
-            messages: [{
-                role: 'system',
-                content: systemMessage,
-            }, ...messages],
+            messages,
             lastRequest: lastAgenticRequest,
             lastResponse: lastAgenticResponse,
         }, null, 2);
-    }, [messages, systemMessage, lastAgenticRequest, lastAgenticResponse]);
+    }, [messages, lastAgenticRequest, lastAgenticResponse]);
 
     // Expose copy function to parent
     useEffect(() => {
@@ -206,13 +193,7 @@ export function Chat({
                 const response = await getAssistantResponseStreamId(
                     projectId,
                     workflow,
-                    [
-                        {
-                            role: 'system',
-                            content: systemMessage || '',
-                        },
-                        ...messages,
-                    ],
+                    messages,
                 );
                 if (ignore) {
                     return;
@@ -329,8 +310,6 @@ export function Chat({
         messages,
         projectId,
         workflow,
-        systemMessage,
-        mcpServerUrls,
         fetchResponseError,
     ]);
 
@@ -362,9 +341,6 @@ export function Chat({
                         toolCallResults={toolCallResults}
                         loadingAssistantResponse={loadingAssistantResponse}
                         workflow={workflow}
-                        systemMessage={systemMessage}
-                        onSystemMessageChange={onSystemMessageChange}
-                        showSystemMessage={false}
                         showDebugMessages={showDebugMessages}
                         showJsonMode={showJsonMode}
                         onFix={handleFix}

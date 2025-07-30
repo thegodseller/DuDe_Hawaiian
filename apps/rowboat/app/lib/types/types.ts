@@ -129,18 +129,6 @@ export const User = z.object({
     updatedAt: z.string().datetime(),
 });
 
-export const PlaygroundChat = z.object({
-    createdAt: z.string().datetime(),
-    projectId: z.string(),
-    title: z.string().optional(),
-    messages: z.array(Message),
-    simulated: z.boolean().default(false).optional(),
-    simulationScenario: z.string().optional(),
-    simulationComplete: z.boolean().default(false).optional(),
-    agenticState: z.unknown().optional(),
-    systemMessage: z.string().optional(),
-});
-
 export const Webpage = z.object({
     _id: z.string(),
     title: z.string(),
