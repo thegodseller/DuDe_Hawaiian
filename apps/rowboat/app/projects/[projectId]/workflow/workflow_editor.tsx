@@ -13,7 +13,7 @@ import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner,
 import { PromptConfig } from "../entities/prompt_config";
 import { DataSourceConfig } from "../entities/datasource_config";
 import { RelativeTime } from "@primer/react";
-import { USE_PRODUCT_TOUR } from "@/app/lib/feature_flags";
+import { USE_PRODUCT_TOUR, USE_CHAT_WIDGET } from "@/app/lib/feature_flags";
 
 import {
     ResizableHandle,
@@ -23,14 +23,19 @@ import {
 import { Copilot } from "../copilot/app";
 import { publishWorkflow } from "@/app/actions/project_actions";
 import { saveWorkflow } from "@/app/actions/project_actions";
+import { updateProjectName } from "@/app/actions/project_actions";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
-import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, XIcon } from "lucide-react";
+import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, XIcon, SettingsIcon, ChevronDownIcon, PhoneIcon, MessageCircleIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
 import { ProductTour } from "@/components/common/product-tour";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
 import { AgentGraphVisualizer } from "../entities/AgentGraphVisualizer";
 import { Panel } from "@/components/common/panel-common";
 import { Button as CustomButton } from "@/components/ui/button";
+import { ConfigApp } from "../config/app";
+import { InputField } from "@/app/lib/components/input-field";
+import { VoiceSection } from "../config/components/voice";
+import { ChatWidgetSection } from "../config/components/project";
 
 enablePatches();
 
@@ -599,6 +604,8 @@ export function WorkflowEditor({
     onRevertToLive,
     onProjectToolsUpdated,
     onDataSourcesUpdated,
+    onProjectConfigUpdated,
+    chatWidgetHost,
 }: {
     projectId: string;
     dataSources: WithStringId<z.infer<typeof DataSource>>[];
@@ -616,6 +623,8 @@ export function WorkflowEditor({
     onRevertToLive: () => void;
     onProjectToolsUpdated?: () => void;
     onDataSourcesUpdated?: () => void;
+    onProjectConfigUpdated?: () => void;
+    chatWidgetHost: string;
 }) {
 
     const [state, dispatch] = useReducer(reducer, {
@@ -652,6 +661,19 @@ export function WorkflowEditor({
     
     // Modal state for revert confirmation
     const { isOpen: isRevertModalOpen, onOpen: onRevertModalOpen, onClose: onRevertModalClose } = useDisclosure();
+    
+    // Modal state for settings
+    const { isOpen: isSettingsModalOpen, onOpen: onSettingsModalOpen, onClose: onSettingsModalClose } = useDisclosure();
+    
+    // Modal state for phone/Twilio configuration
+    const { isOpen: isPhoneModalOpen, onOpen: onPhoneModalOpen, onClose: onPhoneModalClose } = useDisclosure();
+    
+    // Modal state for chat widget configuration
+    const { isOpen: isChatWidgetModalOpen, onOpen: onChatWidgetModalOpen, onClose: onChatWidgetModalClose } = useDisclosure();
+    
+    // Project name state
+    const [localProjectName, setLocalProjectName] = useState<string>(projectConfig.name || '');
+    const [projectNameError, setProjectNameError] = useState<string | null>(null);
 
     // Load agent order from localStorage on mount
     // useEffect(() => {
@@ -877,9 +899,38 @@ export function WorkflowEditor({
         }
     }, [state.present.workflow, state.present.pendingChanges, processQueue, state]);
 
+    // Sync project name when projectConfig changes
+    useEffect(() => {
+        setLocalProjectName(projectConfig.name || '');
+    }, [projectConfig.name]);
+
     function handlePlaygroundClick() {
         setIsInitialState(false);
     }
+
+    const validateProjectName = (value: string) => {
+        if (value.length === 0) {
+            setProjectNameError("Project name cannot be empty");
+            return false;
+        }
+        setProjectNameError(null);
+        return true;
+    };
+
+    const handleProjectNameChange = async (value: string) => {
+        setLocalProjectName(value);
+        
+        if (validateProjectName(value)) {
+            try {
+                await updateProjectName(projectId, value);
+                // Trigger refresh of project config to update all references to project name
+                onProjectConfigUpdated?.();
+            } catch (error) {
+                setProjectNameError("Failed to update project name");
+                console.error('Failed to update project name:', error);
+            }
+        }
+    };
 
     return (
         <EntitySelectionContext.Provider value={{
@@ -890,6 +941,20 @@ export function WorkflowEditor({
             <div className="flex flex-col h-full relative">
                 <div className="shrink-0 flex justify-between items-center pb-6">
                     <div className="workflow-version-selector flex items-center gap-4 px-2 text-gray-800 dark:text-gray-100">
+                        {/* Project Name Editor */}
+                        <div className="flex flex-col min-w-0 max-w-xs">
+                            <InputField
+                                type="text"
+                                value={localProjectName}
+                                onChange={handleProjectNameChange}
+                                error={projectNameError}
+                                placeholder="Project name..."
+                                className="text-lg font-semibold"
+                            />
+                        </div>
+                        
+                        <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+                        
                         <WorkflowIcon size={16} />
                         <div className="flex items-center gap-2">
                             {state.present.publishing && <Spinner size="sm" />}
@@ -979,16 +1044,52 @@ export function WorkflowEditor({
                             >
                                 <RedoIcon size={16} />
                             </button>
-                            <Button
-                                variant="solid"
-                                size="md"
-                                onPress={handlePublishWorkflow}
-                                className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm"
-                                startContent={<RocketIcon size={16} />}
-                                data-tour-target="deploy"
-                            >
-                                Deploy
-                            </Button>
+                            <div className="flex">
+                                <Button
+                                    variant="solid"
+                                    size="md"
+                                    onPress={handlePublishWorkflow}
+                                    className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-r-none"
+                                    startContent={<RocketIcon size={16} />}
+                                    data-tour-target="deploy"
+                                >
+                                    Deploy
+                                </Button>
+                                <Dropdown>
+                                    <DropdownTrigger>
+                                        <Button
+                                            variant="solid"
+                                            size="md"
+                                            className="min-w-0 px-2 bg-green-600 hover:bg-green-700 border-l-1 border-green-500 text-white font-semibold text-sm rounded-l-none"
+                                        >
+                                            <ChevronDownIcon size={14} />
+                                        </Button>
+                                    </DropdownTrigger>
+                                    <DropdownMenu aria-label="Deploy actions">
+                                        <DropdownItem
+                                            key="settings"
+                                            startContent={<SettingsIcon size={16} />}
+                                            onPress={onSettingsModalOpen}
+                                        >
+                                            API & SDK
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="phone"
+                                            startContent={<PhoneIcon size={16} />}
+                                            onPress={onPhoneModalOpen}
+                                        >
+                                            Phone
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="chat-widget"
+                                            startContent={<MessageCircleIcon size={16} />}
+                                            onPress={onChatWidgetModalOpen}
+                                        >
+                                            Chat widget
+                                        </DropdownItem>
+                                    </DropdownMenu>
+                                </Dropdown>
+                            </div>
                             <Button
                                 variant="solid"
                                 size="md"
@@ -1193,6 +1294,66 @@ export function WorkflowEditor({
                                 Revert to Live
                             </Button>
                         </ModalFooter>
+                    </ModalContent>
+                </Modal>
+                
+                {/* Settings Modal */}
+                <Modal 
+                    isOpen={isSettingsModalOpen} 
+                    onClose={onSettingsModalClose}
+                    size="5xl"
+                    scrollBehavior="inside"
+                >
+                    <ModalContent className="h-[80vh]">
+                        <ModalHeader className="flex flex-col gap-1">
+                            API & SDK
+                        </ModalHeader>
+                        <ModalBody className="p-0">
+                            <ConfigApp
+                                projectId={projectId}
+                                useChatWidget={USE_CHAT_WIDGET}
+                                chatWidgetHost={chatWidgetHost}
+                            />
+                        </ModalBody>
+                    </ModalContent>
+                </Modal>
+                
+                {/* Phone/Twilio Modal */}
+                <Modal 
+                    isOpen={isPhoneModalOpen} 
+                    onClose={onPhoneModalClose}
+                    size="4xl"
+                    scrollBehavior="inside"
+                >
+                    <ModalContent className="h-[80vh]">
+                        <ModalHeader className="flex flex-col gap-1">
+                            Phone Configuration
+                        </ModalHeader>
+                        <ModalBody className="p-0">
+                            <VoiceSection projectId={projectId} />
+                        </ModalBody>
+                    </ModalContent>
+                </Modal>
+                
+                {/* Chat Widget Modal */}
+                <Modal 
+                    isOpen={isChatWidgetModalOpen} 
+                    onClose={onChatWidgetModalClose}
+                    size="4xl"
+                    scrollBehavior="inside"
+                >
+                    <ModalContent className="h-[70vh]">
+                        <ModalHeader className="flex flex-col gap-1">
+                            Chat Widget
+                        </ModalHeader>
+                        <ModalBody className="p-0">
+                            <div className="p-6">
+                                <ChatWidgetSection 
+                                    projectId={projectId} 
+                                    chatWidgetHost={chatWidgetHost} 
+                                />
+                            </div>
+                        </ModalBody>
                     </ModalContent>
                 </Modal>
             </div>

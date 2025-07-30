@@ -3,8 +3,7 @@
 import { ReactNode, useEffect, useState, useCallback } from "react";
 import { Spinner, Dropdown, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure } from "@heroui/react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { getProjectConfig, updateProjectName, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret } from "../../../../actions/project_actions";
+import { getProjectConfig, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret, updateProjectName } from "../../../../actions/project_actions";
 import { CopyButton } from "../../../../../components/common/copy-button";
 import { EyeIcon, EyeOffIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { WithStringId } from "../../../../lib/types/types";
@@ -14,6 +13,7 @@ import { RelativeTime } from "@primer/react";
 import { Label } from "../../../../lib/components/label";
 import { sectionHeaderStyles, sectionDescriptionStyles } from './shared-styles';
 import { clsx } from "clsx";
+import { InputField } from "../../../../lib/components/input-field";
 
 export function Section({
     title,
@@ -61,10 +61,15 @@ export function RightContent({
     return <div>{children}</div>;
 }
 
-function ProjectNameSection({ projectId }: { projectId: string }) {
+function ProjectNameSection({ 
+    projectId, 
+    onProjectConfigUpdated 
+}: { 
+    projectId: string;
+    onProjectConfigUpdated?: () => void;
+}) {
     const [loading, setLoading] = useState(false);
     const [projectName, setProjectName] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         setLoading(true);
@@ -74,44 +79,32 @@ function ProjectNameSection({ projectId }: { projectId: string }) {
         });
     }, [projectId]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const value = e.target.value;
-        setProjectName(value);
-        
-        if (!value.trim()) {
-            setError("Project name cannot be empty");
-            return;
+    async function updateName(name: string) {
+        setLoading(true);
+        await updateProjectName(projectId, name);
+        setProjectName(name);
+        setLoading(false);
+        if (onProjectConfigUpdated) {
+            onProjectConfigUpdated();
         }
-        
-        setError(null);
-        updateProjectName(projectId, value);
-    };
+    }
 
     return <Section 
         title="Project Name"
         description="The name of your project."
     >
-        {loading ? (
-            <Spinner size="sm" />
-        ) : (
-            <div className="space-y-2">
-                <div className={clsx(
-                    "border rounded-lg focus-within:ring-2",
-                    error 
-                        ? "border-red-500 focus-within:ring-red-500/20" 
-                        : "border-gray-200 dark:border-gray-700 focus-within:ring-indigo-500/20 dark:focus-within:ring-indigo-400/20"
-                )}>
-                    <Textarea
-                        value={projectName || ''}
-                        onChange={handleChange}
-                        placeholder="Enter project name..."
-                        className="w-full text-sm bg-transparent border-0 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors px-4 py-3"
-                        autoResize
-                    />
-                </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
-            </div>
-        )}
+        <div className="space-y-4">
+            {loading ? (
+                <Spinner size="sm" />
+            ) : (
+                <InputField
+                    type="text"
+                    value={projectName || ''}
+                    onChange={updateName}
+                    className="w-full"
+                />
+            )}
+        </div>
     </Section>;
 }
 
@@ -361,7 +354,7 @@ function ApiKeysSection({ projectId }: { projectId: string }) {
     </Section>;
 }
 
-function ChatWidgetSection({ projectId, chatWidgetHost }: { projectId: string, chatWidgetHost: string }) {
+export function ChatWidgetSection({ projectId, chatWidgetHost }: { projectId: string, chatWidgetHost: string }) {
     const [loading, setLoading] = useState(false);
     const [chatClientId, setChatClientId] = useState<string | null>(null);
 
@@ -534,11 +527,24 @@ export function ProjectSection({
 }) {
     return (
         <div className="p-6 space-y-6">
-            <ProjectNameSection projectId={projectId} />
             <ProjectIdSection projectId={projectId} />
-            <SecretSection projectId={projectId} />
             <ApiKeysSection projectId={projectId} />
             {useChatWidget && <ChatWidgetSection projectId={projectId} chatWidgetHost={chatWidgetHost} />}
+        </div>
+    );
+}
+
+export function SimpleProjectSection({
+    projectId,
+    onProjectConfigUpdated,
+}: {
+    projectId: string;
+    onProjectConfigUpdated?: () => void;
+}) {
+    return (
+        <div className="p-6 space-y-6">
+            <ProjectNameSection projectId={projectId} onProjectConfigUpdated={onProjectConfigUpdated} />
+            <SecretSection projectId={projectId} />
             <DeleteProjectSection projectId={projectId} />
         </div>
     );

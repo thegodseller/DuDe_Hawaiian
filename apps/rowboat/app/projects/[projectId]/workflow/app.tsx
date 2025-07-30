@@ -20,6 +20,7 @@ export function App({
     useRagS3Uploads,
     useRagScraping,
     defaultModel,
+    chatWidgetHost,
 }: {
     projectId: string;
     useRag: boolean;
@@ -27,6 +28,7 @@ export function App({
     useRagS3Uploads: boolean;
     useRagScraping: boolean;
     defaultModel: string;
+    chatWidgetHost: string;
 }) {
     const [mode, setMode] = useState<'draft' | 'live'>('draft');
     const [project, setProject] = useState<WithStringId<z.infer<typeof Project>> | null>(null);
@@ -82,6 +84,13 @@ export function App({
         // Refresh data sources
         const updatedDataSources = await listDataSources(projectId);
         setDataSources(updatedDataSources);
+    }, [projectId]);
+
+    const handleProjectConfigUpdate = useCallback(async () => {
+        // Refresh project config when project name or other settings change
+        const updatedProjectConfig = await getProjectConfig(projectId);
+        setProject(updatedProjectConfig);
+        setProjectConfig(updatedProjectConfig);
     }, [projectId]);
 
     // Auto-update data sources when there are pending ones
@@ -144,6 +153,8 @@ export function App({
             onRevertToLive={handleRevertToLive}
             onProjectToolsUpdated={handleProjectToolsUpdate}
             onDataSourcesUpdated={handleDataSourcesUpdate}
+            onProjectConfigUpdated={handleProjectConfigUpdate}
+            chatWidgetHost={chatWidgetHost}
         />}
     </>
 }
