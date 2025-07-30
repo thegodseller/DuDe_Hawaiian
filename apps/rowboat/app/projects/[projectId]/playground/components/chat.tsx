@@ -42,12 +42,22 @@ export function Chat({
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     // Add state for explain (no modal needed, just direct trigger)
     const [showExplainSuccess, setShowExplainSuccess] = useState(false);
+    const [pendingFixIndex, setPendingFixIndex] = useState<number | null>(null);
 
     // --- Scroll/auto-scroll/unread bubble logic ---
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const eventSourceRef = useRef<EventSource | null>(null);
     const [autoScroll, setAutoScroll] = useState(true);
     const [showUnreadBubble, setShowUnreadBubble] = useState(false);
+
+    // collect published tool call results
+    const toolCallResults: Record<string, z.infer<typeof ToolMessage>> = {};
+    optimisticMessages
+        .filter((message) => message.role == 'tool')
+        .forEach((message) => {
+            toolCallResults[message.toolCallId] = message;
+        });
+
 
     const handleScroll = useCallback(() => {
         const container = scrollContainerRef.current;
@@ -58,18 +68,6 @@ export function Chat({
         if (atBottom) setShowUnreadBubble(false);
     }, []);
 
-    useEffect(() => {
-        const container = scrollContainerRef.current;
-        if (!container) return;
-        if (autoScroll) {
-            container.scrollTop = container.scrollHeight;
-            setShowUnreadBubble(false);
-        } else {
-            setShowUnreadBubble(true);
-        }
-    }, [optimisticMessages, loadingAssistantResponse, autoScroll]);
-    // --- End scroll/auto-scroll logic ---
-
     const getCopyContent = useCallback(() => {
         return JSON.stringify({
             messages,
@@ -78,18 +76,7 @@ export function Chat({
         }, null, 2);
     }, [messages, lastAgenticRequest, lastAgenticResponse]);
 
-    // Expose copy function to parent
-    useEffect(() => {
-        onCopyClick(getCopyContent);
-    }, [getCopyContent, onCopyClick]);
-
-    // reset optimistic messages when messages change
-    useEffect(() => {
-        setOptimisticMessages(messages);
-    }, [messages]);
-
     // Handle fix functionality
-    const [pendingFixIndex, setPendingFixIndex] = useState<number | null>(null);
     const handleFix = useCallback((message: string, index: number) => {
         setPendingFixMessage(message);
         setPendingFixIndex(index);
@@ -144,13 +131,14 @@ export function Chat({
         }
     }, [projectId, triggerCopilotChat]);
 
-    // collect published tool call results
-    const toolCallResults: Record<string, z.infer<typeof ToolMessage>> = {};
-    optimisticMessages
-        .filter((message) => message.role == 'tool')
-        .forEach((message) => {
-            toolCallResults[message.toolCallId] = message;
-        });
+    // Add a stop handler function
+    const handleStop = useCallback(() => {
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+            setLoadingAssistantResponse(false);
+        }
+    }, []);
 
     function handleUserMessage(prompt: string) {
         const updatedMessages: z.infer<typeof Message>[] = [...messages, {
@@ -161,6 +149,27 @@ export function Chat({
         setFetchResponseError(null);
         setIsLastInteracted(true);
     }
+
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        if (autoScroll) {
+            container.scrollTop = container.scrollHeight;
+            setShowUnreadBubble(false);
+        } else {
+            setShowUnreadBubble(true);
+        }
+    }, [optimisticMessages, loadingAssistantResponse, autoScroll]);
+
+    // Expose copy function to parent
+    useEffect(() => {
+        onCopyClick(getCopyContent);
+    }, [getCopyContent, onCopyClick]);
+
+    // reset optimistic messages when messages change
+    useEffect(() => {
+        setOptimisticMessages(messages);
+    }, [messages]);
 
     // reset state when workflow changes
     useEffect(() => {
@@ -187,7 +196,7 @@ export function Chat({
             // Reset request/response state before making new request
             setLastAgenticRequest(null);
             setLastAgenticResponse(null);
-            
+
             let streamId: string | null = null;
             try {
                 const response = await getAssistantResponseStreamId(
@@ -202,7 +211,7 @@ export function Chat({
                     setBillingError(response.billingError);
                     setFetchResponseError(response.billingError);
                     setLoadingAssistantResponse(false);
-                    console.log('returning from getAssistantResponseStreamId due to billing error'); 
+                    console.log('returning from getAssistantResponseStreamId due to billing error');
                     return;
                 }
                 streamId = response.streamId;
@@ -312,15 +321,6 @@ export function Chat({
         workflow,
         fetchResponseError,
     ]);
-
-    // Add a stop handler function
-    const handleStop = useCallback(() => {
-        if (eventSourceRef.current) {
-            eventSourceRef.current.close();
-            eventSourceRef.current = null;
-            setLoadingAssistantResponse(false);
-        }
-    }, []);
 
     return (
         <div className="w-11/12 max-w-6xl mx-auto h-full flex flex-col relative">
