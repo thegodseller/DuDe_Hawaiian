@@ -1,6 +1,6 @@
 import z from "zod";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateObject, generateText, streamText } from "ai";
+import { generateObject, streamText, tool } from "ai";
 import { WithStringId } from "../types/types";
 import { Workflow, WorkflowTool } from "../types/workflow_types";
 import { CopilotChatContext, CopilotMessage } from "../types/copilot_types";
@@ -96,54 +96,31 @@ ${JSON.stringify(simplifiedDataSources)}
     return prompt;
 }
 
-async function getDynamicToolsPrompt(messages: z.infer<typeof CopilotMessage>[], workflow: z.infer<typeof Workflow>): Promise<string> {
-    console.log('--- [Co-pilot] Entering Dynamic Tool Creation ---');
+async function searchRelevantTools(query: string): Promise<string> {
+    const logger = new PrefixLogger("copilot-search-tools");
     if (!USE_COMPOSIO_TOOLS) {
-        console.log('[Co-pilot] Dynamic tool creation is disabled.');
-        return '';
-    }
-
-    // first, check if we need to search for tools at all
-    const startTime = Date.now();
-    const { text } = await generateText({
-        model: openai(COPILOT_MODEL),
-        system: `Your task is to determine if a tool search is required based on the user's request. Respond with a single word: 'yes' or 'no'.
-
-Say 'yes' if:
-- The user explicitly mentions a tool or a capability that requires a tool (e.g., "send an email", "connect to an API").
-- The user describes a goal or workflow that implies the need for external actions or data (e.g., "build an agent to manage my files").
-- The user asks for a tool to be added to the workflow.
-- The user asks questions bout how to perform a task.
-
-Otherwise, say 'no'. Also important to remember if a tool has already been searched and is in context there is no need to search again.`,
-        messages,
-    });
-    console.log("[Co-pilot] Sending the following messages to the LLM for tool search check:", JSON.stringify(messages, null, 2));
-    const endTime = Date.now();
-    console.log(`[Co-pilot] Tool search check took ${endTime - startTime}ms`);
-    console.log("[Co-pilot] LLM response:", text);
-    if (text.toLowerCase() !== "yes") {
-        console.log('[Co-pilot] No tool search needed.');
-        return '';
+        logger.log("dynamic tool search is disabled");
+        return 'No tools found!';
     }
 
     const composio = new Composio();
 
-    // Step 1: Search for relevant tool slugs
-    console.log('[Co-pilot] 🚀 Searching for relevant tools...');
+    // Search for relevant tool slugs
+    logger.log('searching for relevant tools...');
     const searchResult = await composio.tools.execute('COMPOSIO_SEARCH_TOOLS', {
-        userId: '0000-0000-0000', // hmmmmm
-        arguments: { use_case: messages[messages.length - 1].content }, // use last message
+        userId: '0000-0000-0000',
+        arguments: { use_case: query },
     });
 
     if (!searchResult.successful || !Array.isArray(searchResult.data?.results)) {
-        console.warn('[Co-pilot] ⚠️ Tool search was not successful or returned no results.');
+        logger.log("tool search was not successful or returned no results");
         return '';
     }
 
     const toolSlugs: string[] = searchResult.data.results.map((result: any) => result.tool);
-    console.log(`[Co-pilot] ✅ Found tool slugs: ${toolSlugs.join(', ')}`);
+    logger.log(`found tool slugs: ${toolSlugs.join(', ')}`);
 
+    // Enrich tools with full details
     const composioTools = await Promise.all(toolSlugs.map(slug => getTool(slug)));
     const workflowTools: z.infer<typeof WorkflowTool>[] = composioTools.map(tool => ({
         name: tool.name,
@@ -163,19 +140,14 @@ Otherwise, say 'no'. Also important to remember if a tool has already been searc
         },
     }));
 
-    console.log('--- [Co-pilot] Exiting Dynamic Tool Creation (Success) ---');
+    // Format the response
     const toolConfigs = workflowTools.map(tool => 
         `**${tool.name}**:\n\`\`\`json\n${JSON.stringify(tool, null, 2)}\n\`\`\``
     ).join('\n\n');
 
-    const prompt = `## Tool Suggestions:
-The following are tools suggestions being made by the AI. These are composio tools and they must be added first to the workflow before they can be used.
-
-${toolConfigs}
-
-To add any tool you can copy the above json as an add tool block`;
-    console.log(prompt);
-    return prompt;
+    const response = `The following tools were found:\n\n${toolConfigs}`;
+    logger.log('returning response', response);
+    return response;
 }
 
 function updateLastUserMessage(
@@ -183,11 +155,10 @@ function updateLastUserMessage(
     currentWorkflowPrompt: string,
     contextPrompt: string,
     dataSourcesPrompt: string = '',
-    dynamicToolsPrompt: string = '',
 ): void {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage.role === 'user') {
-        lastMessage.content = `${currentWorkflowPrompt}\n\n${contextPrompt}\n\n${dataSourcesPrompt}\n\n${dynamicToolsPrompt}\n\nUser: ${JSON.stringify(lastMessage.content)}`;
+        lastMessage.content = `${currentWorkflowPrompt}\n\n${contextPrompt}\n\n${dataSourcesPrompt}\n\nUser: ${JSON.stringify(lastMessage.content)}`;
     }
 }
 
@@ -253,11 +224,8 @@ export async function* streamMultiAgentResponse(
     // set data sources prompt
     let dataSourcesPrompt = getDataSourcesPrompt(dataSources);
 
-    // get dynamic tools prompt
-    const dynamicToolsPrompt = await getDynamicToolsPrompt(messages, workflow);
-
     // add the above prompts to the last user message
-    updateLastUserMessage(messages, currentWorkflowPrompt, contextPrompt, dataSourcesPrompt, dynamicToolsPrompt);
+    updateLastUserMessage(messages, currentWorkflowPrompt, contextPrompt, dataSourcesPrompt);
 
     // call model
     console.log("calling model", JSON.stringify({
@@ -267,6 +235,18 @@ export async function* streamMultiAgentResponse(
     }));
     const { textStream } = streamText({
         model: openai(COPILOT_MODEL),
+        maxSteps: 5,
+        tools: {
+            "search_relevant_tools": tool({
+                description: "Search for relevant tools",
+                parameters: z.object({
+                    query: z.string().describe("the use-case to search for"),
+                }),
+                execute: async ({ query }: { query: string }) => {
+                    return await searchRelevantTools(query);
+                },
+            }),
+        },
         messages: [
             {
                 role: 'system',
