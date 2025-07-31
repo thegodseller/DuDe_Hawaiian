@@ -35,6 +35,12 @@ export function Chat({
     const [billingError, setBillingError] = useState<string | null>(null);
     const [lastAgenticRequest, setLastAgenticRequest] = useState<unknown | null>(null);
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
+
+    // Optimistic messages for real-time streaming UX:
+    // - messages: source of truth, only updated when responses are complete
+    // - optimisticMessages: what user sees, updated in real-time during streaming
+    // This separation allows immediate visual feedback while maintaining data integrity
+    // and clean error recovery (rollback to last known good state on failures)
     const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof Message>[]>([]);
     const [isLastInteracted, setIsLastInteracted] = useState(false);
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -166,7 +172,8 @@ export function Chat({
         onCopyClick(getCopyContent);
     }, [getCopyContent, onCopyClick]);
 
-    // reset optimistic messages when messages change
+    // Keep optimistic messages in sync with committed messages
+    // This ensures UI shows the latest confirmed state when messages are updated
     useEffect(() => {
         setOptimisticMessages(messages);
     }, [messages]);
@@ -240,10 +247,12 @@ export function Chat({
                     const data = JSON.parse(event.data);
                     const parsedMsg = Message.parse(data);
                     msgs.push(parsedMsg);
+                    // Update optimistic messages immediately for real-time streaming UX
                     setOptimisticMessages(prev => [...prev, parsedMsg]);
                 } catch (err) {
                     console.error('Failed to parse SSE message:', err);
                     setFetchResponseError(`Failed to parse SSE message: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                    // Rollback to last known good state on parsing errors
                     setOptimisticMessages(messages);
                 }
             });
@@ -263,6 +272,7 @@ export function Chat({
                     messages: msgs
                 });
 
+                // Commit all streamed messages atomically to the source of truth
                 setMessages([...messages, ...msgs]);
                 setLoadingAssistantResponse(false);
             });
@@ -278,6 +288,7 @@ export function Chat({
                 if (!ignore) {
                     setLoadingAssistantResponse(false);
                     setFetchResponseError('Error: ' + JSON.parse(event.data).error);
+                    // Rollback to last known good state on stream errors
                     setOptimisticMessages(messages);
                 }
             });
@@ -287,6 +298,7 @@ export function Chat({
                 if (!ignore) {
                     setLoadingAssistantResponse(false);
                     setFetchResponseError('Stream connection failed');
+                    // Rollback to last known good state on connection errors
                     setOptimisticMessages(messages);
                 }
             };
