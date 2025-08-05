@@ -4,7 +4,7 @@ export class BillingError extends Error {
     }
 }
 
-export class QueryLimitError extends Error {
+export class QuotaExceededError extends Error {
     constructor(message?: string, options?: ErrorOptions) {
         super(message, options);
     }

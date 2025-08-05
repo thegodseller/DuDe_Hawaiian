@@ -1,11 +1,10 @@
 import { BadRequestError, NotAuthorizedError, NotFoundError } from '@/src/entities/errors/common';
-import { check_query_limit } from "@/app/lib/rate_limiting";
-import { QueryLimitError } from "@/src/entities/errors/common";
 import { apiKeysCollection, projectMembersCollection, projectsCollection } from "@/app/lib/mongodb";
 import { IConversationsRepository } from "@/src/application/repositories/conversations.repository.interface";
 import { z } from "zod";
 import { Conversation } from "@/src/entities/models/conversation";
 import { Workflow } from "@/app/lib/types/workflow_types";
+import { IUsageQuotaPolicyService } from '../../services/usage-quota-policy.service.interface';
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),
@@ -22,13 +21,17 @@ export interface ICreateConversationUseCase {
 
 export class CreateConversationUseCase implements ICreateConversationUseCase {
     private readonly conversationsRepository: IConversationsRepository;
+    private readonly usageQuotaPolicyService: IUsageQuotaPolicyService;
 
     constructor({
         conversationsRepository,
+        usageQuotaPolicyService,
     }: {
         conversationsRepository: IConversationsRepository,
+        usageQuotaPolicyService: IUsageQuotaPolicyService,
     }) {
         this.conversationsRepository = conversationsRepository;
+        this.usageQuotaPolicyService = usageQuotaPolicyService;
     }
 
     async execute(data: z.infer<typeof inputSchema>): Promise<z.infer<typeof Conversation>> {
@@ -36,10 +39,8 @@ export class CreateConversationUseCase implements ICreateConversationUseCase {
         let isLiveWorkflow = Boolean(data.isLiveWorkflow);
         let workflow = data.workflow;
 
-        // check query limit for project
-        if (!await check_query_limit(projectId)) {
-            throw new QueryLimitError('Query limit exceeded');
-        }
+        // assert and consume quota
+        await this.usageQuotaPolicyService.assertAndConsume(projectId);
 
         // if caller is a user, ensure they are a member of project
         if (caller === "user") {

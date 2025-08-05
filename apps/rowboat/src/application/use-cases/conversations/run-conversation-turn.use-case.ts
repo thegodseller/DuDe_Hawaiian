@@ -2,13 +2,12 @@ import { Turn, TurnEvent } from "@/src/entities/models/turn";
 import { USE_BILLING } from "@/app/lib/feature_flags";
 import { authorize, getCustomerIdForProject } from "@/app/lib/billing";
 import { BadRequestError, BillingError, NotAuthorizedError, NotFoundError } from '@/src/entities/errors/common';
-import { check_query_limit } from "@/app/lib/rate_limiting";
-import { QueryLimitError } from "@/src/entities/errors/common";
 import { apiKeysCollection, projectMembersCollection } from "@/app/lib/mongodb";
 import { IConversationsRepository } from "@/src/application/repositories/conversations.repository.interface";
 import { streamResponse } from "@/app/lib/agents";
 import { z } from "zod";
 import { Message } from "@/app/lib/types/types";
+import { IUsageQuotaPolicyService } from '../../services/usage-quota-policy.service.interface';
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),
@@ -25,13 +24,17 @@ export interface IRunConversationTurnUseCase {
 
 export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
     private readonly conversationsRepository: IConversationsRepository;
+    private readonly usageQuotaPolicyService: IUsageQuotaPolicyService;
 
     constructor({
         conversationsRepository,
+        usageQuotaPolicyService,
     }: {
         conversationsRepository: IConversationsRepository,
+        usageQuotaPolicyService: IUsageQuotaPolicyService,
     }) {
         this.conversationsRepository = conversationsRepository;
+        this.usageQuotaPolicyService = usageQuotaPolicyService;
     }
 
     async *execute(data: z.infer<typeof inputSchema>): AsyncGenerator<z.infer<typeof TurnEvent>, void, unknown> {
@@ -44,10 +47,8 @@ export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
         // extract projectid from conversation
         const { id: conversationId, projectId } = conversation;
 
-        // check query limit for project
-        if (!await check_query_limit(projectId)) {
-            throw new QueryLimitError('Query limit exceeded');
-        }
+        // assert and consume quota
+        await this.usageQuotaPolicyService.assertAndConsume(projectId);
 
         // if caller is a user, ensure they are a member of project
         if (data.caller === "user") {

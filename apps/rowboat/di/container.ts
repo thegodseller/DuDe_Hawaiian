@@ -9,6 +9,7 @@ import { CreateCachedTurnUseCase } from "@/src/application/use-cases/conversatio
 import { FetchCachedTurnUseCase } from "@/src/application/use-cases/conversations/fetch-cached-turn.use-case";
 import { CreateCachedTurnController } from "@/src/interface-adapters/controllers/conversations/create-cached-turn.controller";
 import { RunTurnController } from "@/src/interface-adapters/controllers/conversations/run-turn.controller";
+import { RedisUsageQuotaPolicyService } from "@/src/infrastructure/services/redis.usage-quota-policy.service";
 
 export const container = createContainer({
     injectionMode: InjectionMode.PROXY,
@@ -19,6 +20,7 @@ container.register({
     // services
     // ---
     cacheService: asClass(RedisCacheService).singleton(),
+    usageQuotaPolicyService: asClass(RedisUsageQuotaPolicyService).singleton(),
 
     // conversations
     // ---
