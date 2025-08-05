@@ -1,24 +1,28 @@
 import { z } from "zod";
-import { Workflow, WorkflowTool } from "./workflow_types";
+import { WorkflowTool } from "./workflow_types";
 
-export const SystemMessage = z.object({
+export const BaseMessage = z.object({
+    timestamp: z.string().datetime().optional(),
+});
+
+export const SystemMessage = BaseMessage.extend({
     role: z.literal("system"),
     content: z.string(),
 });
 
-export const UserMessage = z.object({
+export const UserMessage = BaseMessage.extend({
     role: z.literal("user"),
     content: z.string(),
 });
 
-export const AssistantMessage = z.object({
+export const AssistantMessage = BaseMessage.extend({
     role: z.literal("assistant"),
     content: z.string(),
     agentName: z.string().nullable(),
     responseType: z.enum(['internal', 'external']),
 });
 
-export const AssistantMessageWithToolCalls = z.object({
+export const AssistantMessageWithToolCalls = BaseMessage.extend({
     role: z.literal("assistant"),
     content: z.null(),
     toolCalls: z.array(z.object({
@@ -32,7 +36,7 @@ export const AssistantMessageWithToolCalls = z.object({
     agentName: z.string().nullable(),
 });
 
-export const ToolMessage = z.object({
+export const ToolMessage = BaseMessage.extend({
     role: z.literal("tool"),
     content: z.string(),
     toolCallId: z.string(),
@@ -143,18 +147,6 @@ export const ChatClientId = z.object({
 
 export type WithStringId<T> = T & { _id: string };
 
-export const ApiRequest = z.object({
-    messages: z.array(Message),
-    state: z.unknown(),
-    testProfileId: z.string().nullable().optional(),
-    mockTools: z.record(z.string(), z.string()).nullable().optional(),
-});
-
-export const ApiResponse = z.object({
-    messages: z.array(Message),
-    state: z.unknown(),
-});
-
 // Helper function to convert MCP server tool to WorkflowTool
 export function convertMcpServerToolToWorkflowTool(
     mcpTool: z.infer<typeof McpServerTool>,
@@ -195,8 +187,3 @@ export function convertMcpServerToolToWorkflowTool(
 
     return converted;
 }
-export const ZStreamAgentResponsePayload = z.object({
-  projectId: z.string(),
-  workflow: Workflow,
-  messages: z.array(Message),
-});
