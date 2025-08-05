@@ -1,6 +1,6 @@
 import { Turn, TurnEvent } from "@/src/entities/models/turn";
 import { USE_BILLING } from "@/app/lib/feature_flags";
-import { authorize, getCustomerIdForProject } from "@/app/lib/billing";
+import { authorize, getCustomerIdForProject, logUsage } from "@/app/lib/billing";
 import { NotFoundError } from '@/src/entities/errors/common';
 import { IConversationsRepository } from "@/src/application/repositories/conversations.repository.interface";
 import { streamResponse } from "@/app/lib/agents";
@@ -63,14 +63,15 @@ export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
         await this.usageQuotaPolicy.assertAndConsume(projectId);
 
         // Check billing auth
+        let billingCustomerId: string | null = null;
         if (USE_BILLING) {
             // get billing customer id for project
-            const customerId = await getCustomerIdForProject(projectId);
+            billingCustomerId = await getCustomerIdForProject(projectId);
             const agentModels = conversation.workflow.agents.reduce((acc, agent) => {
                 acc.push(agent.model);
                 return acc;
             }, [] as string[]);
-            const response = await authorize(customerId, {
+            const response = await authorize(billingCustomerId, {
                 type: 'agent_response',
                 data: {
                     agentModels,
@@ -130,7 +131,7 @@ export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
                 const turn = await this.conversationsRepository.addTurn(data.conversationId, {
                     trigger: data.trigger,
                     input: data.input,
-                    output: outputMessages, 
+                    output: outputMessages,
                 });
 
                 // yield event
@@ -140,6 +141,14 @@ export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
                     conversationId,
                 }
             }
+        }
+
+        // Log billing usage
+        if (USE_BILLING && billingCustomerId) {
+            await logUsage(billingCustomerId, {
+                type: "agent_messages",
+                amount: outputMessages.length,
+            });
         }
     }
 }
