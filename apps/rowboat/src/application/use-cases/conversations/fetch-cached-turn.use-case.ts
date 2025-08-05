@@ -4,7 +4,7 @@ import { IConversationsRepository } from "@/src/application/repositories/convers
 import { z } from "zod";
 import { ICacheService } from '@/src/application/services/cache.service.interface';
 import { CachedTurnRequest, Turn } from '@/src/entities/models/turn';
-import { IUsageQuotaPolicyService } from '../../services/usage-quota-policy.service.interface';
+import { IUsageQuotaPolicy } from '../../policies/usage-quota.policy.interface';
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),
@@ -20,20 +20,20 @@ export interface IFetchCachedTurnUseCase {
 export class FetchCachedTurnUseCase implements IFetchCachedTurnUseCase {
     private readonly cacheService: ICacheService;
     private readonly conversationsRepository: IConversationsRepository;
-    private readonly usageQuotaPolicyService: IUsageQuotaPolicyService;
+    private readonly usageQuotaPolicy: IUsageQuotaPolicy;
 
     constructor({
         cacheService,
         conversationsRepository,
-        usageQuotaPolicyService,
+        usageQuotaPolicy,
     }: {
         cacheService: ICacheService,
         conversationsRepository: IConversationsRepository,
-        usageQuotaPolicyService: IUsageQuotaPolicyService,
+        usageQuotaPolicy: IUsageQuotaPolicy,
     }) {
         this.cacheService = cacheService;
         this.conversationsRepository = conversationsRepository;
-        this.usageQuotaPolicyService = usageQuotaPolicyService;
+        this.usageQuotaPolicy = usageQuotaPolicy;
     }
 
     async execute(data: z.infer<typeof inputSchema>): Promise<z.infer<typeof CachedTurnRequest>> {
@@ -56,7 +56,7 @@ export class FetchCachedTurnUseCase implements IFetchCachedTurnUseCase {
         const { projectId } = conversation;
 
         // assert and consume quota
-        await this.usageQuotaPolicyService.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsume(projectId);
 
         // if caller is a user, ensure they are a member of project
         if (data.caller === "user") {

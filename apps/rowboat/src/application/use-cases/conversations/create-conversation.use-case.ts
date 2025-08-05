@@ -4,7 +4,7 @@ import { IConversationsRepository } from "@/src/application/repositories/convers
 import { z } from "zod";
 import { Conversation } from "@/src/entities/models/conversation";
 import { Workflow } from "@/app/lib/types/workflow_types";
-import { IUsageQuotaPolicyService } from '../../services/usage-quota-policy.service.interface';
+import { IUsageQuotaPolicy } from '../../policies/usage-quota.policy.interface';
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),
@@ -21,17 +21,17 @@ export interface ICreateConversationUseCase {
 
 export class CreateConversationUseCase implements ICreateConversationUseCase {
     private readonly conversationsRepository: IConversationsRepository;
-    private readonly usageQuotaPolicyService: IUsageQuotaPolicyService;
+    private readonly usageQuotaPolicy: IUsageQuotaPolicy;
 
     constructor({
         conversationsRepository,
-        usageQuotaPolicyService,
+        usageQuotaPolicy,
     }: {
         conversationsRepository: IConversationsRepository,
-        usageQuotaPolicyService: IUsageQuotaPolicyService,
+        usageQuotaPolicy: IUsageQuotaPolicy,
     }) {
         this.conversationsRepository = conversationsRepository;
-        this.usageQuotaPolicyService = usageQuotaPolicyService;
+        this.usageQuotaPolicy = usageQuotaPolicy;
     }
 
     async execute(data: z.infer<typeof inputSchema>): Promise<z.infer<typeof Conversation>> {
@@ -40,7 +40,7 @@ export class CreateConversationUseCase implements ICreateConversationUseCase {
         let workflow = data.workflow;
 
         // assert and consume quota
-        await this.usageQuotaPolicyService.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsume(projectId);
 
         // if caller is a user, ensure they are a member of project
         if (caller === "user") {

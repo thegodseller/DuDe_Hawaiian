@@ -7,7 +7,7 @@ import { IConversationsRepository } from "@/src/application/repositories/convers
 import { streamResponse } from "@/app/lib/agents";
 import { z } from "zod";
 import { Message } from "@/app/lib/types/types";
-import { IUsageQuotaPolicyService } from '../../services/usage-quota-policy.service.interface';
+import { IUsageQuotaPolicy } from '../../policies/usage-quota.policy.interface';
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),
@@ -24,17 +24,17 @@ export interface IRunConversationTurnUseCase {
 
 export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
     private readonly conversationsRepository: IConversationsRepository;
-    private readonly usageQuotaPolicyService: IUsageQuotaPolicyService;
+    private readonly usageQuotaPolicy: IUsageQuotaPolicy;
 
     constructor({
         conversationsRepository,
-        usageQuotaPolicyService,
+        usageQuotaPolicy,
     }: {
         conversationsRepository: IConversationsRepository,
-        usageQuotaPolicyService: IUsageQuotaPolicyService,
+        usageQuotaPolicy: IUsageQuotaPolicy,
     }) {
         this.conversationsRepository = conversationsRepository;
-        this.usageQuotaPolicyService = usageQuotaPolicyService;
+        this.usageQuotaPolicy = usageQuotaPolicy;
     }
 
     async *execute(data: z.infer<typeof inputSchema>): AsyncGenerator<z.infer<typeof TurnEvent>, void, unknown> {
@@ -48,7 +48,7 @@ export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
         const { id: conversationId, projectId } = conversation;
 
         // assert and consume quota
-        await this.usageQuotaPolicyService.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsume(projectId);
 
         // if caller is a user, ensure they are a member of project
         if (data.caller === "user") {
