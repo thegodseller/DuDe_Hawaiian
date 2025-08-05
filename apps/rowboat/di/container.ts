@@ -10,6 +10,9 @@ import { FetchCachedTurnUseCase } from "@/src/application/use-cases/conversation
 import { CreateCachedTurnController } from "@/src/interface-adapters/controllers/conversations/create-cached-turn.controller";
 import { RunTurnController } from "@/src/interface-adapters/controllers/conversations/run-turn.controller";
 import { RedisUsageQuotaPolicy } from "@/src/infrastructure/policies/redis.usage-quota.policy";
+import { ProjectActionAuthorizationPolicy } from "@/src/application/policies/project-action-authorization.policy";
+import { MongoDBProjectMembersRepository } from "@/src/infrastructure/repositories/mongodb.project-members.repository";
+import { MongoDBApiKeysRepository } from "@/src/infrastructure/repositories/mongodb.api-keys.repository";
 
 export const container = createContainer({
     injectionMode: InjectionMode.PROXY,
@@ -20,7 +23,19 @@ container.register({
     // services
     // ---
     cacheService: asClass(RedisCacheService).singleton(),
+
+    // policies
+    // ---
     usageQuotaPolicy: asClass(RedisUsageQuotaPolicy).singleton(),
+    projectActionAuthorizationPolicy: asClass(ProjectActionAuthorizationPolicy).singleton(),
+
+    // project members
+    // ---
+    projectMembersRepository: asClass(MongoDBProjectMembersRepository).singleton(),
+
+    // api keys
+    // ---
+    apiKeysRepository: asClass(MongoDBApiKeysRepository).singleton(),
 
     // conversations
     // ---
