@@ -59,9 +59,6 @@ export class FetchCachedTurnUseCase implements IFetchCachedTurnUseCase {
         // extract projectid from conversation
         const { projectId } = conversation;
 
-        // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
-
         // authz check
         await this.projectActionAuthorizationPolicy.authorize({
             caller: data.caller,
@@ -69,6 +66,9 @@ export class FetchCachedTurnUseCase implements IFetchCachedTurnUseCase {
             apiKey: data.apiKey,
             projectId,
         });
+
+        // assert and consume quota
+        await this.usageQuotaPolicy.assertAndConsume(projectId);
 
         // delete from cache
         await this.cacheService.delete(`turn-${data.key}`);

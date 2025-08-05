@@ -52,9 +52,6 @@ export class CreateCachedTurnUseCase implements ICreateCachedTurnUseCase {
         // extract projectid from conversation
         const { projectId } = conversation;
 
-        // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
-
         // authz check
         await this.projectActionAuthorizationPolicy.authorize({
             caller: data.caller,
@@ -62,6 +59,9 @@ export class CreateCachedTurnUseCase implements ICreateCachedTurnUseCase {
             apiKey: data.apiKey,
             projectId,
         });
+
+        // assert and consume quota
+        await this.usageQuotaPolicy.assertAndConsume(projectId);
 
         // create cache entry
         const key = nanoid();

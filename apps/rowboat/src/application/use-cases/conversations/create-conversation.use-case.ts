@@ -44,9 +44,6 @@ export class CreateConversationUseCase implements ICreateConversationUseCase {
         let isLiveWorkflow = Boolean(data.isLiveWorkflow);
         let workflow = data.workflow;
 
-        // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
-
         // authz check
         await this.projectActionAuthorizationPolicy.authorize({
             caller,
@@ -55,6 +52,9 @@ export class CreateConversationUseCase implements ICreateConversationUseCase {
             projectId,
         });
 
+        // assert and consume quota
+        await this.usageQuotaPolicy.assertAndConsume(projectId);
+ 
         // if workflow is not provided, fetch workflow
         if (!workflow) {
             const project = await projectsCollection.findOne({

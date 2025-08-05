@@ -51,9 +51,6 @@ export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
         // extract projectid from conversation
         const { id: conversationId, projectId } = conversation;
 
-        // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
-
         // authz check
         await this.projectActionAuthorizationPolicy.authorize({
             caller: data.caller,
@@ -61,6 +58,9 @@ export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
             apiKey: data.apiKey,
             projectId,
         });
+
+        // assert and consume quota
+        await this.usageQuotaPolicy.assertAndConsume(projectId);
 
         // Check billing auth
         if (USE_BILLING) {
