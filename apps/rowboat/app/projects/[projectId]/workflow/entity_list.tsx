@@ -25,6 +25,7 @@ import { deleteDataSource } from '../../../actions/datasource_actions';
 import { ToolkitAuthModal } from '../tools/components/ToolkitAuthModal';
 import { deleteConnectedAccount } from '@/app/actions/composio_actions';
 import { ProjectWideChangeConfirmationModal } from '@/components/common/project-wide-change-confirmation-modal';
+import { SHOW_PROMPTS_SECTION } from '../../../lib/feature_flags';
 
 // Reduced gap size to match Cursor's UI
 const GAP_SIZE = 4; // 1 unit * 4px (tailwind's default spacing unit)
@@ -516,6 +517,7 @@ export const EntityList = forwardRef<
 
     // Calculate panel sizes based on expanded state
     const getPanelSize = (panelName: 'agents' | 'tools' | 'data' | 'prompts') => {
+        // If this panel is collapsed, return minimum size
         if (!expandedPanels[panelName]) {
             return 8; // Collapsed height (53px equivalent)
         }
@@ -523,28 +525,35 @@ export const EntityList = forwardRef<
         // Base size when expanded
         let size = DEFAULT_SIZES[panelName];
 
-        // Redistribute space from collapsed panels to the panel above
-        if (panelName === 'agents') {
-            if (!expandedPanels.tools) {
-                size += DEFAULT_SIZES.tools;
+        // Calculate total space available from collapsed/hidden panels
+        let availableSpace = 0;
+        
+        // Add space from collapsed panels and hidden prompts
+        if (!expandedPanels.tools) {
+            availableSpace += DEFAULT_SIZES.tools;
+        }
+        if (!expandedPanels.data) {
+            availableSpace += DEFAULT_SIZES.data;
+        }
+        if (!expandedPanels.prompts || !SHOW_PROMPTS_SECTION) {
+            availableSpace += DEFAULT_SIZES.prompts;
+        }
+        if (!expandedPanels.agents) {
+            availableSpace += DEFAULT_SIZES.agents;
+        }
+
+        // Find the topmost expanded panel to give it the extra space
+        const panelOrder = ['agents', 'tools', 'data', 'prompts'] as const;
+        const expandedVisiblePanels = panelOrder.filter(panel => {
+            if (panel === 'prompts') {
+                return expandedPanels[panel] && SHOW_PROMPTS_SECTION;
             }
-            if (!expandedPanels.data) {
-                size += DEFAULT_SIZES.data;
-            }
-            if (!expandedPanels.prompts) {
-                size += DEFAULT_SIZES.prompts;
-            }
-        } else if (panelName === 'tools') {
-            if (!expandedPanels.data && expandedPanels.agents) {
-                size += DEFAULT_SIZES.data;
-            }
-            if (!expandedPanels.prompts && expandedPanels.agents) {
-                size += DEFAULT_SIZES.prompts;
-            }
-        } else if (panelName === 'data') {
-            if (!expandedPanels.prompts && (expandedPanels.agents || expandedPanels.tools)) {
-                size += DEFAULT_SIZES.prompts;
-            }
+            return expandedPanels[panel];
+        });
+
+        // If this is the topmost expanded panel, give it all the available space
+        if (expandedVisiblePanels.length > 0 && expandedVisiblePanels[0] === panelName) {
+            size += availableSpace;
         }
 
         return size;
@@ -637,6 +646,7 @@ export const EntityList = forwardRef<
     return (
         <div ref={containerRef} className="flex flex-col h-full min-h-0">
             <ResizablePanelGroup 
+                key={`${expandedPanels.agents}-${expandedPanels.tools}-${expandedPanels.data}-${expandedPanels.prompts}-${SHOW_PROMPTS_SECTION}`}
                 direction="vertical" 
                 className="flex-1 min-h-0 flex flex-col"
                 style={{ gap: `${GAP_SIZE}px` }}
@@ -1084,82 +1094,84 @@ export const EntityList = forwardRef<
                     </Panel>
                 </ResizablePanel>
 
-                <ResizableHandle withHandle className="w-[3px] bg-transparent" />
+                {SHOW_PROMPTS_SECTION && <ResizableHandle withHandle className="w-[3px] bg-transparent" />}
 
                 {/* Prompts Panel */}
-                <ResizablePanel 
-                    defaultSize={getPanelSize('prompts')}
-                    minSize={expandedPanels.prompts ? 20 : 8}
-                    maxSize={100}
-                    className="flex flex-col min-h-0 h-full"
-                >
-                    <Panel 
-                        variant="entity-list"
-                        tourTarget="entity-prompts"
-                        className={clsx(
-                            "h-full",
-                            !expandedPanels.prompts && "h-[53px]!"
-                        )}
-                        title={
-                            <div className={`${headerClasses} rounded-md transition-colors h-full`}>
-                                <div className="flex items-center gap-2 h-full">
-                                    <button onClick={() => setExpandedPanels(prev => ({ ...prev, prompts: !prev.prompts }))}>
-                                        {expandedPanels.prompts ? (
-                                            <ChevronDown className="w-4 h-4" />
-                                        ) : (
-                                            <ChevronRight className="w-4 h-4" />
-                                        )}
-                                    </button>
-                                    <PenLine className="w-4 h-4" />
-                                    <span>Prompts</span>
-                                </div>
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setExpandedPanels(prev => ({ ...prev, prompts: true }));
-                                        onAddPrompt({});
-                                    }}
-                                    className={`group ${buttonClasses}`}
-                                    showHoverContent={true}
-                                    hoverContent="Add Prompt"
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        }
+                {SHOW_PROMPTS_SECTION && (
+                    <ResizablePanel 
+                        defaultSize={getPanelSize('prompts')}
+                        minSize={expandedPanels.prompts ? 20 : 8}
+                        maxSize={100}
+                        className="flex flex-col min-h-0 h-full"
                     >
-                        {expandedPanels.prompts && (
-                            <div className="h-[calc(100%-53px)] overflow-y-auto">
-                                <div className="p-2">
-                                    {prompts.length > 0 ? (
-                                        <div className="space-y-1">
-                                            {prompts.map((prompt, index) => (
-                                                <ListItemWithMenu
-                                                    key={`prompt-${index}`}
-                                                    name={prompt.name}
-                                                    isSelected={selectedEntity?.type === "prompt" && selectedEntity.name === prompt.name}
-                                                    onClick={() => onSelectPrompt(prompt.name)}
-                                                    selectedRef={selectedEntity?.type === "prompt" && selectedEntity.name === prompt.name ? selectedRef : undefined}
-                                                    icon={<ScrollText className="w-4 h-4 text-blue-600/70 dark:text-blue-500/70" />}
-                                                    menuContent={
-                                                        <EntityDropdown 
-                                                            name={prompt.name} 
-                                                            onDelete={onDeletePrompt} 
-                                                        />
-                                                    }
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <EmptyState entity="prompts" hasFilteredItems={false} />
-                                    )}
+                        <Panel 
+                            variant="entity-list"
+                            tourTarget="entity-prompts"
+                            className={clsx(
+                                "h-full",
+                                !expandedPanels.prompts && "h-[53px]!"
+                            )}
+                            title={
+                                <div className={`${headerClasses} rounded-md transition-colors h-full`}>
+                                    <div className="flex items-center gap-2 h-full">
+                                        <button onClick={() => setExpandedPanels(prev => ({ ...prev, prompts: !prev.prompts }))}>
+                                            {expandedPanels.prompts ? (
+                                                <ChevronDown className="w-4 h-4" />
+                                            ) : (
+                                                <ChevronRight className="w-4 h-4" />
+                                            )}
+                                        </button>
+                                        <PenLine className="w-4 h-4" />
+                                        <span>Prompts</span>
+                                    </div>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setExpandedPanels(prev => ({ ...prev, prompts: true }));
+                                            onAddPrompt({});
+                                        }}
+                                        className={`group ${buttonClasses}`}
+                                        showHoverContent={true}
+                                        hoverContent="Add Prompt"
+                                    >
+                                        <PlusIcon className="w-4 h-4" />
+                                    </Button>
                                 </div>
-                            </div>
-                        )}
-                    </Panel>
-                </ResizablePanel>
+                            }
+                        >
+                            {expandedPanels.prompts && (
+                                <div className="h-[calc(100%-53px)] overflow-y-auto">
+                                    <div className="p-2">
+                                        {prompts.length > 0 ? (
+                                            <div className="space-y-1">
+                                                {prompts.map((prompt, index) => (
+                                                    <ListItemWithMenu
+                                                        key={`prompt-${index}`}
+                                                        name={prompt.name}
+                                                        isSelected={selectedEntity?.type === "prompt" && selectedEntity.name === prompt.name}
+                                                        onClick={() => onSelectPrompt(prompt.name)}
+                                                        selectedRef={selectedEntity?.type === "prompt" && selectedEntity.name === prompt.name ? selectedRef : undefined}
+                                                        icon={<ScrollText className="w-4 h-4 text-blue-600/70 dark:text-blue-500/70" />}
+                                                        menuContent={
+                                                            <EntityDropdown 
+                                                                name={prompt.name} 
+                                                                onDelete={onDeletePrompt} 
+                                                            />
+                                                        }
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <EmptyState entity="prompts" hasFilteredItems={false} />
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </Panel>
+                    </ResizablePanel>
+                )}
             </ResizablePanelGroup>
             
             <AgentTypeModal
