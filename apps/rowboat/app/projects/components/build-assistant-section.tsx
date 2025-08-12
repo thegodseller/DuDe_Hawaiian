@@ -6,7 +6,7 @@ import { createProjectWithOptions, createProjectFromJsonWithOptions, createProje
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import Image from 'next/image';
-import mascotImage from '/public/mascot.png';
+import mascotImage from '@/public/mascot.png';
 import { Button } from "@/components/ui/button";
 import { Upload, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { TextareaWithSend } from "@/app/components/ui/textarea-with-send";
