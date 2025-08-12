@@ -30,6 +30,7 @@ import { DeleteComposioConnectedAccountController } from "@/src/interface-adapte
 import { HandleComposioWebhookRequestController } from "@/src/interface-adapters/controllers/composio/webhook/handle-composio-webhook-request.controller";
 import { RedisPubSubService } from "@/src/infrastructure/services/redis.pub-sub.service";
 import { JobsWorker } from "@/src/application/workers/jobs.worker";
+import { JobRulesWorker } from "@/src/application/workers/job-rules.worker";
 import { ListJobsUseCase } from "@/src/application/use-cases/jobs/list-jobs.use-case";
 import { ListJobsController } from "@/src/interface-adapters/controllers/jobs/list-jobs.controller";
 import { ListConversationsUseCase } from "@/src/application/use-cases/conversations/list-conversations.use-case";
@@ -38,6 +39,30 @@ import { FetchJobUseCase } from "@/src/application/use-cases/jobs/fetch-job.use-
 import { FetchJobController } from "@/src/interface-adapters/controllers/jobs/fetch-job.controller";
 import { FetchConversationUseCase } from "@/src/application/use-cases/conversations/fetch-conversation.use-case";
 import { FetchConversationController } from "@/src/interface-adapters/controllers/conversations/fetch-conversation.controller";
+
+// Scheduled Job Rules
+import { MongoDBScheduledJobRulesRepository } from "@/src/infrastructure/repositories/mongodb.scheduled-job-rules.repository";
+import { CreateScheduledJobRuleUseCase } from "@/src/application/use-cases/scheduled-job-rules/create-scheduled-job-rule.use-case";
+import { FetchScheduledJobRuleUseCase } from "@/src/application/use-cases/scheduled-job-rules/fetch-scheduled-job-rule.use-case";
+import { ListScheduledJobRulesUseCase } from "@/src/application/use-cases/scheduled-job-rules/list-scheduled-job-rules.use-case";
+import { DeleteScheduledJobRuleUseCase } from "@/src/application/use-cases/scheduled-job-rules/delete-scheduled-job-rule.use-case";
+import { CreateScheduledJobRuleController } from "@/src/interface-adapters/controllers/scheduled-job-rules/create-scheduled-job-rule.controller";
+import { FetchScheduledJobRuleController } from "@/src/interface-adapters/controllers/scheduled-job-rules/fetch-scheduled-job-rule.controller";
+import { ListScheduledJobRulesController } from "@/src/interface-adapters/controllers/scheduled-job-rules/list-scheduled-job-rules.controller";
+import { DeleteScheduledJobRuleController } from "@/src/interface-adapters/controllers/scheduled-job-rules/delete-scheduled-job-rule.controller";
+
+// Recurring Job Rules
+import { MongoDBRecurringJobRulesRepository } from "@/src/infrastructure/repositories/mongodb.recurring-job-rules.repository";
+import { CreateRecurringJobRuleUseCase } from "@/src/application/use-cases/recurring-job-rules/create-recurring-job-rule.use-case";
+import { FetchRecurringJobRuleUseCase } from "@/src/application/use-cases/recurring-job-rules/fetch-recurring-job-rule.use-case";
+import { ListRecurringJobRulesUseCase } from "@/src/application/use-cases/recurring-job-rules/list-recurring-job-rules.use-case";
+import { ToggleRecurringJobRuleUseCase } from "@/src/application/use-cases/recurring-job-rules/toggle-recurring-job-rule.use-case";
+import { DeleteRecurringJobRuleUseCase } from "@/src/application/use-cases/recurring-job-rules/delete-recurring-job-rule.use-case";
+import { CreateRecurringJobRuleController } from "@/src/interface-adapters/controllers/recurring-job-rules/create-recurring-job-rule.controller";
+import { FetchRecurringJobRuleController } from "@/src/interface-adapters/controllers/recurring-job-rules/fetch-recurring-job-rule.controller";
+import { ListRecurringJobRulesController } from "@/src/interface-adapters/controllers/recurring-job-rules/list-recurring-job-rules.controller";
+import { ToggleRecurringJobRuleController } from "@/src/interface-adapters/controllers/recurring-job-rules/toggle-recurring-job-rule.controller";
+import { DeleteRecurringJobRuleController } from "@/src/interface-adapters/controllers/recurring-job-rules/delete-recurring-job-rule.controller";
 
 export const container = createContainer({
     injectionMode: InjectionMode.PROXY,
@@ -48,6 +73,7 @@ container.register({
     // workers
     // ---
     jobsWorker: asClass(JobsWorker).singleton(),
+    jobRulesWorker: asClass(JobRulesWorker).singleton(),
 
     // services
     // ---
@@ -78,6 +104,32 @@ container.register({
     listJobsController: asClass(ListJobsController).singleton(),
     fetchJobUseCase: asClass(FetchJobUseCase).singleton(),
     fetchJobController: asClass(FetchJobController).singleton(),
+
+    // scheduled job rules
+    // ---
+    scheduledJobRulesRepository: asClass(MongoDBScheduledJobRulesRepository).singleton(),
+    createScheduledJobRuleUseCase: asClass(CreateScheduledJobRuleUseCase).singleton(),
+    fetchScheduledJobRuleUseCase: asClass(FetchScheduledJobRuleUseCase).singleton(),
+    listScheduledJobRulesUseCase: asClass(ListScheduledJobRulesUseCase).singleton(),
+    deleteScheduledJobRuleUseCase: asClass(DeleteScheduledJobRuleUseCase).singleton(),
+    createScheduledJobRuleController: asClass(CreateScheduledJobRuleController).singleton(),
+    fetchScheduledJobRuleController: asClass(FetchScheduledJobRuleController).singleton(),
+    listScheduledJobRulesController: asClass(ListScheduledJobRulesController).singleton(),
+    deleteScheduledJobRuleController: asClass(DeleteScheduledJobRuleController).singleton(),
+
+    // recurring job rules
+    // ---
+    recurringJobRulesRepository: asClass(MongoDBRecurringJobRulesRepository).singleton(),
+    createRecurringJobRuleUseCase: asClass(CreateRecurringJobRuleUseCase).singleton(),
+    fetchRecurringJobRuleUseCase: asClass(FetchRecurringJobRuleUseCase).singleton(),
+    listRecurringJobRulesUseCase: asClass(ListRecurringJobRulesUseCase).singleton(),
+    toggleRecurringJobRuleUseCase: asClass(ToggleRecurringJobRuleUseCase).singleton(),
+    deleteRecurringJobRuleUseCase: asClass(DeleteRecurringJobRuleUseCase).singleton(),
+    createRecurringJobRuleController: asClass(CreateRecurringJobRuleController).singleton(),
+    fetchRecurringJobRuleController: asClass(FetchRecurringJobRuleController).singleton(),
+    listRecurringJobRulesController: asClass(ListRecurringJobRulesController).singleton(),
+    toggleRecurringJobRuleController: asClass(ToggleRecurringJobRuleController).singleton(),
+    deleteRecurringJobRuleController: asClass(DeleteRecurringJobRuleController).singleton(),
 
     // composio
     // ---

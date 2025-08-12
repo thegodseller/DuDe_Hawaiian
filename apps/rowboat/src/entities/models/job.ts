@@ -10,14 +10,27 @@ const composioTriggerReason = z.object({
     payload: z.object({}).passthrough(),
 });
 
-const reason = composioTriggerReason;
+const scheduledJobRuleReason = z.object({
+    type: z.literal("scheduled_job_rule"),
+    ruleId: z.string(),
+});
+
+const recurringJobRuleReason = z.object({
+    type: z.literal("recurring_job_rule"),
+    ruleId: z.string(),
+});
+
+const reason = z.discriminatedUnion("type", [
+    composioTriggerReason,
+    scheduledJobRuleReason,
+    recurringJobRuleReason,
+]);
 
 export const Job = z.object({
     id: z.string(),
     reason,
     projectId: z.string(),
     input: z.object({
-        workflow: Workflow,
         messages: z.array(Message),
     }),
     output: z.object({
