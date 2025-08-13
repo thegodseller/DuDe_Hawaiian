@@ -13,7 +13,7 @@ export const USE_KLAVIS_TOOLS = process.env.USE_KLAVIS_TOOLS === 'true';
 export const USE_MULTIPLE_PROJECTS = true;
 export const USE_VOICE_FEATURE = false;
 export const USE_TRANSFER_CONTROL_OPTIONS = true;
-export const USE_PRODUCT_TOUR = true;
+export const USE_PRODUCT_TOUR = false;
 export const SHOW_COPILOT_MARQUEE = false;
 export const SHOW_PROMPTS_SECTION = false;
 export const SHOW_DARK_MODE_TOGGLE = false;
