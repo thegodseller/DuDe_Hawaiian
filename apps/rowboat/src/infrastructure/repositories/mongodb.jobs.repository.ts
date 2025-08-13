@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { db } from "@/app/lib/mongodb";
-import { CreateJobSchema, IJobsRepository, ListedJobItem, UpdateJobSchema } from "@/src/application/repositories/jobs.repository.interface";
+import { CreateJobSchema, IJobsRepository, ListedJobItem, UpdateJobSchema, JobFilters } from "@/src/application/repositories/jobs.repository.interface";
 import { Job } from "@/src/entities/models/job";
 import { JobAcquisitionError } from "@/src/entities/errors/job-errors";
 import { NotFoundError } from "@/src/entities/errors/common";
@@ -198,10 +198,42 @@ export class MongoDBJobsRepository implements IJobsRepository {
     }
 
     /**
-     * Lists jobs for a specific project with pagination.
+     * Lists jobs for a specific project with optional filtering and pagination.
      */
-    async list(projectId: string, cursor?: string, limit: number = 50): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ListedJobItem>>>> {
+    async list(
+        projectId: string, 
+        filters?: JobFilters,
+        cursor?: string, 
+        limit: number = 50
+    ): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ListedJobItem>>>> {
         const query: any = { projectId };
+
+        const _limit = Math.min(limit, 50);
+
+        // Apply filters if provided
+        if (filters) {
+            if (filters.status) {
+                query.status = filters.status;
+            }
+            
+            if (filters.recurringJobRuleId) {
+                query["reason.type"] = "recurring_job_rule";
+                query["reason.ruleId"] = filters.recurringJobRuleId;
+            }
+            
+            if (filters.composioTriggerDeploymentId) {
+                query["reason.type"] = "composio_trigger";
+                query["reason.triggerDeploymentId"] = filters.composioTriggerDeploymentId;
+            }
+            
+            if (filters.createdAfter) {
+                query.createdAt = { ...query.createdAt, $gte: filters.createdAfter };
+            }
+            
+            if (filters.createdBefore) {
+                query.createdAt = { ...query.createdAt, $lte: filters.createdBefore };
+            }
+        }
 
         if (cursor) {
             query._id = { $lt: new ObjectId(cursor) };
@@ -210,7 +242,7 @@ export class MongoDBJobsRepository implements IJobsRepository {
         const results = await this.collection
             .find(query)
             .sort({ _id: -1 })
-            .limit(limit + 1) // Fetch one extra to determine if there's a next page
+            .limit(_limit + 1) // Fetch one extra to determine if there's a next page
             .project<z.infer<typeof ListedJobItem> & { _id: ObjectId }>({
                 _id: 1,
                 projectId: 1,
@@ -221,8 +253,8 @@ export class MongoDBJobsRepository implements IJobsRepository {
             })
             .toArray();
 
-        const hasNextPage = results.length > limit;
-        const items = results.slice(0, limit).map(doc => {
+        const hasNextPage = results.length > _limit;
+        const items = results.slice(0, _limit).map(doc => {
             const { _id, ...rest } = doc;
             return {
                 ...rest,
@@ -232,7 +264,7 @@ export class MongoDBJobsRepository implements IJobsRepository {
 
         return {
             items,
-            nextCursor: hasNextPage ? results[limit - 1]._id.toString() : null,
+            nextCursor: hasNextPage ? results[_limit - 1]._id.toString() : null,
         };
     }
 }

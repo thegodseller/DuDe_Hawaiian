@@ -10,6 +10,7 @@ import Link from "next/link";
 import { RecurringJobRule } from "@/src/entities/models/recurring-job-rule";
 import { Spinner } from "@heroui/react";
 import { z } from "zod";
+import { JobsList } from "@/app/projects/[projectId]/jobs/components/jobs-list";
 
 export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string; ruleId: string }) {
     const router = useRouter();
@@ -262,6 +263,18 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
                                 )}
                                 <div><strong>Rule ID:</strong> <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{rule.id}</code></div>
                             </div>
+                        </div>
+
+                        {/* Jobs Created by This Rule */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3">
+                                Jobs Created by This Rule
+                            </h3>
+                            <JobsList 
+                                projectId={projectId} 
+                                filters={{ recurringJobRuleId: ruleId }}
+                                showTitle={false}
+                            />
                         </div>
                     </div>
                 </div>

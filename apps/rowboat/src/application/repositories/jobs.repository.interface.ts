@@ -24,6 +24,31 @@ export const ListedJobItem = Job.pick({
 });
 
 /**
+ * Schema for filtering jobs when listing.
+ * This schema is designed to be extensible for future filtering criteria.
+ */
+export const JobFiltersSchema = z.object({
+    // Filter by job status
+    status: z.enum(["pending", "running", "completed", "failed"]).optional(),
+    
+    // Filter by recurring job rule ID
+    recurringJobRuleId: z.string().optional(),
+    
+    // Filter by composio trigger deployment ID
+    composioTriggerDeploymentId: z.string().optional(),
+    
+    // Filter by date range
+    createdAfter: z.string().datetime().optional(),
+    createdBefore: z.string().datetime().optional(),
+    
+    // Extensible: add more filters here as needed
+    // Example: errorMessage: z.string().optional(),
+    // Example: priority: z.enum(["low", "medium", "high"]).optional(),
+}).strict();
+
+export type JobFilters = z.infer<typeof JobFiltersSchema>;
+
+/**
  * Schema for updating an existing job.
  * Defines the fields that can be updated for a job.
  */
@@ -102,12 +127,18 @@ export interface IJobsRepository {
     release(id: string): Promise<void>;
 
     /**
-     * Lists jobs for a specific project with pagination.
+     * Lists jobs for a specific project with optional filtering and pagination.
      * 
      * @param projectId - The unique identifier of the project
+     * @param filters - Optional filters to apply to the job list
      * @param cursor - Optional cursor for pagination
      * @param limit - Maximum number of jobs to return (default: 50)
      * @returns Promise resolving to a paginated list of jobs
      */
-    list(projectId: string, cursor?: string, limit?: number): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ListedJobItem>>>>;
+    list(
+        projectId: string, 
+        filters?: JobFilters,
+        cursor?: string, 
+        limit?: number
+    ): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ListedJobItem>>>>;
 }

@@ -2,7 +2,7 @@ import { BadRequestError, NotFoundError } from '@/src/entities/errors/common';
 import { z } from "zod";
 import { IUsageQuotaPolicy } from '../../policies/usage-quota.policy.interface';
 import { IProjectActionAuthorizationPolicy } from '../../policies/project-action-authorization.policy';
-import { IJobsRepository, ListedJobItem } from '../../repositories/jobs.repository.interface';
+import { IJobsRepository, ListedJobItem, JobFilters, JobFiltersSchema } from '../../repositories/jobs.repository.interface';
 import { Job } from '@/src/entities/models/job';
 import { PaginatedList } from '@/src/entities/common/paginated-list';
 
@@ -11,6 +11,7 @@ const inputSchema = z.object({
     userId: z.string().optional(),
     apiKey: z.string().optional(),
     projectId: z.string(),
+    filters: JobFiltersSchema.optional(),
     cursor: z.string().optional(),
     limit: z.number().optional(),
 });
@@ -54,6 +55,6 @@ export class ListJobsUseCase implements IListJobsUseCase {
         await this.usageQuotaPolicy.assertAndConsume(projectId);
 
         // fetch jobs for project
-        return await this.jobsRepository.list(projectId, request.cursor, limit);
+        return await this.jobsRepository.list(projectId, request.filters, request.cursor, limit);
     }
 }

@@ -6,12 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/common/panel-common";
 import { listJobs } from "@/app/actions/job_actions";
 import { z } from "zod";
-import { ListedJobItem } from "@/src/application/repositories/jobs.repository.interface";
+import { ListedJobItem, JobFilters } from "@/src/application/repositories/jobs.repository.interface";
 import { isToday, isThisWeek, isThisMonth } from "@/lib/utils/date";
 
 type ListedItem = z.infer<typeof ListedJobItem>;
 
-export function JobsList({ projectId }: { projectId: string }) {
+interface JobsListProps {
+    projectId: string;
+    filters?: JobFilters;
+    showTitle?: boolean;
+    customTitle?: string;
+}
+
+export function JobsList({ projectId, filters, showTitle = true, customTitle }: JobsListProps) {
     const [items, setItems] = useState<ListedItem[]>([]);
     const [cursor, setCursor] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -19,14 +26,22 @@ export function JobsList({ projectId }: { projectId: string }) {
     const [hasMore, setHasMore] = useState<boolean>(false);
 
     const fetchPage = useCallback(async (cursorArg?: string | null) => {
-        const res = await listJobs({ projectId, cursor: cursorArg ?? undefined, limit: 20 });
+        const res = await listJobs({ 
+            projectId, 
+            filters,
+            cursor: cursorArg ?? undefined, 
+            limit: 20 
+        });
         return res;
-    }, [projectId]);
+    }, [projectId, filters]);
 
     useEffect(() => {
         let ignore = false;
         (async () => {
             setLoading(true);
+            setItems([]);
+            setCursor(null);
+            setHasMore(false);
             const res = await fetchPage(null);
             if (ignore) return;
             setItems(res.items);
@@ -35,7 +50,7 @@ export function JobsList({ projectId }: { projectId: string }) {
             setLoading(false);
         })();
         return () => { ignore = true; };
-    }, [fetchPage]);
+    }, [fetchPage, filters]);
 
     const loadMore = useCallback(async () => {
         if (!cursor) return;
@@ -111,14 +126,21 @@ export function JobsList({ projectId }: { projectId: string }) {
     return (
         <Panel
             title={
-                <div className="flex items-center gap-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        JOBS
+                showTitle ? (
+                    <div className="flex items-center gap-3">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {customTitle || "JOBS"}
+                        </div>
                     </div>
-                </div>
+                ) : null
             }
             rightActions={
                 <div className="flex items-center gap-3">
+                    {filters && items.length > 0 && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {items.length} job{items.length !== 1 ? 's' : ''} found
+                        </div>
+                    )}
                     {/* Reserved for future actions */}
                 </div>
             }
@@ -132,7 +154,9 @@ export function JobsList({ projectId }: { projectId: string }) {
                         </div>
                     )}
                     {!loading && items.length === 0 && (
-                        <p className="mt-4 text-center">No jobs yet.</p>
+                        <p className="mt-4 text-center">
+                            {filters ? "No jobs found matching the current filters." : "No jobs yet."}
+                        </p>
                     )}
                     {!loading && items.length > 0 && (
                         <div className="flex flex-col gap-8">

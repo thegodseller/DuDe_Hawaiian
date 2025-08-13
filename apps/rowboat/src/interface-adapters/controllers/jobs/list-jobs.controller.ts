@@ -3,13 +3,14 @@ import z from "zod";
 import { IListJobsUseCase } from "@/src/application/use-cases/jobs/list-jobs.use-case";
 import { Job } from "@/src/entities/models/job";
 import { PaginatedList } from "@/src/entities/common/paginated-list";
-import { ListedJobItem } from "@/src/application/repositories/jobs.repository.interface";
+import { JobFiltersSchema, ListedJobItem } from "@/src/application/repositories/jobs.repository.interface";
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),
     userId: z.string().optional(),
     apiKey: z.string().optional(),
     projectId: z.string(),
+    filters: JobFiltersSchema.optional(),
     cursor: z.string().optional(),
     limit: z.number().optional(),
 });
@@ -35,7 +36,7 @@ export class ListJobsController implements IListJobsController {
         if (!result.success) {
             throw new BadRequestError(`Invalid request: ${JSON.stringify(result.error)}`);
         }
-        const { caller, userId, apiKey, projectId, cursor, limit } = result.data;
+        const { caller, userId, apiKey, projectId, filters, cursor, limit } = result.data;
 
         // execute use case
         return await this.listJobsUseCase.execute({
@@ -43,6 +44,7 @@ export class ListJobsController implements IListJobsController {
             userId,
             apiKey,
             projectId,
+            filters,
             cursor,
             limit,
         });
