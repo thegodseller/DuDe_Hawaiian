@@ -126,13 +126,9 @@ export async function createProjectFromWorkflowJson(formData: FormData): Promise
     const name = formData.get('name') as string | null;
 
     const workflowJson = formData.get('workflowJson') as string;
-    const { agents, prompts, tools, pipelines, startAgent } = Workflow.parse(JSON.parse(workflowJson));
+    const workflow = Workflow.parse(JSON.parse(workflowJson));
     const response = await createBaseProject(name || 'Imported project', user, {
-        agents,
-        prompts,
-        tools,
-        pipelines,
-        startAgent,
+        ...workflow,
         lastUpdatedAt: (new Date()).toISOString(),
     });
     if ('billingError' in response) {
