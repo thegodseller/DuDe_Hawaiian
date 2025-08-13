@@ -136,12 +136,37 @@ async function searchRelevantTools(query: string): Promise<string> {
         return '';
     }
 
-    const toolSlugs: string[] = searchResult.data.results.map((result: any) => result.tool);
+    // Log the actual response structure to debug
+    logger.log("Raw search results:", JSON.stringify(searchResult.data.results, null, 2));
+
+    // Extract tool slugs with defensive handling for different possible field names
+    const toolSlugs: string[] = searchResult.data.results
+        .map((result: any) => {
+            // Try different possible field names for the tool slug
+            const slug = result.tool || result.slug || result.tool_slug || result.name;
+            logger.log(`Processing result:`, { result, extractedSlug: slug });
+            return slug;
+        })
+        .filter((slug): slug is string => {
+            const isValid = typeof slug === 'string' && slug.length > 0;
+            if (!isValid) {
+                logger.log(`Filtering out invalid slug:`, slug);
+            }
+            return isValid;
+        });
+    
     logger.log(`found tool slugs: ${toolSlugs.join(', ')}`);
     console.log("✅ TOOL CALL SUCCESS: COMPOSIO_SEARCH_TOOLS", { 
         toolSlugs, 
         resultCount: toolSlugs.length 
     });
+
+    // Check if we have any valid tool slugs before proceeding
+    if (toolSlugs.length === 0) {
+        logger.log("No valid tool slugs found after filtering");
+        console.log("⚠️ TOOL CALL WARNING: No valid tools found after filtering");
+        return 'No valid tools found for the given query. The search returned results but they contained invalid tool identifiers.';
+    }
 
     // Enrich tools with full details
     console.log("🔧 TOOL CALL: getTool (multiple calls)", { toolSlugs });

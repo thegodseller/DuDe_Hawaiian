@@ -20,10 +20,13 @@ export function validateConfigChanges(configType: string, configChanges: Record<
             break;
         }
         case 'agent': {
+            // Determine if this is a pipeline agent from the config changes
+            const isPipelineAgent = configChanges.type === 'pipeline';
+            
             testObject = {
                 name: 'test',
                 description: 'test',
-                type: 'conversation',
+                type: isPipelineAgent ? 'pipeline' : 'conversation',
                 instructions: 'test',
                 prompts: [],
                 tools: [],
@@ -31,8 +34,9 @@ export function validateConfigChanges(configType: string, configChanges: Record<
                 ragReturnType: 'chunks',
                 ragK: 10,
                 connectedAgents: [],
-                controlType: 'retain',
-                outputVisibility: 'user_facing',
+                // Set correct defaults based on agent type
+                controlType: isPipelineAgent ? 'relinquish_to_parent' : 'retain',
+                outputVisibility: isPipelineAgent ? 'internal' : 'user_facing',
                 maxCallsPerParentAgent: 3,
             } as z.infer<typeof WorkflowAgent>;
             schema = WorkflowAgent;
