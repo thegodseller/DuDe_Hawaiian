@@ -46,8 +46,6 @@ export const JobFiltersSchema = z.object({
     // Example: priority: z.enum(["low", "medium", "high"]).optional(),
 }).strict();
 
-export type JobFilters = z.infer<typeof JobFiltersSchema>;
-
 /**
  * Schema for updating an existing job.
  * Defines the fields that can be updated for a job.
@@ -137,7 +135,7 @@ export interface IJobsRepository {
      */
     list(
         projectId: string, 
-        filters?: JobFilters,
+        filters?: z.infer<typeof JobFiltersSchema>,
         cursor?: string, 
         limit?: number
     ): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ListedJobItem>>>>;

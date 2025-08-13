@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/common/panel-common";
 import { listJobs } from "@/app/actions/job_actions";
 import { z } from "zod";
-import { ListedJobItem, JobFilters } from "@/src/application/repositories/jobs.repository.interface";
+import { ListedJobItem, JobFiltersSchema } from "@/src/application/repositories/jobs.repository.interface";
 import { isToday, isThisWeek, isThisMonth } from "@/lib/utils/date";
 
 type ListedItem = z.infer<typeof ListedJobItem>;
 
 interface JobsListProps {
     projectId: string;
-    filters?: JobFilters;
+    filters?: z.infer<typeof JobFiltersSchema>;
     showTitle?: boolean;
     customTitle?: string;
 }

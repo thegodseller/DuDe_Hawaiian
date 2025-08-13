@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { db } from "@/app/lib/mongodb";
-import { CreateJobSchema, IJobsRepository, ListedJobItem, UpdateJobSchema, JobFilters } from "@/src/application/repositories/jobs.repository.interface";
+import { CreateJobSchema, IJobsRepository, JobFiltersSchema, ListedJobItem, UpdateJobSchema } from "@/src/application/repositories/jobs.repository.interface";
 import { Job } from "@/src/entities/models/job";
 import { JobAcquisitionError } from "@/src/entities/errors/job-errors";
 import { NotFoundError } from "@/src/entities/errors/common";
@@ -202,7 +202,7 @@ export class MongoDBJobsRepository implements IJobsRepository {
      */
     async list(
         projectId: string, 
-        filters?: JobFilters,
+        filters?: z.infer<typeof JobFiltersSchema>,
         cursor?: string, 
         limit: number = 50
     ): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ListedJobItem>>>> {
