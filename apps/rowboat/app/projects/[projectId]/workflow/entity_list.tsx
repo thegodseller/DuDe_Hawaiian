@@ -113,7 +113,7 @@ const ListItemWithMenu = ({
     isSelected?: boolean;
     onClick?: () => void;
     disabled?: boolean;
-    selectedRef?: React.RefObject<HTMLButtonElement | null>;
+    selectedRef?: React.RefObject<HTMLDivElement | null>;
     menuContent: React.ReactNode;
     statusLabel?: React.ReactNode;
     icon?: React.ReactNode;
@@ -123,16 +123,23 @@ const ListItemWithMenu = ({
     isMocked?: boolean;
 }) => {
     return (
-        <div className={clsx(
-            "group flex items-center gap-2 px-3 py-2 rounded-md min-h-[24px]",
-            {
-                "bg-indigo-50 dark:bg-indigo-950/30": isSelected,
-                "hover:bg-zinc-50 dark:hover:bg-zinc-800": !isSelected
-            }
-        )}>
+        <div 
+            className={clsx(
+                "group flex items-center gap-2 px-3 py-2 rounded-md min-h-[24px] cursor-pointer",
+                {
+                    "bg-indigo-50 dark:bg-indigo-950/30": isSelected,
+                    "hover:bg-zinc-50 dark:hover:bg-zinc-800": !isSelected
+                }
+            )}
+            onClick={() => {
+                if (!disabled && onClick) {
+                    onClick();
+                }
+            }}
+        >
             {dragHandle}
-            <button
-                ref={selectedRef as React.RefObject<HTMLButtonElement>}
+            <div
+                ref={selectedRef as React.RefObject<HTMLDivElement>}
                 className={clsx(
                     "flex-1 flex items-center gap-2 text-sm text-left",
                     {
@@ -140,10 +147,6 @@ const ListItemWithMenu = ({
                         "text-zinc-400 dark:text-zinc-600": disabled,
                     }
                 )}
-                onClick={() => {
-                    onClick?.();
-                }}
-                disabled={disabled}
             >
                 <div className={clsx("shrink-0 flex items-center justify-center w-3 h-3", iconClassName)}>
                     {mcpServerName ? (
@@ -155,7 +158,7 @@ const ListItemWithMenu = ({
                     ) : icon}
                 </div>
                 <span className="text-xs">{name}</span>
-            </button>
+            </div>
             <div className="flex items-center gap-1">
                 {statusLabel}
                 {isMocked && (
@@ -186,7 +189,7 @@ interface ServerCardProps {
     } | null;
     onSelectTool: (name: string) => void;
     onDeleteTool: (name: string) => void;
-    selectedRef: React.RefObject<HTMLButtonElement | null>;
+    selectedRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const ServerCard = ({
@@ -277,7 +280,7 @@ interface PipelineCardProps {
     onDeletePipeline: (name: string) => void;
     onDeleteAgent: (name: string) => void;
     onAddAgentToPipeline: (pipelineName: string) => void;
-    selectedRef: React.RefObject<HTMLButtonElement | null>;
+    selectedRef: React.RefObject<HTMLDivElement | null>;
     startAgentName: string | null;
     dragHandle?: React.ReactNode;
 }
@@ -479,7 +482,7 @@ export const EntityList = forwardRef<
             outputVisibility: agentType
         });
     };
-    const selectedRef = useRef<HTMLButtonElement>(null);
+    const selectedRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerHeight, setContainerHeight] = useState<number>(0);
 
@@ -1045,17 +1048,19 @@ export const EntityList = forwardRef<
 
                                                 return (
                                                     <div key={`datasource-${index}`} className="group/datasource">
-                                                        <div className={clsx(
-                                                            "flex items-center gap-2 px-3 py-2 rounded-md min-h-[24px] cursor-pointer",
-                                                            {
-                                                                "bg-indigo-50 dark:bg-indigo-950/30": selectedEntity?.type === "datasource" && selectedEntity.name === dataSource._id,
-                                                                "hover:bg-zinc-50 dark:hover:bg-zinc-800": !(selectedEntity?.type === "datasource" && selectedEntity.name === dataSource._id)
-                                                            }
-                                                        )}>
-                                                            <button
+                                                        <div 
+                                                            className={clsx(
+                                                                "flex items-center gap-2 px-3 py-2 rounded-md min-h-[24px] cursor-pointer",
+                                                                {
+                                                                    "bg-indigo-50 dark:bg-indigo-950/30": selectedEntity?.type === "datasource" && selectedEntity.name === dataSource._id,
+                                                                    "hover:bg-zinc-50 dark:hover:bg-zinc-800": !(selectedEntity?.type === "datasource" && selectedEntity.name === dataSource._id)
+                                                                }
+                                                            )}
+                                                            onClick={() => handleSelectDataSource(dataSource._id)}
+                                                        >
+                                                            <div
                                                                 ref={selectedEntity?.type === "datasource" && selectedEntity.name === dataSource._id ? selectedRef : undefined}
                                                                 className="flex-1 flex items-center gap-2 text-sm text-left"
-                                                                onClick={() => handleSelectDataSource(dataSource._id)}
                                                             >
                                                                 <div className="shrink-0 flex items-center justify-center w-3 h-3">
                                                                     <DataSourceIcon type={
@@ -1065,7 +1070,7 @@ export const EntityList = forwardRef<
                                                                     } />
                                                                 </div>
                                                                 <span className="text-xs flex-1">{dataSource.name}</span>
-                                                            </button>
+                                                            </div>
                                                             <div className="flex items-center gap-1">
                                                                 {statusPill}
                                                                 <div className="opacity-0 group-hover/datasource:opacity-100 transition-opacity">
@@ -1289,7 +1294,7 @@ interface ComposioCardProps {
     } | null;
     onSelectTool: (name: string) => void;
     onDeleteTool: (name: string) => void;
-    selectedRef: React.RefObject<HTMLButtonElement | null>;
+    selectedRef: React.RefObject<HTMLDivElement | null>;
     projectConfig?: z.infer<typeof Project>;
     projectId: string;
     workflow: z.infer<typeof Workflow>;
@@ -1597,7 +1602,7 @@ const SortableAgentItem = ({ agent, isSelected, onClick, selectedRef, statusLabe
     agent: z.infer<typeof WorkflowAgent>;
     isSelected?: boolean;
     onClick?: () => void;
-    selectedRef?: React.RefObject<HTMLButtonElement | null>;
+    selectedRef?: React.RefObject<HTMLDivElement | null>;
     statusLabel?: React.ReactNode;
     onToggle: (name: string) => void;
     onSetMainAgent: (name: string) => void;
@@ -1672,7 +1677,7 @@ const SortablePipelineItem = ({
     onDeletePipeline: (name: string) => void;
     onDeleteAgent: (name: string) => void;
     onAddAgentToPipeline: (pipelineName: string) => void;
-    selectedRef: React.RefObject<HTMLButtonElement | null>;
+    selectedRef: React.RefObject<HTMLDivElement | null>;
     startAgentName: string | null;
 }) => {
     const {
