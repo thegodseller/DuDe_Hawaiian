@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/common/panel-common";
@@ -19,6 +19,8 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
     const [updating, setUpdating] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    const jobsFilters = useMemo(() => ({ recurringJobRuleId: ruleId }), [ruleId]);
 
     useEffect(() => {
         const loadRule = async () => {
@@ -272,7 +274,7 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
                             </h3>
                             <JobsList 
                                 projectId={projectId} 
-                                filters={{ recurringJobRuleId: ruleId }}
+                                filters={jobsFilters}
                                 showTitle={false}
                             />
                         </div>

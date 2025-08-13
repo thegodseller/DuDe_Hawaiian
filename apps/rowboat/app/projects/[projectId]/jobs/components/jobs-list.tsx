@@ -50,7 +50,7 @@ export function JobsList({ projectId, filters, showTitle = true, customTitle }: 
             setLoading(false);
         })();
         return () => { ignore = true; };
-    }, [fetchPage, filters]);
+    }, [fetchPage]);
 
     const loadMore = useCallback(async () => {
         if (!cursor) return;
