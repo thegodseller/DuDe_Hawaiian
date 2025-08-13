@@ -935,6 +935,13 @@ export function WorkflowEditor({
         }
     }, [projectId]);
 
+    // Hide copilot when switching to live mode
+    useEffect(() => {
+        if (isLive) {
+            setShowCopilot(false);
+        }
+    }, [isLive]);
+
     // Reset initial state when user interacts with copilot or opens other menus
     useEffect(() => {
         if (state.present.selection !== null) {
@@ -1225,13 +1232,13 @@ export function WorkflowEditor({
                                 onChange={handleProjectNameChange}
                                 error={projectNameError}
                                 placeholder="Project name..."
-                                className="text-lg font-semibold"
+                                className="text-lg font-semibold !min-h-[24px] !py-0.5 !border !border-gray-200 dark:!border-gray-700 !rounded-lg"
+                                inline={true}
                             />
                         </div>
                         
                         <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
                         
-                        <WorkflowIcon size={16} />
                         <div className="flex items-center gap-2">
                             {state.present.publishing && <Spinner size="sm" />}
                             {isLive && <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
@@ -1242,35 +1249,7 @@ export function WorkflowEditor({
                                 <PenLine size={16} />
                                 Draft workflow
                             </div>}
-                            {/* Hamburger menu for workflow version switching */}
-                            <Dropdown>
-                                <DropdownTrigger>
-                                    <button
-                                        className="p-1.5 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                                        aria-label="Workflow version menu"
-                                        type="button"
-                                    >
-                                        <HamburgerIcon size={16} />
-                                    </button>
-                                </DropdownTrigger>
-                                <DropdownMenu aria-label="Workflow version options">
-                                    <DropdownItem
-                                        key="switch-version"
-                                        onClick={() => onChangeMode(isLive ? 'draft' : 'live')}
-                                    >
-                                        {isLive ? "View Draft workflow" : "View Live workflow"}
-                                    </DropdownItem>
-                                    {!isLive ? (
-                                        <DropdownItem
-                                            key="revert-to-live"
-                                            onClick={handleRevertToLive}
-                                            className="text-red-600 dark:text-red-400"
-                                        >
-                                            Revert to Live workflow
-                                        </DropdownItem>
-                                    ) : null}
-                                </DropdownMenu>
-                            </Dropdown>
+
                             {/* Download JSON icon button, with tooltip, to the left of the menu */}
                             <Tooltip content="Download Assistant JSON">
                                 <button
@@ -1291,18 +1270,10 @@ export function WorkflowEditor({
                         {isLive && <div className="flex items-center gap-2">
                             <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
                                 <AlertTriangle size={16} />
-                                This version is locked. You cannot make changes. Changes applied through copilot will<b>not</b>be reflected.
+                                This version is locked. Changes applied will not be reflected.
                             </div>
-                            <Button
-                                variant="solid"
-                                size="md"
-                                onPress={() => setShowCopilot(!showCopilot)}
-                                className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
-                                startContent={showCopilot ? null : <Sparkles size={16} />}
-                            >
-                                {showCopilot ? "Hide Skipper" : "Skipper"}
-                            </Button>
                         </div>}
+                        
                         {!isLive && <>
                             <button
                                 className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
@@ -1320,69 +1291,88 @@ export function WorkflowEditor({
                             >
                                 <RedoIcon size={16} />
                             </button>
-                            <div className="flex">
-                                <Button
-                                    variant="solid"
-                                    size="md"
-                                    onPress={handlePublishWorkflow}
-                                    className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-r-none"
-                                    startContent={<RocketIcon size={16} />}
-                                    data-tour-target="deploy"
-                                >
-                                    Deploy
-                                </Button>
-                                <Dropdown>
-                                    <DropdownTrigger>
-                                        <Button
-                                            variant="solid"
-                                            size="md"
-                                            className="min-w-0 px-2 bg-green-600 hover:bg-green-700 border-l-1 border-green-500 text-white font-semibold text-sm rounded-l-none"
-                                        >
-                                            <ChevronDownIcon size={14} />
-                                        </Button>
-                                    </DropdownTrigger>
-                                    <DropdownMenu aria-label="Deploy actions">
-                                        <DropdownItem
-                                            key="settings"
-                                            startContent={<SettingsIcon size={16} />}
-                                            onPress={onSettingsModalOpen}
-                                        >
-                                            API & SDK
-                                        </DropdownItem>
-                                        <DropdownItem
-                                            key="phone"
-                                            startContent={<PhoneIcon size={16} />}
-                                            onPress={onPhoneModalOpen}
-                                        >
-                                            Phone
-                                        </DropdownItem>
-                                        <DropdownItem
-                                            key="chat-widget"
-                                            startContent={<MessageCircleIcon size={16} />}
-                                            onPress={onChatWidgetModalOpen}
-                                        >
-                                            Chat widget
-                                        </DropdownItem>
-                                        <DropdownItem
-                                            key="manage-triggers"
-                                            startContent={<ZapIcon size={16} />}
-                                            onPress={onTriggersModalOpen}
-                                        >
-                                            Manage triggers
-                                        </DropdownItem>
-                                    </DropdownMenu>
-                                </Dropdown>
-                            </div>
+                        </>}
+                        
+                        {/* Deploy CTA - always visible */}
+                        <div className="flex">
                             <Button
                                 variant="solid"
                                 size="md"
-                                onPress={() => setShowCopilot(!showCopilot)}
-                                className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
-                                startContent={showCopilot ? null : <Sparkles size={16} />}
+                                onPress={handlePublishWorkflow}
+                                className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-r-none"
+                                startContent={<RocketIcon size={16} />}
+                                data-tour-target="deploy"
                             >
-                                {showCopilot ? "Hide Skipper" : "Skipper"}
+                                Deploy
                             </Button>
-                        </>}
+                            <Dropdown>
+                                <DropdownTrigger>
+                                    <Button
+                                        variant="solid"
+                                        size="md"
+                                        className="min-w-0 px-2 bg-green-600 hover:bg-green-700 border-l-1 border-green-500 text-white font-semibold text-sm rounded-l-none"
+                                    >
+                                        <ChevronDownIcon size={14} />
+                                    </Button>
+                                </DropdownTrigger>
+                                <DropdownMenu aria-label="Deploy actions">
+                                    <DropdownItem
+                                        key="settings"
+                                        startContent={<SettingsIcon size={16} />}
+                                        onPress={onSettingsModalOpen}
+                                    >
+                                        API & SDK settings
+                                    </DropdownItem>
+                                    <DropdownItem
+                                        key="manage-triggers"
+                                        startContent={<ZapIcon size={16} />}
+                                        onPress={onTriggersModalOpen}
+                                    >
+                                        Manage triggers
+                                    </DropdownItem>
+                                    {!isLive ? (
+                                        <>
+                                            <DropdownItem
+                                                key="view-live"
+                                                startContent={<RadioIcon size={16} />}
+                                                onPress={() => onChangeMode('live')}
+                                            >
+                                                View live version
+                                            </DropdownItem>
+                                            <DropdownItem
+                                                key="reset-to-live"
+                                                startContent={<AlertTriangle size={16} />}
+                                                onPress={handleRevertToLive}
+                                                className="text-red-600 dark:text-red-400"
+                                            >
+                                                Reset to live version
+                                            </DropdownItem>
+                                        </>
+                                    ) : null}
+                                </DropdownMenu>
+                            </Dropdown>
+                        </div>
+                        
+                        {isLive && <div className="flex items-center gap-2">
+                            <Button
+                                variant="solid"
+                                size="md"
+                                onPress={() => onChangeMode('draft')}
+                                className="gap-2 px-4 bg-gray-600 hover:bg-gray-700 text-white font-semibold text-sm"
+                            >
+                                Switch to draft
+                            </Button>
+                        </div>}
+                        
+                        {!isLive && <Button
+                            variant="solid"
+                            size="md"
+                            onPress={() => setShowCopilot(!showCopilot)}
+                            className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
+                            startContent={showCopilot ? null : <Sparkles size={16} />}
+                        >
+                            {showCopilot ? "Hide Skipper" : "Skipper"}
+                        </Button>}
                     </div>
                 </div>
                 <ResizablePanelGroup direction="horizontal" className="grow flex overflow-auto gap-1">
