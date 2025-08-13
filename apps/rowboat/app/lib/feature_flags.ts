@@ -16,3 +16,4 @@ export const USE_TRANSFER_CONTROL_OPTIONS = true;
 export const USE_PRODUCT_TOUR = true;
 export const SHOW_COPILOT_MARQUEE = false;
 export const SHOW_PROMPTS_SECTION = false;
+export const SHOW_DARK_MODE_TOGGLE = false;

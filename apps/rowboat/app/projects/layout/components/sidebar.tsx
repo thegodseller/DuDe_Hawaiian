@@ -23,6 +23,7 @@ import { getProjectConfig } from "@/app/actions/project_actions";
 import { createProjectWithOptions } from "../../lib/project-creation-utils";
 import { useTheme } from "@/app/providers/theme-provider";
 import { USE_PRODUCT_TOUR } from '@/app/lib/feature_flags';
+import { SHOW_DARK_MODE_TOGGLE } from '@/app/lib/feature_flags';
 import { useHelpModal } from "@/app/providers/help-modal-provider";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -263,21 +264,23 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
               </Tooltip>
             )}
 
-            <Tooltip content={collapsed ? "Appearance" : ""} showArrow placement="right">
-              <button 
-                onClick={toggleTheme}
-                className={`
-                  w-full rounded-md flex items-center
-                  text-[15px] font-medium transition-all duration-200
-                  ${collapsed ? 'justify-center py-4' : 'px-4 py-4 gap-3'}
-                  hover:bg-zinc-100 dark:hover:bg-zinc-800/50
-                  text-zinc-600 dark:text-zinc-400
-                `}
-              >
-                { theme == "light" ? <Moon size={COLLAPSED_ICON_SIZE} /> : <Sun size={COLLAPSED_ICON_SIZE} /> }
-                {!collapsed && <span>Appearance</span>}
-              </button>
-            </Tooltip>
+            {SHOW_DARK_MODE_TOGGLE && (
+              <Tooltip content={collapsed ? "Appearance" : ""} showArrow placement="right">
+                <button 
+                  onClick={toggleTheme}
+                  className={`
+                    w-full rounded-md flex items-center
+                    text-[15px] font-medium transition-all duration-200
+                    ${collapsed ? 'justify-center py-4' : 'px-4 py-4 gap-3'}
+                    hover:bg-zinc-100 dark:hover:bg-zinc-800/50
+                    text-zinc-600 dark:text-zinc-400
+                  `}
+                >
+                  { theme == "light" ? <Moon size={COLLAPSED_ICON_SIZE} /> : <Sun size={COLLAPSED_ICON_SIZE} /> }
+                  {!collapsed && <span>Appearance</span>}
+                </button>
+              </Tooltip>
+            )}
 
             {useAuth && (
               <Tooltip content={collapsed ? "Account" : ""} showArrow placement="right">
