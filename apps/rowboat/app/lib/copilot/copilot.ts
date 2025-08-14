@@ -301,7 +301,7 @@ export async function* streamMultiAgentResponse(
     // call model
     console.log("🤖 AI MODEL CALL STARTED", {
         model: COPILOT_MODEL,
-        maxSteps: 5,
+        maxSteps: 20,
         availableTools: ["search_relevant_tools"]
     });
     

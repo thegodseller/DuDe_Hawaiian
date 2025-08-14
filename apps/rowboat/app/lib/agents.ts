@@ -1100,7 +1100,7 @@ async function* handleMessageOutput(
                 nextAgentName = workflow.startAgent;
                 loopLogger.log(`-- using start agent: ${nextAgentName} || reason: ${current} is a pipeline, no parent agent`);
             }
-        } else if (currentAgentConfig?.controlType === 'relinquish_to_parent' || currentAgentConfig?.controlType === 'retain') {
+        } else if (currentAgentConfig?.controlType === 'relinquish_to_parent') {
             if (stack.length > 0) {
                 nextAgentName = stack.pop()!;
                 loopLogger.log(`-- popped agent from stack: ${nextAgentName} || reason: ${current} is an internal agent, it put out a message and it has a control type of ${currentAgentConfig?.controlType}, hence the flow of control needs to return to the previous agent`);
