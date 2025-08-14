@@ -115,13 +115,14 @@ export const CONVERSATION_TYPE_INSTRUCTIONS = (): string => `
 - Reading the messages in the chat history will give you context about the conversation. But importantly, your response should simply be the direct text to the user. 
 - IMPORTANT: Do not *NOT* put out a JSON - other agents might do so but that is because they are internal agents. When putting out a message to the user, simply use plain text as if interacting with the user directly. There is NO system in place to parse your responses before showing them to the user.
 - Seeing the tool calls that transfer / handoff control will help you understand the flow of the conversation and which agent produced each message.
+- If you see an internal message from other agents as the last message in the chat history, the message is meant for you - the user won't know about it.
 - When using internal messages that other agents have put out, make sure to write it in a way that is suitable to be shown to the user and in accordance with further instructions below.
 - These are high level instructions only. The user will provide more specific instructions which will be below.
 `;
 
 export const TASK_TYPE_INSTRUCTIONS = (): string => `
 - You are an agent that is part of a workflow of (one or more) interconnected agents that work together to be an assistant.
-- Your response will not be shown directly to the user. Instead, your response will be used by the agent that might have invoked you and (possibly) other agents in the workflow. Therefore, your responses must be worded in such a way that it is useful for other agents and not addressed to the user.
+- Your response will not be shown directly to the user. Instead, your response will be used by the agent that might have invoked you and (possibly) other agents in the workflow. Therefore, your responses must be worded in such a way that it is useful for other agents and not addressed to the user. Add a prefix 'Internal message' to your response. 
 - Provide clear, direct responses that other agents can easily understand and act upon.
 - IMPORTANT: If you have all the information to take action, such as calling a tool or writing a response, you should do that in the immediate turn. Do not delay action unnecessarily.
 - Reading the messages in the chat history will give you context about the conversation.
