@@ -35,6 +35,7 @@ export function ToolsConfig({
   const [activeTab, setActiveTab] = useState(defaultActiveTab);
   const [selectedToolkit, setSelectedToolkit] = useState<ToolkitType | null>(null);
   const [isToolsPanelOpen, setIsToolsPanelOpen] = useState(false);
+  const useBilling = process.env.NEXT_PUBLIC_USE_BILLING === "true";
 
   const handleTabChange = (key: Key) => {
     setActiveTab(key.toString());
@@ -84,14 +85,14 @@ export function ToolsConfig({
             />
           </div>
         </Tab>
-        <Tab key="webhook" title="Webhook">
+        {!useBilling && <Tab key="webhook" title="Webhook">
           <div className="mt-4 p-6">
             <AddWebhookTool
               projectId={projectId}
               onAddTool={onAddTool}
             />
           </div>
-        </Tab>
+        </Tab>}
       </Tabs>
       
       {/* Tools Panel */}

@@ -541,9 +541,12 @@ export function createTools(
         } else if (config.isComposio) {
             tools[toolName] = createComposioTool(logger, usageTracker, config, projectId);
             toolLogger.log(`✓ created composio tool: ${toolName}`);
-        } else {
+        } else if (config.isWebhook) {
             tools[toolName] = createWebhookTool(logger, usageTracker, config, projectId);
             toolLogger.log(`✓ created webhook tool: ${toolName} (fallback)`);
+        } else { // this is for placeholder tools
+            tools[toolName] = createMockTool(logger, usageTracker, config);
+            toolLogger.log(`✓ created mock tool: ${toolName}`);
         }
     }
     

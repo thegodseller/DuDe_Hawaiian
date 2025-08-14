@@ -76,6 +76,7 @@ export const WorkflowTool = z.object({
     mcpServerName: z.string().optional(),
     isComposio: z.boolean().optional(), // whether this is a Composio tool
     isLibrary: z.boolean().default(false).optional(), // whether this is a library tool
+    isWebhook: z.boolean().optional(), // whether this is a webhook tool
     composioData: z.object({
         slug: z.string(), // the slug for the Composio tool e.g. "GITHUB_CREATE_AN_ISSUE"
         noAuth: z.boolean(), // whether the tool requires no authentication

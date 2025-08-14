@@ -15,7 +15,8 @@ export function AddWebhookTool({ projectId, onAddTool }: AddWebhookToolProps) {
   function handleAddTool() {
     onAddTool({
       description: 'Webhook tool',
-      mockTool: false,
+      mockTool: true,
+      isWebhook: true,
     });
   }
 
