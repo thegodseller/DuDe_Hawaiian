@@ -59,6 +59,16 @@ const ZDoneEvent = z.object({
 
 const ZEvent = z.union([ZTextEvent, ZToolCallEvent, ZToolResultEvent, ZDoneEvent]);
 
+const composioToolSearchToolSuggestion = z.object({
+    toolkit: z.string(),
+    tool_slug: z.string(),
+    description: z.string(),
+});
+const composioToolSearchResponseSchema = z.object({
+    results: z.array(composioToolSearchToolSuggestion),
+    related_tools: z.array(composioToolSearchToolSuggestion),
+});
+
 function getContextPrompt(context: z.infer<typeof CopilotChatContext> | null): string {
     let prompt = '';
     switch (context?.type) {
@@ -127,46 +137,28 @@ async function searchRelevantTools(query: string): Promise<string> {
         arguments: { use_case: query },
     });
 
-    if (!searchResult.successful || !Array.isArray(searchResult.data?.results)) {
-        logger.log("tool search was not successful or returned no results");
-        console.log("❌ TOOL CALL FAILED: COMPOSIO_SEARCH_TOOLS", { 
-            successful: searchResult.successful, 
-            results: searchResult.data?.results 
-        });
-        return '';
+    if (!searchResult.successful) {
+        logger.log(`tool search failed: ${searchResult.error}`)
+        return 'No tools found!';
     }
 
-    // Log the actual response structure to debug
-    logger.log("Raw search results:", JSON.stringify(searchResult.data.results, null, 2));
+    // parse results
+    const result = composioToolSearchResponseSchema.safeParse(searchResult.data);
+    if (!result.success) {
+        logger.log(`tool search response is invalid: ${result.error}`);
+        return 'No tools found!';
+    }
+    if (!result.data.results.length) {
+        logger.log(`tool search yielded no results`);
+        return 'No tools found!';
+    }
 
-    // Extract tool slugs with defensive handling for different possible field names
-    const toolSlugs: string[] = searchResult.data.results
-        .map((result: any) => {
-            // Try different possible field names for the tool slug
-            const slug = result.tool || result.slug || result.tool_slug || result.name;
-            logger.log(`Processing result:`, { result, extractedSlug: slug });
-            return slug;
-        })
-        .filter((slug): slug is string => {
-            const isValid = typeof slug === 'string' && slug.length > 0;
-            if (!isValid) {
-                logger.log(`Filtering out invalid slug:`, slug);
-            }
-            return isValid;
-        });
-    
+    const toolSlugs = result.data.results.map((item) => item.tool_slug);
     logger.log(`found tool slugs: ${toolSlugs.join(', ')}`);
     console.log("✅ TOOL CALL SUCCESS: COMPOSIO_SEARCH_TOOLS", { 
         toolSlugs, 
         resultCount: toolSlugs.length 
     });
-
-    // Check if we have any valid tool slugs before proceeding
-    if (toolSlugs.length === 0) {
-        logger.log("No valid tool slugs found after filtering");
-        console.log("⚠️ TOOL CALL WARNING: No valid tools found after filtering");
-        return 'No valid tools found for the given query. The search returned results but they contained invalid tool identifiers.';
-    }
 
     // Enrich tools with full details
     console.log("🔧 TOOL CALL: getTool (multiple calls)", { toolSlugs });
