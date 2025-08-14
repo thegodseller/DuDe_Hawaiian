@@ -94,6 +94,9 @@ export class JobsWorker implements IJobsWorker {
                 logger.log(`Received event: ${event.type}`);
                 if (event.type === "done") {
                     turn = event.turn;
+                } else if (event.type === "error") {
+                    logger.log(`Error: ${event.error}`);
+                    throw new Error(event.error);
                 }
             }
             if (!turn) {

@@ -2,11 +2,14 @@ import { IJobsRepository } from "@/src/application/repositories/jobs.repository.
 import { IComposioTriggerDeploymentsRepository } from "@/src/application/repositories/composio-trigger-deployments.repository.interface";
 import { createHmac, timingSafeEqual } from "crypto";
 import { z } from "zod";
-import { BadRequestError } from "@/src/entities/errors/common";
+import { BadRequestError, BillingError, NotFoundError } from "@/src/entities/errors/common";
 import { UserMessage } from "@/app/lib/types/types";
 import { PrefixLogger } from "@/app/lib/utils";
 import { IProjectsRepository } from "@/src/application/repositories/projects.repository.interface";
 import { IPubSubService } from "@/src/application/services/pub-sub.service.interface";
+import { authorize, logUsage } from "@/app/lib/billing";
+import { getCustomerIdForProject } from "@/app/lib/billing";
+import { USE_BILLING } from "@/app/lib/feature_flags";
 
 const WEBHOOK_SECRET = process.env.COMPOSIO_TRIGGERS_WEBHOOK_SECRET || "test";
 
@@ -91,60 +94,70 @@ export class HandleCompsioWebhookRequestUseCase implements IHandleCompsioWebhook
 
         const logger = new PrefixLogger(`composio-trigger-webhook-[${event.type}]-[${event.data.trigger_nano_id}]`);
 
-        // create a job for each deployment across all pages
-        const msg: z.infer<typeof UserMessage> = {
-            role: "user",
-            content: `This chat is being invoked through a trigger. Here is the trigger data:\n\n${JSON.stringify(event, null, 2)}`,
-        };
+        // fetch trigger deployment data from db
+        const deployment = await this.composioTriggerDeploymentsRepository.fetchByComposioTriggerId(event.data.trigger_nano_id);
+        if (!deployment) {
+            throw new BadRequestError("Trigger not found");
+        }
 
-        // fetch registered trigger deployments for this event type
-        let cursor: string | null = null;
-        let jobs = 0;
-        do {
-            const triggerDeployments = await this.composioTriggerDeploymentsRepository.listByTriggerId(event.data.trigger_nano_id, cursor || undefined);
+        const { projectId } = deployment;
 
-            // create a job for each deployment in the current page
-            for (const deployment of triggerDeployments.items) {
-                // fetch project
-                const project = await this.projectsRepository.fetch(deployment.projectId);
-                if (!project) {
-                    logger.log(`Project ${deployment.projectId} not found`);
-                    continue;
-                }
+        // Check billing auth
+        if (USE_BILLING) {
+            // get billing customer id for project
+            const billingCustomerId = await getCustomerIdForProject(projectId);
 
-                // ensure workflow
-                if (!project.liveWorkflow) {
-                    logger.log(`Project ${deployment.projectId} has no live workflow`);
-                    continue;
-                }
-
-                // create job
-                const job = await this.jobsRepository.create({
-                    reason: {
-                        type: "composio_trigger",
-                        triggerId: event.data.trigger_nano_id,
-                        triggerDeploymentId: deployment.id,
-                        triggerTypeSlug: deployment.triggerTypeSlug,
-                        payload: event,
-                    },
-                    projectId: deployment.projectId,
-                    input: {
-                        messages: [msg],
-                    },
-                });
-
-                // notify workers
-                await this.pubSubService.publish('new_jobs', job.id);
-
-                jobs++;
-                logger.log(`Created job ${job.id} for trigger deployment ${deployment.id}`);
+            // validate enough credits
+            const result = await authorize(billingCustomerId, {
+                type: "use_credits"
+            });
+            if (!result.success) {
+                throw new BillingError("Not enough credits");
             }
 
-            // check if there are more pages
-            cursor = triggerDeployments.nextCursor;
-        } while (cursor);
+            // log usage for composio trigger
+            await logUsage(billingCustomerId, {
+                items: [{
+                    type: "COMPOSIO_TRIGGER_USAGE",
+                    triggerSlug: deployment.triggerTypeSlug,
+                    context: "trigger.composio",
+                }],
+            });
+        }
 
-        logger.log(`Created ${jobs} jobs for trigger ${event.data.trigger_nano_id}`);
+        // fetch project
+        const project = await this.projectsRepository.fetch(deployment.projectId);
+        if (!project) {
+            throw new NotFoundError("Project not found");
+        }
+
+        // ensure workflow
+        if (!project.liveWorkflow) {
+            throw new BadRequestError("Project has no live workflow");
+        }
+
+        // create job
+        const job = await this.jobsRepository.create({
+            reason: {
+                type: "composio_trigger",
+                triggerId: event.data.trigger_nano_id,
+                triggerDeploymentId: deployment.id,
+                triggerTypeSlug: deployment.triggerTypeSlug,
+                payload: event,
+            },
+            projectId: deployment.projectId,
+            input: {
+                messages: [{
+                    role: "user",
+                    content: `This chat is being invoked through a trigger. Here is the trigger data:\n\n${JSON.stringify(event, null, 2)}`,
+                }],
+            },
+        });
+
+        // notify workers
+        await this.pubSubService.publish('new_jobs', job.id);
+
+        logger.log(`Created job ${job.id} for trigger deployment ${deployment.id}`);
     }
 
     private verifySignature(headers: Record<string, string>, payload: string): void {

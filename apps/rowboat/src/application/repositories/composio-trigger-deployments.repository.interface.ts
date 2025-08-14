@@ -42,6 +42,14 @@ export interface IComposioTriggerDeploymentsRepository {
      * @returns Promise resolving to the deployment if found, null if not found
      */
     fetch(id: string): Promise<z.infer<typeof ComposioTriggerDeployment> | null>;
+
+    /**
+     * Fetches a trigger deployment by its Composio trigger ID.
+     * 
+     * @param triggerId - The unique identifier of the Composio trigger
+     * @returns Promise resolving to the deployment if found, null if not found
+     */
+    fetchByComposioTriggerId(triggerId: string): Promise<z.infer<typeof ComposioTriggerDeployment> | null>;
     
     /**
      * Deletes a Composio trigger deployment by its ID.
@@ -69,16 +77,6 @@ export interface IComposioTriggerDeploymentsRepository {
      * @returns Promise resolving to a paginated list of deployments associated with the project
      */
     listByProjectId(projectId: string, cursor?: string, limit?: number): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ComposioTriggerDeployment>>>>;
-    
-    /**
-     * Retrieves all trigger deployments for a specific trigger.
-     * 
-     * @param triggerId - The identifier of the trigger
-     * @param cursor - Optional cursor for pagination
-     * @param limit - Optional limit for the number of items to return
-     * @returns Promise resolving to a paginated list of deployments for the specified trigger
-     */
-    listByTriggerId(triggerId: string, cursor?: string, limit?: number): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ComposioTriggerDeployment>>>>;
     
     /**
      * Deletes all trigger deployments associated with a specific connected account.

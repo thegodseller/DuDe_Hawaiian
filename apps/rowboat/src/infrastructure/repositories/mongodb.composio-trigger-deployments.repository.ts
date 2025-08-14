@@ -82,6 +82,24 @@ export class MongodbComposioTriggerDeploymentsRepository implements IComposioTri
     }
 
     /**
+     * Fetches a trigger deployment by its Composio trigger ID.
+     */
+    async fetchByComposioTriggerId(triggerId: string): Promise<z.infer<typeof ComposioTriggerDeployment> | null> {
+        const result = await this.collection.findOne({ triggerId });
+
+        if (!result) {
+            return null;
+        }
+
+        const { _id, ...rest } = result;
+
+        return {
+            ...rest,
+            id: _id.toString(),
+        };
+    }
+
+    /**
      * Deletes a Composio trigger deployment by its ID.
      */
     async delete(id: string): Promise<boolean> {
@@ -118,37 +136,6 @@ export class MongodbComposioTriggerDeploymentsRepository implements IComposioTri
      */
     async listByProjectId(projectId: string, cursor?: string, limit: number = 50): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ComposioTriggerDeployment>>>> {
         const query: any = { projectId };
-
-        if (cursor) {
-            query._id = { $gt: new ObjectId(cursor) };
-        }
-
-        const results = await this.collection
-            .find(query)
-            .sort({ _id: 1 })
-            .limit(limit + 1) // Fetch one extra to determine if there's a next page
-            .toArray();
-
-        const hasNextPage = results.length > limit;
-        const items = results.slice(0, limit).map(doc => {
-            const { _id, ...rest } = doc;
-            return {
-                ...rest,
-                id: _id.toString(),
-            };
-        });
-
-        return {
-            items,
-            nextCursor: hasNextPage ? results[limit - 1]._id.toString() : null,
-        };
-    }
-
-    /**
-     * Retrieves all trigger deployments for a specific trigger with pagination.
-     */
-    async listByTriggerId(triggerId: string, cursor?: string, limit: number = 50): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ComposioTriggerDeployment>>>> {
-        const query: any = { triggerId };
 
         if (cursor) {
             query._id = { $gt: new ObjectId(cursor) };

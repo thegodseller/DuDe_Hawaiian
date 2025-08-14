@@ -6,6 +6,7 @@ export const UsageTypeKey = z.enum([
     "LLM_USAGE",
     "EMBEDDING_MODEL_USAGE",
     "COMPOSIO_TOOL_USAGE",
+    "COMPOSIO_TRIGGER_USAGE",
     "FIRECRAWL_SCRAPE_USAGE",
 ]);
 
@@ -30,6 +31,12 @@ export const ComposioToolUsage = z.object({
     context: z.string(),
 });
 
+export const ComposioTriggerUsage = z.object({
+    type: z.literal(UsageTypeKey.Enum.COMPOSIO_TRIGGER_USAGE),
+    triggerSlug: z.string(),
+    context: z.string(),
+});
+
 export const FirecrawlScrapeUsage = z.object({
     type: z.literal(UsageTypeKey.Enum.FIRECRAWL_SCRAPE_USAGE),
     context: z.string(),
@@ -39,6 +46,7 @@ export const UsageItem = z.discriminatedUnion("type", [
     LLMUsage,
     EmbeddingModelUsage,
     ComposioToolUsage,
+    ComposioTriggerUsage,
     FirecrawlScrapeUsage,
 ]);
 
