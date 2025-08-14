@@ -26,7 +26,8 @@ export const WorkflowAgent = z.object({
         'relinquish_to_start',
     ]).optional().describe('Whether this agent retains control after a turn, relinquishes to the parent agent, or relinquishes to the start agent'),
     maxCallsPerParentAgent: z.number().default(3).describe('Maximum number of times this agent can be called by a parent agent in a single turn').optional(),
-}).refine((data) => {
+});
+export const StrictWorkflowAgent = WorkflowAgent.refine((data) => {
     // Pipeline agents should have internal output visibility and relinquish_to_parent control type
     if (data.type === 'pipeline' && data.outputVisibility !== 'internal') {
         return false;
