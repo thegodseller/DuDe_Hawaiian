@@ -12,15 +12,15 @@ export const UsageTypeKey = z.enum([
 export const LLMUsage = z.object({
     type: z.literal(UsageTypeKey.Enum.LLM_USAGE),
     modelName: z.string(),
-    inputTokens: z.number().positive(),
-    outputTokens: z.number().positive(),
+    inputTokens: z.number(),
+    outputTokens: z.number(),
     context: z.string(),
 });
 
 export const EmbeddingModelUsage = z.object({
     type: z.literal(UsageTypeKey.Enum.EMBEDDING_MODEL_USAGE),
     modelName: z.string(),
-    tokens: z.number().positive(),
+    tokens: z.number(),
     context: z.string(),
 });
 
