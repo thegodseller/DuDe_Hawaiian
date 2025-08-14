@@ -59,6 +59,16 @@ const ZDoneEvent = z.object({
 
 const ZEvent = z.union([ZTextEvent, ZToolCallEvent, ZToolResultEvent, ZDoneEvent]);
 
+const composioToolSearchToolSuggestion = z.object({
+    toolkit: z.string(),
+    tool_slug: z.string(),
+    description: z.string(),
+});
+const composioToolSearchResponseSchema = z.object({
+    results: z.array(composioToolSearchToolSuggestion),
+    related_tools: z.array(composioToolSearchToolSuggestion),
+});
+
 function getContextPrompt(context: z.infer<typeof CopilotChatContext> | null): string {
     let prompt = '';
     switch (context?.type) {
@@ -127,16 +137,23 @@ async function searchRelevantTools(query: string): Promise<string> {
         arguments: { use_case: query },
     });
 
-    if (!searchResult.successful || !Array.isArray(searchResult.data?.results)) {
-        logger.log("tool search was not successful or returned no results");
-        console.log("❌ TOOL CALL FAILED: COMPOSIO_SEARCH_TOOLS", { 
-            successful: searchResult.successful, 
-            results: searchResult.data?.results 
-        });
-        return '';
+    if (!searchResult.successful) {
+        logger.log(`tool search failed: ${searchResult.error}`)
+        return 'No tools found!';
     }
 
-    const toolSlugs: string[] = searchResult.data.results.map((result: any) => result.tool);
+    // parse results
+    const result = composioToolSearchResponseSchema.safeParse(searchResult.data);
+    if (!result.success) {
+        logger.log(`tool search response is invalid: ${result.error}`);
+        return 'No tools found!';
+    }
+    if (!result.data.results.length) {
+        logger.log(`tool search yielded no results`);
+        return 'No tools found!';
+    }
+
+    const toolSlugs = result.data.results.map((item) => item.tool_slug);
     logger.log(`found tool slugs: ${toolSlugs.join(', ')}`);
     console.log("✅ TOOL CALL SUCCESS: COMPOSIO_SEARCH_TOOLS", { 
         toolSlugs, 
