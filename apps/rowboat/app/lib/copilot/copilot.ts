@@ -34,6 +34,7 @@ const SYSTEM_PROMPT = [
 const openai = createOpenAI({
     apiKey: PROVIDER_API_KEY,
     baseURL: PROVIDER_BASE_URL,
+    compatibility: "strict",
 });
 
 const ZTextEvent = z.object({

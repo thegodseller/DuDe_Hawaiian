@@ -1,5 +1,5 @@
 // External dependencies
-import { Agent, AgentInputItem, run, Tool } from "@openai/agents";
+import { Agent, AgentInputItem, run, RunRawModelStreamEvent, Tool } from "@openai/agents";
 import { RECOMMENDED_PROMPT_PREFIX } from "@openai/agents-core/extensions";
 import { aisdk } from "@openai/agents-extensions";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -78,6 +78,7 @@ interface AgentState {
 const openai = createOpenAI({
     apiKey: PROVIDER_API_KEY,
     baseURL: PROVIDER_BASE_URL,
+    compatibility: "strict",
 });
 
 const ZOutMessage = z.union([
@@ -734,7 +735,7 @@ function maybeInjectGiveUpControlInstructions(
 
 // Handle raw model stream events
 async function* handleRawModelStreamEvent(
-    event: any,
+    event: RunRawModelStreamEvent,
     agentConfig: Record<string, z.infer<typeof WorkflowAgent>>,
     agentName: string,
     turnMsgs: z.infer<typeof Message>[],
