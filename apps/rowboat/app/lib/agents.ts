@@ -12,6 +12,8 @@ import { ConnectedEntity, sanitizeTextWithMentions, Workflow, WorkflowAgent, Wor
 import { CHILD_TRANSFER_RELATED_INSTRUCTIONS, CONVERSATION_TYPE_INSTRUCTIONS, PIPELINE_TYPE_INSTRUCTIONS, RAG_INSTRUCTIONS, TASK_TYPE_INSTRUCTIONS } from "./agent_instructions";
 import { PrefixLogger } from "./utils";
 import { Message, AssistantMessage, AssistantMessageWithToolCalls, ToolMessage } from "./types/types";
+import { UsageTracker } from "./billing";
+
 // Native handoff support
 import { createAgentHandoff, getSchemaForAgent, createContextFilterForAgent } from "./agent-handoffs";
 import { PipelineStateManager } from "./pipeline-state-manager";
@@ -78,14 +80,6 @@ const openai = createOpenAI({
     baseURL: PROVIDER_BASE_URL,
 });
 
-const ZUsage = z.object({
-    tokens: z.object({
-        total: z.number(),
-        prompt: z.number(),
-        completion: z.number(),
-    }),
-});
-
 const ZOutMessage = z.union([
     AssistantMessage,
     AssistantMessageWithToolCalls,
@@ -95,6 +89,7 @@ const ZOutMessage = z.union([
 // Helper to create an agent
 function createAgent(
     logger: PrefixLogger,
+    usageTracker: UsageTracker,
     projectId: string,
     config: z.infer<typeof WorkflowAgent>,
     tools: Record<string, Tool>,
@@ -145,7 +140,7 @@ ${CHILD_TRANSFER_RELATED_INSTRUCTIONS}
 
     // Add RAG tool if needed
     if (config.ragDataSources?.length) {
-        const ragTool = createRagTool(logger, config, projectId);
+        const ragTool = createRagTool(logger, usageTracker, config, projectId);
         agentTools.push(ragTool);
 
         // update instructions to include RAG instructions
@@ -269,8 +264,8 @@ function getStartOfTurnAgentName(
 // Logs an event and then yields it
 async function* emitEvent(
     logger: PrefixLogger,
-    event: z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage>,
-): AsyncIterable<z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage>> {
+    event: z.infer<typeof ZOutMessage>,
+): AsyncIterable<z.infer<typeof ZOutMessage>> {
     logger.log(`-> emitting event: ${JSON.stringify(event)}`);
     yield event;
     return;
@@ -318,30 +313,6 @@ class AgentTransferCounter {
     get(fromAgent: string, toAgent: string): number {
         const key = `${fromAgent}:${toAgent}`;
         return this.calls[key] || 0;
-    }
-}
-
-class UsageTracker {
-    private usage: {
-        total: number;
-        prompt: number;
-        completion: number;
-    } = { total: 0, prompt: 0, completion: 0 };
-
-    increment(total: number, prompt: number, completion: number): void {
-        this.usage.total += total;
-        this.usage.prompt += prompt;
-        this.usage.completion += completion;
-    }
-
-    get(): { total: number, prompt: number, completion: number } {
-        return this.usage;
-    }
-
-    asEvent(): z.infer<typeof ZUsage> {
-        return {
-            tokens: this.usage,
-        };
     }
 }
 
@@ -396,7 +367,7 @@ function mapConfig(workflow: z.infer<typeof Workflow>): {
     return { agentConfig, toolConfig, promptConfig, pipelineConfig };
 }
 
-async function* emitGreetingTurn(logger: PrefixLogger, workflow: z.infer<typeof Workflow>): AsyncIterable<z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage>> {
+async function* emitGreetingTurn(logger: PrefixLogger, workflow: z.infer<typeof Workflow>): AsyncIterable<z.infer<typeof ZOutMessage>> {
     // find the greeting prompt
     const prompt = workflow.prompts.find(p => p.type === 'greeting')?.prompt || 'How can I help you today?';
     logger.log(`greeting turn: ${prompt}`);
@@ -408,15 +379,13 @@ async function* emitGreetingTurn(logger: PrefixLogger, workflow: z.infer<typeof 
         agentName: workflow.startAgent,
         responseType: 'external',
     });
-
-    // emit final usage information
-    yield* emitEvent(logger, new UsageTracker().asEvent());
 }
 
 
 // Enhanced agent creation with native handoff support
 function createAgentsWithNativeHandoffs(
     logger: PrefixLogger,
+    usageTracker: UsageTracker,
     projectId: string,
     workflow: z.infer<typeof Workflow>,
     agentConfig: Record<string, z.infer<typeof WorkflowAgent>>,
@@ -447,6 +416,7 @@ function createAgentsWithNativeHandoffs(
         
         const { agent, entities } = createAgent(
             logger,
+            usageTracker,
             projectId,
             config,
             tools,
@@ -560,6 +530,7 @@ function createAgentsWithNativeHandoffs(
 // Legacy agent creation (existing implementation)
 function createAgentsLegacy(
     logger: PrefixLogger,
+    usageTracker: UsageTracker,
     projectId: string,
     workflow: z.infer<typeof Workflow>,
     agentConfig: Record<string, z.infer<typeof WorkflowAgent>>,
@@ -595,6 +566,7 @@ function createAgentsLegacy(
 
         const { agent, entities } = createAgent(
             logger,
+            usageTracker,
             projectId,
             config,
             tools,
@@ -763,12 +735,13 @@ function maybeInjectGiveUpControlInstructions(
 // Handle raw model stream events
 async function* handleRawModelStreamEvent(
     event: any,
+    agentConfig: Record<string, z.infer<typeof WorkflowAgent>>,
     agentName: string,
     turnMsgs: z.infer<typeof Message>[],
     usageTracker: UsageTracker,
     eventLogger: PrefixLogger,
     getAgentState?: (agentName: string) => AgentState
-): AsyncIterable<z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage>> {
+): AsyncIterable<z.infer<typeof ZOutMessage>> {
     if (event.data.type === 'response_done') {
         // Count tool calls (excluding transfer_to_* calls)
         const toolCallCount = event.data.response.output.filter(
@@ -809,12 +782,13 @@ async function* handleRawModelStreamEvent(
         }
 
         // update usage information
-        usageTracker.increment(
-            event.data.response.usage.totalTokens,
-            event.data.response.usage.inputTokens,
-            event.data.response.usage.outputTokens
-        );
-        eventLogger.log(`updated usage information: ${JSON.stringify(usageTracker.get())}`);
+        usageTracker.track({
+            type: "LLM_USAGE",
+            modelName: agentConfig[agentName]?.model || "unknown",
+            inputTokens: event.data.response.usage.inputTokens,
+            outputTokens: event.data.response.usage.outputTokens,
+            context: "agents_runtime.llm_usage",
+        });
     }
 }
 
@@ -833,7 +807,7 @@ async function* handleNativeHandoffEvent(
     originalHandoffs: Record<string, any[]>,
     eventLogger: PrefixLogger,
     loopLogger: PrefixLogger
-): AsyncIterable<z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage> | { newAgentName: string; shouldContinue?: boolean }> {
+): AsyncIterable<z.infer<typeof ZOutMessage> | { newAgentName: string; shouldContinue?: boolean }> {
     eventLogger.log(`🔄 NATIVE HANDOFF EVENT: ${agentName} -> ${event.item.targetAgent.name}`);
 
     // skip if its the same agent
@@ -943,7 +917,7 @@ async function* handleHandoffEvent(
     originalHandoffs: Record<string, Agent[]>,
     eventLogger: PrefixLogger,
     loopLogger: PrefixLogger
-): AsyncIterable<z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage> | { newAgentName: string }> {
+): AsyncIterable<z.infer<typeof ZOutMessage> | { newAgentName: string }> {
     eventLogger.log(`🔄 HANDOFF EVENT: ${agentName} -> ${event.item.targetAgent.name}`);
 
     // skip if its the same agent
@@ -1010,7 +984,7 @@ async function* handleToolCallResult(
     event: any,
     turnMsgs: z.infer<typeof Message>[],
     eventLogger: PrefixLogger
-): AsyncIterable<z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage>> {
+): AsyncIterable<z.infer<typeof ZOutMessage>> {
     const m: z.infer<typeof Message> = {
         role: 'tool',
         content: event.item.rawItem.output.text,
@@ -1039,7 +1013,7 @@ async function* handleMessageOutput(
     eventLogger: PrefixLogger,
     loopLogger: PrefixLogger,
     getAgentState: (agentName: string) => AgentState
-): AsyncIterable<z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage> | { newAgentName: string | null; shouldContinue: boolean }> {
+): AsyncIterable<z.infer<typeof ZOutMessage> | { newAgentName: string | null; shouldContinue: boolean }> {
     // check response visibility - could be an agent or pipeline
     const agentConfigObj = agentConfig[agentName];
     const pipelineConfigObj = pipelineConfig[agentName];
@@ -1243,7 +1217,8 @@ export async function* streamResponse(
     projectId: string,
     workflow: z.infer<typeof Workflow>,
     messages: z.infer<typeof Message>[],
-): AsyncIterable<z.infer<typeof ZOutMessage> | z.infer<typeof ZUsage>> {
+    usageTracker: UsageTracker,
+): AsyncIterable<z.infer<typeof ZOutMessage>> {
     // Divider log for tracking agent loop start
     console.log('-------------------- AGENT LOOP START --------------------');
     // set up logging
@@ -1275,11 +1250,11 @@ export async function* streamResponse(
     logger.log(`initialized stack: ${JSON.stringify(stack)}`);
 
     // create tools
-    const tools = createTools(logger, projectId, workflow, toolConfig);
+    const tools = createTools(logger, usageTracker, projectId, workflow, toolConfig);
 
     // create agents with feature flag support
     const createAgentsFunction = USE_NATIVE_HANDOFFS ? createAgentsWithNativeHandoffs : createAgentsLegacy;
-    const { agents, originalInstructions, originalHandoffs } = createAgentsFunction(logger, projectId, workflow, agentConfig, tools, promptConfig, pipelineConfig);
+    const { agents, originalInstructions, originalHandoffs } = createAgentsFunction(logger, usageTracker, projectId, workflow, agentConfig, tools, promptConfig, pipelineConfig);
     
     logger.log(`Using ${USE_NATIVE_HANDOFFS ? 'NATIVE SDK' : 'LEGACY'} handoffs`);
 
@@ -1296,7 +1271,6 @@ export async function* streamResponse(
     let agentName: string | null = startOfTurnAgentName;
 
     // start the turn loop
-    const usageTracker = new UsageTracker();
     const turnMsgs: z.infer<typeof Message>[] = [...messages];
 
     // Initialize agent state tracking for tool call completion
@@ -1390,7 +1364,7 @@ export async function* streamResponse(
 
             switch (event.type) {
                 case 'raw_model_stream_event':
-                    yield* handleRawModelStreamEvent(event, agentName!, turnMsgs, usageTracker, eventLogger, getAgentState);
+                    yield* handleRawModelStreamEvent(event, agentConfig, agentName!, turnMsgs, usageTracker, eventLogger, getAgentState);
                     break;
 
                 case 'run_item_stream_event':
@@ -1523,9 +1497,6 @@ export async function* streamResponse(
         }
 
     }
-
-    // emit usage information
-    yield* emitEvent(logger, usageTracker.asEvent());
 }
 
 // this is a sync version of streamResponse
@@ -1535,8 +1506,10 @@ export async function getResponse(
     messages: z.infer<typeof Message>[],
 ): Promise<{
     messages: z.infer<typeof ZOutMessage>[],
-    usage: z.infer<typeof ZUsage>,
+    usage: any,
 }> {
+    throw new Error("Not implemented!");
+    /*
     const out: z.infer<typeof ZOutMessage>[] = [];
     let usage: z.infer<typeof ZUsage> = {
         tokens: {
@@ -1554,4 +1527,5 @@ export async function getResponse(
         }
     }
     return { messages: out, usage };
+    */
 }
