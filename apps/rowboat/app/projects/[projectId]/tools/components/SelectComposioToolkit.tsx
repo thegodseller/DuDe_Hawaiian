@@ -22,13 +22,17 @@ interface SelectComposioToolkitProps {
   tools: z.infer<typeof Workflow.shape.tools>;
   onSelectToolkit: (toolkit: ToolkitType) => void;
   initialToolkitSlug?: string | null;
+  filterByTriggers?: boolean; // New prop to filter toolkits that have triggers
+  filterByTools?: boolean; // New prop to filter toolkits that have tools
 }
 
 export function SelectComposioToolkit({
   projectId,
   tools,
   onSelectToolkit,
-  initialToolkitSlug
+  initialToolkitSlug,
+  filterByTriggers = false,
+  filterByTools = false
 }: SelectComposioToolkitProps) {
   const [toolkits, setToolkits] = useState<ToolkitType[]>([]);
   const [projectConfig, setProjectConfig] = useState<ProjectType | null>(null);
@@ -59,17 +63,16 @@ export function SelectComposioToolkit({
         cursor = response.next_cursor;
       } while (cursor !== null);
       
-      // // Only show those toolkits that
-      // // - either do not require authentication, OR
-      // // - have oauth2 managed by Composio
-      // const filteredToolkits = allToolkits.filter(toolkit => {
-      //   const noAuth = toolkit.no_auth;
-      //   const hasOAuth2 = toolkit.auth_schemes.includes('OAUTH2');
-      //   const hasComposioManagedOAuth2 = toolkit.composio_managed_auth_schemes.includes('OAUTH2');
-      //   return noAuth || hasOAuth2;
-      // });
+      // Filter toolkits based on the filter props
+      let finalToolkits = allToolkits;
+      if (filterByTriggers) {
+        finalToolkits = finalToolkits.filter(toolkit => toolkit.meta.triggers_count > 0);
+      }
+      if (filterByTools) {
+        finalToolkits = finalToolkits.filter(toolkit => toolkit.meta.tools_count > 0);
+      }
       
-      setToolkits(allToolkits);
+      setToolkits(finalToolkits);
       setError(null);
     } catch (err: any) {
       setError('Unable to load all Composio toolkits. Please check your connection and try again.');
@@ -78,7 +81,7 @@ export function SelectComposioToolkit({
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, filterByTriggers, filterByTools]);
 
   const handleSelectToolkit = useCallback((toolkit: ToolkitType) => {
     onSelectToolkit(toolkit);
@@ -125,7 +128,14 @@ export function SelectComposioToolkit({
     return (
       <div className="text-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800 dark:border-gray-200 mx-auto"></div>
-        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading Composio toolkits...</p>
+        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+          {filterByTriggers 
+            ? 'Loading Composio toolkits with triggers...' 
+            : filterByTools 
+              ? 'Loading Composio toolkits with tools...'
+              : 'Loading Composio toolkits...'
+          }
+        </p>
       </div>
     );
   }
@@ -161,7 +171,13 @@ export function SelectComposioToolkit({
               </div>
               <input
                 type="text"
-                placeholder="Search toolkits..."
+                placeholder={
+                  filterByTriggers 
+                    ? "Search toolkits with triggers..." 
+                    : filterByTools 
+                      ? "Search toolkits with tools..."
+                      : "Search toolkits..."
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md 
@@ -173,6 +189,8 @@ export function SelectComposioToolkit({
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
               {filteredToolkits.length} {filteredToolkits.length === 1 ? 'toolkit' : 'toolkits'}
+              {filterByTriggers && ' with triggers'}
+              {filterByTools && ' with tools'}
             </div>
             <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
           </div>
@@ -204,6 +222,7 @@ export function SelectComposioToolkit({
               isConnected={isConnected}
               workflowTools={tools}
               onSelectToolkit={() => handleSelectToolkit(toolkit)}
+              showTriggerCounts={filterByTriggers}
             />
           );
         })}
@@ -212,7 +231,14 @@ export function SelectComposioToolkit({
       {filteredToolkits.length === 0 && !loading && (
         <div className="text-center py-12">
           <p className="text-gray-500 dark:text-gray-400">
-            {searchQuery ? 'No toolkits found matching your search.' : 'No toolkits available.'}
+            {searchQuery 
+              ? 'No toolkits found matching your search.' 
+              : filterByTriggers 
+                ? 'No toolkits with triggers available.' 
+                : filterByTools
+                  ? 'No toolkits with tools available.'
+                  : 'No toolkits available.'
+            }
           </p>
         </div>
       )}

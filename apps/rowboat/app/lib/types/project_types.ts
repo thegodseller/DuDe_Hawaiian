@@ -42,10 +42,3 @@ export const ProjectMember = z.object({
     createdAt: z.string().datetime(),
     lastUpdatedAt: z.string().datetime(),
 });
-
-export const ApiKey = z.object({
-    projectId: z.string(),
-    key: z.string(),
-    createdAt: z.string().datetime(),
-    lastUsedAt: z.string().datetime().optional(),
-});

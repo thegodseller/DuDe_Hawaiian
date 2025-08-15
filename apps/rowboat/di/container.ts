@@ -64,6 +64,14 @@ import { ListRecurringJobRulesController } from "@/src/interface-adapters/contro
 import { ToggleRecurringJobRuleController } from "@/src/interface-adapters/controllers/recurring-job-rules/toggle-recurring-job-rule.controller";
 import { DeleteRecurringJobRuleController } from "@/src/interface-adapters/controllers/recurring-job-rules/delete-recurring-job-rule.controller";
 
+// API Keys
+import { CreateApiKeyUseCase } from "@/src/application/use-cases/api-keys/create-api-key.use-case";
+import { ListApiKeysUseCase } from "@/src/application/use-cases/api-keys/list-api-keys.use-case";
+import { DeleteApiKeyUseCase } from "@/src/application/use-cases/api-keys/delete-api-key.use-case";
+import { CreateApiKeyController } from "@/src/interface-adapters/controllers/api-keys/create-api-key.controller";
+import { ListApiKeysController } from "@/src/interface-adapters/controllers/api-keys/list-api-keys.controller";
+import { DeleteApiKeyController } from "@/src/interface-adapters/controllers/api-keys/delete-api-key.controller";
+
 export const container = createContainer({
     injectionMode: InjectionMode.PROXY,
     strict: true,
@@ -96,6 +104,12 @@ container.register({
     // api keys
     // ---
     apiKeysRepository: asClass(MongoDBApiKeysRepository).singleton(),
+    createApiKeyUseCase: asClass(CreateApiKeyUseCase).singleton(),
+    listApiKeysUseCase: asClass(ListApiKeysUseCase).singleton(),
+    deleteApiKeyUseCase: asClass(DeleteApiKeyUseCase).singleton(),
+    createApiKeyController: asClass(CreateApiKeyController).singleton(),
+    listApiKeysController: asClass(ListApiKeysController).singleton(),
+    deleteApiKeyController: asClass(DeleteApiKeyController).singleton(),
 
     // jobs
     // ---

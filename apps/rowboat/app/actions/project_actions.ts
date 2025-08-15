@@ -1,24 +1,31 @@
 'use server';
 import { redirect } from "next/navigation";
 import { ObjectId } from "mongodb";
-import { db, dataSourcesCollection, embeddingsCollection, projectsCollection, projectMembersCollection, apiKeysCollection, dataSourceDocsCollection } from "../lib/mongodb";
+import { db, dataSourcesCollection, projectsCollection, projectMembersCollection, dataSourceDocsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import crypto from 'crypto';
 import { revalidatePath } from "next/cache";
 import { templates } from "../lib/project_templates";
 import { authCheck } from "./auth_actions";
 import { User, WithStringId } from "../lib/types/types";
-import { ApiKey } from "../lib/types/project_types";
+import { ApiKey } from "@/src/entities/models/api-key";
 import { Project } from "../lib/types/project_types";
 import { USE_AUTH } from "../lib/feature_flags";
 import { authorizeUserAction } from "./billing_actions";
 import { Workflow } from "../lib/types/workflow_types";
 import { container } from "@/di/container";
 import { IProjectActionAuthorizationPolicy } from "@/src/application/policies/project-action-authorization.policy";
-
+import { ICreateApiKeyController } from "@/src/interface-adapters/controllers/api-keys/create-api-key.controller";
+import { IListApiKeysController } from "@/src/interface-adapters/controllers/api-keys/list-api-keys.controller";
+import { IDeleteApiKeyController } from "@/src/interface-adapters/controllers/api-keys/delete-api-key.controller";
+import { IApiKeysRepository } from "@/src/application/repositories/api-keys.repository.interface";
 const KLAVIS_API_KEY = process.env.KLAVIS_API_KEY || '';
 
 const projectActionAuthorizationPolicy = container.resolve<IProjectActionAuthorizationPolicy>('projectActionAuthorizationPolicy');
+const createApiKeyController = container.resolve<ICreateApiKeyController>('createApiKeyController');
+const listApiKeysController = container.resolve<IListApiKeysController>('listApiKeysController');
+const deleteApiKeyController = container.resolve<IDeleteApiKeyController>('deleteApiKeyController');
+const apiKeysRepository = container.resolve<IApiKeysRepository>('apiKeysRepository');
 
 export async function listTemplates() {
     const templatesArray = Object.entries(templates)
@@ -180,36 +187,32 @@ export async function updateWebhookUrl(projectId: string, url: string) {
     );
 }
 
-export async function createApiKey(projectId: string): Promise<WithStringId<z.infer<typeof ApiKey>>> {
-    await projectAuthCheck(projectId);
-
-    // count existing keys
-    const count = await apiKeysCollection.countDocuments({ projectId });
-    if (count >= 3) {
-        throw new Error('Maximum number of API keys reached');
-    }
-
-    // create key
-    const key = crypto.randomBytes(32).toString('hex');
-    const doc: z.infer<typeof ApiKey> = {
+export async function createApiKey(projectId: string): Promise<z.infer<typeof ApiKey>> {
+    const user = await authCheck();
+    return await createApiKeyController.execute({
+        caller: 'user',
+        userId: user._id,
         projectId,
-        key,
-        createdAt: new Date().toISOString(),
-    };
-    await apiKeysCollection.insertOne(doc);
-    const { _id, ...rest } = doc as WithStringId<z.infer<typeof ApiKey>>;
-    return { ...rest, _id: _id.toString() };
+    });
 }
 
 export async function deleteApiKey(projectId: string, id: string) {
-    await projectAuthCheck(projectId);
-    await apiKeysCollection.deleteOne({ projectId, _id: new ObjectId(id) });
+    const user = await authCheck();
+    return await deleteApiKeyController.execute({
+        caller: 'user',
+        userId: user._id,
+        projectId,
+        id,
+    });
 }
 
-export async function listApiKeys(projectId: string): Promise<WithStringId<z.infer<typeof ApiKey>>[]> {
-    await projectAuthCheck(projectId);
-    const keys = await apiKeysCollection.find({ projectId }).toArray();
-    return keys.map(k => ({ ...k, _id: k._id.toString() }));
+export async function listApiKeys(projectId: string): Promise<z.infer<typeof ApiKey>[]> {
+    const user = await authCheck();
+    return await listApiKeysController.execute({
+        caller: 'user',
+        userId: user._id,
+        projectId,
+    });
 }
 
 export async function updateProjectName(projectId: string, name: string) {
@@ -227,9 +230,7 @@ export async function deleteProject(projectId: string) {
     await projectAuthCheck(projectId);
 
     // delete api keys
-    await apiKeysCollection.deleteMany({
-        projectId,
-    });
+    await apiKeysRepository.deleteAll(projectId);
 
     // delete embeddings
     const sources = await dataSourcesCollection.find({
@@ -243,9 +244,6 @@ export async function deleteProject(projectId: string) {
     const ids = sources.map(s => s._id);
 
     // delete data sources
-    await embeddingsCollection.deleteMany({
-        sourceId: { $in: ids.map(i => i.toString()) },
-    });
     await dataSourcesCollection.deleteMany({
         _id: {
             $in: ids,

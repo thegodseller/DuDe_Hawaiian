@@ -7,7 +7,7 @@ import { getProjectConfig, createApiKey, deleteApiKey, listApiKeys, deleteProjec
 import { CopyButton } from "../../../../../components/common/copy-button";
 import { EyeIcon, EyeOffIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { WithStringId } from "../../../../lib/types/types";
-import { ApiKey } from "../../../../lib/types/project_types";
+import { ApiKey } from "@/src/entities/models/api-key";
 import { z } from "zod";
 import { RelativeTime } from "@primer/react";
 import { Label } from "../../../../lib/components/label";
@@ -224,7 +224,7 @@ function ApiKeyDisplay({ apiKey, onDelete }: { apiKey: string; onDelete: () => v
 }
 
 function ApiKeysSection({ projectId }: { projectId: string }) {
-    const [keys, setKeys] = useState<WithStringId<z.infer<typeof ApiKey>>[]>([]);
+    const [keys, setKeys] = useState<z.infer<typeof ApiKey>[]>([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState<{
         type: 'success' | 'error' | 'info';
@@ -270,7 +270,7 @@ function ApiKeysSection({ projectId }: { projectId: string }) {
         try {
             setLoading(true);
             await deleteApiKey(projectId, id);
-            setKeys(keys.filter((k) => k._id !== id));
+            setKeys(keys.filter((k) => k.id !== id));
             setMessage({
                 type: 'info',
                 text: 'API key deleted successfully',
@@ -325,11 +325,11 @@ function ApiKeysSection({ projectId }: { projectId: string }) {
                     )}
 
                     {keys.map((key) => (
-                        <div key={key._id} className="grid grid-cols-12 items-center border-b border-gray-200 dark:border-gray-700 last:border-0 p-4">
+                        <div key={key.id} className="grid grid-cols-12 items-center border-b border-gray-200 dark:border-gray-700 last:border-0 p-4">
                             <div className="col-span-7">
                                 <ApiKeyDisplay 
                                     apiKey={key.key} 
-                                    onDelete={() => handleDeleteKey(key._id)}
+                                    onDelete={() => handleDeleteKey(key.id)}
                                 />
                             </div>
                             <div className="col-span-3 text-sm text-gray-500">
