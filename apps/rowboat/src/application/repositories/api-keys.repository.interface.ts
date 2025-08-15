@@ -32,6 +32,12 @@ export interface IApiKeysRepository {
     delete(projectId: string, id: string): Promise<boolean>;
 
     /**
+     * Deletes all API keys for a given project.
+     * @param projectId - The ID of the project.
+     */
+    deleteAll(projectId: string): Promise<void>;
+
+    /**
      * Checks if an API key is valid for a project and consumes it (e.g., for rate limiting or one-time use).
      * @param projectId - The ID of the project.
      * @param apiKey - The API key to check and consume.

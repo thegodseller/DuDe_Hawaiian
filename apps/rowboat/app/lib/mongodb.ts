@@ -19,7 +19,6 @@ export const dataSourceDocsCollection = db.collection<z.infer<typeof DataSourceD
 export const projectsCollection = db.collection<z.infer<typeof Project>>("projects");
 export const projectMembersCollection = db.collection<z.infer<typeof ProjectMember>>("project_members");
 export const agentWorkflowsCollection = db.collection<z.infer<typeof Workflow>>("agent_workflows");
-export const apiKeysCollection = db.collection<z.infer<typeof ApiKey>>("api_keys");
 export const chatsCollection = db.collection<z.infer<typeof apiV1.Chat>>("chats");
 export const chatMessagesCollection = db.collection<z.infer<typeof apiV1.ChatMessage>>("chat_messages");
 export const twilioConfigsCollection = db.collection<z.infer<typeof TwilioConfig>>("twilio_configs");

@@ -1,7 +1,7 @@
 'use server';
 import { redirect } from "next/navigation";
 import { ObjectId } from "mongodb";
-import { db, dataSourcesCollection, projectsCollection, projectMembersCollection, apiKeysCollection, dataSourceDocsCollection } from "../lib/mongodb";
+import { db, dataSourcesCollection, projectsCollection, projectMembersCollection, dataSourceDocsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import crypto from 'crypto';
 import { revalidatePath } from "next/cache";
@@ -18,12 +18,14 @@ import { IProjectActionAuthorizationPolicy } from "@/src/application/policies/pr
 import { ICreateApiKeyController } from "@/src/interface-adapters/controllers/api-keys/create-api-key.controller";
 import { IListApiKeysController } from "@/src/interface-adapters/controllers/api-keys/list-api-keys.controller";
 import { IDeleteApiKeyController } from "@/src/interface-adapters/controllers/api-keys/delete-api-key.controller";
+import { IApiKeysRepository } from "@/src/application/repositories/api-keys.repository.interface";
 const KLAVIS_API_KEY = process.env.KLAVIS_API_KEY || '';
 
 const projectActionAuthorizationPolicy = container.resolve<IProjectActionAuthorizationPolicy>('projectActionAuthorizationPolicy');
 const createApiKeyController = container.resolve<ICreateApiKeyController>('createApiKeyController');
 const listApiKeysController = container.resolve<IListApiKeysController>('listApiKeysController');
 const deleteApiKeyController = container.resolve<IDeleteApiKeyController>('deleteApiKeyController');
+const apiKeysRepository = container.resolve<IApiKeysRepository>('apiKeysRepository');
 
 export async function listTemplates() {
     const templatesArray = Object.entries(templates)
@@ -228,9 +230,7 @@ export async function deleteProject(projectId: string) {
     await projectAuthCheck(projectId);
 
     // delete api keys
-    await apiKeysCollection.deleteMany({
-        projectId,
-    });
+    await apiKeysRepository.deleteAll(projectId);
 
     // delete embeddings
     const sources = await dataSourcesCollection.find({

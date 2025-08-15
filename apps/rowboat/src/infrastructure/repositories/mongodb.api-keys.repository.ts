@@ -56,4 +56,8 @@ export class MongoDBApiKeysRepository implements IApiKeysRepository {
         const result = await this.collection.deleteOne({ projectId, _id: new ObjectId(id) });
         return result.deletedCount > 0;
     }
+
+    async deleteAll(projectId: string): Promise<void> {
+        await this.collection.deleteMany({ projectId });
+    }
 }
