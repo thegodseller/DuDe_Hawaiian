@@ -363,11 +363,12 @@ export function AgentConfig({
                                                 });
                                                 showSavedMessage();
                                             }}
+                                            placeholder="Type agent instructions..."
                                             markdown
                                             multiline
                                             mentions
                                             mentionsAtValues={atMentions}
-                                            className="h-full min-h-0 overflow-auto !mb-0 !mt-0"
+                                            className="h-full min-h-0 overflow-auto !mb-0 !mt-0 min-h-[300px]"
                                         />
                                     </div>
                                     {/* Examples Section */}

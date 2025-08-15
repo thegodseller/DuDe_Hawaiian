@@ -248,7 +248,7 @@ function TextInputField({
 
                 {/* Input field */}
                 {mentions ? (
-                    <div className="w-full">
+                    <div className="w-full min-h-[300px]">
                         <MentionsEditor
                             atValues={mentionsAtValues}
                             value={value}
@@ -264,7 +264,7 @@ function TextInputField({
                         placeholder={placeholder}
                         variant="bordered"
                         size={getInputSize()}
-                        minRows={3}
+                        minRows={12}
                         maxRows={20}
                         isInvalid={!isValid}
                         errorMessage={validationResult?.errorMessage}
@@ -321,11 +321,13 @@ function TextInputField({
             {/* Content display */}
             <div
                 className={clsx(
-                    "group relative rounded-lg border border-gray-200 dark:border-gray-700 p-3 min-h-[40px] transition-all duration-200",
+                    "group relative rounded-lg border border-gray-200 dark:border-gray-700 p-3 transition-all duration-200",
                     {
                         "cursor-pointer hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800": !locked && !disabled,
                         "cursor-not-allowed opacity-60": locked || disabled,
                         "border-0 bg-transparent p-0": inline,
+                        "min-h-[300px]": multiline,
+                        "min-h-[40px]": !multiline,
                     }
                 )}
                 onClick={() => !locked && !disabled && setIsEditing(true)}
