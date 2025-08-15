@@ -1,7 +1,7 @@
 'use server';
 import { redirect } from "next/navigation";
 import { ObjectId } from "mongodb";
-import { db, dataSourcesCollection, embeddingsCollection, projectsCollection, projectMembersCollection, apiKeysCollection, dataSourceDocsCollection } from "../lib/mongodb";
+import { db, dataSourcesCollection, projectsCollection, projectMembersCollection, apiKeysCollection, dataSourceDocsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import crypto from 'crypto';
 import { revalidatePath } from "next/cache";
@@ -244,9 +244,6 @@ export async function deleteProject(projectId: string) {
     const ids = sources.map(s => s._id);
 
     // delete data sources
-    await embeddingsCollection.deleteMany({
-        sourceId: { $in: ids.map(i => i.toString()) },
-    });
     await dataSourcesCollection.deleteMany({
         _id: {
             $in: ids,
