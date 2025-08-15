@@ -8,7 +8,7 @@ import {
     updateSubscriptionPlan as libUpdateSubscriptionPlan,
     getEligibleModels as libGetEligibleModels
 } from "../lib/billing";
-import { authCheck } from "./auth_actions";
+import { authCheck } from "./auth.actions";
 import { USE_BILLING } from "../lib/feature_flags";
 import {
     AuthorizeRequest,

@@ -1,6 +1,6 @@
 "use client";
 
-import { createProject, createProjectFromWorkflowJson } from "@/app/actions/project_actions";
+import { createProject, createProjectFromWorkflowJson } from "@/app/actions/project.actions";
 
 export interface CreateProjectOptions {
   name: string;

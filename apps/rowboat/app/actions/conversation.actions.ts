@@ -3,7 +3,7 @@
 import { container } from "@/di/container";
 import { IListConversationsController } from "@/src/interface-adapters/controllers/conversations/list-conversations.controller";
 import { IFetchConversationController } from "@/src/interface-adapters/controllers/conversations/fetch-conversation.controller";
-import { authCheck } from "./auth_actions";
+import { authCheck } from "./auth.actions";
 
 const listConversationsController = container.resolve<IListConversationsController>('listConversationsController');
 const fetchConversationController = container.resolve<IFetchConversationController>('fetchConversationController');

@@ -9,7 +9,7 @@ import { usePreviewModal } from "../workflow/preview-modal";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, SelectItem, Chip, SelectSection } from "@heroui/react";
 import { PreviewModalProvider } from "../workflow/preview-modal";
 import { CopilotMessage } from "@/app/lib/types/copilot_types";
-import { getCopilotAgentInstructions } from "@/app/actions/copilot_actions";
+import { getCopilotAgentInstructions } from "@/app/actions/copilot.actions";
 import { Dropdown as CustomDropdown } from "../../../lib/components/dropdown";
 import { createAtMentions } from "../../../lib/components/atmentions";
 import { Textarea } from "@/components/ui/textarea";

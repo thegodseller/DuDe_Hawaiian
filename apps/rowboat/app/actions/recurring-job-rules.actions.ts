@@ -6,7 +6,7 @@ import { IListRecurringJobRulesController } from "@/src/interface-adapters/contr
 import { IFetchRecurringJobRuleController } from "@/src/interface-adapters/controllers/recurring-job-rules/fetch-recurring-job-rule.controller";
 import { IToggleRecurringJobRuleController } from "@/src/interface-adapters/controllers/recurring-job-rules/toggle-recurring-job-rule.controller";
 import { IDeleteRecurringJobRuleController } from "@/src/interface-adapters/controllers/recurring-job-rules/delete-recurring-job-rule.controller";
-import { authCheck } from "./auth_actions";
+import { authCheck } from "./auth.actions";
 import { z } from "zod";
 import { Message } from "@/app/lib/types/types";
 

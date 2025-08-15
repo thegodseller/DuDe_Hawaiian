@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { WithStringId } from "../../../../lib/types/types";
 import { DataSource } from "../../../../lib/types/datasource_types";
 import { z } from "zod";
-import { listDataSources } from "../../../../actions/datasource_actions";
+import { listDataSources } from "../../../../actions/data-source.actions";
 import { Panel } from "@/components/common/panel-common";
 import { PlusIcon } from "lucide-react";
 

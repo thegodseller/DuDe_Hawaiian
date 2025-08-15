@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Spinner } from "@heroui/react";
 import { Panel } from "@/components/common/panel-common";
-import { fetchJob } from "@/app/actions/job_actions";
+import { fetchJob } from "@/app/actions/job.actions";
 import { Job } from "@/src/entities/models/job";
 import { z } from "zod";
 import Link from "next/link";

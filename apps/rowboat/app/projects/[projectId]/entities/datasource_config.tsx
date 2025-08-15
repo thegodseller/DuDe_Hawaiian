@@ -8,7 +8,7 @@ import { Panel } from "@/components/common/panel-common";
 import { Button } from "@/components/ui/button";
 import { DataSourceIcon } from "@/app/lib/components/datasource-icon";
 import { Tooltip } from "@heroui/react";
-import { getDataSource, listDocsInDataSource, deleteDocsFromDataSource, getDownloadUrlForFile, addDocsToDataSource, getUploadUrlsForFilesDataSource } from "@/app/actions/datasource_actions";
+import { getDataSource, listDocsInDataSource, deleteDocsFromDataSource, getDownloadUrlForFile, addDocsToDataSource, getUploadUrlsForFilesDataSource } from "@/app/actions/data-source.actions";
 import { InputField } from "@/app/lib/components/input-field";
 import { DataSourceDoc } from "../../../lib/types/datasource_types";
 import { RelativeTime } from "@primer/react";

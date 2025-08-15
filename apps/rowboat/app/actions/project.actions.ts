@@ -1,17 +1,16 @@
 'use server';
 import { redirect } from "next/navigation";
-import { ObjectId } from "mongodb";
-import { db, dataSourcesCollection, projectsCollection, dataSourceDocsCollection } from "../lib/mongodb";
+import { db, dataSourcesCollection, projectsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import crypto from 'crypto';
 import { revalidatePath } from "next/cache";
 import { templates } from "../lib/project_templates";
-import { authCheck } from "./auth_actions";
+import { authCheck } from "./auth.actions";
 import { User, WithStringId } from "../lib/types/types";
 import { ApiKey } from "@/src/entities/models/api-key";
 import { Project } from "../lib/types/project_types";
 import { USE_AUTH } from "../lib/feature_flags";
-import { authorizeUserAction } from "./billing_actions";
+import { authorizeUserAction } from "./billing.actions";
 import { Workflow } from "../lib/types/workflow_types";
 import { container } from "@/di/container";
 import { IProjectActionAuthorizationPolicy } from "@/src/application/policies/project-action-authorization.policy";
@@ -20,7 +19,6 @@ import { IListApiKeysController } from "@/src/interface-adapters/controllers/api
 import { IDeleteApiKeyController } from "@/src/interface-adapters/controllers/api-keys/delete-api-key.controller";
 import { IApiKeysRepository } from "@/src/application/repositories/api-keys.repository.interface";
 import { IProjectMembersRepository } from "@/src/application/repositories/project-members.repository.interface";
-const KLAVIS_API_KEY = process.env.KLAVIS_API_KEY || '';
 
 const projectActionAuthorizationPolicy = container.resolve<IProjectActionAuthorizationPolicy>('projectActionAuthorizationPolicy');
 const createApiKeyController = container.resolve<ICreateApiKeyController>('createApiKeyController');

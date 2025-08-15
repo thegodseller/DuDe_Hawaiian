@@ -1,6 +1,6 @@
 'use client';
 
-import { deleteDataSource } from "../../../../actions/datasource_actions";
+import { deleteDataSource } from "../../../../actions/data-source.actions";
 import { FormStatusButton } from "../../../../lib/components/form-status-button";
 
 export function DeleteSource({

@@ -1,7 +1,7 @@
 "use server";
 import { z } from "zod";
 import { WorkflowTool } from "../lib/types/workflow_types";
-import { projectAuthCheck } from "./project_actions";
+import { projectAuthCheck } from "./project.actions";
 import { projectsCollection } from "../lib/mongodb";
 import { Project } from "../lib/types/project_types";
 import { McpServerTool, convertMcpServerToolToWorkflowTool } from "../lib/types/types";

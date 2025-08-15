@@ -4,7 +4,7 @@ import { Metadata } from "next";
 import { Spinner, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider, Textarea } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { ReactNode, useEffect, useState } from "react";
-import { getProjectConfig, updateProjectName, updateWebhookUrl, deleteProject, rotateSecret } from "../../../actions/project_actions";
+import { getProjectConfig, updateProjectName, updateWebhookUrl, deleteProject, rotateSecret } from "../../../actions/project.actions";
 import { CopyButton } from "../../../../components/common/copy-button";
 import { InputField } from "../../../lib/components/input-field";
 import { EyeIcon, EyeOffIcon, Settings, Plus, MoreVertical } from "lucide-react";

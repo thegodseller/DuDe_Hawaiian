@@ -5,7 +5,7 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@herou
 import { Button } from '@/components/ui/button';
 import { Form } from '../../sources/new/form';
 import { FilesSource } from '../../sources/components/files-source';
-import { getDataSource } from '../../../../actions/datasource_actions';
+import { getDataSource } from '../../../../actions/data-source.actions';
 import { WithStringId } from '../../../../lib/types/types';
 import { DataSource } from '../../../../lib/types/datasource_types';
 import { z } from 'zod';

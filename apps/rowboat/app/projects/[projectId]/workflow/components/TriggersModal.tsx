@@ -6,7 +6,7 @@ import { Plus, Trash2, ZapIcon } from 'lucide-react';
 import { z } from 'zod';
 import { ComposioTriggerDeployment } from '@/src/entities/models/composio-trigger-deployment';
 import { ComposioTriggerType } from '@/src/entities/models/composio-trigger-type';
-import { listComposioTriggerDeployments, deleteComposioTriggerDeployment, createComposioTriggerDeployment } from '@/app/actions/composio_actions';
+import { listComposioTriggerDeployments, deleteComposioTriggerDeployment, createComposioTriggerDeployment } from '@/app/actions/composio.actions';
 import { SelectComposioToolkit } from '../../tools/components/SelectComposioToolkit';
 import { ComposioTriggerTypesPanel } from './ComposioTriggerTypesPanel';
 import { TriggerConfigForm } from './TriggerConfigForm';

@@ -3,7 +3,7 @@
 import { Project } from "../lib/types/project_types";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { listProjects } from "../actions/project_actions";
+import { listProjects } from "../actions/project.actions";
 import { BuildAssistantSection } from "./components/build-assistant-section";
 
 

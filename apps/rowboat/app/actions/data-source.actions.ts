@@ -4,7 +4,7 @@ import { dataSourcesCollection, dataSourceDocsCollection } from "../lib/mongodb"
 import { z } from 'zod';
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { projectAuthCheck } from "./project_actions";
+import { projectAuthCheck } from "./project.actions";
 import { WithStringId } from "../lib/types/types";
 import { DataSourceDoc } from "../lib/types/datasource_types";
 import { DataSource } from "../lib/types/datasource_types";

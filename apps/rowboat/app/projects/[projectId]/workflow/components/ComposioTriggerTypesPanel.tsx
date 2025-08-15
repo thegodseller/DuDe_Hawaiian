@@ -5,7 +5,7 @@ import { Button, Card, CardBody, CardHeader, Spinner } from '@heroui/react';
 import { ChevronLeft, ChevronRight, ZapIcon, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import { ComposioTriggerType } from '@/src/entities/models/composio-trigger-type';
-import { listComposioTriggerTypes } from '@/app/actions/composio_actions';
+import { listComposioTriggerTypes } from '@/app/actions/composio.actions';
 import { ZToolkit } from '@/app/lib/composio/composio';
 
 interface ComposioTriggerTypesPanelProps {

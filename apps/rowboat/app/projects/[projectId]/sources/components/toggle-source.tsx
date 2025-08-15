@@ -1,5 +1,5 @@
 'use client';
-import { toggleDataSource } from "../../../../actions/datasource_actions";
+import { toggleDataSource } from "../../../../actions/data-source.actions";
 import { Spinner } from "@heroui/react";
 import { useState } from "react";
 

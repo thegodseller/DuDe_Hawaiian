@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Spinner } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/common/panel-common";
-import { listConversations } from "@/app/actions/conversation_actions";
+import { listConversations } from "@/app/actions/conversation.actions";
 import { z } from "zod";
 import { ListedConversationItem } from "@/src/application/repositories/conversations.repository.interface";
 import { isToday, isThisWeek, isThisMonth } from "@/lib/utils/date";

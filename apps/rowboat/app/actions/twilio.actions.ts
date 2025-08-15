@@ -7,7 +7,7 @@ import twilio from 'twilio';
 import { Twilio } from 'twilio';
 import { z } from "zod";
 import { WithStringId } from "../lib/types/types";
-import { projectAuthCheck } from "./project_actions";
+import { projectAuthCheck } from "./project.actions";
 
 // Helper function to serialize MongoDB documents
 function serializeConfig(config: any) {

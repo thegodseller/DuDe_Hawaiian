@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from "react";
-import { listTemplates, listProjects } from "@/app/actions/project_actions";
+import { listTemplates, listProjects } from "@/app/actions/project.actions";
 import { createProjectWithOptions, createProjectFromJsonWithOptions, createProjectFromTemplate } from "../lib/project-creation-utils";
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { Chip } from '@heroui/react';
 import { Server, MoreVertical } from 'lucide-react';
 import { Workflow, WorkflowTool } from '@/app/lib/types/workflow_types';
-import { fetchTools } from "@/app/actions/custom_mcp_server_actions";
+import { fetchTools } from "@/app/actions/custom-mcp-server.actions";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react';
 import { Button } from '@heroui/react';
 

@@ -21,9 +21,9 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@herou
 import { ToolsModal } from './components/ToolsModal';
 import { DataSourcesModal } from './components/DataSourcesModal';
 import { DataSourceIcon } from '../../../lib/components/datasource-icon';
-import { deleteDataSource } from '../../../actions/datasource_actions';
+import { deleteDataSource } from '../../../actions/data-source.actions';
 import { ToolkitAuthModal } from '../tools/components/ToolkitAuthModal';
-import { deleteConnectedAccount } from '@/app/actions/composio_actions';
+import { deleteConnectedAccount } from '@/app/actions/composio.actions';
 import { ProjectWideChangeConfirmationModal } from '@/components/common/project-wide-change-confirmation-modal';
 import { SHOW_PROMPTS_SECTION, SHOW_VISUALIZATION } from '../../../lib/feature_flags';
 

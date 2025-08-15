@@ -22,9 +22,9 @@ import {
     ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { Copilot } from "../copilot/app";
-import { publishWorkflow } from "@/app/actions/project_actions";
-import { saveWorkflow } from "@/app/actions/project_actions";
-import { updateProjectName } from "@/app/actions/project_actions";
+import { publishWorkflow } from "@/app/actions/project.actions";
+import { saveWorkflow } from "@/app/actions/project.actions";
+import { updateProjectName } from "@/app/actions/project.actions";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
 import { CopyIcon, ImportIcon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, XIcon, SettingsIcon, ChevronDownIcon, PhoneIcon, MessageCircleIcon, ZapIcon } from "lucide-react";
 import { EntityList } from "./entity_list";

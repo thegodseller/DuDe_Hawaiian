@@ -1,7 +1,7 @@
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Spinner } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckIcon } from "lucide-react";
-import { getPrices, getCustomer, updateSubscriptionPlan } from "@/app/actions/billing_actions";
+import { getPrices, getCustomer, updateSubscriptionPlan } from "@/app/actions/billing.actions";
 import { useEffect, useState } from "react";
 import { PricesResponse, SubscriptionPlan } from "@/app/lib/types/billing_types";
 import { z } from "zod";

@@ -6,11 +6,11 @@ import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { WorkflowEditor } from "./workflow_editor";
 import { Spinner } from "@heroui/react";
-import { listDataSources } from "../../../actions/datasource_actions";
-import { revertToLiveWorkflow } from "@/app/actions/project_actions";
-import { getProjectConfig } from "@/app/actions/project_actions";
+import { listDataSources } from "../../../actions/data-source.actions";
+import { revertToLiveWorkflow } from "@/app/actions/project.actions";
+import { getProjectConfig } from "@/app/actions/project.actions";
 import { Workflow, WorkflowTool } from "@/app/lib/types/workflow_types";
-import { getEligibleModels } from "@/app/actions/billing_actions";
+import { getEligibleModels } from "@/app/actions/billing.actions";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
 
 export function App({

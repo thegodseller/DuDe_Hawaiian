@@ -7,9 +7,9 @@ import {
     Workflow} from "../lib/types/workflow_types";
 import { DataSource } from "../lib/types/datasource_types";
 import { z } from 'zod';
-import { projectAuthCheck } from "./project_actions";
+import { projectAuthCheck } from "./project.actions";
 import { redisClient } from "../lib/redis";
-import { authorizeUserAction, logUsage } from "./billing_actions";
+import { authorizeUserAction, logUsage } from "./billing.actions";
 import { USE_BILLING } from "../lib/feature_flags";
 import { WithStringId } from "../lib/types/types";
 import { getEditAgentInstructionsResponse } from "../lib/copilot/copilot";

@@ -6,7 +6,7 @@ import { PictureImg } from '@/components/ui/picture-img';
 import { Button, Checkbox, Input } from '@heroui/react';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { Workflow, WorkflowTool } from '@/app/lib/types/workflow_types';
-import { listTools } from '@/app/actions/composio_actions';
+import { listTools } from '@/app/actions/composio.actions';
 import { z } from 'zod';
 import { ZTool, ZListResponse } from '@/app/lib/composio/composio';
 import { SlidePanel } from '@/components/ui/slide-panel';

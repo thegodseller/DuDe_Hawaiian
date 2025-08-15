@@ -10,7 +10,7 @@ import { DataSourceIcon } from "../../../../lib/components/datasource-icon";
 import { z } from "zod";
 import { ScrapeSource } from "../components/scrape-source";
 import { FilesSource } from "../components/files-source";
-import { getDataSource, updateDataSource } from "../../../../actions/datasource_actions";
+import { getDataSource, updateDataSource } from "../../../../actions/data-source.actions";
 import { TextSource } from "../components/text-source";
 import { Panel } from "@/components/common/panel-common";
 import { Section, SectionRow, SectionLabel, SectionContent } from "../components/section";

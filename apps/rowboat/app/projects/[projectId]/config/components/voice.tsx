@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Spinner } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { configureTwilioNumber, getTwilioConfigs, deleteTwilioConfig } from "../../../../actions/voice_actions";
+import { configureTwilioNumber, getTwilioConfigs, deleteTwilioConfig } from "../../../../actions/twilio.actions";
 import { TwilioConfig, TwilioConfigParams } from "../../../../lib/types/voice_types";
 import { CheckCircleIcon, XCircleIcon, InfoIcon, EyeOffIcon, EyeIcon } from "lucide-react";
 import { Section } from './project';

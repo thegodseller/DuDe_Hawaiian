@@ -3,7 +3,7 @@
 import { container } from "@/di/container";
 import { IListJobsController } from "@/src/interface-adapters/controllers/jobs/list-jobs.controller";
 import { IFetchJobController } from "@/src/interface-adapters/controllers/jobs/fetch-job.controller";
-import { authCheck } from "./auth_actions";
+import { authCheck } from "./auth.actions";
 import { JobFiltersSchema } from "@/src/application/repositories/jobs.repository.interface";
 import { z } from "zod";
 

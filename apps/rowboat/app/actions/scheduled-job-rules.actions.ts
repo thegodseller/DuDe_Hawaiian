@@ -5,7 +5,7 @@ import { ICreateScheduledJobRuleController } from "@/src/interface-adapters/cont
 import { IListScheduledJobRulesController } from "@/src/interface-adapters/controllers/scheduled-job-rules/list-scheduled-job-rules.controller";
 import { IFetchScheduledJobRuleController } from "@/src/interface-adapters/controllers/scheduled-job-rules/fetch-scheduled-job-rule.controller";
 import { IDeleteScheduledJobRuleController } from "@/src/interface-adapters/controllers/scheduled-job-rules/delete-scheduled-job-rule.controller";
-import { authCheck } from "./auth_actions";
+import { authCheck } from "./auth.actions";
 import { z } from "zod";
 import { Message } from "@/app/lib/types/types";
 

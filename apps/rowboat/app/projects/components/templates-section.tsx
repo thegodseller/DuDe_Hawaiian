@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { listTemplates } from "@/app/actions/project_actions";
+import { listTemplates } from "@/app/actions/project.actions";
 import { createProjectFromTemplate } from "../lib/project-creation-utils";
 import { PictureImg } from '@/components/ui/picture-img';
 

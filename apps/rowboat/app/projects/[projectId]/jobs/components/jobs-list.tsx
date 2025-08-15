@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Spinner } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/common/panel-common";
-import { listJobs } from "@/app/actions/job_actions";
+import { listJobs } from "@/app/actions/job.actions";
 import { z } from "zod";
 import { ListedJobItem, JobFiltersSchema } from "@/src/application/repositories/jobs.repository.interface";
 import { isToday, isThisWeek, isThisMonth } from "@/lib/utils/date";

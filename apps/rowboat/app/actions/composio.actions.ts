@@ -4,13 +4,10 @@ import {
     listToolkits as libListToolkits,
     listTools as libListTools,
     getConnectedAccount as libGetConnectedAccount,
-    deleteConnectedAccount as libDeleteConnectedAccount,
     listAuthConfigs as libListAuthConfigs,
     createAuthConfig as libCreateAuthConfig,
     getToolkit as libGetToolkit,
     createConnectedAccount as libCreateConnectedAccount,
-    getAuthConfig as libGetAuthConfig,
-    deleteAuthConfig as libDeleteAuthConfig,
     ZToolkit,
     ZGetToolkitResponse,
     ZTool,
@@ -20,7 +17,7 @@ import {
     ZCredentials,
 } from "@/app/lib/composio/composio";
 import { ComposioConnectedAccount } from "@/app/lib/types/project_types";
-import { getProjectConfig, projectAuthCheck } from "./project_actions";
+import { getProjectConfig, projectAuthCheck } from "./project.actions";
 import { projectsCollection } from "../lib/mongodb";
 import { container } from "@/di/container";
 import { ICreateComposioTriggerDeploymentController } from "@/src/interface-adapters/controllers/composio-trigger-deployments/create-composio-trigger-deployment.controller";
@@ -28,7 +25,7 @@ import { IListComposioTriggerDeploymentsController } from "@/src/interface-adapt
 import { IDeleteComposioTriggerDeploymentController } from "@/src/interface-adapters/controllers/composio-trigger-deployments/delete-composio-trigger-deployment.controller";
 import { IListComposioTriggerTypesController } from "@/src/interface-adapters/controllers/composio-trigger-deployments/list-composio-trigger-types.controller";
 import { IDeleteComposioConnectedAccountController } from "@/src/interface-adapters/controllers/composio/delete-composio-connected-account.controller";
-import { authCheck } from "./auth_actions";
+import { authCheck } from "./auth.actions";
 
 const createComposioTriggerDeploymentController = container.resolve<ICreateComposioTriggerDeploymentController>("createComposioTriggerDeploymentController");
 const listComposioTriggerDeploymentsController = container.resolve<IListComposioTriggerDeploymentsController>("listComposioTriggerDeploymentsController");

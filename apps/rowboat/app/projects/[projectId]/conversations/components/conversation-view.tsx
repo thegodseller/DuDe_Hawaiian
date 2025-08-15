@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Spinner } from "@heroui/react";
 import { Panel } from "@/components/common/panel-common";
-import { fetchConversation } from "@/app/actions/conversation_actions";
+import { fetchConversation } from "@/app/actions/conversation.actions";
 import { Conversation } from "@/src/entities/models/conversation";
 import { Turn } from "@/src/entities/models/turn";
 import { z } from "zod";

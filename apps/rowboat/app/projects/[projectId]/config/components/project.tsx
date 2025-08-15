@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState, useCallback } from "react";
 import { Spinner, Dropdown, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure } from "@heroui/react";
 import { Button } from "@/components/ui/button";
-import { getProjectConfig, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret, updateProjectName } from "../../../../actions/project_actions";
+import { getProjectConfig, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret, updateProjectName } from "../../../../actions/project.actions";
 import { CopyButton } from "../../../../../components/common/copy-button";
 import { EyeIcon, EyeOffIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { WithStringId } from "../../../../lib/types/types";

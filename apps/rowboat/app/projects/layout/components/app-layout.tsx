@@ -2,7 +2,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import Sidebar from './sidebar';
 import { usePathname } from 'next/navigation';
-import { getCustomer } from '../../../actions/billing_actions';
+import { getCustomer } from '../../../actions/billing.actions';
 import { Button } from '@heroui/react';
 import { useRouter } from 'next/navigation';
 

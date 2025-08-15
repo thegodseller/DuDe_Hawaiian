@@ -19,7 +19,7 @@ import {
   LogsIcon,
   Clock
 } from "lucide-react";
-import { getProjectConfig } from "@/app/actions/project_actions";
+import { getProjectConfig } from "@/app/actions/project.actions";
 import { createProjectWithOptions } from "../../lib/project-creation-utils";
 import { useTheme } from "@/app/providers/theme-provider";
 import { USE_PRODUCT_TOUR } from '@/app/lib/feature_flags';

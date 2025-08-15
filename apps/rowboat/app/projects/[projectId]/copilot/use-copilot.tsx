@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { getCopilotResponseStream } from "@/app/actions/copilot_actions";
+import { getCopilotResponseStream } from "@/app/actions/copilot.actions";
 import { CopilotMessage } from "@/app/lib/types/copilot_types";
 import { Workflow } from "@/app/lib/types/workflow_types";
 import { DataSource } from "@/app/lib/types/datasource_types";

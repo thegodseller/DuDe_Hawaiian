@@ -2,7 +2,7 @@
 import { Input, Select, SelectItem } from "@heroui/react"
 import { Textarea } from "@/components/ui/textarea"
 import { useState } from "react";
-import { createDataSource, addDocsToDataSource } from "../../../../actions/datasource_actions";
+import { createDataSource, addDocsToDataSource } from "../../../../actions/data-source.actions";
 import { FormStatusButton } from "../../../../lib/components/form-status-button";
 import { DataSourceIcon } from "../../../../lib/components/datasource-icon";
 import { PlusIcon } from "lucide-react";

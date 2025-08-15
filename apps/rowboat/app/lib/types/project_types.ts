@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { MCPServer } from "./types";
-import { Workflow, WorkflowTool } from "./workflow_types";
+import { Workflow } from "./workflow_types";
 
 export const ComposioConnectedAccount = z.object({
     id: z.string(),

@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { FormStatusButton } from "../../../../lib/components/form-status-button";
 import { Spinner } from "@heroui/react";
-import { addDocsToDataSource, deleteDocsFromDataSource, listDocsInDataSource } from "../../../../actions/datasource_actions";
+import { addDocsToDataSource, deleteDocsFromDataSource, listDocsInDataSource } from "../../../../actions/data-source.actions";
 import { Section } from "./section";
 
 export function TextSource({

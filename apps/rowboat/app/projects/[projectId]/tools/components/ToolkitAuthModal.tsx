@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Spinner, Button as HeroButton, Input } from "@heroui/react";
 import { PictureImg } from '@/components/ui/picture-img';
 import { Wrench, Shield, Key, Globe, ArrowLeft } from "lucide-react";
-import { getToolkit, createComposioManagedOauth2ConnectedAccount, syncConnectedAccount, listToolkits, createCustomConnectedAccount } from '@/app/actions/composio_actions';
+import { getToolkit, createComposioManagedOauth2ConnectedAccount, syncConnectedAccount, listToolkits, createCustomConnectedAccount } from '@/app/actions/composio.actions';
 import { z } from 'zod';
 import { ZGetToolkitResponse, ZToolkit, ZComposioField, ZAuthScheme } from '@/app/lib/composio/composio';
 

@@ -3,7 +3,7 @@ import { WithStringId } from "../../../../lib/types/types";
 import { DataSourceDoc, DataSource } from "../../../../lib/types/datasource_types";
 import { z } from "zod";
 import { Recrawl } from "./web-recrawl";
-import { deleteDocsFromDataSource, listDocsInDataSource, recrawlWebDataSource, addDocsToDataSource } from "../../../../actions/datasource_actions";
+import { deleteDocsFromDataSource, listDocsInDataSource, recrawlWebDataSource, addDocsToDataSource } from "../../../../actions/data-source.actions";
 import { useState, useEffect } from "react";
 import { Spinner, Pagination } from "@heroui/react";
 import { ExternalLinkIcon, PlusIcon } from "lucide-react";

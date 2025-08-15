@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { MCPServer, McpTool } from '@/app/lib/types/types';
-import { testMcpTool } from '@/app/actions/mcp_actions';
+import { testMcpTool } from '@/app/actions/mcp.actions';
 import { Copy, ChevronDown, ChevronRight, X, Trash2 } from 'lucide-react';
 import type { z } from 'zod';
 import clsx from 'clsx';

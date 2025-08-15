@@ -4,7 +4,7 @@ import { Button, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFoot
 import { z } from "zod";
 import { WorkflowTool } from "@/app/lib/types/workflow_types";
 import { RefreshCwIcon } from "lucide-react";
-import { fetchMcpTools } from "@/app/actions/mcp_actions";
+import { fetchMcpTools } from "@/app/actions/mcp.actions";
 
 interface McpImportToolsProps {
     projectId: string;

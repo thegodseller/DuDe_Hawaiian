@@ -2,11 +2,11 @@
 
 import { projectsCollection } from '../lib/mongodb';
 import { z } from 'zod';
-import { projectAuthCheck } from './project_actions';
+import { projectAuthCheck } from './project.actions';
 import { CustomMcpServer } from '../lib/types/project_types';
 import { getMcpClient } from '../lib/mcp';
 import { WorkflowTool } from '../lib/types/workflow_types';
-import { authCheck } from './auth_actions';
+import { authCheck } from './auth.actions';
 
 type McpServerType = z.infer<typeof CustomMcpServer>;
 

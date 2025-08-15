@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { Workflow } from "../lib/types/workflow_types";
 import { Message } from "@/app/lib/types/types";
-import { authCheck } from './auth_actions';
+import { authCheck } from './auth.actions';
 import { container } from '@/di/container';
 import { Conversation } from '@/src/entities/models/conversation';
 import { ICreatePlaygroundConversationController } from '@/src/interface-adapters/controllers/conversations/create-playground-conversation.controller';
