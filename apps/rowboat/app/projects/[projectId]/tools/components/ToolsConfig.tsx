@@ -73,6 +73,7 @@ export function ToolsConfig({
                 tools={tools}
                 onSelectToolkit={handleSelectToolkit}
                 initialToolkitSlug={initialToolkitSlug}
+                filterByTools={true}
               />
             </div>
           </Tab>
