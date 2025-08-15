@@ -30,6 +30,7 @@ interface ToolkitCardProps {
   isConnected: boolean;
   onSelectToolkit: () => void;
   workflowTools: z.infer<typeof Workflow.shape.tools>;
+  showTriggerCounts?: boolean; // New prop to show trigger counts instead of tool counts
 }
 
 export function ToolkitCard({ 
@@ -37,6 +38,7 @@ export function ToolkitCard({
   isConnected,
   onSelectToolkit,
   workflowTools,
+  showTriggerCounts = false,
 }: ToolkitCardProps) {
   const handleCardClick = useCallback(() => {
     onSelectToolkit();
@@ -69,9 +71,11 @@ export function ToolkitCard({
                 variant="faded"
                 size="sm"
               >
-                {selectedToolsCount > 0 
-                  ? `${toolkit.meta.tools_count} tools, ${selectedToolsCount} selected`
-                  : `${toolkit.meta.tools_count} tools`
+                {showTriggerCounts 
+                  ? `${toolkit.meta.triggers_count} triggers`
+                  : selectedToolsCount > 0 
+                    ? `${toolkit.meta.tools_count} tools, ${selectedToolsCount} selected`
+                    : `${toolkit.meta.tools_count} tools`
                 }
               </Chip>
             </div>

@@ -299,6 +299,7 @@ export function TriggersModal({
             tools={[]} // Empty array since we're not using this for tools
             onSelectToolkit={handleSelectToolkit}
             initialToolkitSlug={null}
+            filterByTriggers={true}
           />
         </div>
       );
