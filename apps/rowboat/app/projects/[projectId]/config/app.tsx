@@ -4,14 +4,10 @@ import { Metadata } from "next";
 import { Spinner, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider, Textarea } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { ReactNode, useEffect, useState } from "react";
-import { getProjectConfig, updateProjectName, updateWebhookUrl, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret } from "../../../actions/project_actions";
+import { getProjectConfig, updateProjectName, updateWebhookUrl, deleteProject, rotateSecret } from "../../../actions/project_actions";
 import { CopyButton } from "../../../../components/common/copy-button";
 import { InputField } from "../../../lib/components/input-field";
 import { EyeIcon, EyeOffIcon, Settings, Plus, MoreVertical } from "lucide-react";
-import { WithStringId } from "../../../lib/types/types";
-import { ApiKey } from "../../../lib/types/project_types";
-import { z } from "zod";
-import { RelativeTime } from "@primer/react";
 import { Label } from "../../../lib/components/label";
 import { FormSection } from "../../../lib/components/form-section";
 import { Panel } from "@/components/common/panel-common";
@@ -105,156 +101,6 @@ export function BasicSettingsSection({
                 />
             </div>
         </FormSection>
-    </Section>;
-}
-
-export function ApiKeysSection({
-    projectId,
-}: {
-    projectId: string;
-}) {
-    const [keys, setKeys] = useState<WithStringId<z.infer<typeof ApiKey>>[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState<{
-        type: 'success' | 'error' | 'info';
-        text: string;
-    } | null>(null);
-
-    useEffect(() => {
-        const loadKeys = async () => {
-            const keys = await listApiKeys(projectId);
-            setKeys(keys);
-            setLoading(false);
-        };
-        loadKeys();
-    }, [projectId]);
-
-    const handleCreateKey = async () => {
-        setLoading(true);
-        setMessage(null);
-        try {
-            const key = await createApiKey(projectId);
-            setLoading(false);
-            setMessage({
-                type: 'success',
-                text: 'API key created successfully',
-            });
-            setKeys([...keys, key]);
-
-            setTimeout(() => {
-                setMessage(null);
-            }, 2000);
-        } catch (error) {
-            setLoading(false);
-            setMessage({
-                type: 'error',
-                text: error instanceof Error ? error.message : "Failed to create API key",
-            });
-        }
-    };
-
-    const handleDeleteKey = async (id: string) => {
-        if (!window.confirm("Are you sure you want to delete this API key? This action cannot be undone.")) {
-            return;
-        }
-
-        try {
-            setLoading(true);
-            setMessage(null);
-            await deleteApiKey(projectId, id);
-            setKeys(keys.filter((k) => k._id !== id));
-            setLoading(false);
-            setMessage({
-                type: 'info',
-                text: 'API key deleted successfully',
-            });
-            setTimeout(() => {
-                setMessage(null);
-            }, 2000);
-        } catch (error) {
-            setLoading(false);
-            setMessage({
-                type: 'error',
-                text: error instanceof Error ? error.message : "Failed to delete API key",
-            });
-        }
-    };
-
-    return <Section title="API keys">
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                    API keys are used to authenticate requests to the Rowboat API.
-                </p>
-                <Button
-                    onClick={handleCreateKey}
-                    size="sm"
-                    startContent={<Plus className="h-4 w-4" />}
-                    variant="primary"
-                    disabled={loading}
-                >
-                    Create API key
-                </Button>
-            </div>
-
-            <Divider />
-            {loading && <Spinner size="sm" />}
-            {!loading && <div className="border border rounded-lg text-sm">
-                <div className="flex items-center border-b border p-4">
-                    <div className="flex-3 font-normal">API Key</div>
-                    <div className="flex-1 font-normal">Created</div>
-                    <div className="flex-1 font-normal">Last Used</div>
-                    <div className="w-10"></div>
-                </div>
-                {message?.type === 'success' && <div className="flex flex-col p-2">
-                    <div className="text-sm bg-green-50 text-green-500 p-2 rounded-md">{message.text}</div>
-                </div>}
-                {message?.type === 'error' && <div className="flex flex-col p-2">
-                    <div className="text-sm bg-red-50 text-red-500 p-2 rounded-md">{message.text}</div>
-                </div>}
-                {message?.type === 'info' && <div className="flex flex-col p-2">
-                    <div className="text-sm bg-yellow-50 text-yellow-500 p-2 rounded-md">{message.text}</div>
-                </div>}
-                <div className="flex flex-col">
-                    {keys.map((key) => (
-                        <div key={key._id} className="flex items-start border-b border last:border-b-0 p-4">
-                            <div className="flex-3 p-2">
-                                <ApiKeyDisplay apiKey={key.key} />
-                            </div>
-                            <div className="flex-1 p-2">
-                                <RelativeTime date={new Date(key.createdAt)} />
-                            </div>
-                            <div className="flex-1 p-2">
-                                {key.lastUsedAt ? <RelativeTime date={new Date(key.lastUsedAt)} /> : 'Never'}
-                            </div>
-                            <div className="w-10 p-2">
-                                <Dropdown>
-                                    <DropdownTrigger>
-                                        <button className="text-muted-foreground hover:text-foreground">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </button>
-                                    </DropdownTrigger>
-                                    <DropdownMenu>
-                                        <DropdownItem
-                                            key='delete'
-                                            className="text-destructive"
-                                            onPress={() => handleDeleteKey(key._id)}
-                                        >
-                                            Delete
-                                        </DropdownItem>
-                                    </DropdownMenu>
-                                </Dropdown>
-                            </div>
-                        </div>
-                    ))}
-                    {keys.length === 0 && (
-                        <div className="p-4 text-center text-muted-foreground">
-                            No API keys created yet
-                        </div>
-                    )}
-                </div>
-            </div>}
-        </div>
     </Section>;
 }
 

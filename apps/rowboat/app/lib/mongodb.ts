@@ -1,7 +1,7 @@
 import { MongoClient } from "mongodb";
 import { User, Webpage } from "./types/types";
 import { Workflow } from "./types/workflow_types";
-import { ApiKey } from "./types/project_types";
+import { ApiKey } from "@/src/entities/models/api-key";
 import { ProjectMember } from "./types/project_types";
 import { Project } from "./types/project_types";
 import { EmbeddingDoc } from "./types/datasource_types";
