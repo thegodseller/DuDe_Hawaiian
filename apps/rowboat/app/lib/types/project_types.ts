@@ -35,10 +35,3 @@ export const Project = z.object({
     composioConnectedAccounts: z.record(z.string(), ComposioConnectedAccount).optional(),
     customMcpServers: z.record(z.string(), CustomMcpServer).optional(),
 });
-
-export const ProjectMember = z.object({
-    userId: z.string(),
-    projectId: z.string(),
-    createdAt: z.string().datetime(),
-    lastUpdatedAt: z.string().datetime(),
-});

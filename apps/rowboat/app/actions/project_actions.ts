@@ -1,7 +1,7 @@
 'use server';
 import { redirect } from "next/navigation";
 import { ObjectId } from "mongodb";
-import { db, dataSourcesCollection, projectsCollection, projectMembersCollection, dataSourceDocsCollection } from "../lib/mongodb";
+import { db, dataSourcesCollection, projectsCollection, dataSourceDocsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import crypto from 'crypto';
 import { revalidatePath } from "next/cache";
@@ -19,6 +19,7 @@ import { ICreateApiKeyController } from "@/src/interface-adapters/controllers/ap
 import { IListApiKeysController } from "@/src/interface-adapters/controllers/api-keys/list-api-keys.controller";
 import { IDeleteApiKeyController } from "@/src/interface-adapters/controllers/api-keys/delete-api-key.controller";
 import { IApiKeysRepository } from "@/src/application/repositories/api-keys.repository.interface";
+import { IProjectMembersRepository } from "@/src/application/repositories/project-members.repository.interface";
 const KLAVIS_API_KEY = process.env.KLAVIS_API_KEY || '';
 
 const projectActionAuthorizationPolicy = container.resolve<IProjectActionAuthorizationPolicy>('projectActionAuthorizationPolicy');
@@ -26,6 +27,7 @@ const createApiKeyController = container.resolve<ICreateApiKeyController>('creat
 const listApiKeysController = container.resolve<IListApiKeysController>('listApiKeysController');
 const deleteApiKeyController = container.resolve<IDeleteApiKeyController>('deleteApiKeyController');
 const apiKeysRepository = container.resolve<IApiKeysRepository>('apiKeysRepository');
+const projectMembersRepository = container.resolve<IProjectMembersRepository>('projectMembersRepository');
 
 export async function listTemplates() {
     const templatesArray = Object.entries(templates)
@@ -94,11 +96,9 @@ async function createBaseProject(
     });
 
     // Add user to project
-    await projectMembersCollection.insertOne({
+    await projectMembersRepository.create({
         userId: user._id,
-        projectId: projectId,
-        createdAt: (new Date()).toISOString(),
-        lastUpdatedAt: (new Date()).toISOString(),
+        projectId,
     });
 
     // Add first api key
@@ -159,9 +159,13 @@ export async function getProjectConfig(projectId: string): Promise<WithStringId<
 
 export async function listProjects(): Promise<z.infer<typeof Project>[]> {
     const user = await authCheck();
-    const memberships = await projectMembersCollection.find({
-        userId: user._id,
-    }).toArray();
+    const memberships = [];
+    let cursor = undefined;
+    do {
+        const result = await projectMembersRepository.findByUserId(user._id, cursor);
+        memberships.push(...result.items);
+        cursor = result.nextCursor;
+    } while (cursor);
     const projectIds = memberships.map((m) => m.projectId);
     const projects = await projectsCollection.find({
         _id: { $in: projectIds },
@@ -251,9 +255,7 @@ export async function deleteProject(projectId: string) {
     });
 
     // delete project members
-    await projectMembersCollection.deleteMany({
-        projectId,
-    });
+    await projectMembersRepository.deleteByProjectId(projectId);
 
     // delete workflow versions
     await db.collection('agent_workflows').deleteMany({

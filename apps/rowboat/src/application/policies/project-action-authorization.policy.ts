@@ -36,7 +36,7 @@ export class ProjectActionAuthorizationPolicy implements IProjectActionAuthoriza
             if (!userId) {
                 throw new BadRequestError('User ID is required');
             }
-            const membership = await this.projectMembersRepository.checkMembership(projectId, userId);
+            const membership = await this.projectMembersRepository.exists(projectId, userId);
             if (!membership) {
                 throw new NotAuthorizedError('User is not a member of the project');
             }
