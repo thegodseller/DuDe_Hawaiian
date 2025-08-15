@@ -25,7 +25,7 @@ import { deleteDataSource } from '../../../actions/datasource_actions';
 import { ToolkitAuthModal } from '../tools/components/ToolkitAuthModal';
 import { deleteConnectedAccount } from '@/app/actions/composio_actions';
 import { ProjectWideChangeConfirmationModal } from '@/components/common/project-wide-change-confirmation-modal';
-import { SHOW_PROMPTS_SECTION } from '../../../lib/feature_flags';
+import { SHOW_PROMPTS_SECTION, SHOW_VISUALIZATION } from '../../../lib/feature_flags';
 
 // Reduced gap size to match Cursor's UI
 const GAP_SIZE = 4; // 1 unit * 4px (tailwind's default spacing unit)
@@ -698,19 +698,21 @@ export const EntityList = forwardRef<
                                     <span>Agents</span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onShowVisualise("visualise");
-                                        }}
-                                        className={`group ${buttonClasses}`}
-                                        showHoverContent={true}
-                                        hoverContent="Visualise Agents"
-                                    >
-                                        <Eye className="w-4 h-4" />
-                                    </Button>
+                                    {SHOW_VISUALIZATION && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onShowVisualise("visualise");
+                                            }}
+                                            className={`group ${buttonClasses}`}
+                                            showHoverContent={true}
+                                            hoverContent="Visualise Agents"
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="secondary"
                                         size="sm"
