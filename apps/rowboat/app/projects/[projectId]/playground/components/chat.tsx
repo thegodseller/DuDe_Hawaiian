@@ -384,7 +384,7 @@ export function Chat({
                             {
                                 role: 'assistant',
                                 content: 'Hi, how can I help you today?',
-                                agentName: 'assistant',
+                                agentName: 'Assistant',
                                 responseType: 'external',
                             },
                             ...optimisticMessages,
