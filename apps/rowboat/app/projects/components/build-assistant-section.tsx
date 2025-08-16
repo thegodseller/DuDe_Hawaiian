@@ -231,7 +231,7 @@ export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProp
                                                         }}
                                                         onSubmit={handleCreateAssistant}
                                                         isSubmitting={isCreating}
-                                                        placeholder="Example: build me an AI SDR agent..."
+                                                        placeholder="Example: Build me an assistant to manage my email and calendar..."
                                                         className={clsx(
                                                             "w-full rounded-lg p-3 border border-gray-200 dark:border-gray-700",
                                                             "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750",
