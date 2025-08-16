@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { TextareaHTMLAttributes, forwardRef, useEffect, useRef, useState } from "react";
+import { TextareaHTMLAttributes, forwardRef, useEffect, useRef, useState, useCallback } from "react";
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -29,6 +29,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({
 }, ref) => {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = (ref as any) || internalRef;
+  const adjustHeightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Local state for validation mode
   const [localValue, setLocalValue] = useState(propValue as string);
@@ -47,27 +48,57 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({
     }
   }, [propValue, isEditing]);
 
-  useEffect(() => {
-    if (!autoResize) return;
-    
+  // Debounced adjustHeight function to prevent interference during rapid state changes
+  const debouncedAdjustHeight = useCallback(() => {
     const textarea = textareaRef.current;
-    if (!textarea) return;
+    if (!textarea || !autoResize) return;
 
-    const adjustHeight = () => {
-      textarea.style.height = 'auto';
-      const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+    // Clear any pending timeout
+    if (adjustHeightTimeoutRef.current) {
+      clearTimeout(adjustHeightTimeoutRef.current);
+    }
+
+    // Debounce the height adjustment to prevent interference during rapid changes
+    adjustHeightTimeoutRef.current = setTimeout(() => {
+      // Store current focus state
+      const hadFocus = document.activeElement === textarea;
+      const selectionStart = textarea.selectionStart;
+      const selectionEnd = textarea.selectionEnd;
       
-      // Add scrolling if content exceeds maxHeight
-      textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
-    };
+      // Only adjust if the textarea is properly mounted and not currently being focused
+      if (textarea.offsetParent === null) return;
+      
+      // Prevent adjustment during focus events to avoid disruption
+      requestAnimationFrame(() => {
+        textarea.style.height = 'auto';
+        const scrollHeight = textarea.scrollHeight;
+        textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+        
+        // Add scrolling if content exceeds maxHeight
+        textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
+        
+        // Restore focus and selection if it was focused before
+        if (hadFocus && document.activeElement !== textarea) {
+          textarea.focus();
+          textarea.setSelectionRange(selectionStart, selectionEnd);
+        }
+      });
+    }, 10); // Small debounce delay
+  }, [autoResize, maxHeight, textareaRef]);
 
-    adjustHeight();
+  useEffect(() => {
+    debouncedAdjustHeight();
     
     // Add window resize listener
-    window.addEventListener('resize', adjustHeight);
-    return () => window.removeEventListener('resize', adjustHeight);
-  }, [localValue, autoResize, maxHeight, textareaRef]);
+    window.addEventListener('resize', debouncedAdjustHeight);
+    return () => {
+      window.removeEventListener('resize', debouncedAdjustHeight);
+      // Clear timeout on cleanup
+      if (adjustHeightTimeoutRef.current) {
+        clearTimeout(adjustHeightTimeoutRef.current);
+      }
+    };
+  }, [localValue, debouncedAdjustHeight]);
 
   const validateAndUpdate = (value: string) => {
     if (validate) {
