@@ -2,10 +2,10 @@
 import { 
     CopilotAPIRequest,
     CopilotChatContext, CopilotMessage,
+    DataSourceSchemaForCopilot,
 } from "../lib/types/copilot_types";
 import { 
     Workflow} from "../lib/types/workflow_types";
-import { DataSource } from "@/src/entities/models/data-source";
 import { z } from 'zod';
 import { projectAuthCheck } from "./project.actions";
 import { redisClient } from "../lib/redis";
@@ -23,7 +23,7 @@ export async function getCopilotResponseStream(
     messages: z.infer<typeof CopilotMessage>[],
     current_workflow_config: z.infer<typeof Workflow>,
     context: z.infer<typeof CopilotChatContext> | null,
-    dataSources?: z.infer<typeof DataSource>[]
+    dataSources?: z.infer<typeof DataSourceSchemaForCopilot>[]
 ): Promise<{
     streamId: string;
 } | { billingError: string }> {

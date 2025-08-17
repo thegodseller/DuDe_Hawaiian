@@ -3,6 +3,13 @@ import { Workflow } from "./workflow_types";
 import { Message } from "./types";
 import { DataSource } from "@/src/entities/models/data-source";
 
+export const DataSourceSchemaForCopilot = DataSource.pick({
+    id: true,
+    name: true,
+    description: true,
+    data: true,
+});
+
 export const CopilotUserMessage = z.object({
     role: z.literal('user'),
     content: z.string(),
@@ -52,7 +59,7 @@ export const CopilotAPIRequest = z.object({
     messages: z.array(CopilotMessage),
     workflow: Workflow,
     context: CopilotChatContext.nullable(),
-    dataSources: z.array(DataSource).optional(),
+    dataSources: z.array(DataSourceSchemaForCopilot).optional(),
 });
 export const CopilotAPIResponse = z.union([
     z.object({

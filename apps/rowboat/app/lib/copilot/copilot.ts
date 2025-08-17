@@ -2,8 +2,7 @@ import z from "zod";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject, streamText, tool } from "ai";
 import { Workflow, WorkflowTool } from "../types/workflow_types";
-import { CopilotChatContext, CopilotMessage } from "../types/copilot_types";
-import { DataSource } from "@/src/entities/models/data-source";
+import { CopilotChatContext, CopilotMessage, DataSourceSchemaForCopilot } from "../types/copilot_types";
 import { PrefixLogger } from "../utils";
 import zodToJsonSchema from "zod-to-json-schema";
 import { COPILOT_INSTRUCTIONS_EDIT_AGENT } from "./copilot_edit_agent";
@@ -101,7 +100,7 @@ ${JSON.stringify(workflow)}
 `;
 }
 
-function getDataSourcesPrompt(dataSources: z.infer<typeof DataSource>[]): string {
+function getDataSourcesPrompt(dataSources: z.infer<typeof DataSourceSchemaForCopilot>[]): string {
     let prompt = '';
     if (dataSources.length > 0) {
         const simplifiedDataSources = dataSources.map(ds => ({
@@ -273,7 +272,7 @@ export async function* streamMultiAgentResponse(
     context: z.infer<typeof CopilotChatContext> | null,
     messages: z.infer<typeof CopilotMessage>[],
     workflow: z.infer<typeof Workflow>,
-    dataSources: z.infer<typeof DataSource>[]
+    dataSources: z.infer<typeof DataSourceSchemaForCopilot>[]
 ): AsyncIterable<z.infer<typeof ZEvent>> {
     const logger = new PrefixLogger('copilot /stream');
     logger.log('context', context);
