@@ -154,11 +154,7 @@ ${CHILD_TRANSFER_RELATED_INSTRUCTIONS}
         name: config.name,
         instructions: sanitized,
         tools: agentTools,
-        model: aisdk(openai(config.model)),
-        // model: config.model,
-        modelSettings: {
-            temperature: 0.0,
-        }
+        model: aisdk(openai(config.model))
     });
     agentLogger.log(`created agent`);
 
