@@ -1,6 +1,6 @@
 'use server';
 import { redirect } from "next/navigation";
-import { db, dataSourcesCollection, projectsCollection } from "../lib/mongodb";
+import { db, projectsCollection } from "../lib/mongodb";
 import { z } from 'zod';
 import crypto from 'crypto';
 import { revalidatePath } from "next/cache";
@@ -12,13 +12,16 @@ import { Project } from "../lib/types/project_types";
 import { USE_AUTH } from "../lib/feature_flags";
 import { authorizeUserAction } from "./billing.actions";
 import { Workflow } from "../lib/types/workflow_types";
-import { container } from "@/di/container";
 import { IProjectActionAuthorizationPolicy } from "@/src/application/policies/project-action-authorization.policy";
 import { ICreateApiKeyController } from "@/src/interface-adapters/controllers/api-keys/create-api-key.controller";
 import { IListApiKeysController } from "@/src/interface-adapters/controllers/api-keys/list-api-keys.controller";
 import { IDeleteApiKeyController } from "@/src/interface-adapters/controllers/api-keys/delete-api-key.controller";
 import { IApiKeysRepository } from "@/src/application/repositories/api-keys.repository.interface";
 import { IProjectMembersRepository } from "@/src/application/repositories/project-members.repository.interface";
+import { IDataSourcesRepository } from "@/src/application/repositories/data-sources.repository.interface";
+import { IDataSourceDocsRepository } from "@/src/application/repositories/data-source-docs.repository.interface";
+import { container } from "@/di/container";
+import { qdrantClient } from "../lib/qdrant";
 
 const projectActionAuthorizationPolicy = container.resolve<IProjectActionAuthorizationPolicy>('projectActionAuthorizationPolicy');
 const createApiKeyController = container.resolve<ICreateApiKeyController>('createApiKeyController');
@@ -26,6 +29,8 @@ const listApiKeysController = container.resolve<IListApiKeysController>('listApi
 const deleteApiKeyController = container.resolve<IDeleteApiKeyController>('deleteApiKeyController');
 const apiKeysRepository = container.resolve<IApiKeysRepository>('apiKeysRepository');
 const projectMembersRepository = container.resolve<IProjectMembersRepository>('projectMembersRepository');
+const dataSourcesRepository = container.resolve<IDataSourcesRepository>('dataSourcesRepository');
+const dataSourceDocsRepository = container.resolve<IDataSourceDocsRepository>('dataSourceDocsRepository');
 
 export async function listTemplates() {
     const templatesArray = Object.entries(templates)
@@ -234,22 +239,15 @@ export async function deleteProject(projectId: string) {
     // delete api keys
     await apiKeysRepository.deleteAll(projectId);
 
-    // delete embeddings
-    const sources = await dataSourcesCollection.find({
-        projectId,
-    }, {
-        projection: {
-            _id: true,
-        }
-    }).toArray();
-
-    const ids = sources.map(s => s._id);
-
-    // delete data sources
-    await dataSourcesCollection.deleteMany({
-        _id: {
-            $in: ids,
-        }
+    // delete data sources data
+    await dataSourceDocsRepository.deleteByProjectId(projectId);
+    await dataSourcesRepository.deleteByProjectId(projectId);
+    await qdrantClient.delete("embeddings", {
+        filter: {
+            must: [
+                { key: "projectId", match: { value: projectId } },
+            ],
+        },
     });
 
     // delete project members

@@ -1,6 +1,5 @@
 "use client";
-import { WithStringId } from "../../../lib/types/types";
-import { DataSource } from "../../../lib/types/datasource_types";
+import { DataSource } from "@/src/entities/models/data-source";
 import { z } from "zod";
 import { XIcon, FileIcon, GlobeIcon, AlertTriangle, CheckCircle, Circle, ExternalLinkIcon, Type, PlusIcon, Edit3Icon, DownloadIcon, Trash2 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
@@ -8,9 +7,9 @@ import { Panel } from "@/components/common/panel-common";
 import { Button } from "@/components/ui/button";
 import { DataSourceIcon } from "@/app/lib/components/datasource-icon";
 import { Tooltip } from "@heroui/react";
-import { getDataSource, listDocsInDataSource, deleteDocsFromDataSource, getDownloadUrlForFile, addDocsToDataSource, getUploadUrlsForFilesDataSource } from "@/app/actions/data-source.actions";
+import { getDataSource, listDocsInDataSource, deleteDocFromDataSource, getDownloadUrlForFile, addDocsToDataSource, getUploadUrlsForFilesDataSource } from "@/app/actions/data-source.actions";
 import { InputField } from "@/app/lib/components/input-field";
-import { DataSourceDoc } from "../../../lib/types/datasource_types";
+import { DataSourceDoc } from "@/src/entities/models/data-source-doc";
 import { RelativeTime } from "@primer/react";
 import { Pagination, Spinner, Button as HeroButton, Textarea as HeroTextarea } from "@heroui/react";
 import { useDropzone } from "react-dropzone";
@@ -24,12 +23,12 @@ export function DataSourceConfig({
     handleClose: () => void,
     onDataSourceUpdate?: () => void
 }) {
-    const [dataSource, setDataSource] = useState<WithStringId<z.infer<typeof DataSource>> | null>(null);
+    const [dataSource, setDataSource] = useState<z.infer<typeof DataSource> | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     
     // Files-related state
-    const [files, setFiles] = useState<WithStringId<z.infer<typeof DataSourceDoc>>[]>([]);
+    const [files, setFiles] = useState<z.infer<typeof DataSourceDoc>[]>([]);
     const [filesLoading, setFilesLoading] = useState(false);
     const [filesPage, setFilesPage] = useState(1);
     const [filesTotal, setFilesTotal] = useState(0);
@@ -44,22 +43,22 @@ export function DataSourceConfig({
                 const currentProjectId = pathParts[2]; // /projects/[projectId]/workflow
                 setProjectId(currentProjectId);
                 
-                const ds = await getDataSource(currentProjectId, dataSourceId);
+                const ds = await getDataSource(dataSourceId);
                 setDataSource(ds);
                 
                 // Load files if it's a files data source
                 if (ds.data.type === 'files_local' || ds.data.type === 'files_s3') {
-                    await loadFiles(currentProjectId, dataSourceId, 1);
+                    await loadFiles(dataSourceId, 1);
                 }
                 
                 // Load URLs if it's a URLs data source
                 if (ds.data.type === 'urls') {
-                    await loadUrls(currentProjectId, dataSourceId, 1);
+                    await loadUrls(dataSourceId, 1);
                 }
                 
                 // Load text content if it's a text data source
                 if (ds.data.type === 'text') {
-                    await loadTextContent(currentProjectId, dataSourceId);
+                    await loadTextContent(dataSourceId);
                 }
             } catch (err) {
                 console.error('Failed to load data source:', err);
@@ -91,7 +90,7 @@ export function DataSourceConfig({
             }
             
             try {
-                const updatedSource = await getDataSource(projectId, dataSourceId);
+                const updatedSource = await getDataSource(dataSourceId);
                 if (!ignore) {
                     setDataSource(updatedSource);
                     onDataSourceUpdate?.(); // Notify parent of status change
@@ -124,20 +123,19 @@ export function DataSourceConfig({
     // Helper function to update data source and notify parent
     const updateDataSourceAndNotify = useCallback(async () => {
         try {
-            const updatedSource = await getDataSource(projectId, dataSourceId);
+            const updatedSource = await getDataSource(dataSourceId);
             setDataSource(updatedSource);
             onDataSourceUpdate?.();
         } catch (err) {
             console.error('Failed to reload data source:', err);
         }
-    }, [projectId, dataSourceId, onDataSourceUpdate]);
+    }, [dataSourceId, onDataSourceUpdate]);
 
     // Load files function
-    const loadFiles = async (projectId: string, sourceId: string, page: number) => {
+    const loadFiles = async (sourceId: string, page: number) => {
         try {
             setFilesLoading(true);
             const { files, total } = await listDocsInDataSource({
-                projectId,
                 sourceId,
                 page,
                 limit: 10,
@@ -153,7 +151,7 @@ export function DataSourceConfig({
     };
 
     // URLs-related state
-    const [urls, setUrls] = useState<WithStringId<z.infer<typeof DataSourceDoc>>[]>([]);
+    const [urls, setUrls] = useState<z.infer<typeof DataSourceDoc>[]>([]);
     const [urlsLoading, setUrlsLoading] = useState(false);
     const [urlsPage, setUrlsPage] = useState(1);
     const [urlsTotal, setUrlsTotal] = useState(0);
@@ -171,11 +169,10 @@ export function DataSourceConfig({
     const [uploadingFiles, setUploadingFiles] = useState(false);
 
     // Load URLs function
-    const loadUrls = async (projectId: string, sourceId: string, page: number) => {
+    const loadUrls = async (sourceId: string, page: number) => {
         try {
             setUrlsLoading(true);
             const { files, total } = await listDocsInDataSource({
-                projectId,
                 sourceId,
                 page,
                 limit: 10,
@@ -191,11 +188,10 @@ export function DataSourceConfig({
     };
 
     // Load text content function
-    const loadTextContent = async (projectId: string, sourceId: string) => {
+    const loadTextContent = async (sourceId: string) => {
         try {
             setTextLoading(true);
             const { files } = await listDocsInDataSource({
-                projectId,
                 sourceId,
                 limit: 1,
             });
@@ -218,13 +214,11 @@ export function DataSourceConfig({
         if (!window.confirm('Are you sure you want to delete this file?')) return;
         
         try {
-            await deleteDocsFromDataSource({
-                projectId,
-                sourceId: dataSourceId,
-                docIds: [fileId],
+            await deleteDocFromDataSource({
+                docId: fileId,
             });
             // Reload files
-            await loadFiles(projectId, dataSourceId, filesPage);
+            await loadFiles(dataSourceId, filesPage);
             
             // Reload data source to get updated status
             await updateDataSourceAndNotify();
@@ -236,7 +230,7 @@ export function DataSourceConfig({
     // Handle file download
     const handleDownloadFile = async (fileId: string) => {
         try {
-            const url = await getDownloadUrlForFile(projectId, dataSourceId, fileId);
+            const url = await getDownloadUrlForFile(fileId);
             window.open(url, '_blank');
         } catch (err) {
             console.error('Failed to download file:', err);
@@ -245,7 +239,7 @@ export function DataSourceConfig({
 
     // Handle page change
     const handlePageChange = (page: number) => {
-        loadFiles(projectId, dataSourceId, page);
+        loadFiles(dataSourceId, page);
     };
 
     // Handle URL deletion
@@ -253,13 +247,11 @@ export function DataSourceConfig({
         if (!window.confirm('Are you sure you want to delete this URL?')) return;
         
         try {
-            await deleteDocsFromDataSource({
-                projectId,
-                sourceId: dataSourceId,
-                docIds: [urlId],
+            await deleteDocFromDataSource({
+                docId: urlId,
             });
             // Reload URLs
-            await loadUrls(projectId, dataSourceId, urlsPage);
+            await loadUrls(dataSourceId, urlsPage);
             
             // Reload data source to get updated status
             await updateDataSourceAndNotify();
@@ -270,7 +262,7 @@ export function DataSourceConfig({
 
     // Handle URL page change
     const handleUrlPageChange = (page: number) => {
-        loadUrls(projectId, dataSourceId, page);
+        loadUrls(dataSourceId, page);
     };
 
     // Handle text content update
@@ -279,22 +271,18 @@ export function DataSourceConfig({
         try {
             // Delete existing text doc if it exists
             const { files } = await listDocsInDataSource({
-                projectId,
                 sourceId: dataSourceId,
                 limit: 1,
             });
             
             if (files.length > 0) {
-                await deleteDocsFromDataSource({
-                    projectId,
-                    sourceId: dataSourceId,
-                    docIds: [files[0]._id],
+                await deleteDocFromDataSource({
+                    docId: files[0].id,
                 });
             }
 
             // Add new text doc
             await addDocsToDataSource({
-                projectId,
                 sourceId: dataSourceId,
                 docData: [{
                     name: 'text',
@@ -327,7 +315,6 @@ export function DataSourceConfig({
             const first100Urls = urlsArray.slice(0, 100);
             
             await addDocsToDataSource({
-                projectId,
                 sourceId: dataSourceId,
                 docData: first100Urls.map(url => ({
                     name: url,
@@ -339,7 +326,7 @@ export function DataSourceConfig({
             });
             
             setShowAddUrlForm(false);
-            await loadUrls(projectId, dataSourceId, urlsPage);
+            await loadUrls(dataSourceId, urlsPage);
             
             // Reload data source to get updated status
             await updateDataSourceAndNotify();
@@ -356,7 +343,7 @@ export function DataSourceConfig({
         
         setUploadingFiles(true);
         try {
-            const urls = await getUploadUrlsForFilesDataSource(projectId, dataSourceId, acceptedFiles.map(file => ({
+            const urls = await getUploadUrlsForFilesDataSource(dataSourceId, acceptedFiles.map(file => ({
                 name: file.name,
                 type: file.type,
                 size: file.size,
@@ -403,17 +390,17 @@ export function DataSourceConfig({
                         name: file.name,
                         size: file.size,
                         mimeType: file.type,
+                        path: urls[index].path,
                     },
                 }));
             }
 
             await addDocsToDataSource({
-                projectId,
                 sourceId: dataSourceId,
                 docData,
             });
 
-            await loadFiles(projectId, dataSourceId, filesPage);
+            await loadFiles(dataSourceId, filesPage);
             
             // Reload data source to get updated status
             await updateDataSourceAndNotify();
@@ -422,7 +409,7 @@ export function DataSourceConfig({
         } finally {
             setUploadingFiles(false);
         }
-    }, [projectId, dataSourceId, dataSource, filesPage, updateDataSourceAndNotify]);
+    }, [dataSourceId, dataSource, filesPage, updateDataSourceAndNotify]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop: onFileDrop,
@@ -676,7 +663,7 @@ export function DataSourceConfig({
                                 <div className="space-y-2">
                                     {files.map((file) => (
                                         <div
-                                            key={file._id}
+                                            key={file.id}
                                             className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border"
                                         >
                                             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -696,7 +683,7 @@ export function DataSourceConfig({
                                                 {(file.data.type === 'file_local' || file.data.type === 'file_s3') && (
                                                     <Tooltip content="Download file">
                                                         <button
-                                                            onClick={() => handleDownloadFile(file._id)}
+                                                            onClick={() => handleDownloadFile(file.id)}
                                                             className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
                                                         >
                                                             <DownloadIcon className="w-4 h-4 text-gray-500" />
@@ -705,7 +692,7 @@ export function DataSourceConfig({
                                                 )}
                                                 <Tooltip content="Delete file">
                                                     <button
-                                                        onClick={() => handleDeleteFile(file._id)}
+                                                        onClick={() => handleDeleteFile(file.id)}
                                                         className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors"
                                                     >
                                                         <Trash2 className="w-4 h-4 text-red-500" />
@@ -805,7 +792,7 @@ export function DataSourceConfig({
                                 <div className="space-y-2">
                                     {urls.map((url) => (
                                         <div
-                                            key={url._id}
+                                            key={url.id}
                                             className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border"
                                         >
                                             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -834,7 +821,7 @@ export function DataSourceConfig({
                                             <div className="flex items-center gap-2">
                                                 <Tooltip content="Delete URL">
                                                     <button
-                                                        onClick={() => handleDeleteUrl(url._id)}
+                                                        onClick={() => handleDeleteUrl(url.id)}
                                                         className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors"
                                                     >
                                                         <Trash2 className="w-4 h-4 text-red-500" />

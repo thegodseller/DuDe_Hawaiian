@@ -1,15 +1,13 @@
-import { DataSource } from "../../../../lib/types/datasource_types";
+import { DataSource } from "@/src/entities/models/data-source";
 import { Spinner } from "@heroui/react";
 import { z } from 'zod';
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from "lucide-react";
 
 export function SourceStatus({
     status,
-    projectId,
     compact = false,
 }: {
     status: z.infer<typeof DataSource>['status'],
-    projectId: string,
     compact?: boolean;
 }) {
     return (

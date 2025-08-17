@@ -1,9 +1,9 @@
 "use client";
-import { WithStringId } from "../../../../lib/types/types";
-import { DataSourceDoc, DataSource } from "../../../../lib/types/datasource_types";
+import { DataSourceDoc } from "@/src/entities/models/data-source-doc";
+import { DataSource } from "@/src/entities/models/data-source";
 import { z } from "zod";
 import { Recrawl } from "./web-recrawl";
-import { deleteDocsFromDataSource, listDocsInDataSource, recrawlWebDataSource, addDocsToDataSource } from "../../../../actions/data-source.actions";
+import { deleteDocFromDataSource, listDocsInDataSource, recrawlWebDataSource, addDocsToDataSource } from "../../../../actions/data-source.actions";
 import { useState, useEffect } from "react";
 import { Spinner, Pagination } from "@heroui/react";
 import { ExternalLinkIcon, PlusIcon } from "lucide-react";
@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Section } from "./section";
 
 function UrlListItem({ file, onDelete }: {
-    file: WithStringId<z.infer<typeof DataSourceDoc>>,
+    file: z.infer<typeof DataSourceDoc>,
     onDelete: (fileId: string) => Promise<void>;
 }) {
     const [isDeleting, setIsDeleting] = useState(false);
@@ -37,7 +37,7 @@ function UrlListItem({ file, onDelete }: {
                 onClick={async () => {
                     setIsDeleting(true);
                     try {
-                        await onDelete(file._id);
+                        await onDelete(file.id);
                     } finally {
                         setIsDeleting(false);
                     }
@@ -51,12 +51,11 @@ function UrlListItem({ file, onDelete }: {
     );
 }
 
-function UrlList({ projectId, sourceId, onDelete }: {
-    projectId: string,
+function UrlList({ sourceId, onDelete }: {
     sourceId: string,
     onDelete: (fileId: string) => Promise<void>,
 }) {
-    const [files, setFiles] = useState<WithStringId<z.infer<typeof DataSourceDoc>>[]>([]);
+    const [files, setFiles] = useState<z.infer<typeof DataSourceDoc>[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
@@ -69,7 +68,7 @@ function UrlList({ projectId, sourceId, onDelete }: {
         async function fetchFiles() {
             setLoading(true);
             try {
-                const { files, total } = await listDocsInDataSource({ projectId, sourceId, page, limit: 10 });
+                const { files, total } = await listDocsInDataSource({ sourceId, page, limit: 10 });
                 if (!ignore) {
                     setFiles(files);
                     setTotal(total);
@@ -86,7 +85,7 @@ function UrlList({ projectId, sourceId, onDelete }: {
         return () => {
             ignore = true;
         };
-    }, [projectId, sourceId, page]);
+    }, [sourceId, page]);
 
     return (
         <div className="mt-6 space-y-4">
@@ -102,7 +101,7 @@ function UrlList({ projectId, sourceId, onDelete }: {
             ) : (
                 <div className="space-y-2">
                     {files.map(file => (
-                        <UrlListItem key={file._id} file={file} onDelete={onDelete} />
+                        <UrlListItem key={file.id} file={file} onDelete={onDelete} />
                     ))}
                     {Math.ceil(total / 10) > 1 && (
                         <div className="mt-4">
@@ -120,12 +119,10 @@ function UrlList({ projectId, sourceId, onDelete }: {
 }
 
 export function ScrapeSource({
-    projectId,
     dataSource,
     handleReload,
 }: {
-    projectId: string,
-    dataSource: WithStringId<z.infer<typeof DataSource>>,
+    dataSource: z.infer<typeof DataSource>,
     handleReload: () => void;
 }) {
     const [fileListKey, setFileListKey] = useState(0);
@@ -161,8 +158,7 @@ export function ScrapeSource({
                                 const first100Urls = urlsArray.slice(0, 100);
                                 
                                 await addDocsToDataSource({
-                                    projectId,
-                                    sourceId: dataSource._id,
+                                    sourceId: dataSource.id,
                                     docData: first100Urls.map(url => ({
                                         name: url,
                                         data: {
@@ -209,13 +205,10 @@ export function ScrapeSource({
 
                     <UrlList
                         key={fileListKey}
-                        projectId={projectId}
-                        sourceId={dataSource._id}
+                        sourceId={dataSource.id}
                         onDelete={async (docId) => {
-                            await deleteDocsFromDataSource({
-                                projectId,
-                                sourceId: dataSource._id,
-                                docIds: [docId],
+                            await deleteDocFromDataSource({
+                                docId: docId,
                             });
                             handleReload();
                             setFileListKey(prev => prev + 1);
@@ -230,10 +223,8 @@ export function ScrapeSource({
                     description="Update the content by scraping the URLs again."
                 >
                     <Recrawl 
-                        projectId={projectId} 
-                        sourceId={dataSource._id} 
                         handleRefresh={async () => {
-                            await recrawlWebDataSource(projectId, dataSource._id);
+                            await recrawlWebDataSource(dataSource.id);
                             handleReload();
                             setFileListKey(prev => prev + 1);
                         }} 

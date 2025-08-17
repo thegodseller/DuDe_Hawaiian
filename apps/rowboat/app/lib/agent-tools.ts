@@ -2,7 +2,6 @@
 import { tool, Tool } from "@openai/agents";
 import { createOpenAI } from "@ai-sdk/openai";
 import { embed, generateText } from "ai";
-import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { composio } from "./composio/composio";
 import { SignJWT } from "jose";
@@ -11,12 +10,16 @@ import crypto from "crypto";
 // Internal dependencies
 import { embeddingModel } from '../lib/embedding';
 import { getMcpClient } from "./mcp";
-import { dataSourceDocsCollection, dataSourcesCollection, projectsCollection } from "./mongodb";
+import { projectsCollection } from "./mongodb";
 import { qdrantClient } from '../lib/qdrant';
 import { EmbeddingRecord } from "./types/datasource_types";
 import { WorkflowAgent, WorkflowTool } from "./types/workflow_types";
 import { PrefixLogger } from "./utils";
 import { UsageTracker } from "./billing";
+import { DataSource } from "@/src/entities/models/data-source";
+import { IDataSourcesRepository } from "@/src/application/repositories/data-sources.repository.interface";
+import { IDataSourceDocsRepository } from "@/src/application/repositories/data-source-docs.repository.interface";
+import { container } from "@/di/container";
 
 // Provider configuration
 const PROVIDER_API_KEY = process.env.PROVIDER_API_KEY || process.env.OPENAI_API_KEY || '';
@@ -92,6 +95,9 @@ export async function invokeRagTool(
     logger.log(`returnType: ${returnType}`);
     logger.log(`k: ${k}`);
 
+    const dataSourcesRepository = container.resolve<IDataSourcesRepository>('dataSourcesRepository');
+    const dataSourceDocsRepository = container.resolve<IDataSourceDocsRepository>('dataSourceDocsRepository');
+
     // Create embedding for question
     const { embedding, usage } = await embed({
         model: embeddingModel,
@@ -109,14 +115,19 @@ export async function invokeRagTool(
     });
 
     // Fetch all data sources for this project
-    const sources = await dataSourcesCollection.find({
-        projectId: projectId,
-        active: true,
-    }).toArray();
+    const sources: z.infer<typeof DataSource>[] = [];
+    let cursor = undefined;
+    do {
+        const resp = await dataSourcesRepository.list(projectId, {
+            active: true,
+        }, cursor);
+        sources.push(...resp.items);
+        cursor = resp.nextCursor;
+    } while(cursor);
+
     const validSourceIds = sources
-        .filter(s => sourceIds.includes(s._id.toString())) // id should be in sourceIds
-        .filter(s => s.active) // should be active
-        .map(s => s._id.toString());
+        .filter(s => sourceIds.includes(s.id)) // id should be in sourceIds
+        .map(s => s.id);
     logger.log(`valid source ids: ${validSourceIds.join(', ')}`);
 
     // if no sources found, return empty response
@@ -157,14 +168,12 @@ export async function invokeRagTool(
     }
 
     // otherwise, fetch the doc contents from mongodb
-    const docs = await dataSourceDocsCollection.find({
-        _id: { $in: results.map(r => new ObjectId(r.docId)) },
-    }).toArray();
+    const docs = await dataSourceDocsRepository.bulkFetch(results.map(r => r.docId));
     logger.log(`fetched docs: ${docs.length}`);
 
     // map the results to the docs
     results = results.map(r => {
-        const doc = docs.find(d => d._id.toString() === r.docId);
+        const doc = docs.find(d => d.id === r.docId);
         return {
             ...r,
             content: doc?.content || '',
