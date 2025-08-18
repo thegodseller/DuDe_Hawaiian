@@ -2,7 +2,7 @@ import { CreateProjectMemberSchema, IProjectMembersRepository } from "@/src/appl
 import { ProjectMember } from "@/src/entities/models/project-member";
 import { db } from "@/app/lib/mongodb";
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { PaginatedList } from "@/src/entities/common/paginated-list";
 
 const docSchema = ProjectMember.omit({
@@ -45,7 +45,7 @@ export class MongoDBProjectMembersRepository implements IProjectMembersRepositor
     }
 
     async findByUserId(userId: string, cursor?: string, limit: number = 50): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ProjectMember>>>> {
-        const query: any = { userId };
+        const query: Filter<z.infer<typeof docSchema>> = { userId };
 
         if (cursor) {
             query._id = { $lt: new ObjectId(cursor) };

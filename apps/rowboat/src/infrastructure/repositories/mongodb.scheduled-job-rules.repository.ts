@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { db } from "@/app/lib/mongodb";
 import { CreateRuleSchema, IScheduledJobRulesRepository, ListedRuleItem, UpdateJobSchema } from "@/src/application/repositories/scheduled-job-rules.repository.interface";
 import { ScheduledJobRule } from "@/src/entities/models/scheduled-job-rule";
@@ -187,7 +187,7 @@ export class MongoDBScheduledJobRulesRepository implements IScheduledJobRulesRep
      * Lists scheduled job rules for a specific project with pagination.
      */
     async list(projectId: string, cursor?: string, limit: number = 50): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ListedRuleItem>>>> {
-        const query: any = { projectId };
+        const query: Filter<z.infer<typeof DocSchema>> = { projectId };
 
         if (cursor) {
             query._id = { $lt: new ObjectId(cursor) };

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { db } from "@/app/lib/mongodb";
 import { CreateJobSchema, IJobsRepository, JobFiltersSchema, ListedJobItem, UpdateJobSchema } from "@/src/application/repositories/jobs.repository.interface";
 import { Job } from "@/src/entities/models/job";
@@ -206,7 +206,7 @@ export class MongoDBJobsRepository implements IJobsRepository {
         cursor?: string, 
         limit: number = 50
     ): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ListedJobItem>>>> {
-        const query: any = { projectId };
+        const query: Filter<z.infer<typeof DocSchema>> = { projectId };
 
         const _limit = Math.min(limit, 50);
 

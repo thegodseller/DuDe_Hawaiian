@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { db } from "@/app/lib/mongodb";
 import { DataSource } from "@/src/entities/models/data-source";
 import {
@@ -68,7 +68,7 @@ export class MongoDBDataSourcesRepository implements IDataSourcesRepository {
         cursor?: string,
         limit: number = 50
     ): Promise<z.infer<ReturnType<typeof PaginatedList<typeof DataSource>>>> {
-        const query: any = { projectId, status: { $ne: "deleted" } };
+        const query: Filter<z.infer<typeof DocSchema>> = { projectId, status: { $ne: "deleted" } };
 
         // Default behavior: exclude deleted unless explicitly asked for
         if (filters?.deleted === true) {
@@ -92,7 +92,7 @@ export class MongoDBDataSourcesRepository implements IDataSourcesRepository {
             .toArray();
 
         const hasNextPage = results.length > _limit;
-        const items = results.slice(0, _limit).map((doc: any) => {
+        const items = results.slice(0, _limit).map((doc) => {
             const { _id, ...rest } = doc;
             return {
                 ...rest,

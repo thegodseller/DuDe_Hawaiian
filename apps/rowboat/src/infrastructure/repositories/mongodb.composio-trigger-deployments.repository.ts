@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { db } from "@/app/lib/mongodb";
 import { CreateDeploymentSchema, IComposioTriggerDeploymentsRepository } from "@/src/application/repositories/composio-trigger-deployments.repository.interface";
 import { ComposioTriggerDeployment } from "@/src/entities/models/composio-trigger-deployment";
@@ -135,7 +135,7 @@ export class MongodbComposioTriggerDeploymentsRepository implements IComposioTri
      * Retrieves all trigger deployments for a specific project with pagination.
      */
     async listByProjectId(projectId: string, cursor?: string, limit: number = 50): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ComposioTriggerDeployment>>>> {
-        const query: any = { projectId };
+        const query: Filter<z.infer<typeof DocSchema>> = { projectId };
 
         if (cursor) {
             query._id = { $gt: new ObjectId(cursor) };
