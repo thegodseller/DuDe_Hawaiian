@@ -27,7 +27,7 @@ export function validateConfigChanges(configType: string, configChanges: Record<
                 instructions: 'test',
                 prompts: [],
                 tools: [],
-                model: 'google/gemini-2.5-flash',
+                model: 'gpt-4o',
                 ragReturnType: 'chunks',
                 ragK: 10,
                 connectedAgents: [],
