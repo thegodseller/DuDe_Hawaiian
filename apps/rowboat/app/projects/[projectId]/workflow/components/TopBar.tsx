@@ -1,7 +1,8 @@
 "use client";
 import React from "react";
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip, Input } from "@heroui/react";
-import { RadioIcon, RedoIcon, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, SettingsIcon, ChevronDownIcon, ZapIcon } from "lucide-react";
+import { RadioIcon, RedoIcon, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, SettingsIcon, ChevronDownIcon, ZapIcon, Clock } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 
 interface TopBarProps {
     localProjectName: string;
@@ -44,6 +45,9 @@ export function TopBar({
     onSettingsModalOpen,
     onTriggersModalOpen,
 }: TopBarProps) {
+    const router = useRouter();
+    const params = useParams();
+    const projectId = typeof (params as any).projectId === 'string' ? (params as any).projectId : (params as any).projectId?.[0];
     return (
         <div className="rounded-xl bg-white/70 dark:bg-zinc-800/70 shadow-sm backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 px-5 py-2">
             <div className="flex justify-between items-center">
@@ -159,6 +163,13 @@ export function TopBar({
                                     onPress={onTriggersModalOpen}
                                 >
                                     Manage triggers
+                                </DropdownItem>
+                                <DropdownItem
+                                    key="go-to-schedule-runs"
+                                    startContent={<Clock size={16} />}
+                                    onPress={() => { if (projectId) { router.push(`/projects/${projectId}/job-rules`); } }}
+                                >
+                                    Go to schedule runs
                                 </DropdownItem>
                                 {!isLive ? (
                                     <>
