@@ -6,7 +6,10 @@ import { PictureImg } from '@/components/ui/picture-img';
 import { Wrench, Shield, Key, Globe, ArrowLeft } from "lucide-react";
 import { getToolkit, createComposioManagedOauth2ConnectedAccount, syncConnectedAccount, listToolkits, createCustomConnectedAccount } from '@/app/actions/composio.actions';
 import { z } from 'zod';
-import { ZGetToolkitResponse, ZToolkit, ZComposioField, ZAuthScheme } from '@/app/lib/composio/composio';
+import { ZGetToolkitResponse } from "@/src/application/lib/composio/types";
+import { ZComposioField } from "@/src/application/lib/composio/types";
+import { ZToolkit } from "@/src/application/lib/composio/types";
+import { ZAuthScheme } from "@/src/application/lib/composio/types";
 
 interface ToolkitAuthModalProps {
   isOpen: boolean;

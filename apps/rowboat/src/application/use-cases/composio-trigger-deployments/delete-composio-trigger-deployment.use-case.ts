@@ -4,7 +4,7 @@ import { IUsageQuotaPolicy } from '../../policies/usage-quota.policy.interface';
 import { IProjectActionAuthorizationPolicy } from '../../policies/project-action-authorization.policy';
 import { IComposioTriggerDeploymentsRepository } from '../../repositories/composio-trigger-deployments.repository.interface';
 import { IProjectsRepository } from '../../repositories/projects.repository.interface';
-import { composio } from '../../../../app/lib/composio/composio';
+import { composio } from '../../lib/composio/composio';
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),

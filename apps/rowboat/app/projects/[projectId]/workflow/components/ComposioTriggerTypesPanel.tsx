@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, ZapIcon, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import { ComposioTriggerType } from '@/src/entities/models/composio-trigger-type';
 import { listComposioTriggerTypes } from '@/app/actions/composio.actions';
-import { ZToolkit } from '@/app/lib/composio/composio';
+import { ZToolkit } from "@/src/application/lib/composio/types";
 
 interface ComposioTriggerTypesPanelProps {
   toolkit: z.infer<typeof ZToolkit>;

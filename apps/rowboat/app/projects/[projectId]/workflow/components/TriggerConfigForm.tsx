@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { Button, Input, Card, CardBody, CardHeader } from '@heroui/react';
 import { ArrowLeft, ZapIcon, CheckCircleIcon } from 'lucide-react';
 import { z } from 'zod';
-import { ZToolkit } from '@/app/lib/composio/composio';
+import { ZToolkit } from "@/src/application/lib/composio/types";
 import { ComposioTriggerType } from '@/src/entities/models/composio-trigger-type';
 
 interface TriggerConfigFormProps {

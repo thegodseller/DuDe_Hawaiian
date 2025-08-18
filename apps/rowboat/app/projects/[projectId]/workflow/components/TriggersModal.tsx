@@ -11,7 +11,7 @@ import { SelectComposioToolkit } from '../../tools/components/SelectComposioTool
 import { ComposioTriggerTypesPanel } from './ComposioTriggerTypesPanel';
 import { TriggerConfigForm } from './TriggerConfigForm';
 import { ToolkitAuthModal } from '../../tools/components/ToolkitAuthModal';
-import { ZToolkit } from '@/app/lib/composio/composio';
+import { ZToolkit } from "@/src/application/lib/composio/types";
 import { Project } from "@/src/entities/models/project";
 
 interface TriggersModalProps {

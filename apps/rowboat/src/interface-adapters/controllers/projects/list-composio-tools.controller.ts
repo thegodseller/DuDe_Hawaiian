@@ -1,7 +1,8 @@
 import { BadRequestError } from "@/src/entities/errors/common";
 import z from "zod";
 import { IListComposioToolsUseCase } from "@/src/application/use-cases/projects/list-composio-tools.use-case";
-import { ZTool, ZListResponse } from "@/app/lib/composio/composio";
+import { ZListResponse } from "@/src/application/lib/composio/types";
+import { ZTool } from "@/src/application/lib/composio/types";
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),

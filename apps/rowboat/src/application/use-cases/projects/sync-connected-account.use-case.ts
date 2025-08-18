@@ -3,7 +3,8 @@ import { IProjectsRepository } from "../../repositories/projects.repository.inte
 import { IProjectActionAuthorizationPolicy } from "../../policies/project-action-authorization.policy";
 import { IUsageQuotaPolicy } from "../../policies/usage-quota.policy.interface";
 import { ComposioConnectedAccount } from "@/src/entities/models/project";
-import { ZConnectedAccount, getConnectedAccount } from "@/app/lib/composio/composio";
+import { getConnectedAccount } from "@/src/application/lib/composio/composio";
+import { ZConnectedAccount } from "../../lib/composio/types";
 
 export const InputSchema = z.object({
     caller: z.enum(["user", "api"]),

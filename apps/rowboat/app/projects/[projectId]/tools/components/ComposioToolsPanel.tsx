@@ -8,7 +8,8 @@ import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { Workflow, WorkflowTool } from '@/app/lib/types/workflow_types';
 import { listTools } from '@/app/actions/composio.actions';
 import { z } from 'zod';
-import { ZTool, ZListResponse } from '@/app/lib/composio/composio';
+import { ZListResponse } from "@/src/application/lib/composio/types";
+import { ZTool } from "@/src/application/lib/composio/types";
 import { SlidePanel } from '@/components/ui/slide-panel';
 
 type ToolType = z.infer<typeof ZTool>;

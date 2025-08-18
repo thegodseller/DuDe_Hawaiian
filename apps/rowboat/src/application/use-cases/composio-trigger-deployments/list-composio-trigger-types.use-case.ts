@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { listTriggersTypes } from '../../../../app/lib/composio/composio';
+import { listTriggersTypes } from '../../lib/composio/composio';
 import { PaginatedList } from '@/src/entities/common/paginated-list';
 import { ComposioTriggerType } from '@/src/entities/models/composio-trigger-type';
 

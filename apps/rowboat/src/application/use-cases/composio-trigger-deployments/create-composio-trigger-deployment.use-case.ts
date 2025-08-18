@@ -4,7 +4,7 @@ import { IUsageQuotaPolicy } from '../../policies/usage-quota.policy.interface';
 import { IProjectActionAuthorizationPolicy } from '../../policies/project-action-authorization.policy';
 import { CreateDeploymentSchema, IComposioTriggerDeploymentsRepository } from '../../repositories/composio-trigger-deployments.repository.interface';
 import { IProjectsRepository } from '../../repositories/projects.repository.interface';
-import { composio, getToolkit } from '../../../../app/lib/composio/composio';
+import { composio, getToolkit } from '../../lib/composio/composio';
 import { ComposioTriggerDeployment } from '@/src/entities/models/composio-trigger-deployment';
 
 const inputSchema = z.object({

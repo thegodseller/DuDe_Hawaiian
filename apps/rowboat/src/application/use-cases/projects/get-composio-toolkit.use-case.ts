@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { IProjectActionAuthorizationPolicy } from "../../policies/project-action-authorization.policy";
 import { IUsageQuotaPolicy } from "../../policies/usage-quota.policy.interface";
-import { ZGetToolkitResponse, getToolkit } from "@/app/lib/composio/composio";
+import { getToolkit } from "@/src/application/lib/composio/composio";
+import { ZGetToolkitResponse } from "../../lib/composio/types";
 
 export const InputSchema = z.object({
     caller: z.enum(["user", "api"]),

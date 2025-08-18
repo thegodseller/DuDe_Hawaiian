@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { PictureImg } from '@/components/ui/picture-img';
 import clsx from 'clsx';
 import { z } from 'zod';
-import { ZToolkit } from '@/app/lib/composio/composio';
+import { ZToolkit } from "@/src/application/lib/composio/types";
 import { Chip } from '@heroui/react';
 import { LinkIcon } from 'lucide-react';
 import { Workflow } from '@/app/lib/types/workflow_types';

@@ -3,7 +3,7 @@ import { tool, Tool } from "@openai/agents";
 import { createOpenAI } from "@ai-sdk/openai";
 import { embed, generateText } from "ai";
 import { z } from "zod";
-import { composio } from "./composio/composio";
+import { composio } from "../../src/application/lib/composio/composio";
 import { SignJWT } from "jose";
 import crypto from "crypto";
 

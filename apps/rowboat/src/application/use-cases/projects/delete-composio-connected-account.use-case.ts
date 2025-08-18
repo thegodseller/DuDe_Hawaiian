@@ -4,9 +4,9 @@ import { IProjectActionAuthorizationPolicy } from "../../policies/project-action
 import { IUsageQuotaPolicy } from "../../policies/usage-quota.policy.interface";
 import { IComposioTriggerDeploymentsRepository } from "../../repositories/composio-trigger-deployments.repository.interface";
 import { BadRequestError, NotFoundError } from "@/src/entities/errors/common";
-import { deleteConnectedAccount } from "../../../../app/lib/composio/composio";
-import { getAuthConfig } from "../../../../app/lib/composio/composio";
-import { deleteAuthConfig } from "../../../../app/lib/composio/composio";
+import { deleteConnectedAccount } from "../../lib/composio/composio";
+import { getAuthConfig } from "../../lib/composio/composio";
+import { deleteAuthConfig } from "../../lib/composio/composio";
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),

@@ -1,6 +1,12 @@
 "use server";
 import { z } from "zod";
-import { ZToolkit, ZGetToolkitResponse, ZTool, ZListResponse, ZCreateConnectedAccountResponse, ZAuthScheme, ZCredentials } from "@/app/lib/composio/composio";
+import { ZListResponse } from "@/src/application/lib/composio/types";
+import { ZCreateConnectedAccountResponse } from "@/src/application/lib/composio/types";
+import { ZCredentials } from "@/src/application/lib/composio/types";
+import { ZTool } from "@/src/application/lib/composio/types";
+import { ZGetToolkitResponse } from "@/src/application/lib/composio/types";
+import { ZToolkit } from "@/src/application/lib/composio/types";
+import { ZAuthScheme } from "@/src/application/lib/composio/types";
 import { ComposioConnectedAccount } from "@/src/entities/models/project";
 import { container } from "@/di/container";
 import { ICreateComposioTriggerDeploymentController } from "@/src/interface-adapters/controllers/composio-trigger-deployments/create-composio-trigger-deployment.controller";

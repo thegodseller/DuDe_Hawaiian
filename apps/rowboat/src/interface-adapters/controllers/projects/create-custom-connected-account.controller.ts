@@ -1,7 +1,9 @@
 import { BadRequestError } from "@/src/entities/errors/common";
 import z from "zod";
 import { ICreateCustomConnectedAccountUseCase } from "@/src/application/use-cases/projects/create-custom-connected-account.use-case";
-import { ZAuthScheme, ZCredentials, ZCreateConnectedAccountResponse } from "@/app/lib/composio/composio";
+import { ZCreateConnectedAccountResponse } from "@/src/application/lib/composio/types";
+import { ZCredentials } from "@/src/application/lib/composio/types";
+import { ZAuthScheme } from "@/src/application/lib/composio/types";
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),

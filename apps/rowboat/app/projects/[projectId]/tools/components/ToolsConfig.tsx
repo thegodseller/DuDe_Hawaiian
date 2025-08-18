@@ -8,7 +8,7 @@ import { ComposioToolsPanel } from './ComposioToolsPanel';
 import { AddWebhookTool } from './AddWebhookTool';
 import type { Key } from 'react';
 import { Workflow, WorkflowTool } from '@/app/lib/types/workflow_types';
-import { ZToolkit } from '@/app/lib/composio/composio';
+import { ZToolkit } from "@/src/application/lib/composio/types";
 import { z } from 'zod';
 
 interface ToolsConfigProps {

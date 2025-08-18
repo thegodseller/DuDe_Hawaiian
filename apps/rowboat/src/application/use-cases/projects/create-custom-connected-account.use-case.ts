@@ -3,7 +3,12 @@ import { IProjectsRepository } from "../../repositories/projects.repository.inte
 import { IProjectActionAuthorizationPolicy } from "../../policies/project-action-authorization.policy";
 import { IUsageQuotaPolicy } from "../../policies/usage-quota.policy.interface";
 import { ComposioConnectedAccount } from "@/src/entities/models/project";
-import { ZAuthScheme, ZCredentials, ZCreateAuthConfigResponse, ZCreateConnectedAccountResponse, ZCreateConnectedAccountRequest, createAuthConfig, createConnectedAccount } from "@/app/lib/composio/composio";
+import { createAuthConfig, createConnectedAccount } from "@/src/application/lib/composio/composio";
+import { ZCreateConnectedAccountResponse } from "../../lib/composio/types";
+import { ZCreateConnectedAccountRequest } from "../../lib/composio/types";
+import { ZCreateAuthConfigResponse } from "../../lib/composio/types";
+import { ZCredentials } from "../../lib/composio/types";
+import { ZAuthScheme } from "../../lib/composio/types";
 
 export const InputSchema = z.object({
     caller: z.enum(["user", "api"]),
