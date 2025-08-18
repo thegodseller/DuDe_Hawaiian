@@ -139,4 +139,12 @@ export interface IJobsRepository {
         cursor?: string, 
         limit?: number
     ): Promise<z.infer<ReturnType<typeof PaginatedList<typeof ListedJobItem>>>>;
+
+    /**
+     * Deletes all jobs associated with a specific project.
+     * 
+     * @param projectId - The unique identifier of the project
+     * @returns Promise resolving to void
+     */
+    deleteByProjectId(projectId: string): Promise<void>;
 }

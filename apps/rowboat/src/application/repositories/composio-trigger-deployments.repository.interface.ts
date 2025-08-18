@@ -88,4 +88,12 @@ export interface IComposioTriggerDeploymentsRepository {
      * @returns Promise resolving to the number of records deleted
      */
     deleteByConnectedAccountId(connectedAccountId: string): Promise<number>;
+
+    /**
+     * Deletes all trigger deployments associated with a specific project.
+     * 
+     * @param projectId - The unique identifier of the project
+     * @returns Promise resolving to void
+     */
+    deleteByProjectId(projectId: string): Promise<void>;
 }

@@ -37,4 +37,12 @@ export interface IConversationsRepository {
     // add turn data to conversation
     // returns the created turn
     addTurn(conversationId: string, data: z.infer<typeof AddTurnData>): Promise<z.infer<typeof Turn>>;
+
+    /**
+     * Deletes all conversations associated with a specific project.
+     * 
+     * @param projectId - The unique identifier of the project
+     * @returns Promise resolving to void
+     */
+    deleteByProjectId(projectId: string): Promise<void>;
 }

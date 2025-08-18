@@ -109,4 +109,8 @@ export class MongoDBConversationsRepository implements IConversationsRepository 
             nextCursor: hasNextPage ? results[limit - 1]._id.toString() : null,
         };
     }
+
+    async deleteByProjectId(projectId: string): Promise<void> {
+        await this.collection.deleteMany({ projectId });
+    }
 }

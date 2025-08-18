@@ -238,4 +238,8 @@ export class MongoDBRecurringJobRulesRepository implements IRecurringJobRulesRep
 
         return this.convertDocToModel(result);
     }
+
+    async deleteByProjectId(projectId: string): Promise<void> {
+        await this.collection.deleteMany({ projectId });
+    }
 }

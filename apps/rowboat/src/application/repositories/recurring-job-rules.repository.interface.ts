@@ -89,4 +89,12 @@ export interface IRecurringJobRulesRepository {
      * @returns Promise resolving to true if the rule was deleted, false if not found
      */
     delete(id: string): Promise<boolean>;
+
+    /**
+     * Deletes all recurring job rules associated with a specific project.
+     * 
+     * @param projectId - The unique identifier of the project
+     * @returns Promise resolving to void
+     */
+    deleteByProjectId(projectId: string): Promise<void>;
 }

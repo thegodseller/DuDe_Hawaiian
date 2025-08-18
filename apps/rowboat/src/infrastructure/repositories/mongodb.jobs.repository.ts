@@ -267,4 +267,8 @@ export class MongoDBJobsRepository implements IJobsRepository {
             nextCursor: hasNextPage ? results[_limit - 1]._id.toString() : null,
         };
     }
+
+    async deleteByProjectId(projectId: string): Promise<void> {
+        await this.collection.deleteMany({ projectId });
+    }
 }

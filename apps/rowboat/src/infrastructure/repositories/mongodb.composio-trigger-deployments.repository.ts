@@ -172,4 +172,11 @@ export class MongodbComposioTriggerDeploymentsRepository implements IComposioTri
 
         return result.deletedCount;
     }
+
+    /**
+     * Deletes all trigger deployments associated with a specific project.
+     */
+    async deleteByProjectId(projectId: string): Promise<void> {
+        await this.collection.deleteMany({ projectId });
+    }
 }

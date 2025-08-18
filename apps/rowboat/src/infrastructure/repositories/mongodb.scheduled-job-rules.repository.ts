@@ -218,4 +218,8 @@ export class MongoDBScheduledJobRulesRepository implements IScheduledJobRulesRep
 
         return result.deletedCount > 0;
     }
+
+    async deleteByProjectId(projectId: string): Promise<void> {
+        await this.collection.deleteMany({ projectId });
+    }
 }
