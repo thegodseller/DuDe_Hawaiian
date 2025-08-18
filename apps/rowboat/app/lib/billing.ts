@@ -12,6 +12,8 @@ import { IProjectsRepository } from '@/src/application/repositories/projects.rep
 const BILLING_API_URL = process.env.BILLING_API_URL || 'http://billing';
 const BILLING_API_KEY = process.env.BILLING_API_KEY || 'test';
 
+let logCounter = 1;
+
 const GUEST_BILLING_CUSTOMER = {
     _id: "guest-user",
     userId: "guest-user",
@@ -136,7 +138,8 @@ export async function authorize(customerId: string, request: z.infer<typeof Auth
 }
 
 export async function logUsage(customerId: string, request: z.infer<typeof LogUsageRequest>) {
-    console.log(`logging billing usage for customer ${customerId}`, JSON.stringify(request));
+    const reqId = logCounter++;
+    console.log(`[${reqId}] logging billing usage for customer ${customerId} to ${BILLING_API_URL}`, reqId, JSON.stringify(request));
     const response = await fetch(`${BILLING_API_URL}/api/customers/${customerId}/log-usage`, {
         method: 'POST',
         headers: {
@@ -145,6 +148,7 @@ export async function logUsage(customerId: string, request: z.infer<typeof LogUs
         },
         body: JSON.stringify(request)
     });
+    console.log(`$[{reqId}] completed logging billing usage for customer ${customerId}`, reqId, response.status, response.statusText);
     if (!response.ok) {
         throw new Error(`Failed to log usage: ${response.status} ${response.statusText} ${await response.text()}`);
     }
