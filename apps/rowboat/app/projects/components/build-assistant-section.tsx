@@ -108,22 +108,18 @@ export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProp
     }, []);
 
     const handleCreateAssistant = async () => {
-        if (!userPrompt.trim()) {
-            setPromptError("Prompt cannot be empty");
-            return;
-        }
-
         setIsCreating(true);
         try {
             await createProjectWithOptions({
                 name: defaultName,
-                prompt: userPrompt,
+                prompt: userPrompt.trim(),
                 router,
                 onError: (error) => {
                     console.error('Error creating project:', error);
                 }
             });
-        } finally {
+        } catch (error) {
+            console.error('Error creating project:', error);
             setIsCreating(false);
         }
     };
@@ -169,15 +165,6 @@ export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProp
         } finally {
             setImportLoading(false);
         }
-    };
-
-    // Handle "I'll build it myself" button
-    const handleBuildItMyself = async () => {
-        await createProjectWithOptions({
-            name: defaultName,
-            template: 'default',
-            router
-        });
     };
 
     return (
@@ -278,7 +265,8 @@ export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProp
                                                     <Button
                                                         variant="primary"
                                                         size="sm"
-                                                        onClick={handleBuildItMyself}
+                                                        onClick={handleCreateAssistant}
+                                                        isLoading={isCreating}
                                                         type="button"
                                                         className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600"
                                                     >
