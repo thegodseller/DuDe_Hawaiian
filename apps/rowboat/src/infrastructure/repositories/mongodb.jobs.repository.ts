@@ -227,11 +227,11 @@ export class MongoDBJobsRepository implements IJobsRepository {
             }
             
             if (filters.createdAfter) {
-                query.createdAt = { ...query.createdAt, $gte: filters.createdAfter };
+                query.createdAt = { $gte: filters.createdAfter };
             }
             
             if (filters.createdBefore) {
-                query.createdAt = { ...query.createdAt, $lte: filters.createdBefore };
+                query.createdAt = { $lte: filters.createdBefore };
             }
         }
 
