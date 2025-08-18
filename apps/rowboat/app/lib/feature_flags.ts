@@ -12,7 +12,7 @@ export const USE_KLAVIS_TOOLS = process.env.USE_KLAVIS_TOOLS === 'false';
 // Hardcoded flags
 export const USE_MULTIPLE_PROJECTS = true;
 export const USE_VOICE_FEATURE = false;
-export const USE_TRANSFER_CONTROL_OPTIONS = true;
+export const USE_TRANSFER_CONTROL_OPTIONS = false;
 export const USE_PRODUCT_TOUR = false;
 export const SHOW_COPILOT_MARQUEE = false;
 export const SHOW_PROMPTS_SECTION = false;
