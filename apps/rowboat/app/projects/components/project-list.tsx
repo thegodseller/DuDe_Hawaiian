@@ -1,5 +1,5 @@
 'use client';
-import { Project } from "@/app/lib/types/project_types";
+import { Project } from "@/src/entities/models/project";
 import { z } from "zod";
 import { useState } from "react";
 import clsx from 'clsx';
@@ -48,8 +48,8 @@ export function ProjectList({ projects, isLoading, searchQuery }: ProjectListPro
             <div className="flex-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                 {currentProjects.map((project) => (
                     <Link
-                        key={project._id}
-                        href={`/projects/${project._id}`}
+                        key={project.id}
+                        href={`/projects/${project.id}`}
                         className={clsx(
                             "block px-4 py-3",
                             tokens.transitions.default,

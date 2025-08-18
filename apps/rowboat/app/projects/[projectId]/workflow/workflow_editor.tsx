@@ -3,7 +3,7 @@ import React, { useReducer, Reducer, useState, useCallback, useEffect, useRef, c
 import { MCPServer, Message, WithStringId } from "../../../lib/types/types";
 import { Workflow, WorkflowTool, WorkflowPrompt, WorkflowAgent, WorkflowPipeline } from "../../../lib/types/workflow_types";
 import { DataSource } from "@/src/entities/models/data-source";
-import { Project } from "../../../lib/types/project_types";
+import { Project } from "@/src/entities/models/project";
 import { produce, applyPatches, enablePatches, produceWithPatches, Patch } from 'immer';
 import { AgentConfig } from "../entities/agent_config";
 import { PipelineConfig } from "../entities/pipeline_config";
@@ -36,7 +36,6 @@ import { Button as CustomButton } from "@/components/ui/button";
 import { ConfigApp } from "../config/app";
 import { InputField } from "@/app/lib/components/input-field";
 import { VoiceSection } from "../config/components/voice";
-import { ChatWidgetSection } from "../config/components/project";
 import { TriggersModal } from "./components/TriggersModal";
 import { TopBar } from "./components/TopBar";
 
@@ -808,7 +807,6 @@ export function WorkflowEditor({
     useRagUploads,
     useRagS3Uploads,
     useRagScraping,
-    mcpServerUrls,
     defaultModel,
     projectConfig,
     eligibleModels,
@@ -827,7 +825,6 @@ export function WorkflowEditor({
     useRagUploads: boolean;
     useRagS3Uploads: boolean;
     useRagScraping: boolean;
-    mcpServerUrls: Array<z.infer<typeof MCPServer>>;
     defaultModel: string;
     projectConfig: z.infer<typeof Project>;
     eligibleModels: z.infer<typeof ModelsResponse> | "*";
@@ -1499,6 +1496,7 @@ export function WorkflowEditor({
                 </Modal>
                 
                 {/* Chat Widget Modal */}
+                {/*
                 <Modal 
                     isOpen={isChatWidgetModalOpen} 
                     onClose={onChatWidgetModalClose}
@@ -1519,6 +1517,7 @@ export function WorkflowEditor({
                         </ModalBody>
                     </ModalContent>
                 </Modal>
+                */}
                 
                 {/* Triggers Management Modal */}
                 <TriggersModal

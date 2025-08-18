@@ -3,10 +3,9 @@
 import { ReactNode, useEffect, useState, useCallback } from "react";
 import { Spinner, Dropdown, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure } from "@heroui/react";
 import { Button } from "@/components/ui/button";
-import { getProjectConfig, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret, updateProjectName, saveWorkflow } from "../../../../actions/project.actions";
+import { fetchProject, createApiKey, deleteApiKey, listApiKeys, deleteProject, rotateSecret, updateProjectName, saveWorkflow } from "../../../../actions/project.actions";
 import { CopyButton } from "../../../../../components/common/copy-button";
 import { EyeIcon, EyeOffIcon, PlusIcon, Trash2Icon } from "lucide-react";
-import { WithStringId } from "../../../../lib/types/types";
 import { ApiKey } from "@/src/entities/models/api-key";
 import { z } from "zod";
 import { RelativeTime } from "@primer/react";
@@ -14,7 +13,7 @@ import { Label } from "../../../../lib/components/label";
 import { sectionHeaderStyles, sectionDescriptionStyles } from './shared-styles';
 import { clsx } from "clsx";
 import { InputField } from "../../../../lib/components/input-field";
-import { Project, ComposioConnectedAccount } from "../../../../lib/types/project_types";
+import { ComposioConnectedAccount } from "@/src/entities/models/project";
 import { getToolkit, listComposioTriggerDeployments, deleteComposioTriggerDeployment } from "../../../../actions/composio.actions";
 import { deleteConnectedAccount } from "../../../../actions/composio.actions";
 import { PictureImg } from "@/components/ui/picture-img";
@@ -80,7 +79,7 @@ function ProjectNameSection({
 
     useEffect(() => {
         setLoading(true);
-        getProjectConfig(projectId).then((project) => {
+        fetchProject(projectId).then((project) => {
             setProjectName(project?.name);
             setLoading(false);
         });
@@ -140,7 +139,7 @@ function SecretSection({ projectId }: { projectId: string }) {
 
     useEffect(() => {
         setLoading(true);
-        getProjectConfig(projectId).then((project) => {
+        fetchProject(projectId).then((project) => {
             setSecret(project.secret);
             setLoading(false);
         });
@@ -361,13 +360,14 @@ function ApiKeysSection({ projectId }: { projectId: string }) {
     </Section>;
 }
 
+/*
 export function ChatWidgetSection({ projectId, chatWidgetHost }: { projectId: string, chatWidgetHost: string }) {
     const [loading, setLoading] = useState(false);
     const [chatClientId, setChatClientId] = useState<string | null>(null);
 
     useEffect(() => {
         setLoading(true);
-        getProjectConfig(projectId).then((project) => {
+        fetchProject(projectId).then((project) => {
             setChatClientId(project.chatClientId);
             setLoading(false);
         });
@@ -414,6 +414,7 @@ export function ChatWidgetSection({ projectId, chatWidgetHost }: { projectId: st
         </Section>
     );
 }
+*/
 
 interface ConnectedToolkit {
     slug: string;
@@ -435,7 +436,7 @@ function DisconnectToolkitsSection({ projectId, onProjectConfigUpdated }: {
     const loadConnectedToolkits = useCallback(async () => {
         setLoading(true);
         try {
-            const project = await getProjectConfig(projectId);
+            const project = await fetchProject(projectId);
             const connectedAccounts = project.composioConnectedAccounts || {};
             const workflow = project.draftWorkflow;
             
@@ -502,7 +503,7 @@ function DisconnectToolkitsSection({ projectId, onProjectConfigUpdated }: {
         setDisconnectingToolkit(selectedToolkit.slug);
         try {
             // Step 1: Get current project and workflow
-            const project = await getProjectConfig(projectId);
+            const project = await fetchProject(projectId);
             const currentWorkflow = project.draftWorkflow;
             
             if (currentWorkflow) {
@@ -541,7 +542,6 @@ function DisconnectToolkitsSection({ projectId, onProjectConfigUpdated }: {
                 await deleteConnectedAccount(
                     projectId, 
                     selectedToolkit.slug, 
-                    selectedToolkit.connectedAccount.id
                 );
             }
             
@@ -695,7 +695,7 @@ function DeleteProjectSection({ projectId }: { projectId: string }) {
 
     useEffect(() => {
         setLoadingInitial(true);
-        getProjectConfig(projectId).then((project) => {
+        fetchProject(projectId).then((project) => {
             setProjectName(project.name);
             setLoadingInitial(false);
         });
@@ -803,7 +803,7 @@ export function ProjectSection({
         <div className="p-6 space-y-6">
             <ProjectIdSection projectId={projectId} />
             <ApiKeysSection projectId={projectId} />
-            {useChatWidget && <ChatWidgetSection projectId={projectId} chatWidgetHost={chatWidgetHost} />}
+            {/*{useChatWidget && <ChatWidgetSection projectId={projectId} chatWidgetHost={chatWidgetHost} />}*/}
         </div>
     );
 }

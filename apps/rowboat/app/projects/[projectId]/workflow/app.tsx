@@ -1,14 +1,14 @@
 "use client";
 import { MCPServer, WithStringId } from "../../../lib/types/types";
 import { DataSource } from "@/src/entities/models/data-source";
-import { Project } from "../../../lib/types/project_types";
+import { Project } from "@/src/entities/models/project";
 import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { WorkflowEditor } from "./workflow_editor";
 import { Spinner } from "@heroui/react";
 import { listDataSources } from "../../../actions/data-source.actions";
 import { revertToLiveWorkflow } from "@/app/actions/project.actions";
-import { getProjectConfig } from "@/app/actions/project.actions";
+import { fetchProject } from "@/app/actions/project.actions";
 import { Workflow, WorkflowTool } from "@/app/lib/types/workflow_types";
 import { getEligibleModels } from "@/app/actions/billing.actions";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
@@ -31,12 +31,11 @@ export function App({
     chatWidgetHost: string;
 }) {
     const [mode, setMode] = useState<'draft' | 'live'>('draft');
-    const [project, setProject] = useState<WithStringId<z.infer<typeof Project>> | null>(null);
+    const [project, setProject] = useState<z.infer<typeof Project> | null>(null);
     const [dataSources, setDataSources] = useState<z.infer<typeof DataSource>[] | null>(null);
     const [projectConfig, setProjectConfig] = useState<z.infer<typeof Project> | null>(null);
     const [loading, setLoading] = useState(false);
     const [eligibleModels, setEligibleModels] = useState<z.infer<typeof ModelsResponse> | "*">("*");
-    const [projectMcpServers, setProjectMcpServers] = useState<Array<z.infer<typeof MCPServer>>>([]);
 
     console.log('workflow app.tsx render');
 
@@ -53,7 +52,7 @@ export function App({
             dataSources,
             eligibleModels,
         ] = await Promise.all([
-            getProjectConfig(projectId),
+            fetchProject(projectId),
             listDataSources(projectId),
             getEligibleModels(),
         ]);
@@ -61,23 +60,15 @@ export function App({
         setProject(project);
         setDataSources(dataSources);
         setEligibleModels(eligibleModels);
-        if (project.mcpServers) {
-            setProjectMcpServers(project.mcpServers);
-        }
         setLoading(false);
     }, [projectId]);
 
     const handleProjectToolsUpdate = useCallback(async () => {
         // Lightweight refresh for tool-only updates
-        const projectConfig = await getProjectConfig(projectId);
+        const projectConfig = await fetchProject(projectId);
         
         setProject(projectConfig);
         setProjectConfig(projectConfig);
-        
-        // Update MCP servers if they changed
-        if (projectConfig.mcpServers) {
-            setProjectMcpServers(projectConfig.mcpServers);
-        }
     }, [projectId]);
 
     const handleDataSourcesUpdate = useCallback(async () => {
@@ -88,7 +79,7 @@ export function App({
 
     const handleProjectConfigUpdate = useCallback(async () => {
         // Refresh project config when project name or other settings change
-        const updatedProjectConfig = await getProjectConfig(projectId);
+        const updatedProjectConfig = await fetchProject(projectId);
         setProject(updatedProjectConfig);
         setProjectConfig(updatedProjectConfig);
     }, [projectId]);
@@ -146,7 +137,6 @@ export function App({
             useRagUploads={useRagUploads}
             useRagS3Uploads={useRagS3Uploads}
             useRagScraping={useRagScraping}
-            mcpServerUrls={projectMcpServers}
             defaultModel={defaultModel}
             eligibleModels={eligibleModels}
             onChangeMode={handleSetMode}

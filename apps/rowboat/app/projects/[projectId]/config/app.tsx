@@ -4,7 +4,7 @@ import { Metadata } from "next";
 import { Spinner, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, useDisclosure, Divider, Textarea } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { ReactNode, useEffect, useState } from "react";
-import { getProjectConfig, updateProjectName, updateWebhookUrl, deleteProject, rotateSecret } from "../../../actions/project.actions";
+import { fetchProject, updateProjectName, updateWebhookUrl, deleteProject, rotateSecret } from "../../../actions/project.actions";
 import { CopyButton } from "../../../../components/common/copy-button";
 import { InputField } from "../../../lib/components/input-field";
 import { EyeIcon, EyeOffIcon, Settings, Plus, MoreVertical } from "lucide-react";
@@ -64,7 +64,7 @@ export function BasicSettingsSection({
 
     useEffect(() => {
         setLoading(true);
-        getProjectConfig(projectId).then((project) => {
+        fetchProject(projectId).then((project) => {
             setProjectName(project?.name);
             setLoading(false);
         });
@@ -117,7 +117,7 @@ export function SecretSection({
 
     useEffect(() => {
         setLoading(true);
-        getProjectConfig(projectId).then((project) => {
+        fetchProject(projectId).then((project) => {
             setSecret(project.secret);
             setLoading(false);
         });
@@ -191,7 +191,7 @@ export function WebhookUrlSection({
 
     useEffect(() => {
         setLoading(true);
-        getProjectConfig(projectId).then((project) => {
+        fetchProject(projectId).then((project) => {
             setWebhookUrl(project.webhookUrl || null);
             setLoading(false);
         });
@@ -230,6 +230,7 @@ export function WebhookUrlSection({
     </Section>;
 }
 
+/*
 export function ChatWidgetSection({
     projectId,
     chatWidgetHost,
@@ -242,7 +243,7 @@ export function ChatWidgetSection({
 
     useEffect(() => {
         setLoading(true);
-        getProjectConfig(projectId).then((project) => {
+        fetchProject(projectId).then((project) => {
             setChatClientId(project.chatClientId);
             setLoading(false);
         });
@@ -282,6 +283,7 @@ export function ChatWidgetSection({
         />}
     </Section>;
 }
+*/
 
 export function DeleteProjectSection({
     projectId,
@@ -298,7 +300,7 @@ export function DeleteProjectSection({
 
     useEffect(() => {
         setLoading(true);
-        getProjectConfig(projectId).then((project) => {
+        fetchProject(projectId).then((project) => {
             setProjectName(project.name);
             setLoading(false);
         });

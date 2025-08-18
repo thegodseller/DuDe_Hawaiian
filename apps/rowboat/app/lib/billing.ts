@@ -2,10 +2,12 @@ import { WithStringId } from './types/types';
 import { z } from 'zod';
 import { Customer, AuthorizeRequest, AuthorizeResponse, LogUsageRequest, UsageResponse, CustomerPortalSessionResponse, PricesResponse, UpdateSubscriptionPlanRequest, UpdateSubscriptionPlanResponse, ModelsResponse, UsageItem } from './types/billing_types';
 import { ObjectId } from 'mongodb';
-import { projectsCollection, usersCollection } from './mongodb';
+import { usersCollection } from './mongodb';
 import { redirect } from 'next/navigation';
 import { getUserFromSessionId, requireAuth } from './auth';
 import { USE_BILLING } from './feature_flags';
+import { container } from '@/di/container';
+import { IProjectsRepository } from '@/src/application/repositories/projects.repository.interface';
 
 const BILLING_API_URL = process.env.BILLING_API_URL || 'http://billing';
 const BILLING_API_KEY = process.env.BILLING_API_KEY || 'test';
@@ -37,19 +39,28 @@ export class UsageTracker{
     }
 }
 
-export async function getCustomerIdForProject(projectId: string): Promise<string> {
-    const project = await projectsCollection.findOne({ _id: projectId });
-    if (!project) {
-        throw new Error("Project not found");
-    }
-    const user = await usersCollection.findOne({ _id: new ObjectId(project.createdByUserId) });
+export async function getCustomerForUserId(userId: string): Promise<WithStringId<z.infer<typeof Customer>> | null> {
+    const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
     if (!user) {
         throw new Error("User not found");
     }
     if (!user.billingCustomerId) {
+        return null;
+    }
+    return await getBillingCustomer(user.billingCustomerId);
+}
+
+export async function getCustomerIdForProject(projectId: string): Promise<string> {
+    const projectsRepository = container.resolve<IProjectsRepository>('projectsRepository');
+    const project = await projectsRepository.fetch(projectId);
+    if (!project) {
+        throw new Error("Project not found");
+    }
+    const customer = await getCustomerForUserId(project.createdByUserId);
+    if (!customer) {
         throw new Error("User has no billing customer id");
     }
-    return user.billingCustomerId;
+    return customer._id;
 }
 
 export async function getBillingCustomer(id: string): Promise<WithStringId<z.infer<typeof Customer>> | null> {

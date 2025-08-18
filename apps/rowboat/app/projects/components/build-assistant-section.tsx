@@ -13,7 +13,7 @@ import { TextareaWithSend } from "@/app/components/ui/textarea-with-send";
 import { Workflow } from '../../lib/types/workflow_types';
 import { PictureImg } from '@/components/ui/picture-img';
 import { Tabs, Tab } from "@/components/ui/tabs";
-import { Project } from "@/app/lib/types/project_types";
+import { Project } from "@/src/entities/models/project";
 import { z } from "zod";
 import Link from 'next/link';
 
@@ -313,8 +313,8 @@ export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProp
                                                         <div className="space-y-2">
                                                             {currentProjects.map((project) => (
                                                                 <Link
-                                                                    key={project._id}
-                                                                    href={`/projects/${project._id}/workflow`}
+                                                                    key={project.id}
+                                                                    href={`/projects/${project.id}/workflow`}
                                                                     className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all group hover:shadow-sm"
                                                                 >
                                                                     <div className="flex-1 min-w-0">
@@ -325,7 +325,8 @@ export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProp
                                                                                     {project.name}
                                                                                 </div>
                                                                                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                                                    Created {new Date(project.createdAt).toLocaleDateString()} • Last updated {new Date(project.lastUpdatedAt).toLocaleDateString()}
+                                                                                    Created {new Date(project.createdAt).toLocaleDateString()}
+                                                                                    {project.lastUpdatedAt && `• Last updated ${new Date(project.lastUpdatedAt).toLocaleDateString()}`}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
