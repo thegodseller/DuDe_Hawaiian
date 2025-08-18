@@ -49,8 +49,6 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
             controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify(event)}\n\n`));
           }
         }
-
-        controller.close();
       } catch (error) {
         console.error('Error processing copilot stream:', error);
         controller.error(error);
@@ -65,6 +63,7 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
             console.error("Error logging usage", error);
           }
         }
+        controller.close();
       }
     },
   });
