@@ -137,7 +137,11 @@ ${CHILD_TRANSFER_RELATED_INSTRUCTIONS}
     agentLogger.log(`instructions: ${JSON.stringify(sanitized)}`);
     agentLogger.log(`mentions: ${JSON.stringify(entities)}`);
 
-    const agentTools = entities.filter(e => e.type === 'tool').map(e => tools[e.name]).filter(Boolean) as Tool[];
+    const agentTools = entities
+        .filter(e => e.type === 'tool')
+        .filter(t => t.name !== 'rag_search') // remove rag_search tool
+        .map(e => tools[e.name])
+        .filter(Boolean)
 
     // Add RAG tool if needed
     if (config.ragDataSources?.length) {

@@ -24,25 +24,7 @@ export const templates: { [key: string]: z.infer<typeof WorkflowTemplate> } = {
             },
         ],
         prompts: [],
-        tools: [
-            {
-                "name": "rag_search",
-                "description": "Fetch articles with knowledge relevant to the query",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "The query to retrieve articles for"
-                        }
-                    },
-                    "required": [
-                        "query"
-                    ]
-                },
-                "isLibrary": true
-            }
-        ],
+        tools: [],
     },
 
     "meeting-prep": {
@@ -97,23 +79,6 @@ export const templates: { [key: string]: z.infer<typeof WorkflowTemplate> } = {
         ],
         "prompts": [],
         "tools": [
-            {
-                "name": "rag_search",
-                "description": "Fetch articles with knowledge relevant to the query",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "The query to retrieve articles for"
-                        }
-                    },
-                    "required": [
-                        "query"
-                    ]
-                },
-                "isLibrary": true
-            },
             {
                 "name": "List Events",
                 "description": "Returns events on the specified calendar.",
