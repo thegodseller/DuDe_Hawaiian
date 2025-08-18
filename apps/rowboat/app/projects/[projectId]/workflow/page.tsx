@@ -4,14 +4,15 @@ import { USE_RAG, USE_RAG_UPLOADS, USE_RAG_S3_UPLOADS, USE_RAG_SCRAPING, USE_BIL
 import { notFound } from "next/navigation";
 import { requireActiveBillingSubscription } from '@/app/lib/billing';
 import { container } from "@/di/container";
-import { IProjectsRepository } from "@/src/application/repositories/projects.repository.interface";
-import { IDataSourcesRepository } from "@/src/application/repositories/data-sources.repository.interface";
 import { getEligibleModels } from "@/app/lib/billing";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
+import { requireAuth } from "@/app/lib/auth";
+import { IFetchProjectController } from "@/src/interface-adapters/controllers/projects/fetch-project.controller";
+import { IListDataSourcesController } from "@/src/interface-adapters/controllers/data-sources/list-data-sources.controller";
 import { z } from "zod";
 
-const projectsRepository = container.resolve<IProjectsRepository>('projectsRepository');
-const dataSourceRepository = container.resolve<IDataSourcesRepository>('dataSourcesRepository');
+const fetchProjectController = container.resolve<IFetchProjectController>('fetchProjectController');
+const listDataSourcesController = container.resolve<IListDataSourcesController>('listDataSourcesController');
 
 const DEFAULT_MODEL = process.env.PROVIDER_DEFAULT_MODEL || "gpt-4.1";
 
@@ -25,20 +26,24 @@ export default async function Page(
     }
 ) {
     const params = await props.params;
+    const user = await requireAuth();
     const customer = await requireActiveBillingSubscription();
     console.log('->>> workflow page being rendered');
-    const project = await projectsRepository.fetch(params.projectId);
+
+    const project = await fetchProjectController.execute({
+        caller: "user",
+        userId: user._id,
+        projectId: params.projectId,
+    });
     if (!project) {
         notFound();
     }
 
-    const sources = [];
-    let cursor = undefined;
-    do {
-        const result = await dataSourceRepository.list(project.id, undefined, cursor);
-        sources.push(...result.items);
-        cursor = result.nextCursor;
-    } while (cursor);
+    const sources = await listDataSourcesController.execute({
+        caller: "user",
+        userId: user._id,
+        projectId: params.projectId,
+    });
 
     let eligibleModels: z.infer<typeof ModelsResponse> | "*" = '*';
     if (USE_BILLING) {
