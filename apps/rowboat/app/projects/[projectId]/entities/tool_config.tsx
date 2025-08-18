@@ -1,9 +1,10 @@
 "use client";
 import { WorkflowTool } from "../../../lib/types/workflow_types";
-import { Checkbox, Select, SelectItem, RadioGroup, Radio } from "@heroui/react";
+import { Checkbox, Select, SelectItem, Switch } from "@heroui/react";
 import { z } from "zod";
-import { ImportIcon, XIcon, PlusIcon, FolderIcon} from "lucide-react";
+import { ImportIcon, XIcon, PlusIcon, FolderIcon, Globe, Zap, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/common/panel-common";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,9 @@ import clsx from "clsx";
 import { SectionCard } from "@/components/common/section-card";
 import { ToolParamCard } from "@/components/common/tool-param-card";
 import { UserIcon, Settings, Settings2 } from "lucide-react";
-import { EditableField } from "@/app/lib/components/editable-field";
+import { InputField } from "@/app/lib/components/input-field";
+import Link from "next/link";
+import { Tooltip } from "@heroui/react";
 
 // Update textarea styles with improved states
 const textareaStyles = "rounded-lg p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 focus:shadow-inner focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500";
@@ -74,18 +77,13 @@ export function ParameterConfig({
                     <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
                         Name
                     </label>
-                    <Textarea
+                    <InputField
+                        type="text"
                         value={localName}
-                        onChange={(e) => setLocalName(e.target.value)}
-                        onBlur={() => {
-                            if (localName && localName !== param.name) {
-                                handleRename(param.name, localName);
-                            }
-                        }}
+                        onChange={(value: string) => setLocalName(value)}
                         placeholder="Enter parameter name..."
-                        disabled={readOnly}
-                        className={textareaStyles}
-                        autoResize
+                        locked={readOnly}
+                        className="w-full"
                     />
                 </div>
 
@@ -173,9 +171,23 @@ export function ToolConfig({
         required: tool.parameters?.required || []
     });
 
+    const params = useParams();
+    const projectId = params.projectId as string;
     const [selectedParams, setSelectedParams] = useState(new Set([]));
-    const isReadOnly = tool.isMcp || tool.isLibrary || tool.isComposio;
+    const isReadOnly = tool.isMcp || tool.isComposio;
     const [nameError, setNameError] = useState<string | null>(null);
+    const [showSavedBanner, setShowSavedBanner] = useState(false);
+    const [localToolName, setLocalToolName] = useState(tool.name);
+
+    // Function to show saved banner
+    const showSavedMessage = () => {
+        setShowSavedBanner(true);
+        setTimeout(() => setShowSavedBanner(false), 2000);
+    };
+
+    useEffect(() => {
+        setLocalToolName(tool.name);
+    }, [tool.name]);
 
     // Log when parameters are being rendered
     useEffect(() => {
@@ -209,6 +221,7 @@ export function ToolConfig({
             ...tool,
             parameters: { ...tool.parameters!, properties: newProperties, required: newRequired }
         });
+        showSavedMessage();
     }
 
     function handleParamUpdate(name: string, data: {
@@ -237,6 +250,7 @@ export function ToolConfig({
                 required: newRequired,
             }
         });
+        showSavedMessage();
     }
 
     function handleParamDelete(paramName: string) {
@@ -254,16 +268,20 @@ export function ToolConfig({
                 required: newRequired,
             }
         });
+        showSavedMessage();
     }
 
     function validateToolName(value: string) {
         if (value.length === 0) {
-            return "Name cannot be empty";
+            setNameError("Name cannot be empty");
+            return false;
         }
         if (value !== tool.name && usedToolNames.has(value)) {
-            return "This name is already taken";
+            setNameError("This name is already taken");
+            return false;
         }
-        return null;
+        setNameError(null);
+        return true;
     }
 
     // Log parameter rendering in the actual parameter section
@@ -337,6 +355,65 @@ export function ToolConfig({
             }
         >
             <div className="flex flex-col gap-4 pb-4 pt-4 p-4">
+                {/* Saved Banner */}
+                {showSavedBanner && (
+                    <div className="absolute top-4 left-4 z-10 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-top-2 duration-300">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-sm font-medium">Changes saved ✓</span>
+                    </div>
+                )}
+                {/* Tool Type Section */}
+                {!tool.isLibrary && <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-1">
+                            {tool.isMcp ? (
+                                <ImportIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            ) : tool.isComposio ? (
+                                <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            ) : (
+                                <Globe className="w-5 h-5 text-green-600 dark:text-green-400" />
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                                How this tool runs
+                            </h3>
+                            {tool.isMcp && <div className="text-sm text-gray-700 dark:text-gray-300">
+                                <p>This tool is powered by the <span className="font-medium text-blue-700 dark:text-blue-300">{tool.mcpServerName}</span> MCP server.</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                    MCP (Model Context Protocol) tools are external services that provide additional capabilities to your agent.
+                                </p>
+                            </div>}
+                            { tool.isComposio && <div className="text-sm text-gray-700 dark:text-gray-300">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <p>This tool is powered by <span className="font-medium text-purple-700 dark:text-purple-300">Composio</span></p>
+                                    {tool.composioData?.toolkitName && (
+                                        <span className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full">
+                                            {tool.composioData.toolkitName}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                    Composio provides pre-built integrations with popular services and APIs.
+                                </p>
+                            </div>}
+                            { tool.isWebhook && <div className="text-sm text-gray-700 dark:text-gray-300">
+                                <div className="flex items-center gap-1 mb-1">
+                                    <p>This tool is invoked using the webhook configured in <Link href={`/projects/${projectId}/config`} className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium underline decoration-green-300 hover:decoration-green-500 transition-colors">project settings</Link></p>
+                                </div>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                    Webhook tools make HTTP requests to your configured endpoint when called by the agent.
+                                </p>
+                            </div>}
+                            { !tool.isMcp && !tool.isComposio && !tool.isWebhook && <div className="text-sm text-gray-700 dark:text-gray-300">
+                                <p>This is a placeholder tool that should be mocked.</p>
+                            </div>}
+                        </div>
+                    </div>
+                </div>}
+
                 {/* Identity Section */}
                 <SectionCard
                     icon={<UserIcon className="w-5 h-5 text-indigo-500" />}
@@ -348,24 +425,22 @@ export function ToolConfig({
                         <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
                             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Name</label>
                             <div className="flex-1">
-                                <EditableField
-                                    value={tool.name}
-                                    onChange={(value) => {
-                                        setNameError(validateToolName(value));
-                                        if (!validateToolName(value)) {
+                                <InputField
+                                    type="text"
+                                    value={localToolName}
+                                    locked={isReadOnly}
+                                    onChange={(value: string) => {
+                                        setLocalToolName(value);
+                                        if (validateToolName(value)) {
                                             handleUpdate({
                                                 ...tool,
                                                 name: value
                                             });
                                         }
+                                        showSavedMessage();
                                     }}
-                                    validate={(value) => {
-                                        const error = validateToolName(value);
-                                        setNameError(error);
-                                        return { valid: !error, errorMessage: error || undefined };
-                                    }}
-                                    showSaveButton={true}
-                                    showDiscardButton={true}
+
+
                                     error={nameError}
                                     className="w-full"
                                 />
@@ -374,9 +449,14 @@ export function ToolConfig({
                         <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
                             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Description</label>
                             <div className="flex-1">
-                                <EditableField
+                                <InputField
+                                    type="text"
+                                    locked={isReadOnly}
                                     value={tool.description || ""}
-                                    onChange={(value) => handleUpdate({ ...tool, description: value })}
+                                    onChange={(value: string) => {
+                                        handleUpdate({ ...tool, description: value });
+                                        showSavedMessage();
+                                    }}
                                     multiline={true}
                                     placeholder="Describe what this tool does..."
                                     className="w-full"
@@ -385,80 +465,53 @@ export function ToolConfig({
                         </div>
                     </div>
                 </SectionCard>
-                {/* Behavior Section */}
+                {/* Mock Section */}
                 <SectionCard
                     icon={<Settings className="w-5 h-5 text-indigo-500" />}
-                    title="Behavior"
+                    title={<span className="whitespace-nowrap">Mock responses</span>}
                     labelWidth="md:w-32"
                     className="mb-1"
+                    singleColumnFields={true}
                 >
                     <div className="flex flex-col gap-4">
-                        {!isReadOnly && (
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Tool Mode</label>
-                                <RadioGroup
-                                    defaultValue="mock"
-                                    value={tool.mockTool ? "mock" : "api"}
-                                    onValueChange={(value) => handleUpdate({
-                                        ...tool,
-                                        mockTool: value === "mock",
-                                        autoSubmitMockedResponse: value === "mock" ? true : undefined
-                                    })}
-                                    orientation="horizontal"
-                                    classNames={{
-                                        wrapper: "flex flex-col md:flex-row gap-2 md:gap-8 pl-0 md:pl-3",
-                                        label: "text-sm"
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Mock tool responses</label>
+                            <div className="flex items-center gap-2 mb-1">
+                                <Switch
+                                    isSelected={tool.mockTool}
+                                    onValueChange={(value) => {
+                                        handleUpdate({
+                                            ...tool,
+                                            mockTool: value,
+                                        });
+                                        showSavedMessage();
                                     }}
-                                >
-                                    <Radio
-                                        value="mock"
-                                        classNames={{
-                                            base: "px-2 py-1 rounded-lg transition-colors",
-                                            label: "text-sm font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
-                                        }}
-                                    >
-                                        Mock tool responses
-                                    </Radio>
-                                    <Radio
-                                        value="api"
-                                        classNames={{
-                                            base: "px-2 py-1 rounded-lg transition-colors",
-                                            label: "text-sm font-normal text-gray-900 dark:text-gray-100 px-3 py-1"
-                                        }}
-                                    >
-                                        Connect tool to your API
-                                    </Radio>
-                                </RadioGroup>
+                                    size="sm"
+                                    color="primary"
+                                />
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    When enabled, this tool will be mocked.
+                                </span>
                             </div>
-                        )}
+                        </div>
                         {tool.mockTool && (
-                            <div className="flex flex-col gap-2 pl-0 md:pl-3 mt-2">
-                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Mock Response Schema</label>
-                                <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">Describe the response the mock tool should return. This will be shown in the chat when the tool is called. You can also provide a JSON schema for the response.</span>
-                                <EditableField
+                            <div className="flex flex-col gap-1 mt-4">
+                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Mock Response Instructions</label>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">Describe the response the mock tool should return. This will be shown in the chat when the tool is called.</span>
+                                <InputField
+                                    type="text"
                                     value={tool.mockInstructions || ''}
-                                    onChange={(value) => handleUpdate({
-                                        ...tool,
-                                        mockInstructions: value
-                                    })}
+                                    onChange={(value: string) => {
+                                        handleUpdate({
+                                            ...tool,
+                                            mockInstructions: value
+                                        });
+                                        showSavedMessage();
+                                    }}
                                     multiline={true}
                                     placeholder="Mock response instructions..."
                                     className="w-full text-xs p-2 bg-white dark:bg-gray-900"
                                 />
-                                <Checkbox
-                                    size="sm"
-                                    isSelected={tool.autoSubmitMockedResponse ?? true}
-                                    onValueChange={(value) => handleUpdate({
-                                        ...tool,
-                                        autoSubmitMockedResponse: value
-                                    })}
-                                    disabled={isReadOnly}
-                                    className="mt-2"
-                                >
-                                    <span className="text-sm text-gray-600 dark:text-gray-300">
-                                        Automatically send mock response in chat
-                                    </span>
-                                </Checkbox>
                             </div>
                         )}
                     </div>
@@ -508,6 +561,7 @@ export function ToolConfig({
                                             required: [...(tool.parameters?.required || []), newParamName]
                                         }
                                     });
+                                    showSavedMessage();
                                 }}
                                 className="hover:bg-indigo-100 dark:hover:bg-indigo-900 hover:shadow-indigo-500/20 dark:hover:shadow-indigo-400/20 hover:shadow-lg transition-all mt-2"
                             >

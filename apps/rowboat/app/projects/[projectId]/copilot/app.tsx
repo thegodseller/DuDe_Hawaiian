@@ -2,19 +2,18 @@
 import { Button } from "@/components/ui/button";
 import { Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger, Spinner, Tooltip } from "@heroui/react";
 import { useRef, useState, createContext, useContext, useCallback, forwardRef, useImperativeHandle, useEffect, Ref } from "react";
-import { CopilotChatContext } from "../../../lib/types/copilot_types";
-import { CopilotMessage } from "../../../lib/types/copilot_types";
+import { CopilotChatContext } from "../../../../src/application/lib/copilot/types";
+import { CopilotMessage } from "../../../../src/application/lib/copilot/types";
 import { Workflow } from "@/app/lib/types/workflow_types";
-import { DataSource } from "@/app/lib/types/datasource_types";
+import { DataSource } from "@/src/entities/models/data-source";
 import { z } from "zod";
-import { Action as WorkflowDispatch } from "../workflow/workflow_editor";
+import { Action as WorkflowDispatch } from "@/app/projects/[projectId]/workflow/workflow_editor";
 import { Panel } from "@/components/common/panel-common";
 import { ComposeBoxCopilot } from "@/components/common/compose-box-copilot";
 import { Messages } from "./components/messages";
-import { CopyIcon, CheckIcon, PlusIcon, XIcon, InfoIcon } from "lucide-react";
+import { CopyIcon, CheckIcon, PlusIcon, XIcon, InfoIcon, Sparkles } from "lucide-react";
 import { useCopilot } from "./use-copilot";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
-import { WithStringId } from "@/app/lib/types/types";
 
 const CopilotContext = createContext<{
     workflow: z.infer<typeof Workflow> | null;
@@ -33,7 +32,7 @@ interface AppProps {
     onCopyJson?: (data: { messages: any[] }) => void;
     onMessagesChange?: (messages: z.infer<typeof CopilotMessage>[]) => void;
     isInitialState?: boolean;
-    dataSources?: WithStringId<z.infer<typeof DataSource>>[];
+    dataSources?: z.infer<typeof DataSource>[];
 }
 
 const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message: string) => void }, AppProps>(function App({
@@ -69,6 +68,8 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
     const {
         streamingResponse,
         loading: loadingResponse,
+        toolCalling,
+        toolQuery,
         error: responseError,
         clearError: clearResponseError,
         billingError,
@@ -213,7 +214,17 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
                         onStatusBarChange={handleStatusBarChange}
                     />
                 </div>
-                <div className="shrink-0 px-1 pb-6">
+                {toolCalling && (
+                    <div className="shrink-0 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-gray-950/20 rounded-2xl mx-1 mb-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Spinner size="sm" className="ml-2" />
+                            <span>
+                                Searching for tools{toolQuery ? ` to ${toolQuery}` : '...'}
+                            </span>
+                        </div>
+                    </div>
+                )}
+                <div className="shrink-0 px-1">
                     {responseError && (
                         <div className="mb-4 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex gap-2 justify-between items-center text-sm">
                             <p className="text-red-600 dark:text-red-400">{responseError}</p>
@@ -265,7 +276,7 @@ export const Copilot = forwardRef<{ handleUserMessage: (message: string) => void
     chatContext?: z.infer<typeof CopilotChatContext>;
     dispatch: (action: WorkflowDispatch) => void;
     isInitialState?: boolean;
-    dataSources?: WithStringId<z.infer<typeof DataSource>>[];
+    dataSources?: z.infer<typeof DataSource>[];
 }>(({
     projectId,
     workflow,
@@ -310,16 +321,11 @@ export const Copilot = forwardRef<{ handleUserMessage: (message: string) => void
                 variant="copilot"
                 tourTarget="copilot"
                 showWelcome={messages.length === 0}
-                title={
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                            <div className="font-semibold text-zinc-700 dark:text-zinc-300">
-                                Skipper
-                            </div>
-                            <Tooltip content="A copilot to help you build and modify your workflow">
-                                <InfoIcon className="w-4 h-4 text-gray-400 cursor-help" />
-                            </Tooltip>
-                        </div>
+                icon={<Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />}
+                title="Skipper"
+                subtitle="Build your assistant"
+                rightActions={
+                    <div className="flex items-center gap-2">
                         <Button
                             variant="primary"
                             size="sm"
@@ -330,10 +336,6 @@ export const Copilot = forwardRef<{ handleUserMessage: (message: string) => void
                         >
                             <PlusIcon className="w-4 h-4" />
                         </Button>
-                    </div>
-                }
-                rightActions={
-                    <div className="flex items-center gap-3">
                         <Button
                             variant="secondary"
                             size="sm"

@@ -1,21 +1,18 @@
 "use client";
-import { WithStringId } from "../../../../lib/types/types";
-import { DataSource } from "../../../../lib/types/datasource_types";
+import { DataSource } from "@/src/entities/models/data-source";
 import { z } from "zod";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { FormStatusButton } from "../../../../lib/components/form-status-button";
 import { Spinner } from "@heroui/react";
-import { addDocsToDataSource, deleteDocsFromDataSource, listDocsInDataSource } from "../../../../actions/datasource_actions";
+import { addDocsToDataSource, deleteDocFromDataSource, listDocsInDataSource } from "../../../../actions/data-source.actions";
 import { Section } from "./section";
 
 export function TextSource({
-    projectId,
     dataSource,
     handleReload,
 }: {
-    projectId: string,
-    dataSource: WithStringId<z.infer<typeof DataSource>>,
+    dataSource: z.infer<typeof DataSource>,
     handleReload: () => void;
 }) {
     const [content, setContent] = useState("");
@@ -30,8 +27,7 @@ export function TextSource({
             setIsLoading(true);
             try {
                 const { files } = await listDocsInDataSource({
-                    projectId,
-                    sourceId: dataSource._id,
+                    sourceId: dataSource.id,
                     limit: 1,
                 });
 
@@ -41,7 +37,7 @@ export function TextSource({
                     const doc = files[0];
                     if (doc.data.type === 'text') {
                         setContent(doc.data.content);
-                        setDocId(doc._id);
+                        setDocId(doc.id);
                     }
                 }
             } catch (error) {
@@ -55,7 +51,7 @@ export function TextSource({
         return () => {
             ignore = true;
         };
-    }, [projectId, dataSource._id]);
+    }, [dataSource.id]);
 
     async function handleSubmit(formData: FormData) {
         setIsSaving(true);
@@ -64,17 +60,14 @@ export function TextSource({
 
             // Delete existing doc if it exists
             if (docId) {
-                await deleteDocsFromDataSource({
-                    projectId,
-                    sourceId: dataSource._id,
-                    docIds: [docId],
+                await deleteDocFromDataSource({
+                    docId: docId,
                 });
             }
 
             // Add new doc
             await addDocsToDataSource({
-                projectId,
-                sourceId: dataSource._id,
+                sourceId: dataSource.id,
                 docData: [{
                     name: 'text',
                     data: {

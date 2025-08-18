@@ -1,17 +1,10 @@
-import { getResponse } from "@/app/lib/agents";
-import { agentWorkflowsCollection, twilioConfigsCollection, twilioInboundCallsCollection } from "@/app/lib/mongodb";
-import { collectProjectTools } from "@/app/lib/project_tools";
+import { getResponse } from "@/src/application/lib/agents-runtime/agents";
+import { twilioConfigsCollection, twilioInboundCallsCollection } from "@/app/lib/mongodb";
 import { PrefixLogger } from "@/app/lib/utils";
 import VoiceResponse from "twilio/lib/twiml/VoiceResponse";
-import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { TwilioInboundCall } from "@/app/lib/types/voice_types";
 import { hangup, reject, XmlResponse, ZStandardRequestParams } from "../utils";
-
-export async function POST(request: Request) {
-    let logger = new PrefixLogger("twilioInboundCall");
-    logger.log("Received inbound call request");
-    const recvdAt = new Date();
 
     /*
     form data example
@@ -46,6 +39,13 @@ export async function POST(request: Request) {
         FromState: 'PXXXXXXX'
     }
     */
+export async function POST(request: Request) {
+    return new Response('Not implemented', { status: 501 });
+    /*
+    let logger = new PrefixLogger("twilioInboundCall");
+    logger.log("Received inbound call request");
+    const recvdAt = new Date();
+
     // parse and validate form data
     const formData = await request.formData();
     logger.log('request body:', JSON.stringify(Object.fromEntries(formData)));
@@ -63,25 +63,26 @@ export async function POST(request: Request) {
         return reject('rejected');
     }
 
-    // extract workflow and project id and fetch workflow from db
+    // fetch project and extract live workflow
     // if workflow not found, reject the call
     const projectId = twilioConfig.project_id;
-    const workflowId = twilioConfig.workflow_id;
-    const workflow = await agentWorkflowsCollection.findOne({
-        projectId: projectId,
-        _id: new ObjectId(workflowId),
+    const project = await projectsCollection.findOne({
+        _id: projectId,
     });
+    const project = null;
+    if (!project) {
+        logger.log(`Project ${projectId} not found`);
+        return reject('rejected');
+    }
+    const workflow = project.liveWorkflow;
     if (!workflow) {
-        logger.log(`Workflow ${workflowId} not found for project ${projectId}`);
+        logger.log(`Workflow not found for project ${projectId}`);
         return reject('rejected');
     }
 
-    // fetch project tools
-    const projectTools = await collectProjectTools(projectId);
-
     // this is the first turn, get the initial assistant response
     // and validate it
-    const { messages } = await getResponse(workflow, projectTools, []);
+    const { messages } = await getResponse(projectId, workflow, []);
     if (messages.length === 0) {
         logger.log('Agent response is empty');
         return hangup();
@@ -98,7 +99,6 @@ export async function POST(request: Request) {
         to: data.To,
         from: data.From,
         projectId,
-        workflowId,
         messages,
         createdAt: recvdAt.toISOString(),
         lastUpdatedAt: new Date().toISOString(),
@@ -117,4 +117,5 @@ export async function POST(request: Request) {
         action: `/api/twilio/turn/${data.CallSid}`,
     });
     return XmlResponse(response);
+    */
 }

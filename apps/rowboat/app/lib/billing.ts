@@ -1,14 +1,18 @@
 import { WithStringId } from './types/types';
 import { z } from 'zod';
-import { Customer, AuthorizeRequest, AuthorizeResponse, LogUsageRequest, UsageResponse, CustomerPortalSessionResponse, PricesResponse, UpdateSubscriptionPlanRequest, UpdateSubscriptionPlanResponse, ModelsResponse } from './types/billing_types';
+import { Customer, AuthorizeRequest, AuthorizeResponse, LogUsageRequest, UsageResponse, CustomerPortalSessionResponse, PricesResponse, UpdateSubscriptionPlanRequest, UpdateSubscriptionPlanResponse, ModelsResponse, UsageItem } from './types/billing_types';
 import { ObjectId } from 'mongodb';
-import { projectsCollection, usersCollection } from './mongodb';
+import { usersCollection } from './mongodb';
 import { redirect } from 'next/navigation';
 import { getUserFromSessionId, requireAuth } from './auth';
 import { USE_BILLING } from './feature_flags';
+import { container } from '@/di/container';
+import { IProjectsRepository } from '@/src/application/repositories/projects.repository.interface';
 
 const BILLING_API_URL = process.env.BILLING_API_URL || 'http://billing';
 const BILLING_API_KEY = process.env.BILLING_API_KEY || 'test';
+
+let logCounter = 1;
 
 const GUEST_BILLING_CUSTOMER = {
     _id: "guest-user",
@@ -23,26 +27,42 @@ const GUEST_BILLING_CUSTOMER = {
     updatedAt: new Date().toISOString(),
 };
 
-export class BillingError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'BillingError';
+export class UsageTracker{
+    private items: z.infer<typeof UsageItem>[] = [];
+
+    track(item: z.infer<typeof UsageItem>) {
+        this.items.push(item);
+    }
+
+    flush(): z.infer<typeof UsageItem>[] {
+        const items = this.items;
+        this.items = [];
+        return items;
     }
 }
 
-export async function getCustomerIdForProject(projectId: string): Promise<string> {
-    const project = await projectsCollection.findOne({ _id: projectId });
-    if (!project) {
-        throw new Error("Project not found");
-    }
-    const user = await usersCollection.findOne({ _id: new ObjectId(project.createdByUserId) });
+export async function getCustomerForUserId(userId: string): Promise<WithStringId<z.infer<typeof Customer>> | null> {
+    const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
     if (!user) {
         throw new Error("User not found");
     }
     if (!user.billingCustomerId) {
+        return null;
+    }
+    return await getBillingCustomer(user.billingCustomerId);
+}
+
+export async function getCustomerIdForProject(projectId: string): Promise<string> {
+    const projectsRepository = container.resolve<IProjectsRepository>('projectsRepository');
+    const project = await projectsRepository.fetch(projectId);
+    if (!project) {
+        throw new Error("Project not found");
+    }
+    const customer = await getCustomerForUserId(project.createdByUserId);
+    if (!customer) {
         throw new Error("User has no billing customer id");
     }
-    return user.billingCustomerId;
+    return customer._id;
 }
 
 export async function getBillingCustomer(id: string): Promise<WithStringId<z.infer<typeof Customer>> | null> {
@@ -118,6 +138,8 @@ export async function authorize(customerId: string, request: z.infer<typeof Auth
 }
 
 export async function logUsage(customerId: string, request: z.infer<typeof LogUsageRequest>) {
+    const reqId = logCounter++;
+    console.log(`[${reqId}] logging billing usage for customer ${customerId} to ${BILLING_API_URL}`, reqId, JSON.stringify(request));
     const response = await fetch(`${BILLING_API_URL}/api/customers/${customerId}/log-usage`, {
         method: 'POST',
         headers: {
@@ -126,6 +148,7 @@ export async function logUsage(customerId: string, request: z.infer<typeof LogUs
         },
         body: JSON.stringify(request)
     });
+    console.log(`[${reqId}] completed logging billing usage for customer ${customerId}`, reqId, response.status, response.statusText);
     if (!response.ok) {
         throw new Error(`Failed to log usage: ${response.status} ${response.statusText} ${await response.text()}`);
     }

@@ -4,13 +4,12 @@ import { useCallback } from 'react';
 import { PictureImg } from '@/components/ui/picture-img';
 import clsx from 'clsx';
 import { z } from 'zod';
-import { ZToolkit } from '@/app/lib/composio/composio';
-import { Project } from '@/app/lib/types/project_types';
+import { ZToolkit } from "@/src/application/lib/composio/types";
 import { Chip } from '@heroui/react';
 import { LinkIcon } from 'lucide-react';
+import { Workflow } from '@/app/lib/types/workflow_types';
 
 type ToolkitType = z.infer<typeof ZToolkit>;
-type ProjectType = z.infer<typeof Project>;
 
 const toolkitCardStyles = {
     base: clsx(
@@ -28,33 +27,27 @@ const toolkitCardStyles = {
 
 interface ToolkitCardProps {
   toolkit: ToolkitType;
-  projectId: string;
   isConnected: boolean;
-  connectedAccountId?: string;
-  projectConfig: ProjectType | null;
-  onManageTools: () => void;
-  onProjectConfigUpdate: () => void;
-  onRemoveToolkitTools: (toolkitSlug: string) => void;
+  onSelectToolkit: () => void;
+  workflowTools: z.infer<typeof Workflow.shape.tools>;
+  showTriggerCounts?: boolean; // New prop to show trigger counts instead of tool counts
 }
 
 export function ToolkitCard({ 
   toolkit, 
-  projectId,
   isConnected,
-  connectedAccountId,
-  projectConfig,
-  onManageTools,
-  onProjectConfigUpdate,
-  onRemoveToolkitTools
+  onSelectToolkit,
+  workflowTools,
+  showTriggerCounts = false,
 }: ToolkitCardProps) {
   const handleCardClick = useCallback(() => {
-    onManageTools();
-  }, [onManageTools]);
+    onSelectToolkit();
+  }, [onSelectToolkit]);
 
   // Calculate selected tools count for this toolkit
-  const selectedToolsCount = projectConfig?.composioSelectedTools?.filter(tool => 
-    tool.toolkit.slug === toolkit.slug
-  ).length || 0;
+  const selectedToolsCount = workflowTools
+    .filter(tool => tool.isComposio && tool.composioData?.toolkitSlug === toolkit.slug)
+    .length;
 
   return (
     <div className={toolkitCardStyles.base} onClick={handleCardClick}>
@@ -78,9 +71,11 @@ export function ToolkitCard({
                 variant="faded"
                 size="sm"
               >
-                {selectedToolsCount > 0 
-                  ? `${toolkit.meta.tools_count} tools, ${selectedToolsCount} selected`
-                  : `${toolkit.meta.tools_count} tools`
+                {showTriggerCounts 
+                  ? `${toolkit.meta.triggers_count} triggers`
+                  : selectedToolsCount > 0 
+                    ? `${toolkit.meta.tools_count} tools, ${selectedToolsCount} selected`
+                    : `${toolkit.meta.tools_count} tools`
                 }
               </Chip>
             </div>

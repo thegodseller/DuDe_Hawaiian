@@ -2,7 +2,7 @@
 import { createContext, useContext, useRef, useState } from "react";
 import clsx from "clsx";
 import { z } from "zod";
-import { CopilotAssistantMessageActionPart } from "../../../../lib/types/copilot_types";
+import { CopilotAssistantMessageActionPart } from "../../../../../src/application/lib/copilot/types";
 import { Workflow } from "../../../../lib/types/workflow_types";
 import { PreviewModalProvider, usePreviewModal } from '../../workflow/preview-modal';
 import { getAppliedChangeKey } from "../app";
@@ -59,6 +59,7 @@ export function Action({
     const handleFieldChange = (field: string) => {
         const changes = { [field]: action.config_changes[field] };
         
+        // Dispatch the field change directly (this is for partial updates)
         switch (action.config_type) {
             case 'agent':
                 dispatch({
@@ -94,74 +95,16 @@ export function Action({
                 newApplied[getAppliedChangeKey(msgIndex, actionIndex, key)]
             );
             
-            // If all fields are applied, notify parent
-            if (allFieldsApplied) {
-                onApplied?.();
-            }
+            // If all fields are applied, mark as externally applied but don't call onApplied
+            // to avoid duplicate dispatch (the parent's onApplied would dispatch the full action again)
             
             return newApplied;
         });
     };
 
-    // Handle applying all changes
+    // Handle applying all changes - delegate to parent
     const handleApplyAll = () => {
-        if (action.action === 'create_new') {
-            switch (action.config_type) {
-                case 'agent':
-                    dispatch({
-                        type: 'add_agent',
-                        agent: {
-                            name: action.name,
-                            ...action.config_changes
-                        }
-                    });
-                    break;
-                case 'tool':
-                    dispatch({
-                        type: 'add_tool',
-                        tool: {
-                            name: action.name,
-                            ...action.config_changes
-                        }
-                    });
-                    break;
-                case 'prompt':
-                    dispatch({
-                        type: 'add_prompt',
-                        prompt: {
-                            name: action.name,
-                            ...action.config_changes
-                        }
-                    });
-                    break;
-            }
-        } else if (action.action === 'edit') {
-            switch (action.config_type) {
-                case 'agent':
-                    dispatch({
-                        type: 'update_agent',
-                        name: action.name,
-                        agent: action.config_changes
-                    });
-                    break;
-                case 'tool':
-                    dispatch({
-                        type: 'update_tool',
-                        name: action.name,
-                        tool: action.config_changes
-                    });
-                    break;
-                case 'prompt':
-                    dispatch({
-                        type: 'update_prompt',
-                        name: action.name,
-                        prompt: action.config_changes
-                    });
-                    break;
-            }
-        }
-
-        // Mark all fields as applied
+        // Mark all fields as applied locally for UI state
         const appliedKeys = Object.keys(action.config_changes).reduce((acc, key) => {
             acc[getAppliedChangeKey(msgIndex, actionIndex, key)] = true;
             return acc;
@@ -171,7 +114,7 @@ export function Action({
             ...appliedKeys
         }));
 
-        // Notify parent that this action has been applied
+        // Notify parent to handle the actual dispatching
         onApplied?.();
     };
 
@@ -232,7 +175,7 @@ export function Action({
                         'bg-gray-200 text-gray-600': stale || allApplied || action.error,
                     }
                 )}>
-                    {action.config_type === 'agent' ? '🧑‍💼' : action.config_type === 'tool' ? '🛠️' : '💬'}
+                    {action.config_type === 'agent' ? '🧑‍💼' : action.config_type === 'tool' ? '🛠️' : action.config_type === 'pipeline' ? '⚙️' : '💬'}
                 </span>
                 <span className="font-semibold text-sm text-zinc-800 dark:text-zinc-100 truncate flex-1">
                     {action.action === 'create_new' ? 'Add' : 'Edit'} {action.config_type}: {action.name}
@@ -284,7 +227,7 @@ export function ActionHeader() {
     const { msgIndex, actionIndex, action, workflow, appliedFields, stale } = useContext(ActionContext);
     if (!action || !workflow) return null;
 
-    const targetType = action.config_type === 'tool' ? 'tool' : action.config_type === 'agent' ? 'agent' : 'prompt';
+    const targetType = action.config_type === 'tool' ? 'tool' : action.config_type === 'agent' ? 'agent' : action.config_type === 'pipeline' ? 'pipeline' : 'prompt';
     const change = action.action === 'create_new' ? 'Create' : 'Edit';
 
     return <div className="flex gap-2 items-center py-1 px-1">
@@ -329,6 +272,12 @@ export function ActionField({
             const prompt = workflow.prompts.find(p => p.name === action.name);
             if (prompt) {
                 oldValue = (prompt as any)[field];
+            }
+        } else if (action.config_type === 'pipeline') {
+            // Find the pipeline in the workflow
+            const pipeline = workflow.pipelines?.find(p => p.name === action.name);
+            if (pipeline) {
+                oldValue = (pipeline as any)[field];
             }
         }
     }
@@ -393,7 +342,7 @@ export function StreamingAction({
 }: {
     action: {
         action?: 'create_new' | 'edit';
-        config_type?: 'tool' | 'agent' | 'prompt';
+        config_type?: 'tool' | 'agent' | 'prompt' | 'pipeline';
         name?: string;
     };
     loading: boolean;
@@ -419,7 +368,7 @@ export function StreamingAction({
                         'bg-gray-200 text-gray-600': !action.action,
                     }
                 )}>
-                    {action.config_type === 'agent' ? '🧑‍💼' : action.config_type === 'tool' ? '🛠️' : '💬'}
+                    {action.config_type === 'agent' ? '🧑‍💼' : action.config_type === 'tool' ? '🛠️' : action.config_type === 'pipeline' ? '⚙️' : '💬'}
                 </span>
                 <span className="font-semibold text-sm text-zinc-800 dark:text-zinc-100 truncate flex-1">
                     {action.action === 'create_new' ? 'Add' : 'Edit'} {action.config_type}: {action.name}

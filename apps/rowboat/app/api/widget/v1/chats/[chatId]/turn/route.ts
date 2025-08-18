@@ -1,16 +1,16 @@
 import { NextRequest } from "next/server";
 import { apiV1 } from "rowboat-shared";
-import { agentWorkflowsCollection, projectsCollection, chatsCollection, chatMessagesCollection } from "../../../../../../lib/mongodb";
+import { chatsCollection, chatMessagesCollection } from "../../../../../../lib/mongodb";
 import { z } from "zod";
 import { ObjectId, WithId } from "mongodb";
 import { authCheck } from "../../../utils";
-import { check_query_limit } from "../../../../../../lib/rate_limiting";
 import { PrefixLogger } from "../../../../../../lib/utils";
-import { collectProjectTools } from "@/app/lib/project_tools";
 import { authorize, getCustomerIdForProject, logUsage } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
-import { getResponse } from "@/app/lib/agents";
+import { getResponse } from "@/src/application/lib/agents-runtime/agents";
 import { Message, AssistantMessage, AssistantMessageWithToolCalls, ToolMessage } from "@/app/lib/types/types";
+import { IUsageQuotaPolicy } from "@/src/application/policies/usage-quota.policy.interface";
+import { container } from "@/di/container";
 
 function convert(messages: z.infer<typeof apiV1.ChatMessage>[]): z.infer<typeof Message>[] {
     const result: z.infer<typeof Message>[] = [];
@@ -112,6 +112,8 @@ export async function POST(
     req: NextRequest,
     { params }: { params: Promise<{ chatId: string }> }
 ): Promise<Response> {
+    return new Response('Not implemented', { status: 501 });
+    /*
     return await authCheck(req, async (session) => {
         const { chatId } = await params;
         const logger = new PrefixLogger(`widget-chat:${chatId}`);
@@ -124,11 +126,9 @@ export async function POST(
             billingCustomerId = await getCustomerIdForProject(session.projectId);
         }
 
-        // check query limit
-        if (!await check_query_limit(session.projectId)) {
-            logger.log(`Query limit exceeded for project ${session.projectId}`);
-            return Response.json({ error: "Query limit exceeded" }, { status: 429 });
-        }
+        // assert and consume quota
+        const usageQuotaPolicy = container.resolve<IUsageQuotaPolicy>('usageQuotaPolicy');
+        await usageQuotaPolicy.assertAndConsume(session.projectId);
 
         // parse and validate the request body
         let body;
@@ -181,14 +181,8 @@ export async function POST(
             throw new Error("Project settings not found");
         }
 
-        // fetch project tools
-        const projectTools = await collectProjectTools(session.projectId);
-
         // fetch workflow
-        const workflow = await agentWorkflowsCollection.findOne({
-            projectId: session.projectId,
-            _id: new ObjectId(projectSettings.publishedWorkflowId),
-        });
+        const workflow = projectSettings.liveWorkflow;
         if (!workflow) {
             throw new Error("Workflow not found");
         }
@@ -214,7 +208,7 @@ export async function POST(
         const inMessages: z.infer<typeof Message>[] = convert(messages);
         inMessages.push(userMessage);
 
-        const { messages: responseMessages } = await getResponse(workflow, projectTools, [systemMessage, ...inMessages]);
+        const { messages: responseMessages } = await getResponse(session.projectId, workflow, [systemMessage, ...inMessages]);
         const convertedResponseMessages = convertBack(responseMessages);
         const unsavedMessages = [
             userMessage,
@@ -228,10 +222,10 @@ export async function POST(
         // log billing usage
         if (USE_BILLING && billingCustomerId) {
             const agentMessageCount = convertedResponseMessages.filter(m => m.role === 'assistant').length;
-            await logUsage(billingCustomerId, {
-                type: 'agent_messages',
-                amount: agentMessageCount,
-            });
+            // await logUsage(billingCustomerId, {
+            //     type: 'agent_messages',
+            //     amount: agentMessageCount,
+            // });
         }
 
         logger.log(`Turn processing completed successfully`);
@@ -242,4 +236,5 @@ export async function POST(
             _id: undefined,
         });
     });
+    */
 }

@@ -1,24 +1,20 @@
 "use client";
-import { WithStringId } from "../../../../lib/types/types";
-import { DataSourceDoc, DataSource } from "../../../../lib/types/datasource_types";
+import { DataSourceDoc } from "@/src/entities/models/data-source-doc";
+import { DataSource } from "@/src/entities/models/data-source";
 import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { deleteDocsFromDataSource, getUploadUrlsForFilesDataSource, addDocsToDataSource, getDownloadUrlForFile, listDocsInDataSource } from "../../../../actions/datasource_actions";
+import { deleteDocFromDataSource, getUploadUrlsForFilesDataSource, addDocsToDataSource, getDownloadUrlForFile, listDocsInDataSource } from "../../../../actions/data-source.actions";
 import { RelativeTime } from "@primer/react";
 import { Pagination, Spinner } from "@heroui/react";
 import { DownloadIcon } from "lucide-react";
 import { Section } from "./section";
 
 function FileListItem({
-    projectId,
-    sourceId,
     file,
     onDelete,
 }: {
-    projectId: string,
-    sourceId: string,
-    file: WithStringId<z.infer<typeof DataSourceDoc>>,
+    file: z.infer<typeof DataSourceDoc>,
     onDelete: (fileId: string) => Promise<void>;
 }) {
     const [isDeleting, setIsDeleting] = useState(false);
@@ -27,7 +23,7 @@ function FileListItem({
     const handleDeleteClick = async () => {
         setIsDeleting(true);
         try {
-            await onDelete(file._id);
+            await onDelete(file.id);
         } finally {
             setIsDeleting(false);
         }
@@ -36,7 +32,7 @@ function FileListItem({
     const handleDownloadClick = async () => {
         setIsDownloading(true);
         try {
-            const url = await getDownloadUrlForFile(projectId, sourceId, file._id);
+            const url = await getDownloadUrlForFile(file.id);
             window.open(url, '_blank');
         } catch (error) {
             console.error('Download failed:', error);
@@ -90,17 +86,15 @@ function FileListItem({
 }
 
 function PaginatedFileList({
-    projectId,
     sourceId,
     handleReload,
     onDelete,
 }: {
-    projectId: string,
     sourceId: string,
     handleReload: () => void;
     onDelete: (fileId: string) => Promise<void>;
 }) {
-    const [files, setFiles] = useState<WithStringId<z.infer<typeof DataSourceDoc>>[]>([]);
+    const [files, setFiles] = useState<z.infer<typeof DataSourceDoc>[]>([]);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -114,7 +108,6 @@ function PaginatedFileList({
             setLoading(true);
             try {
                 const { files, total } = await listDocsInDataSource({
-                    projectId,
                     sourceId,
                     page,
                     limit: 10,
@@ -134,7 +127,7 @@ function PaginatedFileList({
         return () => {
             ignore = true;
         }
-    }, [projectId, sourceId, page]);
+    }, [sourceId, page]);
 
     return (
         <div className="space-y-4">
@@ -154,10 +147,8 @@ function PaginatedFileList({
                 <div className="space-y-3">
                     {files.map(file => (
                         <FileListItem
-                            key={file._id}
+                            key={file.id}
                             file={file}
-                            projectId={projectId}
-                            sourceId={sourceId}
                             onDelete={onDelete}
                         />
                     ))}
@@ -177,13 +168,11 @@ function PaginatedFileList({
 }
 
 export function FilesSource({
-    projectId,
     dataSource,
     handleReload,
     type,
 }: {
-    projectId: string,
-    dataSource: WithStringId<z.infer<typeof DataSource>>,
+    dataSource: z.infer<typeof DataSource>,
     handleReload: () => void;
     type: 'files_local' | 'files_s3';
 }) {
@@ -193,7 +182,7 @@ export function FilesSource({
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
         setUploading(true);
         try {
-            const urls = await getUploadUrlsForFilesDataSource(projectId, dataSource._id, acceptedFiles.map(file => ({
+            const urls = await getUploadUrlsForFilesDataSource(dataSource.id, acceptedFiles.map(file => ({
                 name: file.name,
                 type: file.type,
                 size: file.size,
@@ -237,13 +226,13 @@ export function FilesSource({
                         name: file.name,
                         size: file.size,
                         mimeType: file.type,
+                        path: urls[index].path,
                     },
                 }));
             }
 
             await addDocsToDataSource({
-                projectId,
-                sourceId: dataSource._id,
+                sourceId: dataSource.id,
                 docData,
             });
 
@@ -255,7 +244,7 @@ export function FilesSource({
         } finally {
             setUploading(false);
         }
-    }, [projectId, dataSource._id, handleReload, type]);
+    }, [dataSource.id, handleReload, type]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -299,14 +288,11 @@ export function FilesSource({
 
                 <PaginatedFileList
                     key={fileListKey}
-                    projectId={projectId}
-                    sourceId={dataSource._id}
+                    sourceId={dataSource.id}
                     handleReload={handleReload}
                     onDelete={async (docId) => {
-                        await deleteDocsFromDataSource({
-                            projectId,
-                            sourceId: dataSource._id,
-                            docIds: [docId],
+                        await deleteDocFromDataSource({
+                            docId: docId,
                         });
                         handleReload();
                         setFileListKey(prev => prev + 1);

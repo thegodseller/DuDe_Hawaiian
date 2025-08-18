@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
-import { usersCollection, projectsCollection, projectMembersCollection } from "./mongodb";
+import { usersCollection } from "./mongodb";
 import { auth0 } from "./auth0";
 import { User, WithStringId } from "./types/types";
 import { USE_AUTH } from "./feature_flags";
@@ -59,11 +59,6 @@ export async function requireAuth(): Promise<WithStringId<z.infer<typeof User>>>
         console.log(`creating new user id ${doc._id.toString()} for session id ${user.sub}`);
         await usersCollection.insertOne(doc);
 
-        // since auth feature was rolled out later,
-        // set all project authors to new user id instead
-        // of user.sub
-        await updateProjectRefs(user.sub, doc._id.toString());
-
         dbUser = {
             ...doc,
             _id: doc._id.toString(),
@@ -75,25 +70,6 @@ export async function requireAuth(): Promise<WithStringId<z.infer<typeof User>>>
         ...rest,
         _id: _id.toString(),
     };
-}
-
-async function updateProjectRefs(sessionUserId: string, dbUserId: string) {
-    await projectsCollection.updateMany({
-        createdByUserId: sessionUserId
-    }, {
-        $set: {
-            createdByUserId: dbUserId,
-            lastUpdatedAt: new Date().toISOString(),
-        }
-    });
-
-    await projectMembersCollection.updateMany({
-        userId: sessionUserId
-    }, {
-        $set: {
-            userId: dbUserId,
-        }
-    });
 }
 
 export async function getUserFromSessionId(sessionUserId: string): Promise<WithStringId<z.infer<typeof User>> | null> {

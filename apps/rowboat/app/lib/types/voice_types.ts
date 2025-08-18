@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { WithId } from 'mongodb';
 import { Message } from './types';
 
 export const TwilioConfigParams = z.object({
@@ -8,7 +7,6 @@ export const TwilioConfigParams = z.object({
     auth_token: z.string(),
     label: z.string(),
     project_id: z.string(),
-    workflow_id: z.string(),
 });
 
 export const TwilioConfig = TwilioConfigParams.extend({
@@ -24,7 +22,6 @@ export interface TwilioConfigResponse {
 export interface InboundConfigResponse {
     status: 'configured' | 'reconfigured';
     phone_number: string;
-    workflow_id: string;
     previous_webhook?: string;
     error?: string;
 }
@@ -34,7 +31,6 @@ export const TwilioInboundCall = z.object({
     to: z.string(),
     from: z.string(),
     projectId: z.string(),
-    workflowId: z.string(),
     messages: z.array(Message),
     createdAt: z.string().datetime(),
     lastUpdatedAt: z.string().datetime().optional(),

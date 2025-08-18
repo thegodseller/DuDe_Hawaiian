@@ -1,121 +1,114 @@
 "use client";
-import { MCPServer, WithStringId } from "../../../lib/types/types";
-import { Workflow } from "../../../lib/types/workflow_types";
-import { DataSource } from "../../../lib/types/datasource_types";
+import { DataSource } from "@/src/entities/models/data-source";
+import { Project } from "@/src/entities/models/project";
 import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { WorkflowEditor } from "./workflow_editor";
-import { WorkflowSelector } from "./workflow_selector";
 import { Spinner } from "@heroui/react";
-import { cloneWorkflow, createWorkflow, fetchPublishedWorkflowId, fetchWorkflow } from "../../../actions/workflow_actions";
-import { listDataSources } from "../../../actions/datasource_actions";
-import { listMcpServers } from "@/app/actions/mcp_actions";
-import { collectProjectTools } from "@/app/actions/project_actions";
-import { getProjectConfig } from "@/app/actions/project_actions";
-import { WorkflowTool } from "@/app/lib/types/workflow_types";
-import { getEligibleModels } from "@/app/actions/billing_actions";
+import { listDataSources } from "../../../actions/data-source.actions";
+import { revertToLiveWorkflow } from "@/app/actions/project.actions";
+import { fetchProject } from "@/app/actions/project.actions";
+import { Workflow } from "@/app/lib/types/workflow_types";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
 
 export function App({
-    projectId,
+    initialProjectData,
+    initialDataSources,
+    eligibleModels,
     useRag,
+    useRagUploads,
+    useRagS3Uploads,
+    useRagScraping,
     defaultModel,
+    chatWidgetHost,
 }: {
-    projectId: string;
+    initialProjectData: z.infer<typeof Project>;
+    initialDataSources: z.infer<typeof DataSource>[];
+    eligibleModels: z.infer<typeof ModelsResponse> | "*";
     useRag: boolean;
+    useRagUploads: boolean;
+    useRagS3Uploads: boolean;
+    useRagScraping: boolean;
     defaultModel: string;
+    chatWidgetHost: string;
 }) {
-    const [selectorKey, setSelectorKey] = useState(0);
-    const [workflow, setWorkflow] = useState<WithStringId<z.infer<typeof Workflow>> | null>(null);
-    const [publishedWorkflowId, setPublishedWorkflowId] = useState<string | null>(null);
-    const [dataSources, setDataSources] = useState<WithStringId<z.infer<typeof DataSource>>[] | null>(null);
-    const [projectTools, setProjectTools] = useState<z.infer<typeof WorkflowTool>[] | null>(null);
+    const [mode, setMode] = useState<'draft' | 'live'>('draft');
+    const [project, setProject] = useState<z.infer<typeof Project>>(initialProjectData);
+    const [dataSources, setDataSources] = useState<z.infer<typeof DataSource>[]>(initialDataSources);
     const [loading, setLoading] = useState(false);
-    const [autoSelectIfOnlyOneWorkflow, setAutoSelectIfOnlyOneWorkflow] = useState(true);
-    const [mcpServerUrls, setMcpServerUrls] = useState<Array<z.infer<typeof MCPServer>>>([]);
-    const [toolWebhookUrl, setToolWebhookUrl] = useState<string>('');
-    const [eligibleModels, setEligibleModels] = useState<z.infer<typeof ModelsResponse> | "*">("*");
 
-    const handleSelect = useCallback(async (workflowId: string) => {
+    console.log('workflow app.tsx render');
+
+    // choose which workflow to display
+    let workflow: z.infer<typeof Workflow> | undefined = project?.draftWorkflow;
+    if (mode == 'live') {
+        workflow = project?.liveWorkflow;
+    }
+
+    const reloadData = useCallback(async () => {
         setLoading(true);
         const [
-            workflow,
-            publishedWorkflowId,
-            dataSources,
-            mcpServers,
-            projectConfig,
-            projectTools,
-            eligibleModels,
+            projectData,
+            sourcesData,
         ] = await Promise.all([
-            fetchWorkflow(projectId, workflowId),
-            fetchPublishedWorkflowId(projectId),
-            listDataSources(projectId),
-            listMcpServers(projectId),
-            getProjectConfig(projectId),
-            collectProjectTools(projectId),
-            getEligibleModels(),
+            fetchProject(initialProjectData.id),
+            listDataSources(initialProjectData.id),
         ]);
 
-        // Store the selected workflow ID in local storage
-        localStorage.setItem(`lastWorkflowId_${projectId}`, workflowId);
-        setWorkflow(workflow);
-        setPublishedWorkflowId(publishedWorkflowId);
-        setDataSources(dataSources);
-        setMcpServerUrls(mcpServers);
-        setToolWebhookUrl(projectConfig.webhookUrl ?? '');
-        setProjectTools(projectTools);
-        setEligibleModels(eligibleModels);
+        setProject(projectData);
+        setDataSources(sourcesData);
         setLoading(false);
-    }, [projectId]);
+    }, [initialProjectData.id]);
 
-    function handleShowSelector() {
-        // clear the last workflow id from local storage
-        localStorage.removeItem(`lastWorkflowId_${projectId}`);
-        setAutoSelectIfOnlyOneWorkflow(false);
-        setWorkflow(null);
-    }
+    const handleProjectToolsUpdate = useCallback(async () => {
+        // Lightweight refresh for tool-only updates
+        const projectConfig = await fetchProject(initialProjectData.id);
+        
+        setProject(projectConfig);
+    }, [initialProjectData.id]);
 
-    async function handleCreateNewVersion() {
-        setLoading(true);
-        const workflow = await createWorkflow(projectId);
-        const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
-        const dataSources = await listDataSources(projectId);
-        // Store the selected workflow ID in local storage
-        localStorage.setItem(`lastWorkflowId_${projectId}`, workflow._id);
-        setWorkflow(workflow);
-        setPublishedWorkflowId(publishedWorkflowId);
-        setDataSources(dataSources);
-        setLoading(false);
-    }
+    const handleDataSourcesUpdate = useCallback(async () => {
+        // Refresh data sources
+        const updatedDataSources = await listDataSources(initialProjectData.id);
+        setDataSources(updatedDataSources);
+    }, [initialProjectData.id]);
 
-    async function handleCloneVersion(workflowId: string) {
-        setLoading(true);
-        const workflow = await cloneWorkflow(projectId, workflowId);
-        const publishedWorkflowId = await fetchPublishedWorkflowId(projectId);
-        const dataSources = await listDataSources(projectId);
-        // Store the selected workflow ID in local storage
-        localStorage.setItem(`lastWorkflowId_${projectId}`, workflow._id);
-        setWorkflow(workflow);
-        setPublishedWorkflowId(publishedWorkflowId);
-        setDataSources(dataSources);
-        setLoading(false);
-    }
+    const handleProjectConfigUpdate = useCallback(async () => {
+        // Refresh project config when project name or other settings change
+        const updatedProjectConfig = await fetchProject(initialProjectData.id);
+        setProject(updatedProjectConfig);
+    }, [initialProjectData.id]);
 
-    // whenever workflow becomes null, increment selectorKey
+    // Auto-update data sources when there are pending ones
     useEffect(() => {
-        if (!workflow) {
-            setSelectorKey(s => s + 1);
-        }
-    }, [workflow]);
+        if (!dataSources) return;
+        
+        const hasPendingSources = dataSources.some(ds => ds.status === 'pending');
+        if (!hasPendingSources) return;
 
-    // Add this useEffect for initial load
-    useEffect(() => {
-        // Check localStorage first, fall back to lastWorkflowId prop
-        const storedWorkflowId = localStorage.getItem(`lastWorkflowId_${projectId}`);
-        if (storedWorkflowId) {
-            handleSelect(storedWorkflowId);
-        }
-    }, [handleSelect, projectId]);
+        const interval = setInterval(async () => {
+            const updatedDataSources = await listDataSources(initialProjectData.id);
+            setDataSources(updatedDataSources);
+            
+            // Stop polling if no more pending sources
+            const stillHasPending = updatedDataSources.some(ds => ds.status === 'pending');
+            if (!stillHasPending) {
+                clearInterval(interval);
+            }
+        }, 7000); // Poll every 7 seconds (reduced from 3)
+
+        return () => clearInterval(interval);
+    }, [dataSources, initialProjectData.id]);
+
+    function handleSetMode(mode: 'draft' | 'live') {
+        setMode(mode);
+    }
+
+    async function handleRevertToLive() {
+        setLoading(true);
+        await revertToLiveWorkflow(initialProjectData.id);
+        reloadData();
+    }
 
     // if workflow is null, show the selector
     // else show workflow editor
@@ -124,26 +117,25 @@ export function App({
             <Spinner size="sm" />
             <div>Loading workflow...</div>
         </div>}
-        {!loading && workflow == null && <WorkflowSelector
-            projectId={projectId}
-            key={selectorKey}
-            handleSelect={handleSelect}
-            handleCreateNewVersion={handleCreateNewVersion}
-            autoSelectIfOnlyOneWorkflow={autoSelectIfOnlyOneWorkflow}
-        />}
-        {!loading && workflow && (dataSources !== null) && (projectTools !== null) && <WorkflowEditor
-            key={workflow._id}
+        {!loading && !workflow && <div>No workflow found!</div>}
+        {!loading && project && workflow && (dataSources !== null) && <WorkflowEditor
+            projectId={initialProjectData.id}
+            isLive={mode == 'live'}
             workflow={workflow}
             dataSources={dataSources}
-            projectTools={projectTools}
-            publishedWorkflowId={publishedWorkflowId}
-            handleShowSelector={handleShowSelector}
-            handleCloneVersion={handleCloneVersion}
+            projectConfig={project}
             useRag={useRag}
-            mcpServerUrls={mcpServerUrls}
-            toolWebhookUrl={toolWebhookUrl}
+            useRagUploads={useRagUploads}
+            useRagS3Uploads={useRagS3Uploads}
+            useRagScraping={useRagScraping}
             defaultModel={defaultModel}
             eligibleModels={eligibleModels}
+            onChangeMode={handleSetMode}
+            onRevertToLive={handleRevertToLive}
+            onProjectToolsUpdated={handleProjectToolsUpdate}
+            onDataSourcesUpdated={handleDataSourcesUpdate}
+            onProjectConfigUpdated={handleProjectConfigUpdate}
+            chatWidgetHost={chatWidgetHost}
         />}
     </>
 }

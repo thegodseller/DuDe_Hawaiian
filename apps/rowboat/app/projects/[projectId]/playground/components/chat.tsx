@@ -1,70 +1,73 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from "react";
-import { getAssistantResponseStreamId } from "@/app/actions/actions";
+import { createCachedTurn, createConversation } from "@/app/actions/playground-chat.actions";
 import { Messages } from "./messages";
-import z from "zod";
-import { MCPServer, Message, PlaygroundChat, ToolMessage } from "@/app/lib/types/types";
-import { Workflow, WorkflowTool } from "@/app/lib/types/workflow_types";
+import { z } from "zod";
+import { Message, ToolMessage } from "@/app/lib/types/types";
+import { Workflow } from "@/app/lib/types/workflow_types";
 import { ComposeBoxPlayground } from "@/components/common/compose-box-playground";
 import { Button } from "@heroui/react";
-import { TestProfile } from "@/app/lib/types/testing_types";
-import { WithStringId } from "@/app/lib/types/types";
-import { ProfileContextBox } from "./profile-context-box";
-import { USE_TESTING_FEATURE } from "@/app/lib/feature_flags";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { FeedbackModal } from "./feedback-modal";
-import { FIX_WORKFLOW_PROMPT, FIX_WORKFLOW_PROMPT_WITH_FEEDBACK } from "../copilot-prompts";
+import { FIX_WORKFLOW_PROMPT, FIX_WORKFLOW_PROMPT_WITH_FEEDBACK, EXPLAIN_WORKFLOW_PROMPT_ASSISTANT, EXPLAIN_WORKFLOW_PROMPT_TOOL, EXPLAIN_WORKFLOW_PROMPT_TRANSITION } from "../copilot-prompts";
+import { TurnEvent } from "@/src/entities/models/turn";
 
 export function Chat({
-    chat,
     projectId,
     workflow,
     messageSubscriber,
-    testProfile = null,
-    onTestProfileChange,
-    systemMessage,
-    onSystemMessageChange,
-    mcpServerUrls,
-    toolWebhookUrl,
     onCopyClick,
     showDebugMessages = true,
     showJsonMode = false,
-    projectTools,
     triggerCopilotChat,
+    isLiveWorkflow,
 }: {
-    chat: z.infer<typeof PlaygroundChat>;
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     messageSubscriber?: (messages: z.infer<typeof Message>[]) => void;
-    testProfile?: z.infer<typeof TestProfile> | null;
-    onTestProfileChange: (profile: WithStringId<z.infer<typeof TestProfile>> | null) => void;
-    systemMessage: string;
-    onSystemMessageChange: (message: string) => void;
-    mcpServerUrls: Array<z.infer<typeof MCPServer>>;
-    toolWebhookUrl: string;
     onCopyClick: (fn: () => string) => void;
     showDebugMessages?: boolean;
     showJsonMode?: boolean;
-    projectTools: z.infer<typeof WorkflowTool>[];
     triggerCopilotChat?: (message: string) => void;
+    isLiveWorkflow: boolean;
 }) {
-    const [messages, setMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
-    const [loadingAssistantResponse, setLoadingAssistantResponse] = useState<boolean>(false);
-    const [fetchResponseError, setFetchResponseError] = useState<string | null>(null);
+    const conversationId = useRef<string | null>(null);
+    const [messages, setMessages] = useState<z.infer<typeof Message>[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
     const [billingError, setBillingError] = useState<string | null>(null);
     const [lastAgenticRequest, setLastAgenticRequest] = useState<unknown | null>(null);
     const [lastAgenticResponse, setLastAgenticResponse] = useState<unknown | null>(null);
-    const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof Message>[]>(chat.messages);
+
+    // Optimistic messages for real-time streaming UX:
+    // - messages: source of truth, only updated when responses are complete
+    // - optimisticMessages: what user sees, updated in real-time during streaming
+    // This separation allows immediate visual feedback while maintaining data integrity
+    // and clean error recovery (rollback to last known good state on failures)
+    const [optimisticMessages, setOptimisticMessages] = useState<z.infer<typeof Message>[]>([]);
     const [isLastInteracted, setIsLastInteracted] = useState(false);
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
     const [pendingFixMessage, setPendingFixMessage] = useState<string | null>(null);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+    // Add state for explain (no modal needed, just direct trigger)
+    const [showExplainSuccess, setShowExplainSuccess] = useState(false);
+    const [pendingFixIndex, setPendingFixIndex] = useState<number | null>(null);
 
     // --- Scroll/auto-scroll/unread bubble logic ---
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const eventSourceRef = useRef<EventSource | null>(null);
     const [autoScroll, setAutoScroll] = useState(true);
     const [showUnreadBubble, setShowUnreadBubble] = useState(false);
+
+    // collect published tool call results
+    const toolCallResults: Record<string, z.infer<typeof ToolMessage>> = {};
+    optimisticMessages
+        .filter((message) => message.role == 'tool')
+        .forEach((message) => {
+            toolCallResults[message.toolCallId] = message;
+        });
+
 
     const handleScroll = useCallback(() => {
         const container = scrollContainerRef.current;
@@ -75,54 +78,32 @@ export function Chat({
         if (atBottom) setShowUnreadBubble(false);
     }, []);
 
-    useEffect(() => {
-        const container = scrollContainerRef.current;
-        if (!container) return;
-        if (autoScroll) {
-            container.scrollTop = container.scrollHeight;
-            setShowUnreadBubble(false);
-        } else {
-            setShowUnreadBubble(true);
-        }
-    }, [optimisticMessages, loadingAssistantResponse, autoScroll]);
-    // --- End scroll/auto-scroll logic ---
-
     const getCopyContent = useCallback(() => {
         return JSON.stringify({
-            messages: [{
-                role: 'system',
-                content: systemMessage,
-            }, ...messages],
+            messages,
             lastRequest: lastAgenticRequest,
             lastResponse: lastAgenticResponse,
         }, null, 2);
-    }, [messages, systemMessage, lastAgenticRequest, lastAgenticResponse]);
-
-    // Expose copy function to parent
-    useEffect(() => {
-        onCopyClick(getCopyContent);
-    }, [getCopyContent, onCopyClick]);
-
-    // reset optimistic messages when messages change
-    useEffect(() => {
-        setOptimisticMessages(messages);
-    }, [messages]);
+    }, [messages, lastAgenticRequest, lastAgenticResponse]);
 
     // Handle fix functionality
-    const handleFix = useCallback((message: string) => {
+    const handleFix = useCallback((message: string, index: number) => {
         setPendingFixMessage(message);
+        setPendingFixIndex(index);
         setShowFeedbackModal(true);
     }, []);
 
     const handleFeedbackSubmit = useCallback((feedback: string) => {
-        if (!pendingFixMessage) return;
+        if (!pendingFixMessage || pendingFixIndex === null) return;
 
-        // Create the copilot prompt
-        const prompt = feedback.trim() 
+        // Create the copilot prompt with index
+        const prompt = feedback.trim()
             ? FIX_WORKFLOW_PROMPT_WITH_FEEDBACK
+                .replace('{index}', String(pendingFixIndex))
                 .replace('{chat_turn}', pendingFixMessage)
                 .replace('{feedback}', feedback)
             : FIX_WORKFLOW_PROMPT
+                .replace('{index}', String(pendingFixIndex))
                 .replace('{chat_turn}', pendingFixMessage);
 
         // Use the triggerCopilotChat function if available, otherwise fall back to localStorage
@@ -137,15 +118,37 @@ export function Chat({
             alert('Fix request submitted! Redirecting to workflow editor...');
             window.location.href = `/projects/${projectId}/workflow`;
         }
-    }, [pendingFixMessage, projectId, triggerCopilotChat]);
+    }, [pendingFixMessage, pendingFixIndex, projectId, triggerCopilotChat]);
 
-    // collect published tool call results
-    const toolCallResults: Record<string, z.infer<typeof ToolMessage>> = {};
-    optimisticMessages
-        .filter((message) => message.role == 'tool')
-        .forEach((message) => {
-            toolCallResults[message.toolCallId] = message;
-        });
+    // Handle explain functionality
+    const handleExplain = useCallback((type: 'assistant' | 'tool' | 'transition', message: string, index: number) => {
+        let prompt = '';
+        if (type === 'assistant') {
+            prompt = EXPLAIN_WORKFLOW_PROMPT_ASSISTANT.replace('{index}', String(index)).replace('{chat_turn}', message);
+        } else if (type === 'tool') {
+            prompt = EXPLAIN_WORKFLOW_PROMPT_TOOL.replace('{index}', String(index)).replace('{chat_turn}', message);
+        } else if (type === 'transition') {
+            prompt = EXPLAIN_WORKFLOW_PROMPT_TRANSITION.replace('{index}', String(index)).replace('{chat_turn}', message);
+        }
+        if (triggerCopilotChat) {
+            triggerCopilotChat(prompt);
+            setShowExplainSuccess(true);
+            setTimeout(() => setShowExplainSuccess(false), 3000);
+        } else {
+            localStorage.setItem(`project_prompt_${projectId}`, prompt);
+            alert('Explain request submitted! Redirecting to workflow editor...');
+            window.location.href = `/projects/${projectId}/workflow`;
+        }
+    }, [projectId, triggerCopilotChat]);
+
+    // Add a stop handler function
+    const handleStop = useCallback(() => {
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+            setLoading(false);
+        }
+    }, []);
 
     function handleUserMessage(prompt: string) {
         const updatedMessages: z.infer<typeof Message>[] = [...messages, {
@@ -153,9 +156,31 @@ export function Chat({
             content: prompt,
         }];
         setMessages(updatedMessages);
-        setFetchResponseError(null);
+        setError(null);
         setIsLastInteracted(true);
     }
+
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        if (autoScroll) {
+            container.scrollTop = container.scrollHeight;
+            setShowUnreadBubble(false);
+        } else {
+            setShowUnreadBubble(true);
+        }
+    }, [optimisticMessages, loading, autoScroll]);
+
+    // Expose copy function to parent
+    useEffect(() => {
+        onCopyClick(getCopyContent);
+    }, [getCopyContent, onCopyClick]);
+
+    // Keep optimistic messages in sync with committed messages
+    // This ensures UI shows the latest confirmed state when messages are updated
+    useEffect(() => {
+        setOptimisticMessages(messages);
+    }, [messages]);
 
     // reset state when workflow changes
     useEffect(() => {
@@ -169,248 +194,293 @@ export function Chat({
         }
     }, [messages, messageSubscriber]);
 
-    // get assistant response
+    // get agent response
     useEffect(() => {
         let ignore = false;
         let eventSource: EventSource | null = null;
-        let msgs: z.infer<typeof Message>[] = [];
 
         async function process() {
-            setLoadingAssistantResponse(true);
-            setFetchResponseError(null);
-
-            // Reset request/response state before making new request
-            setLastAgenticRequest(null);
-            setLastAgenticResponse(null);
-            
-            let streamId: string | null = null;
             try {
-                const response = await getAssistantResponseStreamId(
-                    workflow,
-                    projectTools,
-                    [
-                        {
-                            role: 'system',
-                            content: systemMessage || '',
-                        },
-                        ...messages,
-                    ],
-                );
+                // first, if there is no conversation id, create it
+                if (!conversationId.current) {
+                    const response = await createConversation({
+                        projectId,
+                        workflow,
+                        isLiveWorkflow,
+                    });
+                    conversationId.current = response.id;
+                }
+
+                // set up a cached turn
+                const response = await createCachedTurn({
+                    conversationId: conversationId.current,
+                    messages: messages.slice(-1), // only send the last message
+                });
                 if (ignore) {
                     return;
                 }
-                if ('billingError' in response) {
-                    setBillingError(response.billingError);
-                    setFetchResponseError(response.billingError);
-                    setLoadingAssistantResponse(false);
-                    console.log('returning from getAssistantResponseStreamId due to billing error'); 
-                    return;
-                }
-                streamId = response.streamId;
-            } catch (err) {
-                if (!ignore) {
-                    setFetchResponseError(`Failed to get assistant response: ${err instanceof Error ? err.message : 'Unknown error'}`);
-                    setLoadingAssistantResponse(false);
-                }
-            }
+                // if ('billingError' in response) {
+                //     setBillingError(response.billingError);
+                //     setError(response.billingError);
+                //     setLoading(false);
+                //     console.log('returning from createRun due to billing error');
+                //     return;
+                // }
 
-            if (ignore || !streamId) {
-                return;
-            }
+                // stream events
+                eventSource = new EventSource(`/api/stream-response/${response.key}`);
+                eventSourceRef.current = eventSource;
 
-            eventSource = new EventSource(`/api/stream-response/${streamId}`);
+                // handle events
+                eventSource.addEventListener("message", (event) => {
+                    console.log(`chat.tsx: got message: ${JSON.stringify(event.data)}`);
+                    if (ignore) {
+                        return;
+                    }
 
-            eventSource.addEventListener("message", (event) => {
-                if (ignore) {
-                    return;
-                }
+                    try {
+                        const data = JSON.parse(event.data);
+                        const turnEvent = TurnEvent.parse(data);
+                        console.log(`chat.tsx: got event: ${turnEvent}`);
 
-                try {
-                    const data = JSON.parse(event.data);
-                    const parsedMsg = Message.parse(data);
-                    msgs.push(parsedMsg);
-                    setOptimisticMessages(prev => [...prev, parsedMsg]);
-                } catch (err) {
-                    console.error('Failed to parse SSE message:', err);
-                    setFetchResponseError(`Failed to parse SSE message: ${err instanceof Error ? err.message : 'Unknown error'}`);
-                    setOptimisticMessages(messages);
-                }
-            });
+                        switch (turnEvent.type) {
+                            case "message": {
+                                // Handle regular message events
+                                const generatedMessage = turnEvent.data;
+                                // Update optimistic messages immediately for real-time streaming UX
+                                setOptimisticMessages(prev => [...prev, generatedMessage]);
+                                break;
+                            }
+                            case "done": {
+                                // Handle completion event
+                                if (eventSource) {
+                                    eventSource.close();
+                                    eventSourceRef.current = null;
+                                }
 
-            eventSource.addEventListener('done', (event) => {
-                if (eventSource) {
-                    eventSource.close();
-                }
+                                // Combine state and collected messages in the response
+                                setLastAgenticResponse({
+                                    turn: turnEvent.turn,
+                                    messages: turnEvent.turn.output,
+                                });
 
-                const parsed = JSON.parse(event.data);
+                                // Commit all streamed messages atomically to the source of truth
+                                setMessages([...messages, ...turnEvent.turn.output]);
+                                setLoading(false);
+                                break;
+                            }
+                            case "error": {
+                                // Handle error event
+                                if (eventSource) {
+                                    eventSource.close();
+                                    eventSourceRef.current = null;
+                                }
 
-                // Combine state and collected messages in the response
-                setLastAgenticResponse({
-                    ...parsed,
-                    messages: msgs
+                                console.error('Turn Error:', turnEvent.error);
+                                if (!ignore) {
+                                    setLoading(false);
+                                    setError('Error: ' + turnEvent.error);
+                                    // Rollback to last known good state on stream errors
+                                    setOptimisticMessages(messages);
+
+                                    // check if billing error
+                                    if (turnEvent.isBillingError) {
+                                        setBillingError(turnEvent.error);
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Failed to parse SSE message:', err);
+                        setError(`Failed to parse SSE message: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                        // Rollback to last known good state on parsing errors
+                        setOptimisticMessages(messages);
+                    }
                 });
 
-                setMessages([...messages, ...msgs]);
-                setLoadingAssistantResponse(false);
-            });
+                eventSource.addEventListener('stream_error', (event) => {
+                    console.log(`chat.tsx: got stream_error event: ${event.data}`);
+                    if (eventSource) {
+                        eventSource.close();
+                        eventSourceRef.current = null;
+                    }
+    
+                    console.error('SSE Error:', event);
+                    if (!ignore) {
+                        setLoading(false);
+                        setError('Error: ' + JSON.parse(event.data).error);
+                        // Rollback to last known good state on stream errors
+                        setOptimisticMessages(messages);
+                    }
+                });
 
-            eventSource.addEventListener('stream_error', (event) => {
-                if (eventSource) {
-                    eventSource.close();
-                }
-
-                console.error('SSE Error:', event);
+                eventSource.onerror = (error) => {
+                    console.error('SSE Error:', error);
+                    if (!ignore) {
+                        setLoading(false);
+                        setError('Stream connection failed');
+                        // Rollback to last known good state on connection errors
+                        setOptimisticMessages(messages);
+                    }
+                };
+            } catch (err) {
                 if (!ignore) {
-                    setLoadingAssistantResponse(false);
-                    setFetchResponseError('Error: ' + JSON.parse(event.data).error);
-                    setOptimisticMessages(messages);
+                    setError(`Failed to create run: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                    setLoading(false);
                 }
-            });
-
-            eventSource.onerror = (error) => {
-                console.error('SSE Error:', error);
-                if (!ignore) {
-                    setLoadingAssistantResponse(false);
-                    setFetchResponseError('Stream connection failed');
-                    setOptimisticMessages(messages);
-                }
-            };
-        }
-
-        // if last message is not a user message, return
-        if (messages.length > 0) {
-            const last = messages[messages.length - 1];
-            if (last.role !== 'user') {
-                return;
             }
         }
 
-        // if there is an error, return
-        if (fetchResponseError) {
+        // if there are no messages yet, return
+        if (messages.length === 0) {
             return;
         }
 
-        console.log(`executing response process: fetchresponseerr: ${fetchResponseError}`);
+        // if last message is not a user message, return
+        const last = messages[messages.length - 1];
+        if (last.role !== 'user') {
+            return;
+        }
+
+        // if there is an error, return
+        if (error) {
+            return;
+        }
+
+        console.log(`chat.tsx: fetching agent response`);
+        setLoading(true);
+        setError(null);
         process();
 
         return () => {
             ignore = true;
-            if (eventSource) {
-                eventSource.close();
-            }
         };
     }, [
+        conversationId,
         messages,
         projectId,
         workflow,
-        systemMessage,
-        mcpServerUrls,
-        toolWebhookUrl,
-        testProfile,
-        fetchResponseError,
-        projectTools,
+        isLiveWorkflow,
+        error,
     ]);
 
-    return <div className="w-11/12 max-w-6xl mx-auto h-full flex flex-col relative">
-        <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pt-4 pb-4">
-            {USE_TESTING_FEATURE && (
-                <ProfileContextBox
-                    content={testProfile?.context || systemMessage || ''}
-                    onChange={onSystemMessageChange}
-                    locked={testProfile !== null}
-                />
-            )}
-        </div>
+    return (
+        <div className="w-11/12 max-w-6xl mx-auto h-full flex flex-col relative">
+            <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pt-4 pb-4">
+            </div>
 
-        <div
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-            className="flex-1 overflow-auto pr-4 relative playground-scrollbar"
-            style={{ scrollBehavior: 'smooth' }}
-        >
-            <Messages
-                projectId={projectId}
-                messages={optimisticMessages}
-                toolCallResults={toolCallResults}
-                loadingAssistantResponse={loadingAssistantResponse}
-                workflow={workflow}
-                testProfile={testProfile}
-                systemMessage={systemMessage}
-                onSystemMessageChange={onSystemMessageChange}
-                showSystemMessage={false}
-                showDebugMessages={showDebugMessages}
-                showJsonMode={showJsonMode}
-                onFix={handleFix}
-            />
-            {showUnreadBubble && (
-                <button
-                    className="absolute bottom-4 right-4 z-20 bg-blue-100 text-blue-700 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200 transition-colors animate-pulse"
-                    onClick={() => {
-                        const container = scrollContainerRef.current;
-                        if (container) {
-                            container.scrollTop = container.scrollHeight;
-                        }
-                        setAutoScroll(true);
-                        setShowUnreadBubble(false);
-                    }}
-                    aria-label="Scroll to latest message"
+            {/* Main chat area: flex column, messages area is flex-1 min-h-0 overflow-auto, compose box at bottom */}
+            <div className="flex flex-col flex-1 min-h-0 relative">
+                <div
+                    ref={scrollContainerRef}
+                    onScroll={handleScroll}
+                    className="flex-1 min-h-0 overflow-auto pr-4 playground-scrollbar"
+                    style={{ scrollBehavior: 'smooth' }}
                 >
-                    <ChevronDownIcon className="w-5 h-5" strokeWidth={2.2} />
-                </button>
-            )}
-        </div>
-
-        <div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-4 pb-2">
-            {showSuccessMessage && (
-                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 
-                              rounded-lg flex gap-2 justify-between items-center">
-                    <p className="text-green-600 dark:text-green-400 text-sm">Skipper will suggest fixes for you now.</p>
-                    <Button
-                        size="sm"
-                        color="success"
-                        onPress={() => setShowSuccessMessage(false)}
-                    >
-                        Dismiss
-                    </Button>
+                    <Messages
+                        projectId={projectId}
+                        messages={[
+                            {
+                                role: 'assistant',
+                                content: 'Hi, how can I help you today?',
+                                agentName: 'Assistant',
+                                responseType: 'external',
+                            },
+                            ...optimisticMessages,
+                        ]}
+                        toolCallResults={toolCallResults}
+                        loadingAssistantResponse={loading}
+                        workflow={workflow}
+                        showDebugMessages={showDebugMessages}
+                        showJsonMode={showJsonMode}
+                        onFix={handleFix}
+                        onExplain={handleExplain}
+                    />
                 </div>
-            )}
-            {fetchResponseError && (
-                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 
-                              rounded-lg flex gap-2 justify-between items-center">
-                    <p className="text-red-600 dark:text-red-400 text-sm">{fetchResponseError}</p>
-                    <Button
-                        size="sm"
-                        color="danger"
-                        onPress={() => {
-                            setFetchResponseError(null);
-                            setBillingError(null);
+                {showUnreadBubble && (
+                    <button
+                        className="absolute bottom-24 right-4 z-20 bg-blue-100 text-blue-700 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200 transition-colors animate-pulse shadow-lg"
+                        style={{ pointerEvents: 'auto' }}
+                        onClick={() => {
+                            const container = scrollContainerRef.current;
+                            if (container) {
+                                container.scrollTop = container.scrollHeight;
+                            }
+                            setAutoScroll(true);
+                            setShowUnreadBubble(false);
                         }}
+                        aria-label="Scroll to latest message"
                     >
-                        Retry
-                    </Button>
-                </div>
-            )}
+                        <ChevronDownIcon className="w-5 h-5" strokeWidth={2.2} />
+                    </button>
+                )}
+                <div className="bg-white dark:bg-zinc-900 pt-4 pb-2">
+                    {showSuccessMessage && (
+                        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 
+                                      rounded-lg flex gap-2 justify-between items-center">
+                            <p className="text-green-600 dark:text-green-400 text-sm">Skipper will suggest fixes for you now.</p>
+                            <Button
+                                size="sm"
+                                color="success"
+                                onPress={() => setShowSuccessMessage(false)}
+                            >
+                                Dismiss
+                            </Button>
+                        </div>
+                    )}
+                    {showExplainSuccess && (
+                        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 
+                                      rounded-lg flex gap-2 justify-between items-center">
+                            <p className="text-blue-600 dark:text-blue-400 text-sm">Skipper will explain this for you now.</p>
+                            <Button
+                                size="sm"
+                                color="primary"
+                                onPress={() => setShowExplainSuccess(false)}
+                            >
+                                Dismiss
+                            </Button>
+                        </div>
+                    )}
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 
+                                      rounded-lg flex gap-2 justify-between items-center">
+                            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                            <Button
+                                size="sm"
+                                color="danger"
+                                onPress={() => {
+                                    setError(null);
+                                    setBillingError(null);
+                                }}
+                            >
+                                Retry
+                            </Button>
+                        </div>
+                    )}
 
-            <ComposeBoxPlayground
-                handleUserMessage={handleUserMessage}
-                messages={messages.filter(msg => msg.content !== undefined) as any}
-                loading={loadingAssistantResponse}
-                shouldAutoFocus={isLastInteracted}
-                onFocus={() => setIsLastInteracted(true)}
+                    <ComposeBoxPlayground
+                        handleUserMessage={handleUserMessage}
+                        messages={messages.filter(msg => msg.content !== undefined) as any}
+                        loading={loading}
+                        shouldAutoFocus={isLastInteracted}
+                        onFocus={() => setIsLastInteracted(true)}
+                        onCancel={handleStop}
+                    />
+                </div>
+            </div>
+
+            <BillingUpgradeModal
+                isOpen={!!billingError}
+                onClose={() => setBillingError(null)}
+                errorMessage={billingError || ''}
+            />
+            <FeedbackModal
+                isOpen={showFeedbackModal}
+                onClose={() => setShowFeedbackModal(false)}
+                onSubmit={handleFeedbackSubmit}
+                title="Fix Assistant"
             />
         </div>
-
-
-        <BillingUpgradeModal
-            isOpen={!!billingError}
-            onClose={() => setBillingError(null)}
-            errorMessage={billingError || ''}
-        />
-        <FeedbackModal
-            isOpen={showFeedbackModal}
-            onClose={() => setShowFeedbackModal(false)}
-            onSubmit={handleFeedbackSubmit}
-            title="Fix Assistant"
-        />
-    </div>;
+    );
 }

@@ -1,8 +1,8 @@
-import { getCustomerIdForProject, logUsage } from "@/app/lib/billing";
+import { getCustomerIdForProject, logUsage, UsageTracker } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
 import { redisClient } from "@/app/lib/redis";
-import { CopilotAPIRequest } from "@/app/lib/types/copilot_types";
-import { streamMultiAgentResponse } from "@/app/lib/copilot/copilot";
+import { CopilotAPIRequest } from "@/src/application/lib/copilot/types";
+import { streamMultiAgentResponse } from "@/src/application/lib/copilot/copilot";
 
 export async function GET(request: Request, props: { params: Promise<{ streamId: string }> }) {
   const params = await props.params;
@@ -21,6 +21,7 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
     billingCustomerId = await getCustomerIdForProject(projectId);
   }
 
+  const usageTracker = new UsageTracker();
   const encoder = new TextEncoder();
   let messageCount = 0;
 
@@ -29,6 +30,7 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
       try {
         // Iterate over the copilot stream generator
         for await (const event of streamMultiAgentResponse(
+          usageTracker,
           projectId,
           context,
           messages,
@@ -39,27 +41,29 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
           if ('content' in event) {
             messageCount++;
             controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(event)}\n\n`));
+          } else if ('type' in event && event.type === 'tool-call') {
+            controller.enqueue(encoder.encode(`event: tool-call\ndata: ${JSON.stringify(event)}\n\n`));
+          } else if ('type' in event && event.type === 'tool-result') {
+            controller.enqueue(encoder.encode(`event: tool-result\ndata: ${JSON.stringify(event)}\n\n`));
           } else {
             controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify(event)}\n\n`));
-          }
-        }
-
-        controller.close();
-
-        // increment copilot request count in billing
-        if (USE_BILLING && billingCustomerId) {
-          try {
-            await logUsage(billingCustomerId, {
-              type: "copilot_requests",
-              amount: 1,
-            });
-          } catch (error) {
-            console.error("Error logging usage", error);
           }
         }
       } catch (error) {
         console.error('Error processing copilot stream:', error);
         controller.error(error);
+      } finally {
+        // log copilot usage
+        if (USE_BILLING && billingCustomerId) {
+          try {
+            await logUsage(billingCustomerId, {
+              items: usageTracker.flush(),
+            });
+          } catch (error) {
+            console.error("Error logging usage", error);
+          }
+        }
+        controller.close();
       }
     },
   });

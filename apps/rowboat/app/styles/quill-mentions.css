@@ -70,6 +70,12 @@
 .ql-editor {
     font-size: 1rem !important; /* Increase base font size */
     line-height: 1.6 !important; /* Adjust line height for better readability */
+    min-height: 300px !important; /* Set minimum height for better editing experience */
+}
+
+/* Quill editor container height */
+.ql-container {
+    min-height: 300px !important; /* Ensure the container also has minimum height */
 }
 
 /* Keep the rendered markdown view at its original size */

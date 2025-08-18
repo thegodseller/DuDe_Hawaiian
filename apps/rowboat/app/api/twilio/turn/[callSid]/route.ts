@@ -1,9 +1,7 @@
-import { getResponse } from "@/app/lib/agents";
-import { agentWorkflowsCollection, twilioConfigsCollection, twilioInboundCallsCollection } from "@/app/lib/mongodb";
-import { collectProjectTools } from "@/app/lib/project_tools";
+import { getResponse } from "@/src/application/lib/agents-runtime/agents";
+import { twilioInboundCallsCollection } from "@/app/lib/mongodb";
 import { PrefixLogger } from "@/app/lib/utils";
 import VoiceResponse from "twilio/lib/twiml/VoiceResponse";
-import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { hangup, XmlResponse, ZStandardRequestParams } from "../../utils";
 import { Message } from "@/app/lib/types/types";
@@ -17,6 +15,8 @@ export async function POST(
     request: Request,
     { params }: { params: Promise<{ callSid: string }> }
 ) {
+    return new Response('Not implemented', { status: 501 });
+    /*
     const { callSid } = await params;
     let logger = new PrefixLogger(`turn:${callSid}`);
     logger.log("Received turn");
@@ -35,20 +35,21 @@ export async function POST(
         logger.log('Call not found');
         return hangup();
     }
-    const { workflowId, projectId } = call;
+    const { projectId } = call;
 
-    // fetch workflow
-    const workflow = await agentWorkflowsCollection.findOne({
-        projectId: projectId,
-        _id: new ObjectId(workflowId),
+    // fetch project and extract live workflow
+    const project = await projectsCollection.findOne({
+        _id: projectId,
     });
-    if (!workflow) {
-        logger.log(`Workflow ${workflowId} not found for project ${projectId}`);
+    if (!project) {
+        logger.log(`Project ${projectId} not found`);
         return hangup();
     }
-
-    // fetch project tools
-    const projectTools = await collectProjectTools(projectId);
+    const workflow = project.liveWorkflow;
+    if (!workflow) {
+        logger.log(`Workflow not found for project ${projectId}`);
+        return hangup();
+    }
 
     // add user speech as user message, and get assistant response
     const reqMessages: z.infer<typeof Message>[] = [
@@ -58,7 +59,7 @@ export async function POST(
             content: data.SpeechResult,
         }
     ];
-    const { messages } = await getResponse(workflow, projectTools, reqMessages);
+    const { messages } = await getResponse(projectId, workflow, reqMessages);
     if (messages.length === 0) {
         logger.log('Agent response is empty');
         return hangup();
@@ -94,4 +95,5 @@ export async function POST(
         action: `/api/twilio/turn/${callSid}`,
     });
     return XmlResponse(response);
+    */
 }

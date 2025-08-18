@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation';
-import { requireActiveBillingSubscription } from '../lib/billing';
+import App from "./app";
+import { requireActiveBillingSubscription } from '@/app/lib/billing';
 
 export default async function Page() {
     await requireActiveBillingSubscription();
-    redirect('/projects/select');
+    return <App />
 }

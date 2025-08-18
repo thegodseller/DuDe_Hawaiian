@@ -9,7 +9,6 @@ import { Info, RefreshCw, RefreshCcw, Lock, Wrench } from 'lucide-react';
 import { clsx } from 'clsx';
 import { MCPServer, McpTool } from '@/app/lib/types/types';
 import type { z } from 'zod';
-import { TestToolModal } from './TestToolModal';
 
 type McpServerType = z.infer<typeof MCPServer>;
 type McpToolType = z.infer<typeof McpTool>;
@@ -484,15 +483,6 @@ export function ToolManagementPanel({
           </div>
         </div>
       </SlidePanel>
-
-      {testingTool && (
-        <TestToolModal
-          isOpen={!!testingTool}
-          onClose={() => setTestingTool(null)}
-          tool={testingTool}
-          server={server}
-        />
-      )}
     </>
   );
 } 

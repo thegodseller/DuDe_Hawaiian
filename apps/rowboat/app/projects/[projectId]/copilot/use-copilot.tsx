@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from "react";
-import { getCopilotResponseStream } from "@/app/actions/copilot_actions";
-import { CopilotMessage } from "@/app/lib/types/copilot_types";
+import { getCopilotResponseStream } from "@/app/actions/copilot.actions";
+import { CopilotMessage } from "@/src/application/lib/copilot/types";
 import { Workflow } from "@/app/lib/types/workflow_types";
-import { DataSource } from "@/app/lib/types/datasource_types";
+import { DataSource } from "@/src/entities/models/data-source";
 import { z } from "zod";
 import { WithStringId } from "@/app/lib/types/types";
 
@@ -10,12 +10,14 @@ interface UseCopilotParams {
     projectId: string;
     workflow: z.infer<typeof Workflow>;
     context: any;
-    dataSources?: WithStringId<z.infer<typeof DataSource>>[];
+    dataSources?: z.infer<typeof DataSource>[];
 }
 
 interface UseCopilotResult {
     streamingResponse: string;
     loading: boolean;
+    toolCalling: boolean;
+    toolQuery: string | null;
     error: string | null;
     clearError: () => void;
     billingError: string | null;
@@ -30,6 +32,8 @@ interface UseCopilotResult {
 export function useCopilot({ projectId, workflow, context, dataSources }: UseCopilotParams): UseCopilotResult {
     const [streamingResponse, setStreamingResponse] = useState('');
     const [loading, setLoading] = useState(false);
+    const [toolCalling, setToolCalling] = useState(false);
+    const [toolQuery, setToolQuery] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [billingError, setBillingError] = useState<string | null>(null);
     const cancelRef = useRef<() => void>(() => { });
@@ -52,6 +56,8 @@ export function useCopilot({ projectId, workflow, context, dataSources }: UseCop
         setStreamingResponse('');
         responseRef.current = '';
         setError(null);
+        setToolCalling(false);
+        setToolQuery(null);
         setLoading(true);
 
         try {
@@ -76,6 +82,21 @@ export function useCopilot({ projectId, workflow, context, dataSources }: UseCop
                     setError('Failed to parse stream message');
                 }
             };
+
+            eventSource.addEventListener('tool-call', (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    setToolCalling(true);
+                    setToolQuery(data.query || null);
+                } catch (e) {
+                    setToolCalling(true);
+                    setToolQuery(null);
+                }
+            });
+
+            eventSource.addEventListener('tool-result', (event) => {
+                setToolCalling(false);
+            });
 
             eventSource.addEventListener('done', () => {
                 eventSource.close();
@@ -104,6 +125,8 @@ export function useCopilot({ projectId, workflow, context, dataSources }: UseCop
     return {
         streamingResponse,
         loading,
+        toolCalling,
+        toolQuery,
         error,
         clearError,
         billingError,

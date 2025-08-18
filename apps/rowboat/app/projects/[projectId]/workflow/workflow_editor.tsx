@@ -1,18 +1,20 @@
 "use client";
 import React, { useReducer, Reducer, useState, useCallback, useEffect, useRef, createContext, useContext } from "react";
 import { MCPServer, Message, WithStringId } from "../../../lib/types/types";
-import { Workflow, WorkflowTool, WorkflowPrompt, WorkflowAgent } from "../../../lib/types/workflow_types";
-import { DataSource } from "../../../lib/types/datasource_types";
+import { Workflow, WorkflowTool, WorkflowPrompt, WorkflowAgent, WorkflowPipeline } from "../../../lib/types/workflow_types";
+import { DataSource } from "@/src/entities/models/data-source";
+import { Project } from "@/src/entities/models/project";
 import { produce, applyPatches, enablePatches, produceWithPatches, Patch } from 'immer';
 import { AgentConfig } from "../entities/agent_config";
+import { PipelineConfig } from "../entities/pipeline_config";
 import { ToolConfig } from "../entities/tool_config";
 import { App as ChatApp } from "../playground/app";
 import { z } from "zod";
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip } from "@heroui/react";
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@heroui/react";
 import { PromptConfig } from "../entities/prompt_config";
-import { EditableField } from "../../../lib/components/editable-field";
+import { DataSourceConfig } from "../entities/datasource_config";
 import { RelativeTime } from "@primer/react";
-import { USE_PRODUCT_TOUR } from "@/app/lib/feature_flags";
+import { USE_PRODUCT_TOUR, USE_CHAT_WIDGET } from "@/app/lib/feature_flags";
 
 import {
     ResizableHandle,
@@ -20,16 +22,23 @@ import {
     ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { Copilot } from "../copilot/app";
-import { publishWorkflow, renameWorkflow, saveWorkflow } from "../../../actions/workflow_actions";
-import { PublishedBadge } from "./published_badge";
+import { publishWorkflow } from "@/app/actions/project.actions";
+import { saveWorkflow } from "@/app/actions/project.actions";
+import { updateProjectName } from "@/app/actions/project.actions";
+import { listProjects } from "@/app/actions/project.actions";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
-import { CopyIcon, ImportIcon, Layers2Icon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, XIcon } from "lucide-react";
+import { CopyIcon, ImportIcon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, XIcon, SettingsIcon, ChevronDownIcon, PhoneIcon, MessageCircleIcon, ZapIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
 import { ProductTour } from "@/components/common/product-tour";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
 import { AgentGraphVisualizer } from "../entities/AgentGraphVisualizer";
 import { Panel } from "@/components/common/panel-common";
 import { Button as CustomButton } from "@/components/ui/button";
+import { ConfigApp } from "../config/app";
+import { InputField } from "@/app/lib/components/input-field";
+import { VoiceSection } from "../config/components/voice";
+import { TriggersModal } from "./components/TriggersModal";
+import { TopBar } from "./components/TopBar";
 
 enablePatches();
 
@@ -40,11 +49,10 @@ const PANEL_RATIOS = {
 } as const;
 
 interface StateItem {
-    workflow: WithStringId<z.infer<typeof Workflow>>;
-    publishedWorkflowId: string | null;
+    workflow: z.infer<typeof Workflow>;
     publishing: boolean;
     selection: {
-        type: "agent" | "tool" | "prompt" | "visualise";
+        type: "agent" | "tool" | "prompt" | "datasource" | "pipeline" | "visualise";
         name: string;
     } | null;
     saving: boolean;
@@ -53,6 +61,7 @@ interface StateItem {
     pendingChanges: boolean;
     chatKey: number;
     lastUpdatedAt: string;
+    isLive: boolean;
 }
 
 interface State {
@@ -69,9 +78,6 @@ export type Action = {
     type: "set_publishing";
     publishing: boolean;
 } | {
-    type: "set_published_workflow_id";
-    workflowId: string;
-} | {
     type: "add_agent";
     agent: Partial<z.infer<typeof WorkflowAgent>>;
 } | {
@@ -81,10 +87,16 @@ export type Action = {
     type: "add_prompt";
     prompt: Partial<z.infer<typeof WorkflowPrompt>>;
 } | {
+    type: "add_pipeline";
+    pipeline: Partial<z.infer<typeof WorkflowPipeline>>;
+} | {
     type: "select_agent";
     name: string;
 } | {
     type: "select_tool";
+    name: string;
+} | {
+    type: "select_pipeline";
     name: string;
 } | {
     type: "delete_agent";
@@ -92,6 +104,13 @@ export type Action = {
 } | {
     type: "delete_tool";
     name: string;
+} | {
+    type: "delete_pipeline";
+    name: string;
+} | {
+    type: "update_pipeline";
+    name: string;
+    pipeline: Partial<z.infer<typeof WorkflowPipeline>>;
 } | {
     type: "update_agent";
     name: string;
@@ -116,6 +135,8 @@ export type Action = {
     name: string;
 } | {
     type: "unselect_prompt";
+} | {
+    type: "unselect_pipeline";
 } | {
     type: "delete_prompt";
     name: string;
@@ -142,6 +163,14 @@ export type Action = {
     type: "reorder_agents";
     agents: z.infer<typeof WorkflowAgent>[];
 } | {
+    type: "reorder_pipelines";
+    pipelines: z.infer<typeof WorkflowPipeline>[];
+} | {
+    type: "select_datasource";
+    id: string;
+} | {
+    type: "unselect_datasource";
+} | {
     type: "show_visualise";
 } | {
     type: "hide_visualise";
@@ -159,7 +188,7 @@ function reducer(state: State, action: Action): State {
         };
     }
 
-    const isLive = state.present.workflow._id == state.present.publishedWorkflowId;
+    const isLive = state.present.isLive;
 
     switch (action.type) {
         case "undo": {
@@ -184,21 +213,9 @@ function reducer(state: State, action: Action): State {
             });
             break;
         }
-        case "update_workflow_name": {
-            newState = produce(state, draft => {
-                draft.present.workflow.name = action.name;
-            });
-            break;
-        }
         case "set_publishing": {
             newState = produce(state, draft => {
                 draft.present.publishing = action.publishing;
-            });
-            break;
-        }
-        case "set_published_workflow_id": {
-            newState = produce(state, draft => {
-                draft.present.publishedWorkflowId = action.workflowId;
             });
             break;
         }
@@ -229,6 +246,23 @@ function reducer(state: State, action: Action): State {
             });
             const [nextState, patches, inversePatches] = produceWithPatches(state.present, draft => {
                 draft.workflow.agents = action.agents;
+                draft.lastUpdatedAt = new Date().toISOString();
+            });
+            return {
+                ...state,
+                present: nextState,
+                patches: [...state.patches.slice(0, state.currentIndex), patches],
+                inversePatches: [...state.inversePatches.slice(0, state.currentIndex), inversePatches],
+                currentIndex: state.currentIndex + 1,
+            };
+        }
+        case "reorder_pipelines": {
+            const newState = produce(state.present, draft => {
+                draft.workflow.pipelines = action.pipelines;
+                draft.lastUpdatedAt = new Date().toISOString();
+            });
+            const [nextState, patches, inversePatches] = produceWithPatches(state.present, draft => {
+                draft.workflow.pipelines = action.pipelines;
                 draft.lastUpdatedAt = new Date().toISOString();
             });
             return {
@@ -274,9 +308,23 @@ function reducer(state: State, action: Action): State {
                                 name: action.name
                             };
                             break;
+                        case "select_pipeline":
+                            draft.selection = {
+                                type: "pipeline",
+                                name: action.name
+                            };
+                            break;
+                        case "select_datasource":
+                            draft.selection = {
+                                type: "datasource",
+                                name: action.id
+                            };
+                            break;
                         case "unselect_agent":
                         case "unselect_tool":
                         case "unselect_prompt":
+                        case "unselect_datasource":
+                        case "unselect_pipeline":
                             draft.selection = null;
                             break;
                         case "add_agent": {
@@ -330,7 +378,6 @@ function reducer(state: State, action: Action): State {
                                     required: []
                                 },
                                 mockTool: true,
-                                autoSubmitMockedResponse: true,
                                 ...action.tool
                             });
                             draft.selection = {
@@ -364,13 +411,97 @@ function reducer(state: State, action: Action): State {
                             draft.chatKey++;
                             break;
                         }
+                        case "add_pipeline": {
+                            if (isLive) {
+                                break;
+                            }
+                            let newPipelineName = "New pipeline";
+                            if (draft.workflow?.pipelines?.some((pipeline) => pipeline.name === newPipelineName)) {
+                                newPipelineName = `New pipeline ${(draft.workflow?.pipelines?.filter((pipeline) =>
+                                    pipeline.name.startsWith("New pipeline")).length || 0) + 1}`;
+                            }
+                            if (!draft.workflow.pipelines) {
+                                draft.workflow.pipelines = [];
+                            }
+                            
+                            // Create the first agent for this pipeline
+                            const firstAgentName = `${action.pipeline.name || newPipelineName} Step 1`;
+                            draft.workflow.agents.push({
+                                name: firstAgentName,
+                                type: "pipeline",
+                                description: "",
+                                disabled: false,
+                                instructions: "",
+                                model: "gpt-4o",
+                                locked: false,
+                                toggleAble: true,
+                                ragReturnType: "chunks",
+                                ragK: 3,
+                                controlType: "relinquish_to_parent",
+                                outputVisibility: "internal",
+                                maxCallsPerParentAgent: 3,
+                            });
+                            
+                            // Create the pipeline with the first agent
+                            draft.workflow.pipelines.push({
+                                name: newPipelineName,
+                                description: "",
+                                agents: [firstAgentName],
+                                ...action.pipeline
+                            });
+                            
+                            // Select the newly created agent to open it in agent_config
+                            draft.selection = {
+                                type: "agent",
+                                name: firstAgentName
+                            };
+                            draft.pendingChanges = true;
+                            draft.chatKey++;
+                            break;
+                        }
                         case "delete_agent":
                             if (isLive) {
                                 break;
                             }
+                            // Remove the agent
                             draft.workflow.agents = draft.workflow.agents.filter(
                                 (agent) => agent.name !== action.name
                             );
+                            
+                            // Update references to deleted agent in other agents' instructions
+                            draft.workflow.agents = draft.workflow.agents.map(agent => ({
+                                ...agent,
+                                instructions: agent.instructions.replace(
+                                    new RegExp(`\\[@agent:${action.name}\\]\\(#mention\\)`, 'g'),
+                                    ''
+                                )
+                            }));
+                            
+                            // Update references in prompts
+                            draft.workflow.prompts = draft.workflow.prompts.map(prompt => ({
+                                ...prompt,
+                                prompt: prompt.prompt.replace(
+                                    new RegExp(`\\[@agent:${action.name}\\]\\(#mention\\)`, 'g'),
+                                    ''
+                                )
+                            }));
+                            
+                            // Update references in pipelines
+                            if (draft.workflow.pipelines) {
+                                draft.workflow.pipelines = draft.workflow.pipelines.map(pipeline => ({
+                                    ...pipeline,
+                                    agents: pipeline.agents.filter(agentName => agentName !== action.name)
+                                }));
+                            }
+                            
+                            // Update start agent if it was the deleted agent
+                            if (draft.workflow.startAgent === action.name) {
+                                // Set to first available agent, or empty string if no agents left
+                                draft.workflow.startAgent = draft.workflow.agents.length > 0 
+                                    ? draft.workflow.agents[0].name 
+                                    : '';
+                            }
+                            
                             draft.selection = null;
                             draft.pendingChanges = true;
                             draft.chatKey++;
@@ -397,7 +528,80 @@ function reducer(state: State, action: Action): State {
                             draft.pendingChanges = true;
                             draft.chatKey++;
                             break;
-                        case "update_agent":
+                        case "delete_pipeline":
+                            if (isLive) {
+                                break;
+                            }
+                            if (draft.workflow.pipelines) {
+                                // Find the pipeline to get its associated agents
+                                const pipelineToDelete = draft.workflow.pipelines.find(
+                                    (pipeline) => pipeline.name === action.name
+                                );
+                                
+                                if (pipelineToDelete) {
+                                    // Remove all agents that belong to this pipeline
+                                    const agentsToDelete = pipelineToDelete.agents || [];
+                                    
+                                    // Check if startAgent is one of the agents being deleted
+                                    const startAgentBeingDeleted = agentsToDelete.includes(draft.workflow.startAgent);
+                                    
+                                    draft.workflow.agents = draft.workflow.agents.filter(
+                                        (agent) => !agentsToDelete.includes(agent.name)
+                                    );
+                                    
+                                    // Update references to deleted agents in other agents' instructions
+                                    agentsToDelete.forEach(agentName => {
+                                        draft.workflow.agents = draft.workflow.agents.map(agent => ({
+                                            ...agent,
+                                            instructions: agent.instructions.replace(
+                                                new RegExp(`\\[@agent:${agentName}\\]\\(#mention\\)`, 'g'),
+                                                ''
+                                            )
+                                        }));
+                                        
+                                        // Update references in prompts
+                                        draft.workflow.prompts = draft.workflow.prompts.map(prompt => ({
+                                            ...prompt,
+                                            prompt: prompt.prompt.replace(
+                                                new RegExp(`\\[@agent:${agentName}\\]\\(#mention\\)`, 'g'),
+                                                ''
+                                            )
+                                        }));
+                                    });
+                                    
+                                    // Update start agent if it was one of the deleted agents (same logic as regular agent deletion)
+                                    if (startAgentBeingDeleted) {
+                                        // Set to first available agent, or empty string if no agents left
+                                        draft.workflow.startAgent = draft.workflow.agents.length > 0 
+                                            ? draft.workflow.agents[0].name 
+                                            : '';
+                                    }
+                                }
+                                
+                                // Remove the pipeline itself
+                                draft.workflow.pipelines = draft.workflow.pipelines.filter(
+                                    (pipeline) => pipeline.name !== action.name
+                                );
+                            }
+                            draft.selection = null;
+                            draft.pendingChanges = true;
+                            draft.chatKey++;
+                            break;
+                        case "update_pipeline": {
+                            if (isLive) {
+                                break;
+                            }
+                            if (draft.workflow.pipelines) {
+                                draft.workflow.pipelines = draft.workflow.pipelines.map(pipeline =>
+                                    pipeline.name === action.name ? { ...pipeline, ...action.pipeline } : pipeline
+                                );
+                            }
+                            draft.selection = null;
+                            draft.pendingChanges = true;
+                            draft.chatKey++;
+                            break;
+                        }
+                        case "update_agent": {
                             if (isLive) {
                                 break;
                             }
@@ -430,6 +634,16 @@ function reducer(state: State, action: Action): State {
                                     )
                                 }));
 
+                                // update pipeline references if this agent is part of any pipeline
+                                if (draft.workflow.pipelines) {
+                                    draft.workflow.pipelines = draft.workflow.pipelines.map(pipeline => ({
+                                        ...pipeline,
+                                        agents: pipeline.agents.map(agentName => 
+                                            agentName === action.name ? action.agent.name! : agentName
+                                        )
+                                    }));
+                                }
+
                                 // update the selection pointer if this is the selected agent
                                 if (draft.selection?.type === "agent" && draft.selection.name === action.name) {
                                     draft.selection = {
@@ -447,6 +661,7 @@ function reducer(state: State, action: Action): State {
                             draft.pendingChanges = true;
                             draft.chatKey++;
                             break;
+                        }
                         case "update_tool":
                             if (isLive) {
                                 break;
@@ -586,29 +801,41 @@ export function useEntitySelection() {
 }
 
 export function WorkflowEditor({
+    projectId,
     dataSources,
     workflow,
-    publishedWorkflowId,
-    handleShowSelector,
-    handleCloneVersion,
     useRag,
-    mcpServerUrls,
-    toolWebhookUrl,
+    useRagUploads,
+    useRagS3Uploads,
+    useRagScraping,
     defaultModel,
-    projectTools,
+    projectConfig,
     eligibleModels,
+    isLive,
+    onChangeMode,
+    onRevertToLive,
+    onProjectToolsUpdated,
+    onDataSourcesUpdated,
+    onProjectConfigUpdated,
+    chatWidgetHost,
 }: {
-    dataSources: WithStringId<z.infer<typeof DataSource>>[];
-    workflow: WithStringId<z.infer<typeof Workflow>>;
-    publishedWorkflowId: string | null;
-    handleShowSelector: () => void;
-    handleCloneVersion: (workflowId: string) => void;
+    projectId: string;
+    dataSources: z.infer<typeof DataSource>[];
+    workflow: z.infer<typeof Workflow>;
     useRag: boolean;
-    mcpServerUrls: Array<z.infer<typeof MCPServer>>;
-    toolWebhookUrl: string;
+    useRagUploads: boolean;
+    useRagS3Uploads: boolean;
+    useRagScraping: boolean;
     defaultModel: string;
-    projectTools: z.infer<typeof WorkflowTool>[];
+    projectConfig: z.infer<typeof Project>;
     eligibleModels: z.infer<typeof ModelsResponse> | "*";
+    isLive: boolean;
+    onChangeMode: (mode: 'draft' | 'live') => void;
+    onRevertToLive: () => void;
+    onProjectToolsUpdated?: () => void;
+    onDataSourcesUpdated?: () => void;
+    onProjectConfigUpdated?: () => void;
+    chatWidgetHost: string;
 }) {
 
     const [state, dispatch] = useReducer(reducer, {
@@ -619,48 +846,71 @@ export function WorkflowEditor({
             publishing: false,
             selection: null,
             workflow: workflow,
-            publishedWorkflowId: publishedWorkflowId,
             saving: false,
             publishError: null,
             publishSuccess: false,
             pendingChanges: false,
             chatKey: 0,
             lastUpdatedAt: workflow.lastUpdatedAt,
+            isLive,
         }
     });
+
     const [chatMessages, setChatMessages] = useState<z.infer<typeof Message>[]>([]);
     const updateChatMessages = useCallback((messages: z.infer<typeof Message>[]) => {
         setChatMessages(messages);
     }, []);
     const saveQueue = useRef<z.infer<typeof Workflow>[]>([]);
     const saving = useRef(false);
-    const isLive = state.present.workflow._id == state.present.publishedWorkflowId;
     const [showCopySuccess, setShowCopySuccess] = useState(false);
     const [showCopilot, setShowCopilot] = useState(true);
     const [copilotWidth, setCopilotWidth] = useState<number>(PANEL_RATIOS.copilot);
     const [isInitialState, setIsInitialState] = useState(true);
     const [showTour, setShowTour] = useState(true);
     const copilotRef = useRef<{ handleUserMessage: (message: string) => void }>(null);
+    const entityListRef = useRef<{ openDataSourcesModal: () => void } | null>(null);
+    
+    // Modal state for revert confirmation
+    const { isOpen: isRevertModalOpen, onOpen: onRevertModalOpen, onClose: onRevertModalClose } = useDisclosure();
+    
+    // Modal state for settings
+    const { isOpen: isSettingsModalOpen, onOpen: onSettingsModalOpen, onClose: onSettingsModalClose } = useDisclosure();
+    
+    // Modal state for phone/Twilio configuration
+    const { isOpen: isPhoneModalOpen, onOpen: onPhoneModalOpen, onClose: onPhoneModalClose } = useDisclosure();
+    
+    // Modal state for chat widget configuration
+    const { isOpen: isChatWidgetModalOpen, onOpen: onChatWidgetModalOpen, onClose: onChatWidgetModalClose } = useDisclosure();
+    
+    // Modal state for triggers management
+    const { isOpen: isTriggersModalOpen, onOpen: onTriggersModalOpen, onClose: onTriggersModalClose } = useDisclosure();
+    
+    // Project name state
+    const [localProjectName, setLocalProjectName] = useState<string>(projectConfig.name || '');
+    const [projectNameError, setProjectNameError] = useState<string | null>(null);
+    const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
+    const [pendingProjectName, setPendingProjectName] = useState<string | null>(null);
 
     // Load agent order from localStorage on mount
-    useEffect(() => {
-        const storedOrder = localStorage.getItem(`workflow_${workflow._id}_agent_order`);
-        if (storedOrder) {
-            try {
-                const orderMap = JSON.parse(storedOrder);
-                const orderedAgents = [...workflow.agents].sort((a, b) => {
-                    const orderA = orderMap[a.name] ?? Number.MAX_SAFE_INTEGER;
-                    const orderB = orderMap[b.name] ?? Number.MAX_SAFE_INTEGER;
-                    return orderA - orderB;
-                });
-                if (JSON.stringify(orderedAgents) !== JSON.stringify(workflow.agents)) {
-                    dispatch({ type: "reorder_agents", agents: orderedAgents });
-                }
-            } catch (e) {
-                console.error("Error loading agent order:", e);
-            }
-        }
-    }, [workflow._id, workflow.agents]);
+    // useEffect(() => {
+    //     const mode = isLive ? 'live' : 'draft';
+    //     const storedOrder = localStorage.getItem(`${mode}_workflow_${projectId}_agent_order`);
+    //     if (storedOrder) {
+    //         try {
+    //             const orderMap = JSON.parse(storedOrder);
+    //             const orderedAgents = [...workflow.agents].sort((a, b) => {
+    //                 const orderA = orderMap[a.name] ?? Number.MAX_SAFE_INTEGER;
+    //                 const orderB = orderMap[b.name] ?? Number.MAX_SAFE_INTEGER;
+    //                 return orderA - orderB;
+    //             });
+    //             if (JSON.stringify(orderedAgents) !== JSON.stringify(workflow.agents)) {
+    //                 dispatch({ type: "reorder_agents", agents: orderedAgents });
+    //             }
+    //         } catch (e) {
+    //             console.error("Error loading agent order:", e);
+    //         }
+    //     }
+    // }, [workflow.agents, isLive, projectId]);
 
     // Function to trigger copilot chat
     const triggerCopilotChat = useCallback((message: string) => {
@@ -671,16 +921,27 @@ export function WorkflowEditor({
         }, 100);
     }, []);
 
+    const handleOpenDataSourcesModal = useCallback(() => {
+        entityListRef.current?.openDataSourcesModal();
+    }, []);
+
     console.log(`workflow editor chat key: ${state.present.chatKey}`);
 
     // Auto-show copilot and increment key when prompt is present
     useEffect(() => {
-        const prompt = localStorage.getItem(`project_prompt_${state.present.workflow.projectId}`);
+        const prompt = localStorage.getItem(`project_prompt_${projectId}`);
         console.log('init project prompt', prompt);
         if (prompt) {
             setShowCopilot(true);
         }
-    }, [state.present.workflow.projectId]);
+    }, [projectId]);
+
+    // Hide copilot when switching to live mode
+    useEffect(() => {
+        if (isLive) {
+            setShowCopilot(false);
+        }
+    }, [isLive]);
 
     // Reset initial state when user interacts with copilot or opens other menus
     useEffect(() => {
@@ -706,6 +967,9 @@ export function WorkflowEditor({
 
     function handleSelectPrompt(name: string) {
         dispatch({ type: "select_prompt", name });
+    }
+    function handleSelectDataSource(id: string) {
+        dispatch({ type: "select_datasource", id });
     }
 
     function handleUnselectAgent() {
@@ -744,8 +1008,57 @@ export function WorkflowEditor({
         dispatch({ type: "add_prompt", prompt });
     }
 
+    function handleSelectPipeline(name: string) {
+        dispatch({ type: "select_pipeline", name });
+    }
+
+    function handleAddPipeline(pipeline: Partial<z.infer<typeof WorkflowPipeline>> = {}) {
+        dispatch({ type: "add_pipeline", pipeline });
+    }
+
+    function handleDeletePipeline(name: string) {
+        if (window.confirm(`Are you sure you want to delete the pipeline "${name}"?`)) {
+            dispatch({ type: "delete_pipeline", name });
+        }
+    }
+
+    function handleAddAgentToPipeline(pipelineName: string) {
+        // Create a pipeline agent and add it to the specified pipeline
+        const newAgentName = `${pipelineName} Step ${(state.present.workflow.pipelines?.find(p => p.name === pipelineName)?.agents.length || 0) + 1}`;
+        
+        const agentWithModel = {
+            name: newAgentName,
+            type: 'pipeline' as const,
+            outputVisibility: 'internal' as const,
+            model: defaultModel || "gpt-4o"
+        };
+        
+        // First add the agent
+        dispatch({ type: "add_agent", agent: agentWithModel });
+        
+        // Then add it to the pipeline
+        const pipeline = state.present.workflow.pipelines?.find(p => p.name === pipelineName);
+        if (pipeline) {
+            dispatch({ 
+                type: "update_pipeline", 
+                name: pipelineName, 
+                pipeline: { 
+                    ...pipeline, 
+                    agents: [...pipeline.agents, newAgentName] 
+                } 
+            });
+        }
+        
+        // Select the newly created agent to open it in agent_config
+        dispatch({ type: "select_agent", name: newAgentName });
+    }
+
     function handleUpdateAgent(name: string, agent: Partial<z.infer<typeof WorkflowAgent>>) {
         dispatch({ type: "update_agent", name, agent });
+    }
+
+    function handleUpdatePipeline(name: string, pipeline: Partial<z.infer<typeof WorkflowPipeline>>) {
+        dispatch({ type: "update_pipeline", name, pipeline });
     }
 
     function handleDeleteAgent(name: string) {
@@ -788,32 +1101,47 @@ export function WorkflowEditor({
             acc[agent.name] = index;
             return acc;
         }, {} as Record<string, number>);
-        localStorage.setItem(`workflow_${workflow._id}_agent_order`, JSON.stringify(orderMap));
+        const mode = isLive ? 'live' : 'draft';
+        localStorage.setItem(`${mode}_workflow_${projectId}_agent_order`, JSON.stringify(orderMap));
         
         dispatch({ type: "reorder_agents", agents });
     }
 
-    async function handleRenameWorkflow(name: string) {
-        await renameWorkflow(state.present.workflow.projectId, state.present.workflow._id, name);
-        dispatch({ type: "update_workflow_name", name });
+    function handleReorderPipelines(pipelines: z.infer<typeof WorkflowPipeline>[]) {
+        // Save order to localStorage
+        const orderMap = pipelines.reduce((acc, pipeline, index) => {
+            acc[pipeline.name] = index;
+            return acc;
+        }, {} as Record<string, number>);
+        const mode = isLive ? 'live' : 'draft';
+        localStorage.setItem(`${mode}_workflow_${projectId}_pipeline_order`, JSON.stringify(orderMap));
+        
+        dispatch({ type: "reorder_pipelines", pipelines });
     }
 
     async function handlePublishWorkflow() {
-        dispatch({ type: "set_publishing", publishing: true });
-        await publishWorkflow(state.present.workflow.projectId, state.present.workflow._id);
-        dispatch({ type: "set_publishing", publishing: false });
-        dispatch({ type: "set_published_workflow_id", workflowId: state.present.workflow._id });
+        await publishWorkflow(projectId, state.present.workflow);
+        onChangeMode('live');
+    }
+
+    function handleRevertToLive() {
+        onRevertModalOpen();
+    }
+
+    function handleConfirmRevert() {
+        onRevertToLive();
+        onRevertModalClose();
     }
 
     // Remove handleCopyJSON and add handleDownloadJSON
     function handleDownloadJSON() {
-        const { _id, projectId, ...workflow } = state.present.workflow;
+        const workflow = state.present.workflow;
         const json = JSON.stringify(workflow, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${state.present.workflow.name || 'workflow'}.json`;
+        a.download = 'workflow.json';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -831,7 +1159,7 @@ export function WorkflowEditor({
             if (isLive) {
                 return;
             } else {
-                await saveWorkflow(state.present.workflow.projectId, state.present.workflow._id, workflowToSave);
+                await saveWorkflow(projectId, workflowToSave);
             }
         } finally {
             saving.current = false;
@@ -841,7 +1169,7 @@ export function WorkflowEditor({
                 dispatch({ type: "set_saving", saving: false });
             }
         }
-    }, [isLive]);
+    }, [isLive, projectId]);
 
     useEffect(() => {
         if (state.present.pendingChanges && state.present.workflow) {
@@ -855,9 +1183,80 @@ export function WorkflowEditor({
         }
     }, [state.present.workflow, state.present.pendingChanges, processQueue, state]);
 
+    // Sync project name from server when not editing and no pending commit in-flight
+    useEffect(() => {
+        if (!isEditingProjectName && pendingProjectName === null) {
+            setLocalProjectName(projectConfig.name || '');
+        }
+    }, [projectConfig.name, isEditingProjectName, pendingProjectName]);
+
+    // When a commit is pending, wait until server reflects it to clear the lock
+    useEffect(() => {
+        if (
+            pendingProjectName &&
+            (projectConfig.name || '').trim().toLowerCase() === pendingProjectName.trim().toLowerCase()
+        ) {
+            setPendingProjectName(null);
+            setLocalProjectName(projectConfig.name || '');
+        }
+    }, [projectConfig.name, pendingProjectName]);
+
     function handlePlaygroundClick() {
         setIsInitialState(false);
     }
+
+    const validateProjectName = (value: string) => {
+        if (value.length === 0) {
+            setProjectNameError("Project name cannot be empty");
+            return false;
+        }
+        setProjectNameError(null);
+        return true;
+    };
+
+    const handleProjectNameChange = (value: string) => {
+        setLocalProjectName(value);
+        setIsEditingProjectName(true);
+        // Do not validate or save on every keystroke
+    };
+
+    const handleProjectNameCommit = async (value: string) => {
+        const trimmed = value.trim();
+        // If unchanged, just clear editing state
+        if (trimmed === (projectConfig.name || '')) {
+            setProjectNameError(null);
+            setIsEditingProjectName(false);
+            return;
+        }
+
+        if (!validateProjectName(trimmed)) {
+            setIsEditingProjectName(false);
+            return;
+        }
+
+        try {
+            // Validate uniqueness against other projects (case-insensitive)
+            const projects = await listProjects();
+            const isDuplicate = projects.some(p => ((p as any).id ?? (p as any)._id) !== projectId && (p.name || '').trim().toLowerCase() === trimmed.toLowerCase());
+            if (isDuplicate) {
+                setProjectNameError("This name is already taken by another project");
+                return;
+            }
+            // Lock local sync until server reflects the change
+            setPendingProjectName(trimmed);
+            await updateProjectName(projectId, trimmed);
+            onProjectConfigUpdated?.();
+            setProjectNameError(null);
+        } catch (error) {
+            setProjectNameError("Failed to update project name");
+            console.error('Failed to update project name:', error);
+            // Clear pending state so we resync from server
+            setPendingProjectName(null);
+            setLocalProjectName(projectConfig.name || '');
+        } finally {
+            setIsEditingProjectName(false);
+        }
+    };
 
     return (
         <EntitySelectionContext.Provider value={{
@@ -865,166 +1264,49 @@ export function WorkflowEditor({
             onSelectTool: handleSelectTool,
             onSelectPrompt: handleSelectPrompt,
         }}>
-            <div className="flex flex-col h-full relative">
-                <div className="shrink-0 flex justify-between items-center pb-6">
-                    <div className="workflow-version-selector flex items-center gap-4 px-2 text-gray-800 dark:text-gray-100">
-                        <WorkflowIcon size={16} />
-                        <Tooltip content="Click to edit">
-                            <div>
-                                <EditableField
-                                    key={state.present.workflow._id}
-                                    value={state.present.workflow?.name || ''}
-                                    onChange={handleRenameWorkflow}
-                                    placeholder="Name this version"
-                                    className="text-sm font-semibold"
-                                    inline={true}
-                                />
-                            </div>
-                        </Tooltip>
-                        <div className="flex items-center gap-2">
-                            {state.present.publishing && <Spinner size="sm" />}
-                            {isLive && <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
-                                <RadioIcon size={16} />
-                                Live
-                            </div>}
-                            {!isLive && <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
-                                <PenLine size={16} />
-                                Draft
-                            </div>}
-                            {/* Download JSON icon button, with tooltip, to the left of the menu */}
-                            <Tooltip content="Download Assistant JSON">
-                                <button
-                                    onClick={handleDownloadJSON}
-                                    className="p-1.5 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
-                                    aria-label="Download JSON"
-                                    type="button"
-                                >
-                                    <DownloadIcon size={20} />
-                                </button>
-                            </Tooltip>
-                            <Dropdown>
-                                <DropdownTrigger>
-                                    <div>
-                                        <Tooltip content="Version Menu">
-                                            <button className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors">
-                                                <HamburgerIcon size={20} />
-                                            </button>
-                                        </Tooltip>
-                                    </div>
-                                </DropdownTrigger>
-                                <DropdownMenu
-                                    disabledKeys={[
-                                        ...(state.present.pendingChanges ? ['switch', 'clone'] : []),
-                                        ...(isLive ? ['mcp'] : []),
-                                    ]}
-                                    onAction={(key) => {
-                                        if (key === 'switch') {
-                                            handleShowSelector();
-                                        }
-                                        if (key === 'clone') {
-                                            handleCloneVersion(state.present.workflow._id);
-                                        }
-                                    }}
-                                >
-                                    <DropdownItem
-                                        key="switch"
-                                        startContent={<div className="text-gray-500"><BackIcon size={16} /></div>}
-                                        className="gap-x-2"
-                                    >
-                                        View versions
-                                    </DropdownItem>
-
-                                    <DropdownItem
-                                        key="clone"
-                                        startContent={<div className="text-gray-500"><Layers2Icon size={16} /></div>}
-                                        className="gap-x-2"
-                                    >
-                                        Clone this version
-                                    </DropdownItem>
-                                </DropdownMenu>
-                            </Dropdown>
-                        </div>
-                    </div>
-                    {showCopySuccess && <div className="flex items-center gap-2">
-                        <div className="text-green-500">Copied to clipboard</div>
-                    </div>}
-                    <div className="flex items-center gap-2">
-                        {isLive && <div className="flex items-center gap-2">
-                            <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
-                                <AlertTriangle size={16} />
-                                This version is locked. You cannot make changes. Changes applied through copilot will<b>not</b>be reflected.
-                            </div>
-                            <Button
-                                variant="solid"
-                                size="md"
-                                onPress={() => handleCloneVersion(state.present.workflow._id)}
-                                className="gap-2 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm"
-                                startContent={<Layers2Icon size={16} />}
-                            >
-                                Clone this version
-                            </Button>
-                            <Button
-                                variant="solid"
-                                size="md"
-                                onPress={() => setShowCopilot(!showCopilot)}
-                                className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
-                                startContent={showCopilot ? null : <Sparkles size={16} />}
-                            >
-                                {showCopilot ? "Hide Skipper" : "Skipper"}
-                            </Button>
-                        </div>}
-                        {!isLive && <>
-                            <button
-                                className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
-                                title="Undo"
-                                disabled={state.currentIndex <= 0}
-                                onClick={() => dispatch({ type: "undo" })}
-                            >
-                                <UndoIcon size={16} />
-                            </button>
-                            <button
-                                className="p-1 text-gray-400 hover:text-black hover:cursor-pointer"
-                                title="Redo"
-                                disabled={state.currentIndex >= state.patches.length}
-                                onClick={() => dispatch({ type: "redo" })}
-                            >
-                                <RedoIcon size={16} />
-                            </button>
-                            <Button
-                                variant="solid"
-                                size="md"
-                                onPress={handlePublishWorkflow}
-                                className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm"
-                                startContent={<RocketIcon size={16} />}
-                                data-tour-target="deploy"
-                            >
-                                Deploy
-                            </Button>
-                            <Button
-                                variant="solid"
-                                size="md"
-                                onPress={() => setShowCopilot(!showCopilot)}
-                                className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
-                                startContent={showCopilot ? null : <Sparkles size={16} />}
-                            >
-                                {showCopilot ? "Hide Skipper" : "Skipper"}
-                            </Button>
-                        </>}
-                    </div>
-                </div>
-                <ResizablePanelGroup direction="horizontal" className="grow flex overflow-auto gap-1">
+            <div className="h-full flex flex-col gap-5">
+                {/* Top Bar - Isolated like sidebar */}
+                <TopBar
+                    localProjectName={localProjectName}
+                    projectNameError={projectNameError}
+                    onProjectNameChange={handleProjectNameChange}
+                    onProjectNameCommit={handleProjectNameCommit}
+                    publishing={state.present.publishing}
+                    isLive={isLive}
+                    showCopySuccess={showCopySuccess}
+                    canUndo={state.currentIndex > 0}
+                    canRedo={state.currentIndex < state.patches.length}
+                    showCopilot={showCopilot}
+                    onUndo={() => dispatch({ type: "undo" })}
+                    onRedo={() => dispatch({ type: "redo" })}
+                    onDownloadJSON={handleDownloadJSON}
+                    onPublishWorkflow={handlePublishWorkflow}
+                    onChangeMode={onChangeMode}
+                    onRevertToLive={handleRevertToLive}
+                    onToggleCopilot={() => setShowCopilot(!showCopilot)}
+                    onSettingsModalOpen={onSettingsModalOpen}
+                    onTriggersModalOpen={onTriggersModalOpen}
+                />
+                
+                {/* Content Area */}
+                <ResizablePanelGroup direction="horizontal" className="flex-1 flex overflow-auto gap-1 rounded-xl bg-zinc-50 dark:bg-zinc-900">
                     <ResizablePanel minSize={10} defaultSize={PANEL_RATIOS.entityList}>
                         <div className="flex flex-col h-full">
                             <EntityList
+                                ref={entityListRef}
                                 agents={state.present.workflow.agents}
                                 tools={state.present.workflow.tools}
-                                projectTools={projectTools}
                                 prompts={state.present.workflow.prompts}
+                                pipelines={state.present.workflow.pipelines || []}
+                                dataSources={dataSources}
+                                workflow={state.present.workflow}
                                 selectedEntity={
                                     state.present.selection &&
                                     (state.present.selection.type === "agent" ||
                                      state.present.selection.type === "tool" ||
-                                     state.present.selection.type === "prompt")
+                                     state.present.selection.type === "prompt" ||
+                                     state.present.selection.type === "datasource" ||
+                                     state.present.selection.type === "pipeline")
                                       ? state.present.selection
                                       : null
                                 }
@@ -1032,17 +1314,29 @@ export function WorkflowEditor({
                                 onSelectAgent={handleSelectAgent}
                                 onSelectTool={handleSelectTool}
                                 onSelectPrompt={handleSelectPrompt}
+                                onSelectPipeline={handleSelectPipeline}
+                                onSelectDataSource={handleSelectDataSource}
                                 onAddAgent={handleAddAgent}
                                 onAddTool={handleAddTool}
                                 onAddPrompt={handleAddPrompt}
+                                onAddPipeline={handleAddPipeline}
+                                onAddAgentToPipeline={handleAddAgentToPipeline}
                                 onToggleAgent={handleToggleAgent}
                                 onSetMainAgent={handleSetMainAgent}
                                 onDeleteAgent={handleDeleteAgent}
                                 onDeleteTool={handleDeleteTool}
                                 onDeletePrompt={handleDeletePrompt}
+                                onDeletePipeline={handleDeletePipeline}
                                 onShowVisualise={handleShowVisualise}
-                                projectId={state.present.workflow.projectId}
+                                projectId={projectId}
+                                onProjectToolsUpdated={onProjectToolsUpdated}
+                                onDataSourcesUpdated={onDataSourcesUpdated}
+                                projectConfig={projectConfig}
                                 onReorderAgents={handleReorderAgents}
+                                onReorderPipelines={handleReorderPipelines}
+                                useRagUploads={useRagUploads}
+                                useRagS3Uploads={useRagS3Uploads}
+                                useRagScraping={useRagScraping}
                             />
                         </div>
                     </ResizablePanel>
@@ -1055,25 +1349,22 @@ export function WorkflowEditor({
                         <ChatApp
                             key={'' + state.present.chatKey}
                             hidden={state.present.selection !== null}
-                            projectId={state.present.workflow.projectId}
+                            projectId={projectId}
                             workflow={state.present.workflow}
                             messageSubscriber={updateChatMessages}
-                            mcpServerUrls={mcpServerUrls}
-                            toolWebhookUrl={toolWebhookUrl}
-                            isInitialState={isInitialState}
                             onPanelClick={handlePlaygroundClick}
-                            projectTools={projectTools}
                             triggerCopilotChat={triggerCopilotChat}
+                            isLiveWorkflow={isLive}
                         />
                         {state.present.selection?.type === "agent" && <AgentConfig
                             key={`agent-${state.present.workflow.agents.findIndex(agent => agent.name === state.present.selection!.name)}`}
-                            projectId={state.present.workflow.projectId}
+                            projectId={projectId}
                             workflow={state.present.workflow}
                             agent={state.present.workflow.agents.find((agent) => agent.name === state.present.selection!.name)!}
                             usedAgentNames={new Set(state.present.workflow.agents.filter((agent) => agent.name !== state.present.selection!.name).map((agent) => agent.name))}
+                            usedPipelineNames={new Set((state.present.workflow.pipelines || []).map((pipeline) => pipeline.name))}
                             agents={state.present.workflow.agents}
                             tools={state.present.workflow.tools}
-                            projectTools={projectTools}
                             prompts={state.present.workflow.prompts}
                             dataSources={dataSources}
                             handleUpdate={handleUpdateAgent.bind(null, state.present.selection.name)}
@@ -1081,11 +1372,10 @@ export function WorkflowEditor({
                             useRag={useRag}
                             triggerCopilotChat={triggerCopilotChat}
                             eligibleModels={eligibleModels === "*" ? "*" : eligibleModels.agentModels}
+                            onOpenDataSourcesModal={handleOpenDataSourcesModal}
                         />}
                         {state.present.selection?.type === "tool" && (() => {
                             const selectedTool = state.present.workflow.tools.find(
-                                (tool) => tool.name === state.present.selection!.name
-                            ) || projectTools.find(
                                 (tool) => tool.name === state.present.selection!.name
                             );
                             return <ToolConfig
@@ -1093,7 +1383,6 @@ export function WorkflowEditor({
                                 tool={selectedTool!}
                                 usedToolNames={new Set([
                                     ...state.present.workflow.tools.filter((tool) => tool.name !== state.present.selection!.name).map((tool) => tool.name),
-                                    ...projectTools.filter((tool) => tool.name !== state.present.selection!.name).map((tool) => tool.name)
                                 ])}
                                 handleUpdate={handleUpdateTool.bind(null, state.present.selection.name)}
                                 handleClose={handleUnselectTool}
@@ -1108,6 +1397,24 @@ export function WorkflowEditor({
                             usedPromptNames={new Set(state.present.workflow.prompts.filter((prompt) => prompt.name !== state.present.selection!.name).map((prompt) => prompt.name))}
                             handleUpdate={handleUpdatePrompt.bind(null, state.present.selection.name)}
                             handleClose={handleUnselectPrompt}
+                        />}
+                        {state.present.selection?.type === "datasource" && <DataSourceConfig
+                            key={state.present.selection.name}
+                            dataSourceId={state.present.selection.name}
+                            handleClose={() => dispatch({ type: "unselect_datasource" })}
+                            onDataSourceUpdate={onDataSourcesUpdated}
+                        />}
+                        {state.present.selection?.type === "pipeline" && <PipelineConfig
+                            key={state.present.selection.name}
+                            projectId={projectId}
+                            workflow={state.present.workflow}
+                            pipeline={state.present.workflow.pipelines?.find((pipeline) => pipeline.name === state.present.selection!.name)!}
+                            usedPipelineNames={new Set((state.present.workflow.pipelines || []).filter((pipeline) => pipeline.name !== state.present.selection!.name).map((pipeline) => pipeline.name))}
+                            usedAgentNames={new Set(state.present.workflow.agents.map((agent) => agent.name))}
+                            agents={state.present.workflow.agents}
+                            pipelines={state.present.workflow.pipelines || []}
+                            handleUpdate={handleUpdatePipeline.bind(null, state.present.selection.name)}
+                            handleClose={() => dispatch({ type: "unselect_pipeline" })}
                         />}
                         {state.present.selection?.type === "visualise" && (
                             <Panel 
@@ -1144,7 +1451,7 @@ export function WorkflowEditor({
                             >
                                 <Copilot
                                     ref={copilotRef}
-                                    projectId={state.present.workflow.projectId}
+                                    projectId={projectId}
                                     workflow={state.present.workflow}
                                     dispatch={dispatch}
                                     chatContext={
@@ -1169,10 +1476,103 @@ export function WorkflowEditor({
                 </ResizablePanelGroup>
                 {USE_PRODUCT_TOUR && showTour && (
                     <ProductTour
-                        projectId={state.present.workflow.projectId}
+                        projectId={projectId}
                         onComplete={() => setShowTour(false)}
                     />
                 )}
+                
+                {/* Revert to Live Confirmation Modal */}
+                <Modal isOpen={isRevertModalOpen} onClose={onRevertModalClose}>
+                    <ModalContent>
+                        <ModalHeader className="flex flex-col gap-1">
+                            Revert to Live Workflow
+                        </ModalHeader>
+                        <ModalBody>
+                            <p>
+                                Are you sure you want to revert to the live workflow? This will discard all your current draft changes and switch back to the live version.
+                            </p>
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button color="danger" variant="light" onPress={onRevertModalClose}>
+                                Cancel
+                            </Button>
+                            <Button color="danger" onPress={handleConfirmRevert}>
+                                Revert to Live
+                            </Button>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
+                
+                {/* Settings Modal */}
+                <Modal 
+                    isOpen={isSettingsModalOpen} 
+                    onClose={onSettingsModalClose}
+                    size="5xl"
+                    scrollBehavior="inside"
+                >
+                    <ModalContent className="h-[80vh]">
+                        <ModalHeader className="flex flex-col gap-1">
+                            API & SDK
+                        </ModalHeader>
+                        <ModalBody className="p-0">
+                            <ConfigApp
+                                projectId={projectId}
+                                useChatWidget={USE_CHAT_WIDGET}
+                                chatWidgetHost={chatWidgetHost}
+                            />
+                        </ModalBody>
+                    </ModalContent>
+                </Modal>
+                
+                {/* Phone/Twilio Modal */}
+                <Modal 
+                    isOpen={isPhoneModalOpen} 
+                    onClose={onPhoneModalClose}
+                    size="4xl"
+                    scrollBehavior="inside"
+                >
+                    <ModalContent className="h-[80vh]">
+                        <ModalHeader className="flex flex-col gap-1">
+                            Phone Configuration
+                        </ModalHeader>
+                        <ModalBody className="p-0">
+                            <VoiceSection projectId={projectId} />
+                        </ModalBody>
+                    </ModalContent>
+                </Modal>
+                
+                {/* Chat Widget Modal */}
+                {/*
+                <Modal 
+                    isOpen={isChatWidgetModalOpen} 
+                    onClose={onChatWidgetModalClose}
+                    size="4xl"
+                    scrollBehavior="inside"
+                >
+                    <ModalContent className="h-[70vh]">
+                        <ModalHeader className="flex flex-col gap-1">
+                            Chat Widget
+                        </ModalHeader>
+                        <ModalBody className="p-0">
+                            <div className="p-6">
+                                <ChatWidgetSection 
+                                    projectId={projectId} 
+                                    chatWidgetHost={chatWidgetHost} 
+                                />
+                            </div>
+                        </ModalBody>
+                    </ModalContent>
+                </Modal>
+                */}
+                
+                {/* Triggers Management Modal */}
+                <TriggersModal
+                    isOpen={isTriggersModalOpen}
+                    onClose={onTriggersModalClose}
+                    projectId={projectId}
+                    projectConfig={projectConfig}
+                    onProjectConfigUpdated={onProjectConfigUpdated}
+                />
             </div>
         </EntitySelectionContext.Provider>
     );

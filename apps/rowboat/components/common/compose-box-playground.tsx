@@ -9,6 +9,7 @@ interface ComposeBoxPlaygroundProps {
     disabled?: boolean;
     shouldAutoFocus?: boolean;
     onFocus?: () => void;
+    onCancel?: () => void; // Add this prop
 }
 
 export function ComposeBoxPlayground({
@@ -18,6 +19,7 @@ export function ComposeBoxPlayground({
     disabled = false,
     shouldAutoFocus = false,
     onFocus,
+    onCancel,
 }: ComposeBoxPlaygroundProps) {
     const [input, setInput] = useState('');
     const [isFocused, setIsFocused] = useState(false);
@@ -93,17 +95,19 @@ export function ComposeBoxPlayground({
                     />
                 </div>
 
-                {/* Send button */}
+                {/* Send/Stop button */}
                 <Button
                     size="sm"
                     isIconOnly
-                    disabled={disabled || loading || !input.trim()}
-                    onPress={handleInput}
+                    disabled={disabled || (loading ? false : !input.trim())}
+                    onPress={loading ? onCancel : handleInput}
                     className={`
                         transition-all duration-200
-                        ${input.trim() 
-                            ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:hover:bg-indigo-800/60 dark:text-indigo-300' 
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
+                        ${loading 
+                            ? 'bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/50 dark:hover:bg-red-800/60 dark:text-red-300'
+                            : input.trim() 
+                                ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:hover:bg-indigo-800/60 dark:text-indigo-300' 
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
                         }
                         scale-100 hover:scale-105 active:scale-95
                         disabled:opacity-50 disabled:scale-95
@@ -112,7 +116,7 @@ export function ComposeBoxPlayground({
                     `}
                 >
                     {loading ? (
-                        <Spinner size="sm" color={input.trim() ? "primary" : "default"} />
+                        <StopIcon size={16} />
                     ) : (
                         <SendIcon 
                             size={16} 
@@ -141,6 +145,22 @@ function SendIcon({ size, className }: { size: number, className?: string }) {
         >
             <path d="M22 2L11 13" />
             <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+        </svg>
+    );
+} 
+
+// Add StopIcon component (copy from ComposeBoxCopilot)
+function StopIcon({ size, className }: { size: number, className?: string }) {
+    return (
+        <svg 
+            width={size} 
+            height={size} 
+            viewBox="0 0 24 24" 
+            fill="currentColor" 
+            stroke="none"
+            className={className}
+        >
+            <rect x="6" y="6" width="12" height="12" rx="1" />
         </svg>
     );
 } 

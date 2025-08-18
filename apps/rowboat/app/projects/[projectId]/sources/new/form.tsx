@@ -2,11 +2,10 @@
 import { Input, Select, SelectItem } from "@heroui/react"
 import { Textarea } from "@/components/ui/textarea"
 import { useState } from "react";
-import { createDataSource, addDocsToDataSource } from "../../../../actions/datasource_actions";
+import { createDataSource, addDocsToDataSource } from "../../../../actions/data-source.actions";
 import { FormStatusButton } from "../../../../lib/components/form-status-button";
 import { DataSourceIcon } from "../../../../lib/components/datasource-icon";
 import { PlusIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Panel } from "@/components/common/panel-common";
 
@@ -15,14 +14,17 @@ export function Form({
     useRagUploads,
     useRagS3Uploads,
     useRagScraping,
+    onSuccess,
+    hidePanel = false,
 }: {
     projectId: string;
     useRagUploads: boolean;
     useRagS3Uploads: boolean;
     useRagScraping: boolean;
+    onSuccess?: (sourceId: string) => void;
+    hidePanel?: boolean;
 }) {
     const [sourceType, setSourceType] = useState("");
-    const router = useRouter();
 
     let dropdownOptions = [
         {
@@ -69,8 +71,7 @@ export function Form({
         // pick first 100
         const first100Urls = urlsArray.slice(0, 100);
         await addDocsToDataSource({
-            projectId,
-            sourceId: source._id,
+            sourceId: source.id,
             docData: first100Urls.map(url => ({
                 name: url,
                 data: {
@@ -79,7 +80,9 @@ export function Form({
                 },
             })),
         });
-        router.push(`/projects/${projectId}/sources/${source._id}`);
+        if (onSuccess) {
+            onSuccess(source.id);
+        }
     }
 
     async function createFilesDataSource(formData: FormData) {
@@ -92,7 +95,9 @@ export function Form({
             },
         });
 
-        router.push(`/projects/${projectId}/sources/${source._id}`);
+        if (onSuccess) {
+            onSuccess(source.id);
+        }
     }
 
     async function createTextDataSource(formData: FormData) {
@@ -108,8 +113,7 @@ export function Form({
 
         const content = formData.get('content') as string;
         await addDocsToDataSource({
-            projectId,
-            sourceId: source._id,
+            sourceId: source.id,
             docData: [{
                 name: 'text',
                 data: {
@@ -119,21 +123,14 @@ export function Form({
             }],
         });
 
-        router.push(`/projects/${projectId}/sources/${source._id}`);
+        if (onSuccess) {
+            onSuccess(source.id);
+        }
     }
 
-    return (
-        <Panel
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        NEW DATA SOURCE
-                    </div>
-                </div>
-            }
-        >
-            <div className="h-full overflow-auto px-4 py-4">
-                <div className="max-w-[768px] mx-auto flex flex-col gap-4">
+    const formContent = (
+        <div className={hidePanel ? "flex flex-col gap-4" : "h-full overflow-auto px-4 py-4"}>
+            <div className={hidePanel ? "flex flex-col gap-4" : "max-w-[768px] mx-auto flex flex-col gap-4"}>
                     <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
                         <div className="flex items-start gap-3">
                             <svg 
@@ -345,8 +342,25 @@ export function Form({
                             }}
                         />
                     </form>}
-                </div>
             </div>
+        </div>
+    );
+
+    if (hidePanel) {
+        return formContent;
+    }
+
+    return (
+        <Panel
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        NEW DATA SOURCE
+                    </div>
+                </div>
+            }
+        >
+            {formContent}
         </Panel>
     );
 }

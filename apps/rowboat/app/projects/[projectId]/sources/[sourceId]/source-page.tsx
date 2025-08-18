@@ -1,6 +1,5 @@
 'use client';
-import { WithStringId } from "../../../../lib/types/types";
-import { DataSource } from "../../../../lib/types/datasource_types";
+import { DataSource } from "@/src/entities/models/data-source";
 import { ToggleSource } from "../components/toggle-source";
 import { Spinner } from "@heroui/react";
 import { SourceStatus } from "../components/source-status";
@@ -10,7 +9,7 @@ import { DataSourceIcon } from "../../../../lib/components/datasource-icon";
 import { z } from "zod";
 import { ScrapeSource } from "../components/scrape-source";
 import { FilesSource } from "../components/files-source";
-import { getDataSource, updateDataSource } from "../../../../actions/datasource_actions";
+import { getDataSource, updateDataSource } from "../../../../actions/data-source.actions";
 import { TextSource } from "../components/text-source";
 import { Panel } from "@/components/common/panel-common";
 import { Section, SectionRow, SectionLabel, SectionContent } from "../components/section";
@@ -28,14 +27,14 @@ export function SourcePage({
     sourceId: string;
     projectId: string;
 }) {
-    const [source, setSource] = useState<WithStringId<z.infer<typeof DataSource>> | null>(null);
+    const [source, setSource] = useState<z.infer<typeof DataSource> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [showSaveSuccess, setShowSaveSuccess] = useState(false);
     const [billingError, setBillingError] = useState<string | null>(null);
 
     async function handleReload() {
         setIsLoading(true);
-        const updatedSource = await getDataSource(projectId, sourceId);
+        const updatedSource = await getDataSource(sourceId);
         setSource(updatedSource);
         if ("billingError" in updatedSource && updatedSource.billingError) {
             setBillingError(updatedSource.billingError);
@@ -48,7 +47,7 @@ export function SourcePage({
         let ignore = false;
         async function fetchSource() {
             setIsLoading(true);
-            const source = await getDataSource(projectId, sourceId);
+            const source = await getDataSource(sourceId);
             if (!ignore) {
                 setSource(source);
                 if ("billingError" in source && source.billingError) {
@@ -61,7 +60,7 @@ export function SourcePage({
         return () => {
             ignore = true;
         };
-    }, [projectId, sourceId]);
+    }, [sourceId]);
 
     // refresh source data every 15 seconds
     // under certain conditions
@@ -80,7 +79,7 @@ export function SourcePage({
             if (timeout) {
                 clearTimeout(timeout);
             }
-            const updatedSource = await getDataSource(projectId, sourceId);
+            const updatedSource = await getDataSource(sourceId);
             if (!ignore) {
                 setSource(updatedSource);
                 if ("billingError" in updatedSource && updatedSource.billingError) {
@@ -130,7 +129,6 @@ export function SourcePage({
                                 <SectionLabel>Toggle</SectionLabel>
                                 <SectionContent>
                                     <ToggleSource
-                                        projectId={projectId}
                                         sourceId={sourceId}
                                         active={source.active}
                                     />
@@ -153,7 +151,6 @@ export function SourcePage({
                                         action={async (formData: FormData) => {
                                             const description = formData.get('description') as string;
                                             await updateDataSource({
-                                                projectId,
                                                 sourceId,
                                                 description,
                                             });
@@ -217,7 +214,7 @@ export function SourcePage({
                                 <SectionRow>
                                     <SectionLabel>Status</SectionLabel>
                                     <SectionContent>
-                                        <SourceStatus status={source.status} projectId={projectId} />
+                                        <SourceStatus status={source.status} />
 
                                         {("billingError" in source) && source.billingError && <div className="flex flex-col gap-1 items-start mt-4">
                                             <div className="text-sm">{source.billingError}</div>
@@ -240,14 +237,12 @@ export function SourcePage({
                     {/* Source-specific sections */}
                     {source.data.type === 'urls' &&
                         <ScrapeSource
-                            projectId={projectId}
                             dataSource={source}
                             handleReload={handleReload}
                         />
                     }
                     {(source.data.type === 'files_local' || source.data.type === 'files_s3') &&
                         <FilesSource
-                            projectId={projectId}
                             dataSource={source}
                             handleReload={handleReload}
                             type={source.data.type}
@@ -255,7 +250,6 @@ export function SourcePage({
                     }
                     {source.data.type === 'text' &&
                         <TextSource
-                            projectId={projectId}
                             dataSource={source}
                             handleReload={handleReload}
                         />
@@ -272,7 +266,7 @@ export function SourcePage({
                                     This action cannot be undone.
                                 </p>
                             </div>
-                            <DeleteSource projectId={projectId} sourceId={sourceId} />
+                            <DeleteSource sourceId={sourceId} />
                         </div>
                     </Section>
                 </div>

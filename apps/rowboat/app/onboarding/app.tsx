@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { FormStatusButton } from "@/app/lib/components/form-status-button";
 import { useRouter } from "next/navigation";
-import { updateUserEmail } from "../actions/auth_actions";
+import { updateUserEmail } from "../actions/auth.actions";
 import { tokens } from "@/app/styles/design-tokens";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { HorizontalDivider } from "@/components/ui/horizontal-divider";

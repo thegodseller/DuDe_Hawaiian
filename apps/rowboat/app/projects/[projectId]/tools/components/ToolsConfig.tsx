@@ -2,30 +2,58 @@
 
 import { useState } from 'react';
 import { Tabs, Tab } from '@/components/ui/tabs';
-import { HostedServers } from './HostedServers';
-import { CustomServers } from './CustomServers';
-import { WebhookConfig } from './WebhookConfig';
-import { Composio } from './Composio';
+import { CustomMcpServers } from './CustomMcpServer';
+import { SelectComposioToolkit } from './SelectComposioToolkit';
+import { ComposioToolsPanel } from './ComposioToolsPanel';
+import { AddWebhookTool } from './AddWebhookTool';
 import type { Key } from 'react';
+import { Workflow, WorkflowTool } from '@/app/lib/types/workflow_types';
+import { ZToolkit } from "@/src/application/lib/composio/types";
+import { z } from 'zod';
+
+interface ToolsConfigProps {
+  projectId: string;
+  useComposioTools: boolean;
+  tools: z.infer<typeof Workflow.shape.tools>;
+  onAddTool: (tool: Partial<z.infer<typeof WorkflowTool>>) => void;
+  initialToolkitSlug?: string | null;
+}
+
+type ToolkitType = z.infer<typeof ZToolkit>;
 
 export function ToolsConfig({
+  projectId,
   useComposioTools,
-  useKlavisTools
-}: {
-  useComposioTools: boolean;
-  useKlavisTools: boolean;
-}) {
-  let defaultActiveTab = 'custom';
-  if (useKlavisTools) {
-    defaultActiveTab = 'hosted';
-  }
+  tools,
+  onAddTool,
+  initialToolkitSlug
+}: ToolsConfigProps) {
+  let defaultActiveTab = 'mcp';
   if (useComposioTools) {
     defaultActiveTab = 'composio';
   }
   const [activeTab, setActiveTab] = useState(defaultActiveTab);
+  const [selectedToolkit, setSelectedToolkit] = useState<ToolkitType | null>(null);
+  const [isToolsPanelOpen, setIsToolsPanelOpen] = useState(false);
+  const useBilling = process.env.NEXT_PUBLIC_USE_BILLING === "true";
 
   const handleTabChange = (key: Key) => {
     setActiveTab(key.toString());
+  };
+
+  const handleSelectToolkit = (toolkit: ToolkitType) => {
+    setSelectedToolkit(toolkit);
+    setIsToolsPanelOpen(true);
+  };
+
+  const handleCloseToolsPanel = () => {
+    setSelectedToolkit(null);
+    setIsToolsPanelOpen(false);
+  };
+
+  const handleAddTool = (tool: z.infer<typeof WorkflowTool>) => {
+    onAddTool(tool);
+    handleCloseToolsPanel();
   };
 
   return (
@@ -38,37 +66,46 @@ export function ToolsConfig({
         fullWidth
       >
         {useComposioTools && (
-          <Tab key="composio" title="Composio">
+          <Tab key="composio" title="Library">
             <div className="mt-4 p-6">
-              <Composio />
+              <SelectComposioToolkit
+                projectId={projectId}
+                tools={tools}
+                onSelectToolkit={handleSelectToolkit}
+                initialToolkitSlug={initialToolkitSlug}
+                filterByTools={true}
+              />
             </div>
           </Tab>
         )}
-        {useKlavisTools && (
-          <Tab key="hosted" title={
-            <div className="flex items-center gap-2">
-              <span>Klavis</span>
-              <span className="leading-none px-1.5 py-[2px] text-[9px] font-medium bg-linear-to-r from-pink-500 to-violet-500 text-white rounded-full">
-                BETA
-              </span>
-            </div>
-          }>
-            <div className="mt-4 p-6">
-              <HostedServers onSwitchTab={key => setActiveTab(key)} />
-            </div>
-          </Tab>
-        )}
-        <Tab key="custom" title="Custom MCP Servers">
+        <Tab key="mcp" title="Custom MCP Servers">
           <div className="mt-4 p-6">
-            <CustomServers />
+            <CustomMcpServers
+              tools={tools}
+              onAddTool={onAddTool}
+            />
           </div>
         </Tab>
-        <Tab key="webhook" title="Webhook">
+        {!useBilling && <Tab key="webhook" title="Webhook">
           <div className="mt-4 p-6">
-            <WebhookConfig />
+            <AddWebhookTool
+              projectId={projectId}
+              onAddTool={onAddTool}
+            />
           </div>
-        </Tab>
+        </Tab>}
       </Tabs>
+      
+      {/* Tools Panel */}
+      {selectedToolkit && (
+        <ComposioToolsPanel
+          toolkit={selectedToolkit}
+          isOpen={isToolsPanelOpen}
+          onClose={handleCloseToolsPanel}
+          tools={tools}
+          onAddTool={handleAddTool}
+        />
+      )}
     </div>
   );
 } 

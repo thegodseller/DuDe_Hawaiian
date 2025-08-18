@@ -1,12 +1,5 @@
-import { WorkflowTool, WorkflowAgent, WorkflowPrompt } from "./types/workflow_types";
+import { WorkflowTool, WorkflowAgent, WorkflowPrompt, WorkflowPipeline } from "./types/workflow_types";
 import { z } from "zod";
-
-export class QueryLimitError extends Error {
-    constructor(message: string = 'Query limit exceeded') {
-        super(message);
-        this.name = 'QueryLimitError';
-    }
-}
 
 export function validateConfigChanges(configType: string, configChanges: Record<string, unknown>, name: string) {
     let testObject: any;
@@ -52,6 +45,15 @@ export function validateConfigChanges(configType: string, configChanges: Record<
                 prompt: "test",
             } as z.infer<typeof WorkflowPrompt>;
             schema = WorkflowPrompt;
+            break;
+        }
+        case 'pipeline': {
+            testObject = {
+                name: 'test',
+                description: 'test',
+                agents: [],
+            } as z.infer<typeof WorkflowPipeline>;
+            schema = WorkflowPipeline;
             break;
         }
         default:

@@ -4,22 +4,20 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import Menu from "./menu";
-import { getProjectConfig } from "@/app/actions/project_actions";
+import { fetchProject } from "@/app/actions/project.actions";
 import { FolderOpenIcon, PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
 
 export function Nav({
     projectId,
-    useRag,
 }: {
     projectId: string;
-    useRag: boolean;
 }) {
     const [collapsed, setCollapsed] = useState(false);
     const [projectName, setProjectName] = useState<string | null>(null);
 
     useEffect(() => {
         async function getProject() {
-            const project = await getProjectConfig(projectId);
+            const project = await fetchProject(projectId);
             setProjectName(project.name);
         }
         getProject();
@@ -56,6 +54,6 @@ export function Nav({
                 <FolderOpenIcon size={16} className="ml-1" />
             </Link>
         </Tooltip>}
-        <Menu projectId={projectId} collapsed={collapsed} useRag={useRag} />
+        <Menu projectId={projectId} collapsed={collapsed} />
     </div>;
 }
