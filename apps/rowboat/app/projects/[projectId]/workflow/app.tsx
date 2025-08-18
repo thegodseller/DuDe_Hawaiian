@@ -1,5 +1,4 @@
 "use client";
-import { MCPServer, WithStringId } from "../../../lib/types/types";
 import { DataSource } from "@/src/entities/models/data-source";
 import { Project } from "@/src/entities/models/project";
 import { z } from "zod";
@@ -9,12 +8,13 @@ import { Spinner } from "@heroui/react";
 import { listDataSources } from "../../../actions/data-source.actions";
 import { revertToLiveWorkflow } from "@/app/actions/project.actions";
 import { fetchProject } from "@/app/actions/project.actions";
-import { Workflow, WorkflowTool } from "@/app/lib/types/workflow_types";
-import { getEligibleModels } from "@/app/actions/billing.actions";
+import { Workflow } from "@/app/lib/types/workflow_types";
 import { ModelsResponse } from "@/app/lib/types/billing_types";
 
 export function App({
-    projectId,
+    initialProjectData,
+    initialDataSources,
+    eligibleModels,
     useRag,
     useRagUploads,
     useRagS3Uploads,
@@ -22,7 +22,9 @@ export function App({
     defaultModel,
     chatWidgetHost,
 }: {
-    projectId: string;
+    initialProjectData: z.infer<typeof Project>;
+    initialDataSources: z.infer<typeof DataSource>[];
+    eligibleModels: z.infer<typeof ModelsResponse> | "*";
     useRag: boolean;
     useRagUploads: boolean;
     useRagS3Uploads: boolean;
@@ -31,11 +33,9 @@ export function App({
     chatWidgetHost: string;
 }) {
     const [mode, setMode] = useState<'draft' | 'live'>('draft');
-    const [project, setProject] = useState<z.infer<typeof Project> | null>(null);
-    const [dataSources, setDataSources] = useState<z.infer<typeof DataSource>[] | null>(null);
-    const [projectConfig, setProjectConfig] = useState<z.infer<typeof Project> | null>(null);
+    const [project, setProject] = useState<z.infer<typeof Project>>(initialProjectData);
+    const [dataSources, setDataSources] = useState<z.infer<typeof DataSource>[]>(initialDataSources);
     const [loading, setLoading] = useState(false);
-    const [eligibleModels, setEligibleModels] = useState<z.infer<typeof ModelsResponse> | "*">("*");
 
     console.log('workflow app.tsx render');
 
@@ -45,44 +45,39 @@ export function App({
         workflow = project?.liveWorkflow;
     }
 
-    const loadData = useCallback(async () => {
+    const reloadData = useCallback(async () => {
         setLoading(true);
         const [
-            project,
-            dataSources,
-            eligibleModels,
+            projectData,
+            sourcesData,
         ] = await Promise.all([
-            fetchProject(projectId),
-            listDataSources(projectId),
-            getEligibleModels(),
+            fetchProject(initialProjectData.id),
+            listDataSources(initialProjectData.id),
         ]);
 
-        setProject(project);
-        setDataSources(dataSources);
-        setEligibleModels(eligibleModels);
+        setProject(projectData);
+        setDataSources(sourcesData);
         setLoading(false);
-    }, [projectId]);
+    }, [initialProjectData.id]);
 
     const handleProjectToolsUpdate = useCallback(async () => {
         // Lightweight refresh for tool-only updates
-        const projectConfig = await fetchProject(projectId);
+        const projectConfig = await fetchProject(initialProjectData.id);
         
         setProject(projectConfig);
-        setProjectConfig(projectConfig);
-    }, [projectId]);
+    }, [initialProjectData.id]);
 
     const handleDataSourcesUpdate = useCallback(async () => {
         // Refresh data sources
-        const updatedDataSources = await listDataSources(projectId);
+        const updatedDataSources = await listDataSources(initialProjectData.id);
         setDataSources(updatedDataSources);
-    }, [projectId]);
+    }, [initialProjectData.id]);
 
     const handleProjectConfigUpdate = useCallback(async () => {
         // Refresh project config when project name or other settings change
-        const updatedProjectConfig = await fetchProject(projectId);
+        const updatedProjectConfig = await fetchProject(initialProjectData.id);
         setProject(updatedProjectConfig);
-        setProjectConfig(updatedProjectConfig);
-    }, [projectId]);
+    }, [initialProjectData.id]);
 
     // Auto-update data sources when there are pending ones
     useEffect(() => {
@@ -92,7 +87,7 @@ export function App({
         if (!hasPendingSources) return;
 
         const interval = setInterval(async () => {
-            const updatedDataSources = await listDataSources(projectId);
+            const updatedDataSources = await listDataSources(initialProjectData.id);
             setDataSources(updatedDataSources);
             
             // Stop polling if no more pending sources
@@ -103,11 +98,7 @@ export function App({
         }, 7000); // Poll every 7 seconds (reduced from 3)
 
         return () => clearInterval(interval);
-    }, [dataSources, projectId]);
-    // Add this useEffect for initial load
-    useEffect(() => {
-        loadData();
-    }, [mode, loadData, projectId]);
+    }, [dataSources, initialProjectData.id]);
 
     function handleSetMode(mode: 'draft' | 'live') {
         setMode(mode);
@@ -115,8 +106,8 @@ export function App({
 
     async function handleRevertToLive() {
         setLoading(true);
-        await revertToLiveWorkflow(projectId);
-        loadData();
+        await revertToLiveWorkflow(initialProjectData.id);
+        reloadData();
     }
 
     // if workflow is null, show the selector
@@ -128,11 +119,11 @@ export function App({
         </div>}
         {!loading && !workflow && <div>No workflow found!</div>}
         {!loading && project && workflow && (dataSources !== null) && <WorkflowEditor
-            projectId={projectId}
+            projectId={initialProjectData.id}
             isLive={mode == 'live'}
             workflow={workflow}
             dataSources={dataSources}
-            projectConfig={projectConfig || project}
+            projectConfig={project}
             useRag={useRag}
             useRagUploads={useRagUploads}
             useRagS3Uploads={useRagS3Uploads}
