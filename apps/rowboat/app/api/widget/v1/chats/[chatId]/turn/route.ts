@@ -7,7 +7,7 @@ import { authCheck } from "../../../utils";
 import { PrefixLogger } from "../../../../../../lib/utils";
 import { authorize, getCustomerIdForProject, logUsage } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
-import { getResponse } from "@/app/lib/agents";
+import { getResponse } from "@/src/application/lib/agents-runtime/agents";
 import { Message, AssistantMessage, AssistantMessageWithToolCalls, ToolMessage } from "@/app/lib/types/types";
 import { IUsageQuotaPolicy } from "@/src/application/policies/usage-quota.policy.interface";
 import { container } from "@/di/container";

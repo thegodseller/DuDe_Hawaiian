@@ -1,4 +1,4 @@
-import { getResponse } from "@/app/lib/agents";
+import { getResponse } from "@/src/application/lib/agents-runtime/agents";
 import { twilioInboundCallsCollection } from "@/app/lib/mongodb";
 import { PrefixLogger } from "@/app/lib/utils";
 import VoiceResponse from "twilio/lib/twiml/VoiceResponse";

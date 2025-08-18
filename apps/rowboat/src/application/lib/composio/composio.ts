@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PrefixLogger } from "../../../../app/lib/utils";
+import { PrefixLogger } from "@/app/lib/utils";
 import { Composio } from "@composio/core";
 import { ZAuthConfig, ZConnectedAccount, ZCreateAuthConfigRequest, ZCreateAuthConfigResponse, ZCreateConnectedAccountRequest, ZCreateConnectedAccountResponse, ZDeleteOperationResponse, ZErrorResponse, ZGetToolkitResponse, ZListResponse, ZTool, ZToolkit, ZTriggerType } from "./types";
 

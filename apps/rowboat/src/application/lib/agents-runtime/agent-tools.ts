@@ -3,18 +3,18 @@ import { tool, Tool } from "@openai/agents";
 import { createOpenAI } from "@ai-sdk/openai";
 import { embed, generateText } from "ai";
 import { z } from "zod";
-import { composio } from "../../src/application/lib/composio/composio";
+import { composio } from "@/src/application/lib/composio/composio";
 import { SignJWT } from "jose";
 import crypto from "crypto";
 
 // Internal dependencies
-import { embeddingModel } from '../lib/embedding';
-import { getMcpClient } from "./mcp";
-import { qdrantClient } from '../lib/qdrant';
-import { EmbeddingRecord } from "./types/datasource_types";
-import { WorkflowAgent, WorkflowTool } from "./types/workflow_types";
-import { PrefixLogger } from "./utils";
-import { UsageTracker } from "./billing";
+import { embeddingModel } from "@/app/lib/embedding";
+import { getMcpClient } from "@/app/lib/mcp";
+import { qdrantClient } from "@/app/lib/qdrant";
+import { EmbeddingRecord } from "@/app/lib/types/datasource_types";
+import { WorkflowAgent, WorkflowTool } from "@/app/lib/types/workflow_types";
+import { PrefixLogger } from "@/app/lib/utils";
+import { UsageTracker } from "@/app/lib/billing";
 import { DataSource } from "@/src/entities/models/data-source";
 import { IDataSourcesRepository } from "@/src/application/repositories/data-sources.repository.interface";
 import { IDataSourceDocsRepository } from "@/src/application/repositories/data-source-docs.repository.interface";

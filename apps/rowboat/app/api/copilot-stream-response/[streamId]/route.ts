@@ -1,8 +1,8 @@
 import { getCustomerIdForProject, logUsage, UsageTracker } from "@/app/lib/billing";
 import { USE_BILLING } from "@/app/lib/feature_flags";
 import { redisClient } from "@/app/lib/redis";
-import { CopilotAPIRequest } from "@/app/lib/types/copilot_types";
-import { streamMultiAgentResponse } from "@/app/lib/copilot/copilot";
+import { CopilotAPIRequest } from "@/src/application/lib/copilot/types";
+import { streamMultiAgentResponse } from "@/src/application/lib/copilot/copilot";
 
 export async function GET(request: Request, props: { params: Promise<{ streamId: string }> }) {
   const params = await props.params;

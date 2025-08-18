@@ -3,7 +3,7 @@ import { USE_BILLING } from "@/app/lib/feature_flags";
 import { authorize, getCustomerIdForProject, logUsage, UsageTracker } from "@/app/lib/billing";
 import { NotFoundError } from '@/src/entities/errors/common';
 import { IConversationsRepository } from "@/src/application/repositories/conversations.repository.interface";
-import { streamResponse } from "@/app/lib/agents";
+import { streamResponse } from "@/src/application/lib/agents-runtime/agents";
 import { z } from "zod";
 import { Message } from "@/app/lib/types/types";
 import { IUsageQuotaPolicy } from '../../policies/usage-quota.policy.interface';

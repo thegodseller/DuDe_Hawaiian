@@ -1,10 +1,8 @@
 // Agent handoffs using OpenAI Agents SDK native capabilities
 import { Agent, handoff, Handoff } from "@openai/agents";
 import { z } from "zod";
-import { PrefixLogger } from "./utils";
-import { 
-    WorkflowAgent
-} from "./types/workflow_types";
+import { PrefixLogger } from "@/app/lib/utils";
+import { WorkflowAgent } from "@/app/lib/types/workflow_types";
 import {
     HandoffContext, 
     PipelineContext, 

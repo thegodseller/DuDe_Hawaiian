@@ -3,7 +3,7 @@ import {
     CopilotAPIRequest,
     CopilotChatContext, CopilotMessage,
     DataSourceSchemaForCopilot,
-} from "../lib/types/copilot_types";
+} from "../../src/application/lib/copilot/types";
 import { 
     Workflow} from "../lib/types/workflow_types";
 import { z } from 'zod';
@@ -11,7 +11,7 @@ import { projectAuthCheck } from "./project.actions";
 import { redisClient } from "../lib/redis";
 import { authorizeUserAction, logUsage } from "./billing.actions";
 import { USE_BILLING } from "../lib/feature_flags";
-import { getEditAgentInstructionsResponse } from "../lib/copilot/copilot";
+import { getEditAgentInstructionsResponse } from "../../src/application/lib/copilot/copilot";
 import { container } from "@/di/container";
 import { IUsageQuotaPolicy } from "@/src/application/policies/usage-quota.policy.interface";
 import { UsageTracker } from "../lib/billing";

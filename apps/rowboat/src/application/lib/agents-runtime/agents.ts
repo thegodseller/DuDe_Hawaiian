@@ -8,11 +8,11 @@ import crypto from "crypto";
 
 // Internal dependencies
 import { createTools, createRagTool } from "./agent-tools";
-import { ConnectedEntity, sanitizeTextWithMentions, Workflow, WorkflowAgent, WorkflowPipeline, WorkflowPrompt, WorkflowTool } from "./types/workflow_types";
+import { ConnectedEntity, sanitizeTextWithMentions, Workflow, WorkflowAgent, WorkflowPipeline, WorkflowPrompt, WorkflowTool } from "@/app/lib/types/workflow_types";
 import { CHILD_TRANSFER_RELATED_INSTRUCTIONS, CONVERSATION_TYPE_INSTRUCTIONS, PIPELINE_TYPE_INSTRUCTIONS, RAG_INSTRUCTIONS, TASK_TYPE_INSTRUCTIONS } from "./agent_instructions";
-import { PrefixLogger } from "./utils";
-import { Message, AssistantMessage, AssistantMessageWithToolCalls, ToolMessage } from "./types/types";
-import { UsageTracker } from "./billing";
+import { PrefixLogger } from "@/app/lib/utils";
+import { Message, AssistantMessage, AssistantMessageWithToolCalls, ToolMessage } from "@/app/lib/types/types";
+import { UsageTracker } from "@/app/lib/billing";
 
 // Native handoff support
 import { createAgentHandoff, getSchemaForAgent, createContextFilterForAgent } from "./agent-handoffs";

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { Workflow } from "./workflow_types";
-import { Message } from "./types";
+import { Workflow } from "@/app/lib/types/workflow_types";
+import { Message } from "@/app/lib/types/types";
 import { DataSource } from "@/src/entities/models/data-source";
 
 export const DataSourceSchemaForCopilot = DataSource.pick({
