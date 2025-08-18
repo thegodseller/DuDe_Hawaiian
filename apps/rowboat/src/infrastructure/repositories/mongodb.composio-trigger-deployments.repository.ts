@@ -22,23 +22,6 @@ const DocSchema = ComposioTriggerDeployment.omit({
 export class MongodbComposioTriggerDeploymentsRepository implements IComposioTriggerDeploymentsRepository {
     private readonly collection = db.collection<z.infer<typeof DocSchema>>("composio_trigger_deployments");
 
-    constructor() {
-        // Create indexes for efficient querying
-        this.createIndexes();
-    }
-
-    /**
-     * Creates the necessary indexes for efficient querying.
-     */
-    private async createIndexes(): Promise<void> {
-        await this.collection.createIndexes([
-            { key: { projectId: 1 }, name: "projectId_idx" },
-            { key: { triggerTypeSlug: 1 }, name: "triggerTypeSlug_idx" },
-            { key: { connectedAccountId: 1 }, name: "connectedAccountId_idx" },
-            { key: { triggerId: 1 }, name: "triggerId_idx" },
-        ]);
-    }
-
     /**
      * Creates a new Composio trigger deployment.
      */
