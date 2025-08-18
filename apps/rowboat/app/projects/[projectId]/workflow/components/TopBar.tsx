@@ -8,6 +8,7 @@ interface TopBarProps {
     localProjectName: string;
     projectNameError: string | null;
     onProjectNameChange: (value: string) => void;
+    onProjectNameCommit: (value: string) => void;
     publishing: boolean;
     isLive: boolean;
     showCopySuccess: boolean;
@@ -29,6 +30,7 @@ export function TopBar({
     localProjectName,
     projectNameError,
     onProjectNameChange,
+    onProjectNameCommit,
     publishing,
     isLive,
     showCopySuccess,
@@ -58,6 +60,12 @@ export function TopBar({
                             type="text"
                             value={localProjectName}
                             onChange={(e) => onProjectNameChange(e.target.value)}
+                            onBlur={() => onProjectNameCommit(localProjectName)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.currentTarget.blur();
+                                }
+                            }}
                             isInvalid={!!projectNameError}
                             errorMessage={projectNameError}
                             placeholder="Project name..."

@@ -25,6 +25,7 @@ import { Copilot } from "../copilot/app";
 import { publishWorkflow } from "@/app/actions/project.actions";
 import { saveWorkflow } from "@/app/actions/project.actions";
 import { updateProjectName } from "@/app/actions/project.actions";
+import { listProjects } from "@/app/actions/project.actions";
 import { BackIcon, HamburgerIcon, WorkflowIcon } from "../../../lib/components/icons";
 import { CopyIcon, ImportIcon, RadioIcon, RedoIcon, ServerIcon, Sparkles, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, XIcon, SettingsIcon, ChevronDownIcon, PhoneIcon, MessageCircleIcon, ZapIcon } from "lucide-react";
 import { EntityList } from "./entity_list";
@@ -887,8 +888,8 @@ export function WorkflowEditor({
     // Project name state
     const [localProjectName, setLocalProjectName] = useState<string>(projectConfig.name || '');
     const [projectNameError, setProjectNameError] = useState<string | null>(null);
-    const editingNameRef = useRef<string | null>(null);
-    const projectNameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
+    const [pendingProjectName, setPendingProjectName] = useState<string | null>(null);
 
     // Load agent order from localStorage on mount
     // useEffect(() => {
@@ -1182,12 +1183,23 @@ export function WorkflowEditor({
         }
     }, [state.present.workflow, state.present.pendingChanges, processQueue, state]);
 
-    // Sync project name when projectConfig changes, but not while actively editing
+    // Sync project name from server when not editing and no pending commit in-flight
     useEffect(() => {
-        if (editingNameRef.current === null) {
+        if (!isEditingProjectName && pendingProjectName === null) {
             setLocalProjectName(projectConfig.name || '');
         }
-    }, [projectConfig.name]);
+    }, [projectConfig.name, isEditingProjectName, pendingProjectName]);
+
+    // When a commit is pending, wait until server reflects it to clear the lock
+    useEffect(() => {
+        if (
+            pendingProjectName &&
+            (projectConfig.name || '').trim().toLowerCase() === pendingProjectName.trim().toLowerCase()
+        ) {
+            setPendingProjectName(null);
+            setLocalProjectName(projectConfig.name || '');
+        }
+    }, [projectConfig.name, pendingProjectName]);
 
     function handlePlaygroundClick() {
         setIsInitialState(false);
@@ -1204,41 +1216,47 @@ export function WorkflowEditor({
 
     const handleProjectNameChange = (value: string) => {
         setLocalProjectName(value);
-        editingNameRef.current = value;
-
-        if (projectNameDebounceRef.current) {
-            clearTimeout(projectNameDebounceRef.current);
-        }
-
-        projectNameDebounceRef.current = setTimeout(async () => {
-            const trimmed = value.trim();
-            if (!validateProjectName(trimmed)) {
-                editingNameRef.current = null;
-                return;
-            }
-
-            try {
-                if (trimmed !== (projectConfig.name || '')) {
-                    await updateProjectName(projectId, trimmed);
-                    onProjectConfigUpdated?.();
-                }
-            } catch (error) {
-                setProjectNameError("Failed to update project name");
-                console.error('Failed to update project name:', error);
-            } finally {
-                editingNameRef.current = null;
-            }
-        }, 500);
+        setIsEditingProjectName(true);
+        // Do not validate or save on every keystroke
     };
 
-    // Clear any pending debounce on unmount
-    useEffect(() => {
-        return () => {
-            if (projectNameDebounceRef.current) {
-                clearTimeout(projectNameDebounceRef.current);
+    const handleProjectNameCommit = async (value: string) => {
+        const trimmed = value.trim();
+        // If unchanged, just clear editing state
+        if (trimmed === (projectConfig.name || '')) {
+            setProjectNameError(null);
+            setIsEditingProjectName(false);
+            return;
+        }
+
+        if (!validateProjectName(trimmed)) {
+            setIsEditingProjectName(false);
+            return;
+        }
+
+        try {
+            // Validate uniqueness against other projects (case-insensitive)
+            const projects = await listProjects();
+            const isDuplicate = projects.some(p => ((p as any).id ?? (p as any)._id) !== projectId && (p.name || '').trim().toLowerCase() === trimmed.toLowerCase());
+            if (isDuplicate) {
+                setProjectNameError("This name is already taken by another project");
+                return;
             }
-        };
-    }, []);
+            // Lock local sync until server reflects the change
+            setPendingProjectName(trimmed);
+            await updateProjectName(projectId, trimmed);
+            onProjectConfigUpdated?.();
+            setProjectNameError(null);
+        } catch (error) {
+            setProjectNameError("Failed to update project name");
+            console.error('Failed to update project name:', error);
+            // Clear pending state so we resync from server
+            setPendingProjectName(null);
+            setLocalProjectName(projectConfig.name || '');
+        } finally {
+            setIsEditingProjectName(false);
+        }
+    };
 
     return (
         <EntitySelectionContext.Provider value={{
@@ -1252,6 +1270,7 @@ export function WorkflowEditor({
                     localProjectName={localProjectName}
                     projectNameError={projectNameError}
                     onProjectNameChange={handleProjectNameChange}
+                    onProjectNameCommit={handleProjectNameCommit}
                     publishing={state.present.publishing}
                     isLive={isLive}
                     showCopySuccess={showCopySuccess}
