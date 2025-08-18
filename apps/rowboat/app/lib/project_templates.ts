@@ -1,7 +1,7 @@
 import { WorkflowTemplate } from "./types/workflow_types";
 import { z } from 'zod';
 
-const DEFAULT_MODEL = process.env.PROVIDER_DEFAULT_MODEL || "gpt-4.1";
+const DEFAULT_MODEL = process.env.PROVIDER_DEFAULT_MODEL || "google/gemini-2.5-flash";
 
 export const templates: { [key: string]: z.infer<typeof WorkflowTemplate> } = {
     // Default template
@@ -36,7 +36,7 @@ export const templates: { [key: string]: z.infer<typeof WorkflowTemplate> } = {
                 "type": "conversation",
                 "description": "Hub agent to orchestrate fetching attendee details and preparing a meeting brief.",
                 "instructions": "## 🧑‍💼 Role:\nYou orchestrate the workflow to fetch attendee details for a calendar event and prepare a meeting brief by researching attendees and their companies.\n\n---\n## ⚙️ Steps to Follow:\n1. Greet the user and ask which event they want to prepare for (ask for event title and, if needed, time).\n2. FIRST: Send the event details to [@agent:Attendee Fetch Agent] to get attendee details.\n3. Wait for the complete attendee list from Attendee Fetch Agent.\n4. THEN: Send the attendee list to [@agent:Attendee Research Agent] to research and prepare the meeting brief.\n5. Return the meeting brief to the user.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Orchestrating the workflow for meeting preparation.\n\n❌ Out of Scope:\n- Directly fetching attendee details or researching attendees.\n- Handling unrelated user queries.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Follow the strict sequence: fetch attendees, then research, then respond.\n- Only interact with the user for event details and final meeting brief.\n\n🚫 Don'ts:\n- Do not attempt to fetch or research directly.\n- Do not try to get both steps done simultaneously.\n- Do not reference the individual agents in user-facing messages.\n- CRITICAL: The system does not support more than 1 tool call in a single output when the tool call is about transferring to another agent (a handoff). You must only put out 1 transfer related tool call in one output.",
-                "model": "gpt-4.1",
+                "model": "google/gemini-2.5-flash",
                 "toggleAble": true,
                 "ragReturnType": "chunks",
                 "ragK": 3,
@@ -50,7 +50,7 @@ export const templates: { [key: string]: z.infer<typeof WorkflowTemplate> } = {
                 "description": "Fetches attendee details for a specified event from the user's primary calendar.",
                 "disabled": false,
                 "instructions": "## 🧑‍💼 Role:\nYou fetch attendee details (name, email, company if available) for a specified event from the user's primary calendar by searching through events using the List Events tool.\n\n---\n## ⚙️ Steps to Follow:\n1. Receive the event title (and optionally time) from the parent agent.\n2. Call [@tool:List Events](#mention) with calendarId='primary' and the event title (and optionally time) as search parameters.\n3. Search through the returned events to find the event(s) that best match the provided title (and time, if given).\n4. Extract the attendee details (name, email, company if available) from the matching event.\n5. Return the list of attendees (name, email, company if available) to the parent agent.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Fetching attendee details for a specified event by searching the user's primary calendar.\n\n❌ Out of Scope:\n- Researching attendees or companies.\n- Interacting directly with the user.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Return all available attendee details from the best-matching event.\n- If multiple events match, use the event time (if provided) to disambiguate.\n- If no matching event is found, return an empty list or a clear indication to the parent agent.\n\n🚫 Don'ts:\n- Do not attempt to research or summarize attendee info.\n- Do not interact with the user directly.",
-                "model": "gpt-4.1",
+                "model": "google/gemini-2.5-flash",
                 "locked": false,
                 "toggleAble": true,
                 "ragReturnType": "chunks",
@@ -66,7 +66,7 @@ export const templates: { [key: string]: z.infer<typeof WorkflowTemplate> } = {
                 "description": "Researches each attendee and their company using Google search, then summarizes findings for meeting preparation.",
                 "disabled": false,
                 "instructions": "## 🧑‍💼 Role:\nYou research each attendee and their company using Google search, then summarize findings to prepare the user for a meeting.\n\n---\n## ⚙️ Steps to Follow:\n1. Receive a list of attendees (name, email, company if available) from the parent agent.\n2. For each attendee:\n   a. Search for the attendee's name and company using [@tool:Composio Google Search](#mention).\n   b. Summarize key information about the attendee (role, background, recent news, etc.).\n   c. Search for the company (if available) and summarize key facts (industry, size, recent news, etc.).\n3. Compile a concise meeting brief with all findings.\n4. Return the meeting brief to the parent agent.\n\n---\n## 🎯 Scope:\n✅ In Scope:\n- Researching attendees and their companies.\n- Summarizing findings for meeting prep.\n\n❌ Out of Scope:\n- Fetching attendee details from the calendar.\n- Interacting with the calendar directly.\n\n---\n## 📋 Guidelines:\n✔️ Dos:\n- Be concise and actionable in your summaries.\n- Highlight anything notable or recent.\n\n🚫 Don'ts:\n- Do not fabricate information.\n- Do not include irrelevant details.",
-                "model": "gpt-4.1",
+                "model": "google/gemini-2.5-flash",
                 "locked": false,
                 "toggleAble": true,
                 "ragReturnType": "chunks",
