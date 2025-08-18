@@ -2,7 +2,7 @@
 import { WorkflowPrompt, WorkflowAgent, Workflow, WorkflowTool } from "../../../lib/types/workflow_types";
 import { DataSource } from "@/src/entities/models/data-source";
 import { z } from "zod";
-import { PlusIcon, Sparkles, X as XIcon, ChevronDown, ChevronRight, Trash2, Maximize2, Minimize2, StarIcon, DatabaseIcon, UserIcon, Settings, Info } from "lucide-react";
+import { PlusIcon, X as XIcon, ChevronDown, ChevronRight, Trash2, Maximize2, Minimize2, StarIcon, DatabaseIcon, UserIcon, Settings, Info } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { usePreviewModal } from "../workflow/preview-modal";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, SelectItem, Chip, SelectSection } from "@heroui/react";
@@ -337,14 +337,7 @@ export function AgentConfig({
                                                     )}
                                                 </button>
                                             </div>
-                                            <CustomButton
-                                                variant="primary"
-                                                size="sm"
-                                                onClick={() => setShowGenerateModal(true)}
-                                                startContent={<Sparkles className="w-4 h-4" />}
-                                            >
-                                                Generate
-                                            </CustomButton>
+                                            
                                         </div>
                                         {!isInstructionsMaximized && (
                                             <div className="text-xs text-gray-500 dark:text-gray-400">
