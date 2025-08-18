@@ -31,6 +31,8 @@ const s3UploadsStorageService = container.resolve<IUploadsStorageService>('s3Upl
 
 const firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY || "test" });
 
+const geminiParsingModel = "gemini-2.5-flash";
+
 const openai = createOpenAI({
     apiKey: FILE_PARSING_PROVIDER_API_KEY,
     baseURL: FILE_PARSING_PROVIDER_BASE_URL,
@@ -110,7 +112,7 @@ async function runProcessFilePipeline(_logger: PrefixLogger, usageTracker: Usage
     } else {
         // Use Gemini to extract text content
         logger.log("Extracting content using Gemini");
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
+        const model = genAI.getGenerativeModel({ model: geminiParsingModel });
 
         const result = await model.generateContent([
             {
@@ -124,7 +126,7 @@ async function runProcessFilePipeline(_logger: PrefixLogger, usageTracker: Usage
         markdown = result.response.text();
         usageTracker.track({
             type: "LLM_USAGE",
-            modelName: FILE_PARSING_MODEL,
+            modelName: geminiParsingModel,
             inputTokens: result.response.usageMetadata?.promptTokenCount || 0,
             outputTokens: result.response.usageMetadata?.candidatesTokenCount || 0,
             context: "rag.files.llm_usage",
