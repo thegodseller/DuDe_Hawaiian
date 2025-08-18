@@ -19,13 +19,9 @@ import Link from 'next/link';
 
 
 
-interface BuildAssistantSectionProps {
-    defaultName: string;
-}
-
 const ITEMS_PER_PAGE = 6;
 
-export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProps) {
+export function BuildAssistantSection() {
     const [userPrompt, setUserPrompt] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [promptError, setPromptError] = useState<string | null>(null);
@@ -83,8 +79,8 @@ export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProp
     };
 
     // Handle template selection
-    const handleTemplateSelect = async (templateId: string, templateName: string) => {
-        await createProjectFromTemplate(templateId, templateName, router);
+    const handleTemplateSelect = async (templateId: string) => {
+        await createProjectFromTemplate(templateId, router);
     };
 
     const fetchProjects = async () => {
@@ -111,7 +107,6 @@ export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProp
         setIsCreating(true);
         try {
             await createProjectWithOptions({
-                name: defaultName,
                 prompt: userPrompt.trim(),
                 router,
                 onError: (error) => {
@@ -153,7 +148,6 @@ export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProp
 
             // Create project from imported JSON
             await createProjectFromJsonWithOptions({
-                name: defaultName,
                 workflowJson: text,
                 router,
                 onError: (error) => {
@@ -395,7 +389,7 @@ export function BuildAssistantSection({ defaultName }: BuildAssistantSectionProp
                                     {templates.map((template) => (
                                         <button
                                             key={template.id}
-                                            onClick={() => handleTemplateSelect(template.id, template.name)}
+                                            onClick={() => handleTemplateSelect(template.id)}
                                             className="block p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all group hover:shadow-md text-left"
                                         >
                                             <div className="space-y-2">

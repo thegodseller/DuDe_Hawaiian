@@ -170,7 +170,6 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
                 setAutoCreateLoading(true);
                 try {
                     await createProjectWithOptions({
-                        name: 'New Assistant', // Default name for auto-creation
                         template: urlTemplate || undefined,
                         prompt: urlPrompt || undefined,
                         router,
@@ -281,7 +280,6 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
             if (importedJson) {
                 // Use imported JSON
                 await createProjectFromJsonWithOptions({
-                    name,
                     workflowJson: importedJson,
                     router,
                     onError: (error) => {
@@ -297,7 +295,6 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
             }
             
             await createProjectWithOptions({
-                name,
                 template: urlTemplate || undefined,
                 prompt: customPrompt,
                 router,
@@ -312,7 +309,6 @@ export function CreateProject({ defaultName, onOpenProjectPane, isProjectPaneOpe
 
     async function handleSubmitWithTemplate(template: string) {
         await createProjectWithOptions({
-            name,
             template,
             router,
             onError: (error) => {

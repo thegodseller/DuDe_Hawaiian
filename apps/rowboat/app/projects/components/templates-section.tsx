@@ -52,7 +52,7 @@ export function TemplatesSection({}: TemplatesSectionProps) {
 
     // Handle template selection
     const handleTemplateSelect = async (templateId: string, templateName: string) => {
-        await createProjectFromTemplate(templateId, templateName, router);
+        await createProjectFromTemplate(templateId, router);
     };
 
     useEffect(() => {

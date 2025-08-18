@@ -3,7 +3,6 @@
 import { createProject, createProjectFromWorkflowJson } from "@/app/actions/project.actions";
 
 export interface CreateProjectOptions {
-  name: string;
   template?: string;
   prompt?: string;
   router: any; // NextJS router instance
@@ -12,7 +11,6 @@ export interface CreateProjectOptions {
 }
 
 export interface CreateProjectFromJsonOptions {
-  name: string;
   workflowJson: string;
   router: any; // NextJS router instance
   onSuccess?: (projectId: string) => void;
@@ -25,7 +23,6 @@ export interface CreateProjectFromJsonOptions {
 export async function createProjectWithOptions(options: CreateProjectOptions): Promise<void> {
   try {
     const formData = new FormData();
-    formData.append('name', options.name);
     
     if (options.template) {
       formData.append('template', options.template);
@@ -71,7 +68,6 @@ export async function createProjectWithOptions(options: CreateProjectOptions): P
 export async function createProjectFromJsonWithOptions(options: CreateProjectFromJsonOptions): Promise<void> {
   try {
     const formData = new FormData();
-    formData.append('name', options.name);
     formData.append('workflowJson', options.workflowJson);
 
     const response = await createProjectFromWorkflowJson(formData);
@@ -108,12 +104,10 @@ export async function createProjectFromJsonWithOptions(options: CreateProjectFro
  */
 export async function createProjectFromTemplate(
   templateId: string,
-  templateName: string,
   router: any,
   onError?: (error: any) => void
 ): Promise<void> {
   return createProjectWithOptions({
-    name: templateName,
     template: templateId,
     router,
     onError

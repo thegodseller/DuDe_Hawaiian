@@ -75,7 +75,6 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
     setIsCreatingAssistant(true);
     try {
       await createProjectWithOptions({
-        name: assistantName || 'New Assistant',
         prompt: assistantPrompt,
         router,
         onSuccess: () => {
