@@ -148,7 +148,7 @@ export async function logUsage(customerId: string, request: z.infer<typeof LogUs
         },
         body: JSON.stringify(request)
     });
-    console.log(`$[{reqId}] completed logging billing usage for customer ${customerId}`, reqId, response.status, response.statusText);
+    console.log(`[${reqId}] completed logging billing usage for customer ${customerId}`, reqId, response.status, response.statusText);
     if (!response.ok) {
         throw new Error(`Failed to log usage: ${response.status} ${response.statusText} ${await response.text()}`);
     }
