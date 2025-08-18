@@ -887,6 +887,8 @@ export function WorkflowEditor({
     // Project name state
     const [localProjectName, setLocalProjectName] = useState<string>(projectConfig.name || '');
     const [projectNameError, setProjectNameError] = useState<string | null>(null);
+    const editingNameRef = useRef<string | null>(null);
+    const projectNameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Load agent order from localStorage on mount
     // useEffect(() => {
@@ -1180,9 +1182,11 @@ export function WorkflowEditor({
         }
     }, [state.present.workflow, state.present.pendingChanges, processQueue, state]);
 
-    // Sync project name when projectConfig changes
+    // Sync project name when projectConfig changes, but not while actively editing
     useEffect(() => {
-        setLocalProjectName(projectConfig.name || '');
+        if (editingNameRef.current === null) {
+            setLocalProjectName(projectConfig.name || '');
+        }
     }, [projectConfig.name]);
 
     function handlePlaygroundClick() {
@@ -1198,20 +1202,43 @@ export function WorkflowEditor({
         return true;
     };
 
-    const handleProjectNameChange = async (value: string) => {
+    const handleProjectNameChange = (value: string) => {
         setLocalProjectName(value);
-        
-        if (validateProjectName(value)) {
+        editingNameRef.current = value;
+
+        if (projectNameDebounceRef.current) {
+            clearTimeout(projectNameDebounceRef.current);
+        }
+
+        projectNameDebounceRef.current = setTimeout(async () => {
+            const trimmed = value.trim();
+            if (!validateProjectName(trimmed)) {
+                editingNameRef.current = null;
+                return;
+            }
+
             try {
-                await updateProjectName(projectId, value);
-                // Trigger refresh of project config to update all references to project name
-                onProjectConfigUpdated?.();
+                if (trimmed !== (projectConfig.name || '')) {
+                    await updateProjectName(projectId, trimmed);
+                    onProjectConfigUpdated?.();
+                }
             } catch (error) {
                 setProjectNameError("Failed to update project name");
                 console.error('Failed to update project name:', error);
+            } finally {
+                editingNameRef.current = null;
             }
-        }
+        }, 500);
     };
+
+    // Clear any pending debounce on unmount
+    useEffect(() => {
+        return () => {
+            if (projectNameDebounceRef.current) {
+                clearTimeout(projectNameDebounceRef.current);
+            }
+        };
+    }, []);
 
     return (
         <EntitySelectionContext.Provider value={{
