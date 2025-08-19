@@ -282,21 +282,12 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
               </Tooltip>
             )}
 
-            {useAuth && (
-              <Tooltip content={collapsed ? "Account" : ""} showArrow placement="right">
-                <div 
-                  className={`
-                    w-full rounded-md flex items-center
-                    text-[15px] font-medium transition-all duration-200
-                    ${collapsed ? 'justify-center py-4' : 'px-4 py-4 gap-3'}
-                    hover:bg-zinc-100 dark:hover:bg-zinc-800/50
-                  `}
-                >
-                  <UserButton useBilling={useBilling} />
-                  {!collapsed && <span>Account</span>}
-                </div>
-              </Tooltip>
-            )}
+            {useAuth && <>
+              {collapsed && <Tooltip content="Account" showArrow placement="right">
+                  <UserButton useBilling={useBilling} collapsed={collapsed} />
+              </Tooltip>}
+              {!collapsed && <UserButton useBilling={useBilling} collapsed={collapsed} />}
+            </>}
           </div>
         </div>
       </aside>
