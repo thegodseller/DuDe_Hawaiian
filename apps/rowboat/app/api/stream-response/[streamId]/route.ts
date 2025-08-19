@@ -4,6 +4,8 @@ import { requireAuth } from "@/app/lib/auth";
 import { z } from "zod";
 import { TurnEvent } from "@/src/entities/models/turn";
 
+export const maxDuration = 300;
+
 export async function GET(request: Request, props: { params: Promise<{ streamId: string }> }) {
     const params = await props.params;
     
