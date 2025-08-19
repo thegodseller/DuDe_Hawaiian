@@ -5,6 +5,7 @@ import { Spinner, Link } from '@heroui/react';
 import { Button } from '@/components/ui/button';
 import { Panel } from '@/components/common/panel-common';
 import { Plus, Trash2, ZapIcon, ChevronDown, ChevronUp, ArrowLeftIcon } from 'lucide-react';
+import Image from 'next/image';
 import { z } from 'zod';
 import { ComposioTriggerDeployment } from '@/src/entities/models/composio-trigger-deployment';
 import { ComposioTriggerType } from '@/src/entities/models/composio-trigger-type';
@@ -330,10 +331,13 @@ export function TriggersTab({ projectId }: { projectId: string }) {
                               <a href={`/projects/${projectId}/job-rules/triggers/${trigger.id}`} className="block">
                                 <div className="flex items-center gap-3 mb-1">
                                   {trigger.logo && (
-                                    <img
+                                    <Image
                                       src={trigger.logo}
                                       alt={`${trigger.toolkitSlug} logo`}
-                                      className="w-5 h-5 rounded"
+                                      width={20}
+                                      height={20}
+                                      className="rounded"
+                                      unoptimized
                                     />
                                   )}
                                   {trigger.toolkitSlug && (
@@ -364,10 +368,9 @@ export function TriggersTab({ projectId }: { projectId: string }) {
                               size="sm"
                               isLoading={deletingTrigger === trigger.id}
                               onClick={() => handleDeleteTrigger(trigger.id)}
+                              startContent={<Trash2 className="w-4 h-4" />}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            />
                           </div>
                           
                           {/* Advanced Details Section - Collapsible */}
