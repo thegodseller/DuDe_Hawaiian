@@ -1,6 +1,6 @@
 'use client';
 
-import { Progress, Badge, Chip } from "@heroui/react";
+import { Progress, Badge, Chip, Spinner } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/app/lib/components/label";
 import { Customer, UsageResponse } from "@/app/lib/types/billing_types";
@@ -11,6 +11,9 @@ import { HorizontalDivider } from "@/components/ui/horizontal-divider";
 import { WithStringId } from "@/app/lib/types/types";
 import clsx from 'clsx';
 import { getCustomerPortalUrl } from "../actions/billing.actions";
+import { useState } from "react";
+import { ArrowUpCircle } from "lucide-react";
+import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
 
 const planDetails = {
     free: {
@@ -46,6 +49,9 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
     const plan = customer.subscriptionPlan || "free";
     const displayStatus = getDisplayStatus(customer.subscriptionStatus);
     const planInfo = planDetails[plan];
+    const [loading, setLoading] = useState(false);
+    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+    const [upgradeError, setUpgradeError] = useState("");
 
     // Prepare usage metrics data
     const usageData = Object.entries(usage.usage)
@@ -57,6 +63,7 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
         .sort((a, b) => b.credits - a.credits);
 
     async function handleManageSubscription() {
+        setLoading(true);
         const returnUrl = new URL('/billing/callback', window.location.origin);
         returnUrl.searchParams.set('redirect', window.location.href);
         const url = await getCustomerPortalUrl(returnUrl.toString());
@@ -105,15 +112,34 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
                                 </Chip>
                             </div>
                         </div>
-                        <form action={handleManageSubscription}>
-                            <Button 
-                                variant="primary"
-                                size="md"
-                                type="submit"
+                        <div className="flex flex-col items-end gap-2 min-w-[200px]">
+                            {(plan === "free" || plan === "starter") && (
+                                <Button
+                                    variant="primary"
+                                    size="lg"
+                                    className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-100 text-indigo-700 dark:text-indigo-200 shadow hover:from-indigo-300 hover:to-pink-200 rounded-md border border-indigo-200 dark:border-indigo-700"
+                                    startContent={<ArrowUpCircle className="w-5 h-5" />}
+                                    onClick={() => setUpgradeModalOpen(true)}
+                                >
+                                    Upgrade Now
+                                </Button>
+                            )}
+                            {!loading && <a
+                                href="#"
+                                className="text-xs text-gray-500 underline hover:text-indigo-600 mt-1"
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    try {
+                                        await handleManageSubscription();
+                                    } catch (err) {
+                                        setUpgradeError("Failed to open subscription portal");
+                                    }
+                                }}
                             >
                                 Manage Subscription
-                            </Button>
-                        </form>
+                            </a>}
+                            {loading && <Spinner size="sm" />}
+                        </div>
                     </div>
                 </div>
             </section>
@@ -289,6 +315,11 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
                     )}
                 </div>
             </section>
+            <BillingUpgradeModal
+                isOpen={upgradeModalOpen}
+                onClose={() => setUpgradeModalOpen(false)}
+                errorMessage={upgradeError}
+            />
         </div>
     );
 } 
