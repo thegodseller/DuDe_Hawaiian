@@ -14,6 +14,7 @@ export const CreateDeploymentSchema = ComposioTriggerDeployment
         toolkitSlug: true,
         logo: true,
         triggerTypeSlug: true,
+        triggerTypeName: true,
         triggerConfig: true,
     });
 

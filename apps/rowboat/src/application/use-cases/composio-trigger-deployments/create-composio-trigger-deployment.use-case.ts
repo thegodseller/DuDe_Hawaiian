@@ -2,18 +2,20 @@ import { BadRequestError, NotFoundError } from '@/src/entities/errors/common';
 import { z } from "zod";
 import { IUsageQuotaPolicy } from '../../policies/usage-quota.policy.interface';
 import { IProjectActionAuthorizationPolicy } from '../../policies/project-action-authorization.policy';
-import { CreateDeploymentSchema, IComposioTriggerDeploymentsRepository } from '../../repositories/composio-trigger-deployments.repository.interface';
+import { IComposioTriggerDeploymentsRepository } from '../../repositories/composio-trigger-deployments.repository.interface';
 import { IProjectsRepository } from '../../repositories/projects.repository.interface';
-import { composio, getToolkit } from '../../lib/composio/composio';
+import { composio, getTriggersType } from '../../lib/composio/composio';
 import { ComposioTriggerDeployment } from '@/src/entities/models/composio-trigger-deployment';
 
 const inputSchema = z.object({
     caller: z.enum(["user", "api"]),
     userId: z.string().optional(),
     apiKey: z.string().optional(),
-    data: CreateDeploymentSchema.omit({
-        triggerId: true,
-        logo: true,
+    projectId: z.string(),
+    data: ComposioTriggerDeployment.pick({
+        triggerTypeSlug: true,
+        connectedAccountId: true,
+        triggerConfig: true,
     }),
 });
 
@@ -46,7 +48,7 @@ export class CreateComposioTriggerDeploymentUseCase implements ICreateComposioTr
 
     async execute(request: z.infer<typeof inputSchema>): Promise<z.infer<typeof ComposioTriggerDeployment>> {
         // extract projectid from conversation
-        const { projectId } = request.data;
+        const { projectId } = request;
 
         // authz check
         await this.projectActionAuthorizationPolicy.authorize({
@@ -59,8 +61,11 @@ export class CreateComposioTriggerDeploymentUseCase implements ICreateComposioTr
         // assert and consume quota
         await this.usageQuotaPolicy.assertAndConsume(projectId);
 
+        // get trigger type info
+        const triggerType = await getTriggersType(request.data.triggerTypeSlug);
+
         // get toolkit info
-        const toolkit = await getToolkit(request.data.toolkitSlug);
+        const toolkit = triggerType.toolkit;
 
         // ensure that connected account exists on project
         const project = await this.projectsRepository.fetch(projectId);
@@ -69,7 +74,7 @@ export class CreateComposioTriggerDeploymentUseCase implements ICreateComposioTr
         }
 
         // ensure connected account exists
-        const account = project.composioConnectedAccounts?.[request.data.toolkitSlug];
+        const account = project.composioConnectedAccounts?.[toolkit.slug];
         if (!account || account.id !== request.data.connectedAccountId) {
             throw new BadRequestError('Invalid connected account');
         }
@@ -81,7 +86,7 @@ export class CreateComposioTriggerDeploymentUseCase implements ICreateComposioTr
         }
 
         // create trigger on composio
-        const result = await composio.triggers.create(request.data.projectId, request.data.triggerTypeSlug, {
+        const result = await composio.triggers.create(projectId, request.data.triggerTypeSlug, {
             connectedAccountId: request.data.connectedAccountId,
             triggerConfig: request.data.triggerConfig,
         });
@@ -89,11 +94,12 @@ export class CreateComposioTriggerDeploymentUseCase implements ICreateComposioTr
         // create trigger deployment in db
         return await this.composioTriggerDeploymentsRepository.create({
             projectId,
-            toolkitSlug: request.data.toolkitSlug,
-            logo: toolkit.meta.logo,
+            toolkitSlug: toolkit.slug,
+            logo: toolkit.logo,
             triggerId: result.triggerId,
             connectedAccountId: request.data.connectedAccountId,
             triggerTypeSlug: request.data.triggerTypeSlug,
+            triggerTypeName: triggerType.name,
             triggerConfig: request.data.triggerConfig,
         });
     }

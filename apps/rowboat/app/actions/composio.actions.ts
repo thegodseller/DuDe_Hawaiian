@@ -135,7 +135,6 @@ export async function listComposioTriggerTypes(toolkitSlug: string, cursor?: str
 
 export async function createComposioTriggerDeployment(request: {
     projectId: string,
-    toolkitSlug: string,
     triggerTypeSlug: string,
     connectedAccountId: string,
     triggerConfig?: Record<string, unknown>,
@@ -146,9 +145,8 @@ export async function createComposioTriggerDeployment(request: {
     return await createComposioTriggerDeploymentController.execute({
         caller: 'user',
         userId: user._id,
+        projectId: request.projectId,
         data: {
-            projectId: request.projectId,
-            toolkitSlug: request.toolkitSlug,
             triggerTypeSlug: request.triggerTypeSlug,
             connectedAccountId: request.connectedAccountId,
             triggerConfig: request.triggerConfig ?? {},

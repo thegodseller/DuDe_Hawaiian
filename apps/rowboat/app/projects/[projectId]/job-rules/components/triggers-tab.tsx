@@ -199,7 +199,6 @@ export function TriggersTab({ projectId }: { projectId: string }) {
       // Create the trigger deployment
       await createComposioTriggerDeployment({
         projectId,
-        toolkitSlug: selectedToolkit.slug,
         triggerTypeSlug: selectedTriggerType.slug,
         connectedAccountId,
         triggerConfig,
