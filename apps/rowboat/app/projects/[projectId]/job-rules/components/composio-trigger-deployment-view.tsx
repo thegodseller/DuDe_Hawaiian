@@ -47,7 +47,7 @@ export function ComposioTriggerDeploymentView({ projectId, deploymentId }: { pro
         setDeleting(true);
         try {
             await deleteComposioTriggerDeployment({ projectId, deploymentId: deployment.id });
-            window.location.href = `/projects/${projectId}/job-rules`;
+            window.location.href = `/projects/${projectId}/job-rules?tab=triggers`;
         } catch (e) {
             console.error(e);
             alert('Failed to delete trigger');
@@ -62,7 +62,7 @@ export function ComposioTriggerDeploymentView({ projectId, deploymentId }: { pro
             <Panel
                 title={
                     <div className="flex items-center gap-3">
-                        <Link href={`/projects/${projectId}/job-rules`}>
+                        <Link href={`/projects/${projectId}/job-rules?tab=triggers`}>
                             <Button variant="secondary" size="sm">
                                 <ArrowLeftIcon className="w-4 h-4 mr-2" />
                                 Back

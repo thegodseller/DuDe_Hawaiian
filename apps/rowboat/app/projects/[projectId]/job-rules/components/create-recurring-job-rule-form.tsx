@@ -89,7 +89,7 @@ export function CreateRecurringJobRuleForm({ projectId }: { projectId: string })
                 input: { messages: convertedMessages },
                 cron: cronExpression,
             });
-            router.push(`/projects/${projectId}/job-rules`);
+            router.push(`/projects/${projectId}/job-rules?tab=recurring`);
         } catch (error) {
             console.error("Failed to create recurring job rule:", error);
             alert("Failed to create recurring job rule");
@@ -102,7 +102,7 @@ export function CreateRecurringJobRuleForm({ projectId }: { projectId: string })
         <Panel
             title={
                 <div className="flex items-center gap-3">
-                    <Link href={`/projects/${projectId}/job-rules`}>
+                    <Link href={`/projects/${projectId}/job-rules?tab=recurring`}>
                         <Button variant="secondary" size="sm" startContent={<ArrowLeftIcon className="w-4 h-4" />} className="whitespace-nowrap">
                             Back
                         </Button>

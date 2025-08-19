@@ -180,7 +180,11 @@ export function TriggersTab({ projectId }: { projectId: string }) {
         triggerConfig,
       });
 
-      // Success! Go back to triggers list and reload
+      // Success! Go back to triggers list tab and reload
+      if (typeof window !== 'undefined') {
+        window.location.href = `/projects/${projectId}/job-rules?tab=triggers`;
+        return;
+      }
       handleBackToList();
     } catch (err: any) {
       console.error('Error creating trigger:', err);

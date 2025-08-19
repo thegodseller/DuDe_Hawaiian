@@ -46,7 +46,7 @@ export function ScheduledJobRuleView({ projectId, ruleId }: { projectId: string;
                 ruleId: rule.id,
             });
             // Redirect back to job rules list
-            router.push(`/projects/${projectId}/job-rules`);
+            router.push(`/projects/${projectId}/job-rules?tab=scheduled`);
         } catch (error) {
             console.error("Failed to delete rule:", error);
             alert("Failed to delete rule");
@@ -80,7 +80,7 @@ export function ScheduledJobRuleView({ projectId, ruleId }: { projectId: string;
             <Panel
                 title={
                     <div className="flex items-center gap-3">
-                        <Link href={`/projects/${projectId}/job-rules`}>
+                        <Link href={`/projects/${projectId}/job-rules?tab=scheduled`}>
                             <Button variant="secondary" size="sm" startContent={<ArrowLeftIcon className="w-4 h-4" />} className="whitespace-nowrap">
                                 Back
                             </Button>
