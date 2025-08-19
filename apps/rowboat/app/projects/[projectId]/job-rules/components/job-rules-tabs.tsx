@@ -4,9 +4,10 @@ import { useState } from "react";
 import { Tabs, Tab } from "@/components/ui/tabs";
 import { ScheduledJobRulesList } from "../scheduled/components/scheduled-job-rules-list";
 import { RecurringJobRulesList } from "./recurring-job-rules-list";
+import { TriggersTab } from "./triggers-tab";
 
 export function JobRulesTabs({ projectId }: { projectId: string }) {
-    const [activeTab, setActiveTab] = useState<string>("scheduled");
+    const [activeTab, setActiveTab] = useState<string>("triggers");
 
     const handleTabChange = (key: React.Key) => {
         setActiveTab(key.toString());
@@ -20,10 +21,13 @@ export function JobRulesTabs({ projectId }: { projectId: string }) {
                 aria-label="Job Rules"
                 fullWidth
             >
-                <Tab key="scheduled" title="Scheduled Rules">
+                <Tab key="triggers" title="External Triggers">
+                    <TriggersTab projectId={projectId} />
+                </Tab>
+                <Tab key="scheduled" title="One-Time Triggers">
                     <ScheduledJobRulesList projectId={projectId} />
                 </Tab>
-                <Tab key="recurring" title="Recurring Rules">
+                <Tab key="recurring" title="Recurring Triggers">
                     <RecurringJobRulesList projectId={projectId} />
                 </Tab>
             </Tabs>

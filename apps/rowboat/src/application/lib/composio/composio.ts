@@ -213,3 +213,8 @@ export async function listTriggersTypes(toolkitSlug: string, cursor?: string): P
     // fetch
     return composioApiCall(ZListResponse(ZTriggerType), url.toString());
 }
+
+export async function getTriggersType(triggerTypeSlug: string): Promise<z.infer<typeof ZTriggerType>> {
+    const url = new URL(`${BASE_URL}/triggers_types/${triggerTypeSlug}`);
+    return composioApiCall(ZTriggerType, url.toString());
+}

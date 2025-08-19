@@ -3,7 +3,7 @@ import { requireActiveBillingSubscription } from '@/app/lib/billing';
 import { JobRulesTabs } from "./components/job-rules-tabs";
 
 export const metadata: Metadata = {
-    title: "Job Rules",
+    title: "Triggers",
 };
 
 export default async function Page(

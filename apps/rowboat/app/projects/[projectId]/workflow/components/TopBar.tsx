@@ -8,7 +8,7 @@ interface TopBarProps {
     localProjectName: string;
     projectNameError: string | null;
     onProjectNameChange: (value: string) => void;
-    onProjectNameCommit: (value: string) => void;
+    onProjectNameCommit: (value: string) => Promise<void>;
     publishing: boolean;
     isLive: boolean;
     showCopySuccess: boolean;
@@ -23,7 +23,6 @@ interface TopBarProps {
     onRevertToLive: () => void;
     onToggleCopilot: () => void;
     onSettingsModalOpen: () => void;
-    onTriggersModalOpen: () => void;
 }
 
 export function TopBar({
@@ -45,7 +44,6 @@ export function TopBar({
     onRevertToLive,
     onToggleCopilot,
     onSettingsModalOpen,
-    onTriggersModalOpen,
 }: TopBarProps) {
     const router = useRouter();
     const params = useParams();
@@ -168,16 +166,9 @@ export function TopBar({
                                 <DropdownItem
                                     key="manage-triggers"
                                     startContent={<ZapIcon size={16} />}
-                                    onPress={onTriggersModalOpen}
-                                >
-                                    Manage triggers
-                                </DropdownItem>
-                                <DropdownItem
-                                    key="go-to-schedule-runs"
-                                    startContent={<Clock size={16} />}
                                     onPress={() => { if (projectId) { router.push(`/projects/${projectId}/job-rules`); } }}
                                 >
-                                    Go to schedule runs
+                                    Manage triggers
                                 </DropdownItem>
                                 {!isLive ? (
                                     <>

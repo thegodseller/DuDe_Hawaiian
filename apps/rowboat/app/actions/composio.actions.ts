@@ -13,6 +13,7 @@ import { ICreateComposioTriggerDeploymentController } from "@/src/interface-adap
 import { IListComposioTriggerDeploymentsController } from "@/src/interface-adapters/controllers/composio-trigger-deployments/list-composio-trigger-deployments.controller";
 import { IDeleteComposioTriggerDeploymentController } from "@/src/interface-adapters/controllers/composio-trigger-deployments/delete-composio-trigger-deployment.controller";
 import { IListComposioTriggerTypesController } from "@/src/interface-adapters/controllers/composio-trigger-deployments/list-composio-trigger-types.controller";
+import { IFetchComposioTriggerDeploymentController } from "@/src/interface-adapters/controllers/composio-trigger-deployments/fetch-composio-trigger-deployment.controller";
 import { IDeleteComposioConnectedAccountController } from "@/src/interface-adapters/controllers/projects/delete-composio-connected-account.controller";
 import { authCheck } from "./auth.actions";
 import { ICreateComposioManagedConnectedAccountController } from "@/src/interface-adapters/controllers/projects/create-composio-managed-connected-account.controller";
@@ -26,6 +27,7 @@ const createComposioTriggerDeploymentController = container.resolve<ICreateCompo
 const listComposioTriggerDeploymentsController = container.resolve<IListComposioTriggerDeploymentsController>("listComposioTriggerDeploymentsController");
 const deleteComposioTriggerDeploymentController = container.resolve<IDeleteComposioTriggerDeploymentController>("deleteComposioTriggerDeploymentController");
 const listComposioTriggerTypesController = container.resolve<IListComposioTriggerTypesController>("listComposioTriggerTypesController");
+const fetchComposioTriggerDeploymentController = container.resolve<IFetchComposioTriggerDeploymentController>("fetchComposioTriggerDeploymentController");
 const deleteComposioConnectedAccountController = container.resolve<IDeleteComposioConnectedAccountController>("deleteComposioConnectedAccountController");
 const createComposioManagedConnectedAccountController = container.resolve<ICreateComposioManagedConnectedAccountController>("createComposioManagedConnectedAccountController");
 const createCustomConnectedAccountController = container.resolve<ICreateCustomConnectedAccountController>("createCustomConnectedAccountController");
@@ -133,7 +135,6 @@ export async function listComposioTriggerTypes(toolkitSlug: string, cursor?: str
 
 export async function createComposioTriggerDeployment(request: {
     projectId: string,
-    toolkitSlug: string,
     triggerTypeSlug: string,
     connectedAccountId: string,
     triggerConfig?: Record<string, unknown>,
@@ -144,9 +145,8 @@ export async function createComposioTriggerDeployment(request: {
     return await createComposioTriggerDeploymentController.execute({
         caller: 'user',
         userId: user._id,
+        projectId: request.projectId,
         data: {
-            projectId: request.projectId,
-            toolkitSlug: request.toolkitSlug,
             triggerTypeSlug: request.triggerTypeSlug,
             connectedAccountId: request.connectedAccountId,
             triggerConfig: request.triggerConfig ?? {},
@@ -180,6 +180,15 @@ export async function deleteComposioTriggerDeployment(request: {
         caller: 'user',
         userId: user._id,
         projectId: request.projectId,
+        deploymentId: request.deploymentId,
+    });
+}
+
+export async function fetchComposioTriggerDeployment(request: { deploymentId: string }) {
+    const user = await authCheck();
+    return await fetchComposioTriggerDeploymentController.execute({
+        caller: 'user',
+        userId: user._id,
         deploymentId: request.deploymentId,
     });
 }
