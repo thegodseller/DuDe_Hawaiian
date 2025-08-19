@@ -74,17 +74,18 @@ export function BillingUpgradeModal({ isOpen, onClose, errorMessage }: BillingUp
             plan: "starter" as const,
             description: "Great for your personal projects",
             features: [
-                "1000 playground chat requests",
-                "500 copilot requests"
+                "2,000 credits",
+                "Latest models like gpt-5, claude-4 and others",
             ]
         },
         {
             name: "Pro",
             plan: "pro" as const,
-            description: "Great for enterprise teams",
+            description: "Great for power users or teams",
             features: [
-                "10000 playground chat requests",
-                "2000 copilot requests"
+                "20,000 credits",
+                "o3 and o3-pro",
+                "Priority support",
             ],
             recommended: true
         }
