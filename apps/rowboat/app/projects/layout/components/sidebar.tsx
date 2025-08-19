@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import Link from "next/link";
 import Image from "next/image";
-import logoImage from '@/public/logo-only.png';
+import logo from '@/public/logo.png';
+import logoOnly from '@/public/logo-only.png';
 import { usePathname } from "next/navigation";
 import { Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@heroui/react";
 import { UserButton } from "@/app/lib/components/user_button";
@@ -155,18 +156,17 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
                   ${collapsed ? 'py-3' : 'gap-3 px-4 py-2.5 justify-start'}
                 `}
               >
-                <Image
-                  src={logoImage}
+                {collapsed && <Image
+                  src={logoOnly}
                   alt="Rowboat"
-                  width={collapsed ? 24 : 24}
-                  height={collapsed ? 24 : 24}
-                  className="rounded-full transition-all duration-200 flex-shrink-0"
-                />
-                {!collapsed && (
-                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                    Rowboat
-                  </span>
-                )}
+                  width={24}
+                  height={24}
+                />}
+                {!collapsed && <Image
+                  src={logo}
+                  alt="Rowboat"
+                  height={32}
+                />}
               </Link>
             </Tooltip>
           </div>
