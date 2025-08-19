@@ -99,7 +99,7 @@ export function JobsList({ projectId, filters, showTitle = true, customTitle }: 
             return {
                 type: 'Composio Trigger',
                 display: `Composio: ${reason.triggerTypeSlug}`,
-                link: null
+                link: reason.triggerDeploymentId ? `/projects/${projectId}/job-rules/triggers/${reason.triggerDeploymentId}` : null
             };
         }
         if (reason.type === 'scheduled_job_rule') {

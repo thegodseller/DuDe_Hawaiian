@@ -55,7 +55,7 @@ export function JobView({ projectId, jobId }: { projectId: string; jobId: string
                     'Deployment ID': reason.triggerDeploymentId,
                 },
                 payload: reason.payload,
-                link: null
+                link: reason.triggerDeploymentId ? `/projects/${projectId}/job-rules/triggers/${reason.triggerDeploymentId}` : null
             };
         }
         if (reason.type === 'scheduled_job_rule') {

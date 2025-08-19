@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Spinner } from '@heroui/react';
+import { Spinner, Link } from '@heroui/react';
 import { Button } from '@/components/ui/button';
 import { Panel } from '@/components/common/panel-common';
 import { Plus, Trash2, ZapIcon, ChevronDown, ChevronUp } from 'lucide-react';
@@ -350,22 +350,24 @@ export function TriggersTab({ projectId }: { projectId: string }) {
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                                  Active
-                                </span>
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                  {triggerTypeNames[trigger.triggerTypeSlug] || trigger.triggerTypeSlug}
-                                </span>
-                              </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                Created: {new Date(trigger.createdAt).toLocaleDateString()}
-                              </div>
-                              {Object.keys(trigger.triggerConfig).length > 0 && (
-                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                  Configuration: {Object.keys(trigger.triggerConfig).length} settings
+                              <a href={`/projects/${projectId}/job-rules/triggers/${trigger.id}`} className="block">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                                    Active
+                                  </span>
+                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    {triggerTypeNames[trigger.triggerTypeSlug] || trigger.triggerTypeSlug}
+                                  </span>
                                 </div>
-                              )}
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  Created: {new Date(trigger.createdAt).toLocaleDateString()}
+                                </div>
+                                {Object.keys(trigger.triggerConfig).length > 0 && (
+                                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    Configuration: {Object.keys(trigger.triggerConfig).length} settings
+                                  </div>
+                                )}
+                              </a>
                             </div>
                             <Button
                               variant="tertiary"
@@ -403,6 +405,7 @@ export function TriggersTab({ projectId }: { projectId: string }) {
                                 <div className="text-xs text-gray-600 dark:text-gray-400">
                                   <span className="font-medium">Connected Account:</span> {trigger.connectedAccountId}
                                 </div>
+                                
                               </div>
                             )}
                           </div>
