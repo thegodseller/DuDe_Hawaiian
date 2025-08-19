@@ -17,7 +17,8 @@ import {
   HelpCircle,
   MessageSquareIcon,
   LogsIcon,
-  Clock
+  Clock,
+  ZapIcon
 } from "lucide-react";
 import { fetchProject } from "@/app/actions/project.actions";
 import { createProjectWithOptions } from "../../lib/project-creation-utils";
@@ -103,6 +104,12 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
       requiresProject: true
     },
     {
+      href: 'job-rules',
+      label: 'Triggers',
+      icon: ZapIcon,
+      requiresProject: true
+    },
+    {
       href: 'conversations',
       label: 'Conversations',
       icon: MessageSquareIcon,
@@ -112,12 +119,6 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
       href: 'jobs',
       label: 'Jobs',
       icon: LogsIcon,
-      requiresProject: true
-    },
-    {
-      href: 'job-rules',
-      label: 'Job Rules',
-      icon: Clock,
       requiresProject: true
     },
     {

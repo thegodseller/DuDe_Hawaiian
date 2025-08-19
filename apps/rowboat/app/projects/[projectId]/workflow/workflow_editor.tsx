@@ -37,7 +37,6 @@ import { Button as CustomButton } from "@/components/ui/button";
 import { ConfigApp } from "../config/app";
 import { InputField } from "@/app/lib/components/input-field";
 import { VoiceSection } from "../config/components/voice";
-import { TriggersModal } from "./components/TriggersModal";
 import { TopBar } from "./components/TopBar";
 
 enablePatches();
@@ -882,9 +881,6 @@ export function WorkflowEditor({
     // Modal state for chat widget configuration
     const { isOpen: isChatWidgetModalOpen, onOpen: onChatWidgetModalOpen, onClose: onChatWidgetModalClose } = useDisclosure();
     
-    // Modal state for triggers management
-    const { isOpen: isTriggersModalOpen, onOpen: onTriggersModalOpen, onClose: onTriggersModalClose } = useDisclosure();
-    
     // Project name state
     const [localProjectName, setLocalProjectName] = useState<string>(projectConfig.name || '');
     const [projectNameError, setProjectNameError] = useState<string | null>(null);
@@ -1285,7 +1281,6 @@ export function WorkflowEditor({
                     onRevertToLive={handleRevertToLive}
                     onToggleCopilot={() => setShowCopilot(!showCopilot)}
                     onSettingsModalOpen={onSettingsModalOpen}
-                    onTriggersModalOpen={onTriggersModalOpen}
                 />
                 
                 {/* Content Area */}
@@ -1565,14 +1560,6 @@ export function WorkflowEditor({
                 </Modal>
                 */}
                 
-                {/* Triggers Management Modal */}
-                <TriggersModal
-                    isOpen={isTriggersModalOpen}
-                    onClose={onTriggersModalClose}
-                    projectId={projectId}
-                    projectConfig={projectConfig}
-                    onProjectConfigUpdated={onProjectConfigUpdated}
-                />
             </div>
         </EntitySelectionContext.Provider>
     );

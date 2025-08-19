@@ -1,36 +1,23 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Spinner, Card, CardBody, CardHeader } from '@heroui/react';
+import { Button, Spinner, Card, CardBody, CardHeader } from '@heroui/react';
 import { Plus, Trash2, ZapIcon } from 'lucide-react';
 import { z } from 'zod';
 import { ComposioTriggerDeployment } from '@/src/entities/models/composio-trigger-deployment';
 import { ComposioTriggerType } from '@/src/entities/models/composio-trigger-type';
 import { listComposioTriggerDeployments, deleteComposioTriggerDeployment, createComposioTriggerDeployment } from '@/app/actions/composio.actions';
 import { SelectComposioToolkit } from '../../tools/components/SelectComposioToolkit';
-import { ComposioTriggerTypesPanel } from './ComposioTriggerTypesPanel';
-import { TriggerConfigForm } from './TriggerConfigForm';
+import { ComposioTriggerTypesPanel } from '../../workflow/components/ComposioTriggerTypesPanel';
+import { TriggerConfigForm } from '../../workflow/components/TriggerConfigForm';
 import { ToolkitAuthModal } from '../../tools/components/ToolkitAuthModal';
 import { ZToolkit } from "@/src/application/lib/composio/types";
 import { Project } from "@/src/entities/models/project";
-
-interface TriggersModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  projectId: string;
-  projectConfig: z.infer<typeof Project>;
-  onProjectConfigUpdated?: () => void;
-}
+import { fetchProject } from '@/app/actions/project.actions';
 
 type TriggerDeployment = z.infer<typeof ComposioTriggerDeployment>;
 
-export function TriggersModal({
-  isOpen,
-  onClose,
-  projectId,
-  projectConfig,
-  onProjectConfigUpdated,
-}: TriggersModalProps) {
+export function TriggersTab({ projectId }: { projectId: string }) {
   const [triggers, setTriggers] = useState<TriggerDeployment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +27,16 @@ export function TriggersModal({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSubmittingTrigger, setIsSubmittingTrigger] = useState(false);
   const [deletingTrigger, setDeletingTrigger] = useState<string | null>(null);
+  const [projectConfig, setProjectConfig] = useState<z.infer<typeof Project> | null>(null);
+
+  const loadProjectConfig = useCallback(async () => {
+    try {
+      const config = await fetchProject(projectId);
+      setProjectConfig(config);
+    } catch (err: any) {
+      console.error('Error fetching project config:', err);
+    }
+  }, [projectId]);
 
   const loadTriggers = useCallback(async () => {
     try {
@@ -115,7 +112,7 @@ export function TriggersModal({
 
   const handleAuthComplete = async () => {
     setShowAuthModal(false);
-    onProjectConfigUpdated?.();
+    await loadProjectConfig(); // Refresh project config
   };
 
   const handleTriggerSubmit = async (triggerConfig: Record<string, unknown>) => {
@@ -151,10 +148,14 @@ export function TriggersModal({
   };
 
   useEffect(() => {
-    if (isOpen && !showCreateFlow) {
+    loadProjectConfig();
+  }, [loadProjectConfig]);
+
+  useEffect(() => {
+    if (!showCreateFlow) {
       loadTriggers();
     }
-  }, [isOpen, showCreateFlow, loadTriggers]);
+  }, [showCreateFlow, loadTriggers]);
 
   const renderTriggerList = () => {
     if (loading) {
@@ -319,31 +320,11 @@ export function TriggersModal({
 
   return (
     <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        size="5xl"
-        scrollBehavior="inside"
-      >
-        <ModalContent className="max-h-[90vh]">
-          <ModalHeader>
-            <div className="flex items-center gap-2">
-              <ZapIcon className="w-5 h-5" />
-              <span>Manage Triggers</span>
-            </div>
-          </ModalHeader>
-          <ModalBody>
-            {showCreateFlow ? renderCreateFlow() : renderTriggerList()}
-          </ModalBody>
-          {!showCreateFlow && (
-            <ModalFooter>
-              <Button variant="light" onPress={onClose}>
-                Close
-              </Button>
-            </ModalFooter>
-          )}
-        </ModalContent>
-      </Modal>
+      <div className="h-full overflow-auto px-4 py-4">
+        <div className="max-w-[1024px] mx-auto">
+          {showCreateFlow ? renderCreateFlow() : renderTriggerList()}
+        </div>
+      </div>
       
       {/* Auth Modal */}
       {selectedToolkit && (
