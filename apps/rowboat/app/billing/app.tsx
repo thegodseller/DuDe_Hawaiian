@@ -53,6 +53,11 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
     const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
     const [upgradeError, setUpgradeError] = useState("");
 
+    // show friendly values for credits
+    const sanctionedCredits = Math.floor(usage.sanctionedCredits / (10 ** 6));
+    const availableCredits = Math.floor(usage.availableCredits / (10 ** 6));
+    const usedCredits = Math.ceil((usage.sanctionedCredits - usage.availableCredits) / (10 ** 6));
+
     // Prepare usage metrics data
     const usageData = Object.entries(usage.usage)
         .map(([type, credits]) => ({
@@ -162,7 +167,7 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
                                 tokens.colors.light.text.primary,
                                 tokens.colors.dark.text.primary
                             )}>
-                                {usage.sanctionedCredits.toLocaleString()}
+                                {sanctionedCredits.toLocaleString()}
                             </p>
                             <p className={clsx(
                                 tokens.typography.sizes.sm,
@@ -180,7 +185,7 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
                                 tokens.colors.light.text.primary,
                                 tokens.colors.dark.text.primary
                             )}>
-                                {(usage.sanctionedCredits - usage.availableCredits).toLocaleString()}
+                                {usedCredits.toLocaleString()}
                             </p>
                             <p className={clsx(
                                 tokens.typography.sizes.sm,
@@ -200,7 +205,7 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
                                     tokens.colors.dark.text.primary
                                 )
                             )}>
-                                {usage.availableCredits.toLocaleString()}
+                                {availableCredits.toLocaleString()}
                             </p>
                             <p className={clsx(
                                 tokens.typography.sizes.sm,
@@ -263,7 +268,7 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
             <section className="card">
                 <div className="px-4 pt-4 pb-6">
                     <SectionHeading>
-                        Usage data
+                        Usage split
                     </SectionHeading>
                 </div>
                 <HorizontalDivider />
@@ -287,13 +292,13 @@ export function BillingPage({ customer, usage }: BillingPageProps) {
                                     <div className="flex justify-between items-center">
                                         <div className="space-y-1">
                                             <Label label={type.replace(/_/g, ' ')} />
-                                            <p className={clsx(
+                                            {/* <p className={clsx(
                                                 tokens.typography.sizes.sm,
                                                 tokens.colors.light.text.secondary,
                                                 tokens.colors.dark.text.secondary
                                             )}>
                                                 {credits.toLocaleString()} credits
-                                            </p>
+                                            </p> */}
                                         </div>
                                         <span className={clsx(
                                             tokens.typography.sizes.sm,
