@@ -148,7 +148,7 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
         <div className="flex flex-col grow">
           {/* Rowboat Logo */}
           <div className="p-3 border-b border-zinc-100 dark:border-zinc-800">
-            <Tooltip content={collapsed ? "Rowboat" : ""} showArrow placement="right">
+            <Tooltip content="Home" showArrow placement="right">
               <Link
                 href="/projects"
                 className={`
@@ -159,8 +159,8 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
                 {collapsed && <Image
                   src={logoOnly}
                   alt="Rowboat"
-                  width={24}
-                  height={24}
+                  width={32}
+                  height={32}
                 />}
                 {!collapsed && <Image
                   src={logo}
