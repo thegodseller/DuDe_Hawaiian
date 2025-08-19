@@ -55,7 +55,7 @@ export async function POST(
                     controller.close();
                 } catch (error) {
                     logger.log(`Error processing stream: ${error}`);
-                    controller.error(error);
+                    controller.error(new Error("Something went wrong. Please try again."));
                 }
             },
         });

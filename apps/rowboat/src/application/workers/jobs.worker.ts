@@ -120,7 +120,7 @@ export class JobsWorker implements IJobsWorker {
             await this.jobsRepository.update(job.id, {
                 status: "failed",
                 output: {
-                    error: error instanceof Error ? error.message : "Unknown error",
+                    error: "Something went wrong. Please try again.",
                 },
             });
         } finally {

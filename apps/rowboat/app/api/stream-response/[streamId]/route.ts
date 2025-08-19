@@ -31,7 +31,7 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
                 console.error('Error processing stream:', error);
                 const errMessage: z.infer<typeof TurnEvent> = {
                     type: "error",
-                    error: `Error processing stream: ${error}`,
+                    error: "Something went wrong. Please try again.",
                     isBillingError: false,
                 };
                 controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(errMessage)}\n\n`));
