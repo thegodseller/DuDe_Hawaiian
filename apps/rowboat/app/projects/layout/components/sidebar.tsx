@@ -7,9 +7,9 @@ import logoOnly from '@/public/logo-only.png';
 import { usePathname } from "next/navigation";
 import { Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@heroui/react";
 import { UserButton } from "@/app/lib/components/user_button";
-import { 
-  SettingsIcon, 
-  WorkflowIcon, 
+import {
+  SettingsIcon,
+  WorkflowIcon,
   PlayIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -102,31 +102,26 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
       href: 'workflow',
       label: 'Build',
       icon: WorkflowIcon,
-      requiresProject: true
     },
     {
       href: 'job-rules',
       label: 'Triggers',
       icon: ZapIcon,
-      requiresProject: true
     },
     {
       href: 'conversations',
       label: 'Conversations',
       icon: MessageSquareIcon,
-      requiresProject: true
     },
     {
       href: 'jobs',
       label: 'Jobs',
       icon: LogsIcon,
-      requiresProject: true
     },
     {
       href: 'config',
       label: 'Settings',
       icon: SettingsIcon,
-      requiresProject: true
     }
   ];
 
@@ -179,49 +174,65 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
                 const Icon = item.icon;
                 const fullPath = `/projects/${projectId}/${item.href}`;
                 const isActive = pathname.startsWith(fullPath);
-                const isDisabled = isProjectsRoute && item.requiresProject;
-                
-                return (
-                  <Tooltip 
+
+                return <>
+                  {collapsed && <Tooltip
                     key={item.href}
                     content={collapsed ? item.label : ""}
-                    showArrow 
+                    showArrow
                     placement="right"
                   >
-                    <Link 
-                      href={isDisabled ? '#' : fullPath}
+                    <Link
+                      href={fullPath}
                       className={`
                         relative w-full rounded-md flex items-center
                         text-[15px] font-medium transition-all duration-200
-                        ${collapsed ? 'justify-center py-4' : 'px-2.5 py-3 gap-2.5'}
-                        ${isActive 
-                          ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-l-2 border-indigo-600 dark:border-indigo-400' 
-                          : isDisabled
-                            ? 'text-zinc-300 dark:text-zinc-600 cursor-not-allowed'
-                            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-300'
+                        px-2.5 py-3 gap-2.5
+                        ${isActive
+                          ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-l-2 border-indigo-600 dark:border-indigo-400'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-300'
                         }
-                        ${isDisabled ? 'pointer-events-none' : ''}
                       `}
                       data-tour-target={item.href === 'config' ? 'settings' : item.href === 'sources' ? 'entity-data-sources' : undefined}
                     >
-                      <Icon 
-                        size={collapsed ? COLLAPSED_ICON_SIZE : EXPANDED_ICON_SIZE} 
+                      <Icon
+                        size={COLLAPSED_ICON_SIZE}
                         className={`
                           transition-all duration-200
-                          ${isDisabled 
-                            ? 'text-zinc-300 dark:text-zinc-600' 
-                            : isActive
-                              ? 'text-indigo-600 dark:text-indigo-400'
-                              : 'text-zinc-500 dark:text-zinc-400'
+                          ${isActive
+                            ? 'text-indigo-600 dark:text-indigo-400'
+                            : 'text-zinc-500 dark:text-zinc-400'
                           }
                         `}
                       />
-                      {!collapsed && (
-                        <span>{item.label}</span>
-                      )}
                     </Link>
-                  </Tooltip>
-                );
+                  </Tooltip>}
+                  {!collapsed && <Link
+                    href={fullPath}
+                    className={`
+                        relative w-full rounded-md flex items-center
+                        text-[15px] font-medium transition-all duration-200
+                        px-2.5 py-3 gap-2.5
+                        ${isActive
+                        ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-l-2 border-indigo-600 dark:border-indigo-400'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-300'
+                      }
+                      `}
+                    data-tour-target={item.href === 'config' ? 'settings' : item.href === 'sources' ? 'entity-data-sources' : undefined}
+                  >
+                    <Icon
+                      size={EXPANDED_ICON_SIZE}
+                      className={`
+                          transition-all duration-200
+                          ${isActive
+                          ? 'text-indigo-600 dark:text-indigo-400'
+                          : 'text-zinc-500 dark:text-zinc-400'
+                        }
+                        `}
+                    />
+                    <span>{item.label}</span>
+                  </Link>}
+                </>
               })
             )}
           </nav>
@@ -247,7 +258,7 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
           <div className="p-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
             {USE_PRODUCT_TOUR && !isProjectsRoute && (
               <Tooltip content={collapsed ? "Help" : ""} showArrow placement="right">
-                <button 
+                <button
                   onClick={showHelpModal}
                   className={`
                     w-full rounded-md flex items-center
@@ -266,7 +277,7 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
 
             {SHOW_DARK_MODE_TOGGLE && (
               <Tooltip content={collapsed ? "Appearance" : ""} showArrow placement="right">
-                <button 
+                <button
                   onClick={toggleTheme}
                   className={`
                     w-full rounded-md flex items-center
@@ -276,7 +287,7 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
                     text-zinc-600 dark:text-zinc-400
                   `}
                 >
-                  { theme == "light" ? <Moon size={COLLAPSED_ICON_SIZE} /> : <Sun size={COLLAPSED_ICON_SIZE} /> }
+                  {theme == "light" ? <Moon size={COLLAPSED_ICON_SIZE} /> : <Sun size={COLLAPSED_ICON_SIZE} />}
                   {!collapsed && <span>Appearance</span>}
                 </button>
               </Tooltip>
@@ -284,7 +295,7 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
 
             {useAuth && <>
               {collapsed && <Tooltip content="Account" showArrow placement="right">
-                  <UserButton useBilling={useBilling} collapsed={collapsed} />
+                <UserButton useBilling={useBilling} collapsed={collapsed} />
               </Tooltip>}
               {!collapsed && <UserButton useBilling={useBilling} collapsed={collapsed} />}
             </>}
@@ -294,8 +305,8 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
 
 
       {/* Create Assistant Modal */}
-      <Modal 
-        isOpen={isCreateModalOpen} 
+      <Modal
+        isOpen={isCreateModalOpen}
         onClose={handleCreateModalClose}
         size="2xl"
       >
