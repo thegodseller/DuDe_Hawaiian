@@ -21,13 +21,13 @@ export function JobRulesTabs({ projectId }: { projectId: string }) {
                 aria-label="Job Rules"
                 fullWidth
             >
-                <Tab key="triggers" title="Triggers">
+                <Tab key="triggers" title="External Triggers">
                     <TriggersTab projectId={projectId} />
                 </Tab>
-                <Tab key="scheduled" title="One-time">
+                <Tab key="scheduled" title="One-Time Triggers">
                     <ScheduledJobRulesList projectId={projectId} />
                 </Tab>
-                <Tab key="recurring" title="Recurring">
+                <Tab key="recurring" title="Recurring Triggers">
                     <RecurringJobRulesList projectId={projectId} />
                 </Tab>
             </Tabs>

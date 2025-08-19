@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Spinner } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/common/panel-common";
-import { listRecurringJobRules } from "@/app/actions/recurring-job-rules.actions";
+import { listRecurringJobRules, deleteRecurringJobRule } from "@/app/actions/recurring-job-rules.actions";
 import { z } from "zod";
 import { ListedRecurringRuleItem } from "@/src/application/repositories/recurring-job-rules.repository.interface";
 import { isToday, isThisWeek, isThisMonth } from "@/lib/utils/date";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, Trash2 } from "lucide-react";
 
 type ListedItem = z.infer<typeof ListedRecurringRuleItem>;
 
@@ -18,6 +18,7 @@ export function RecurringJobRulesList({ projectId }: { projectId: string }) {
     const [loading, setLoading] = useState<boolean>(true);
     const [loadingMore, setLoadingMore] = useState<boolean>(false);
     const [hasMore, setHasMore] = useState<boolean>(false);
+    const [deletingRule, setDeletingRule] = useState<string | null>(null);
 
     const fetchPage = useCallback(async (cursorArg?: string | null) => {
         const res = await listRecurringJobRules({ projectId, cursor: cursorArg ?? undefined, limit: 20 });
@@ -47,6 +48,24 @@ export function RecurringJobRulesList({ projectId }: { projectId: string }) {
         setHasMore(Boolean(res.nextCursor));
         setLoadingMore(false);
     }, [cursor, fetchPage]);
+
+    const handleDeleteRule = async (ruleId: string) => {
+        if (!window.confirm('Are you sure you want to delete this recurring trigger?')) {
+            return;
+        }
+
+        try {
+            setDeletingRule(ruleId);
+            await deleteRecurringJobRule({ projectId, ruleId });
+            // Remove the deleted item from the list
+            setItems(prev => prev.filter(item => item.id !== ruleId));
+        } catch (err: any) {
+            console.error('Error deleting recurring trigger:', err);
+            alert('Failed to delete recurring trigger. Please try again.');
+        } finally {
+            setDeletingRule(null);
+        }
+    };
 
     const sections = useMemo(() => {
         const groups: Record<string, ListedItem[]> = {
@@ -109,18 +128,15 @@ export function RecurringJobRulesList({ projectId }: { projectId: string }) {
     return (
         <Panel
             title={
-                <div className="flex items-center gap-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        RECURRING JOB RULES
-                    </div>
+                <div className="text-base font-normal text-gray-900 dark:text-gray-100">
+                    Run your assistant workflow on an automated repeating schedule (cron jobs).
                 </div>
             }
             rightActions={
                 <div className="flex items-center gap-3">
                     <Link href={`/projects/${projectId}/job-rules/recurring/new`}>
-                        <Button size="sm" className="flex items-center gap-2">
-                            <PlusIcon className="w-4 h-4" />
-                            New Rule
+                        <Button size="sm" className="whitespace-nowrap" startContent={<PlusIcon className="w-4 h-4" />}>
+                            New Recurring Trigger
                         </Button>
                     </Link>
                 </div>
@@ -145,38 +161,48 @@ export function RecurringJobRulesList({ projectId }: { projectId: string }) {
                                         </h3>
                                         <div className="grid gap-3">
                                             {sectionItems.map((item) => (
-                                                <Link
+                                                <div
                                                     key={item.id}
-                                                    href={`/projects/${projectId}/job-rules/recurring/${item.id}`}
                                                     className="block p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
                                                 >
-                                                    <div className="flex items-center justify-between">
+                                                    <div className="flex items-start justify-between">
                                                         <div className="flex-1">
-                                                            <div className="flex items-center gap-3 mb-2">
-                                                                <span className={`text-sm font-medium ${getStatusColor(item.disabled, item.lastError || null)}`}>
-                                                                    {getStatusText(item.disabled, item.lastError || null)}
-                                                                </span>
-                                                                <span className="text-sm text-gray-500 dark:text-gray-400">
-                                                                    Next run: {formatNextRunAt(item.nextRunAt)}
-                                                                </span>
-                                                            </div>
-                                                            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                                                                Schedule: {formatCronExpression(item.cron)}
-                                                            </div>
-                                                            <div className="text-sm text-gray-600 dark:text-gray-400">
-                                                                Created: {new Date(item.createdAt).toLocaleDateString()}
-                                                            </div>
-                                                            {item.lastError && (
-                                                                <div className="text-sm text-red-600 dark:text-red-400 mt-1">
-                                                                    Last error: {item.lastError}
+                                                            <Link
+                                                                href={`/projects/${projectId}/job-rules/recurring/${item.id}`}
+                                                                className="block"
+                                                            >
+                                                                <div className="flex items-center gap-3 mb-2">
+                                                                    <span className={`text-sm font-medium ${getStatusColor(item.disabled, item.lastError || null)}`}>
+                                                                        {getStatusText(item.disabled, item.lastError || null)}
+                                                                    </span>
+                                                                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                                                                        Next run: {formatNextRunAt(item.nextRunAt)}
+                                                                    </span>
                                                                 </div>
-                                                            )}
+                                                                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                                                    Schedule: {formatCronExpression(item.cron)}
+                                                                </div>
+                                                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                                                    Created: {new Date(item.createdAt).toLocaleDateString()}
+                                                                </div>
+                                                                {item.lastError && (
+                                                                    <div className="text-sm text-red-600 dark:text-red-400 mt-1">
+                                                                        Last error: {item.lastError}
+                                                                    </div>
+                                                                )}
+                                                            </Link>
                                                         </div>
-                                                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                            {new Date(item.createdAt).toLocaleDateString()}
-                                                        </div>
+                                                        <Button
+                                                            variant="tertiary"
+                                                            size="sm"
+                                                            isLoading={deletingRule === item.id}
+                                                            onClick={() => handleDeleteRule(item.id)}
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
                                                     </div>
-                                                </Link>
+                                                </div>
                                             ))}
                                         </div>
                                     </div>
@@ -184,7 +210,7 @@ export function RecurringJobRulesList({ projectId }: { projectId: string }) {
                             })}
                             {items.length === 0 && !loading && (
                                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                    No recurring job rules found. Create your first rule to get started.
+                                    No recurring triggers yet. Create your first recurring trigger to get started.
                                 </div>
                             )}
                             {hasMore && (

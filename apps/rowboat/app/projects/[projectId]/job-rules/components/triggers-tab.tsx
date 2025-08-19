@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Spinner, Card, CardBody, CardHeader } from '@heroui/react';
-import { Plus, Trash2, ZapIcon } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Spinner } from '@heroui/react';
+import { Button } from '@/components/ui/button';
+import { Panel } from '@/components/common/panel-common';
+import { Plus, Trash2, ZapIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { z } from 'zod';
 import { ComposioTriggerDeployment } from '@/src/entities/models/composio-trigger-deployment';
 import { ComposioTriggerType } from '@/src/entities/models/composio-trigger-type';
-import { listComposioTriggerDeployments, deleteComposioTriggerDeployment, createComposioTriggerDeployment } from '@/app/actions/composio.actions';
+import { isToday, isThisWeek, isThisMonth } from '@/lib/utils/date';
+import { listComposioTriggerDeployments, deleteComposioTriggerDeployment, createComposioTriggerDeployment, listComposioTriggerTypes } from '@/app/actions/composio.actions';
 import { SelectComposioToolkit } from '../../tools/components/SelectComposioToolkit';
 import { ComposioTriggerTypesPanel } from '../../workflow/components/ComposioTriggerTypesPanel';
 import { TriggerConfigForm } from '../../workflow/components/TriggerConfigForm';
@@ -28,6 +31,11 @@ export function TriggersTab({ projectId }: { projectId: string }) {
   const [isSubmittingTrigger, setIsSubmittingTrigger] = useState(false);
   const [deletingTrigger, setDeletingTrigger] = useState<string | null>(null);
   const [projectConfig, setProjectConfig] = useState<z.infer<typeof Project> | null>(null);
+  const [triggerTypeNames, setTriggerTypeNames] = useState<Record<string, string>>({});
+  const [expandedTrigger, setExpandedTrigger] = useState<string | null>(null);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState<boolean>(false);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
 
   const loadProjectConfig = useCallback(async () => {
     try {
@@ -38,12 +46,56 @@ export function TriggersTab({ projectId }: { projectId: string }) {
     }
   }, [projectId]);
 
+  const loadTriggerTypeNames = useCallback(async () => {
+    try {
+      const names: Record<string, string> = {};
+      
+      // Get unique toolkit slugs from existing triggers
+      const uniqueToolkits = [...new Set(triggers.map(t => t.toolkitSlug))];
+      
+      // Fetch trigger types for each toolkit
+      for (const toolkitSlug of uniqueToolkits) {
+        try {
+          const response = await listComposioTriggerTypes(toolkitSlug);
+          response.items.forEach(triggerType => {
+            names[triggerType.slug] = triggerType.name;
+          });
+        } catch (err) {
+          console.error(`Error fetching trigger types for ${toolkitSlug}:`, err);
+        }
+      }
+      
+      setTriggerTypeNames(names);
+    } catch (err: any) {
+      console.error('Error loading trigger type names:', err);
+    }
+  }, [triggers]);
+
+  const sections = useMemo(() => {
+    const groups: Record<string, TriggerDeployment[]> = {
+      Today: [],
+      'This week': [],
+      'This month': [],
+      Older: [],
+    };
+    for (const trigger of triggers) {
+      const d = new Date(trigger.createdAt);
+      if (isToday(d)) groups['Today'].push(trigger);
+      else if (isThisWeek(d)) groups['This week'].push(trigger);
+      else if (isThisMonth(d)) groups['This month'].push(trigger);
+      else groups['Older'].push(trigger);
+    }
+    return groups;
+  }, [triggers]);
+
   const loadTriggers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await listComposioTriggerDeployments({ projectId });
       setTriggers(response.items);
+      setCursor(response.nextCursor);
+      setHasMore(Boolean(response.nextCursor));
     } catch (err: any) {
       console.error('Error loading triggers:', err);
       setError('Failed to load triggers. Please try again.');
@@ -51,6 +103,21 @@ export function TriggersTab({ projectId }: { projectId: string }) {
       setLoading(false);
     }
   }, [projectId]);
+
+  const loadMore = useCallback(async () => {
+    if (!cursor) return;
+    setLoadingMore(true);
+    try {
+      const response = await listComposioTriggerDeployments({ projectId, cursor });
+      setTriggers(prev => [...prev, ...response.items]);
+      setCursor(response.nextCursor);
+      setHasMore(Boolean(response.nextCursor));
+    } catch (err: any) {
+      console.error('Error loading more triggers:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [cursor, projectId]);
 
   const handleDeleteTrigger = async (deploymentId: string) => {
     if (!window.confirm('Are you sure you want to delete this trigger?')) {
@@ -79,6 +146,7 @@ export function TriggersTab({ projectId }: { projectId: string }) {
     setSelectedTriggerType(null);
     setShowAuthModal(false);
     setIsSubmittingTrigger(false);
+    setExpandedTrigger(null); // Reset expanded state
     loadTriggers(); // Reload in case any triggers were created
   };
 
@@ -157,106 +225,217 @@ export function TriggersTab({ projectId }: { projectId: string }) {
     }
   }, [showCreateFlow, loadTriggers]);
 
+  useEffect(() => {
+    if (triggers.length > 0) {
+      loadTriggerTypeNames();
+    }
+  }, [triggers, loadTriggerTypeNames]);
+
   const renderTriggerList = () => {
     if (loading) {
       return (
-        <div className="flex items-center justify-center py-8">
-          <Spinner size="lg" />
-          <span className="ml-2">Loading triggers...</span>
-        </div>
+        <Panel
+          title={
+            <div className="text-base font-normal text-gray-900 dark:text-gray-100">
+              Loading your triggers
+            </div>
+          }
+        >
+          <div className="h-full overflow-auto px-4 py-4">
+            <div className="max-w-[1024px] mx-auto">
+              <div className="flex items-center justify-center py-8">
+                <Spinner size="lg" />
+                <span className="ml-2">Loading triggers...</span>
+              </div>
+            </div>
+          </div>
+        </Panel>
       );
     }
 
     if (error) {
       return (
-        <div className="text-center py-8">
-          <p className="text-red-500 mb-4">{error}</p>
-          <Button variant="flat" onPress={loadTriggers}>
-            Try Again
-          </Button>
-        </div>
+        <Panel
+          title={
+            <div className="text-base font-normal text-gray-900 dark:text-gray-100">
+              Error loading your triggers
+            </div>
+          }
+          rightActions={
+            <Button variant="secondary" onClick={loadTriggers}>
+              Try Again
+            </Button>
+          }
+        >
+          <div className="h-full overflow-auto px-4 py-4">
+            <div className="max-w-[1024px] mx-auto">
+              <div className="text-center py-8">
+                <p className="text-red-500 mb-4">{error}</p>
+              </div>
+            </div>
+          </div>
+        </Panel>
       );
     }
 
     if (triggers.length === 0) {
       return (
-        <div className="text-center py-12">
-          <ZapIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            No triggers configured
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
-            Set up your first trigger to listen for events from your connected apps.
-          </p>
-          <Button
-            color="primary"
-            variant="solid"
-            startContent={<Plus className="w-4 h-4" />}
-            onPress={handleCreateNew}
-          >
-            Create your first trigger
-          </Button>
-        </div>
+        <Panel
+          title={
+            <div className="text-base font-normal text-gray-900 dark:text-gray-100">
+              Listen for events from connected apps to run your assistant workflow automatically.
+            </div>
+          }
+          rightActions={
+            <Button
+              variant="primary"
+              startContent={<Plus className="w-4 h-4" />}
+              onClick={handleCreateNew}
+              className="whitespace-nowrap"
+            >
+              New External Trigger
+            </Button>
+          }
+        >
+          <div className="h-full overflow-auto px-4 py-4">
+            <div className="max-w-[1024px] mx-auto">
+              <div className="text-center py-12">
+                <ZapIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  No external triggers yet
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  Create your first external trigger to listen for events from your connected apps.
+                </p>
+              </div>
+            </div>
+          </div>
+        </Panel>
       );
     }
 
     return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Active Triggers ({triggers.length})
-          </h3>
+      <Panel
+        title={
+          <div className="text-base font-normal text-gray-900 dark:text-gray-100">
+            Listen for events from connected apps to run your assistant workflow automatically.
+          </div>
+        }
+        rightActions={
           <Button
-            color="primary"
-            variant="solid"
+            variant="primary"
             startContent={<Plus className="w-4 h-4" />}
-            onPress={handleCreateNew}
+            onClick={handleCreateNew}
+            className="whitespace-nowrap"
           >
-            Create New Trigger
+            New External Trigger
           </Button>
-        </div>
-
-        <div className="space-y-3">
-          {triggers.map((trigger) => (
-            <Card key={trigger.id} className="w-full">
-              <CardHeader className="flex justify-between items-start">
-                <div>
-                  <h4 className="text-base font-medium text-gray-900 dark:text-gray-100">
-                    {trigger.triggerTypeSlug}
-                  </h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Created {new Date(trigger.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <Button
-                  isIconOnly
-                  variant="light"
-                  color="danger"
-                  size="sm"
-                  isLoading={deletingTrigger === trigger.id}
-                  onPress={() => handleDeleteTrigger(trigger.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </CardHeader>
-              <CardBody className="pt-0">
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  <p><strong>Trigger ID:</strong> {trigger.triggerId}</p>
-                  <p><strong>Connected Account:</strong> {trigger.connectedAccountId}</p>
-                  {Object.keys(trigger.triggerConfig).length > 0 && (
-                    <div className="mt-2">
-                      <strong>Configuration:</strong>
-                      <pre className="mt-1 text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                        {JSON.stringify(trigger.triggerConfig, null, 2)}
-                      </pre>
+        }
+      >
+        <div className="h-full overflow-auto px-4 py-4">
+          <div className="max-w-[1024px] mx-auto">
+            <div className="flex flex-col gap-6">
+              {Object.entries(sections).map(([sectionName, sectionTriggers]) => {
+                if (sectionTriggers.length === 0) return null;
+                return (
+                  <div key={sectionName} className="space-y-3">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      {sectionName}
+                    </h3>
+                    <div className="grid gap-3">
+                      {sectionTriggers.map((trigger) => (
+                        <div
+                          key={trigger.id}
+                          className="block p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                                  Active
+                                </span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                  {triggerTypeNames[trigger.triggerTypeSlug] || trigger.triggerTypeSlug}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                Created: {new Date(trigger.createdAt).toLocaleDateString()}
+                              </div>
+                              {Object.keys(trigger.triggerConfig).length > 0 && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                  Configuration: {Object.keys(trigger.triggerConfig).length} settings
+                                </div>
+                              )}
+                            </div>
+                            <Button
+                              variant="tertiary"
+                              size="sm"
+                              isLoading={deletingTrigger === trigger.id}
+                              onClick={() => handleDeleteTrigger(trigger.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          
+                          {/* Advanced Details Section - Collapsible */}
+                          <div className="mt-3">
+                            <button
+                              onClick={() => setExpandedTrigger(expandedTrigger === trigger.id ? null : trigger.id)}
+                              className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                            >
+                              <span className="font-medium">Advanced Details</span>
+                              {expandedTrigger === trigger.id ? (
+                                <ChevronUp className="w-3 h-3" />
+                              ) : (
+                                <ChevronDown className="w-3 h-3" />
+                              )}
+                            </button>
+                            
+                            {expandedTrigger === trigger.id && (
+                              <div className="mt-2 space-y-1">
+                                <div className="text-xs text-gray-600 dark:text-gray-400">
+                                  <span className="font-medium">Slug:</span> {trigger.triggerTypeSlug}
+                                </div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400">
+                                  <span className="font-medium">Trigger ID:</span> {trigger.triggerId}
+                                </div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400">
+                                  <span className="font-medium">Connected Account:</span> {trigger.connectedAccountId}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
+                );
+              })}
+              
+              {hasMore && (
+                <div className="text-center">
+                  <Button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    variant="secondary"
+                    size="sm"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Spinner size="sm" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load More'
+                    )}
+                  </Button>
                 </div>
-              </CardBody>
-            </Card>
-          ))}
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </Panel>
     );
   };
 
@@ -288,8 +467,8 @@ export function TriggersTab({ projectId }: { projectId: string }) {
               Select a Toolkit to Create Trigger
             </h3>
             <Button
-              variant="flat"
-              onPress={handleBackToList}
+              variant="secondary"
+              onClick={handleBackToList}
             >
               ← Back to Triggers
             </Button>
@@ -320,11 +499,7 @@ export function TriggersTab({ projectId }: { projectId: string }) {
 
   return (
     <>
-      <div className="h-full overflow-auto px-4 py-4">
-        <div className="max-w-[1024px] mx-auto">
-          {showCreateFlow ? renderCreateFlow() : renderTriggerList()}
-        </div>
-      </div>
+      {showCreateFlow ? renderCreateFlow() : renderTriggerList()}
       
       {/* Auth Modal */}
       {selectedToolkit && (
