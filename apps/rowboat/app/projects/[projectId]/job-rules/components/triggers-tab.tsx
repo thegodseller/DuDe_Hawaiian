@@ -4,12 +4,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Spinner, Link } from '@heroui/react';
 import { Button } from '@/components/ui/button';
 import { Panel } from '@/components/common/panel-common';
-import { Plus, Trash2, ZapIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, ZapIcon, ChevronDown, ChevronUp, ArrowLeftIcon } from 'lucide-react';
 import { z } from 'zod';
 import { ComposioTriggerDeployment } from '@/src/entities/models/composio-trigger-deployment';
 import { ComposioTriggerType } from '@/src/entities/models/composio-trigger-type';
 import { isToday, isThisWeek, isThisMonth } from '@/lib/utils/date';
-import { listComposioTriggerDeployments, deleteComposioTriggerDeployment, createComposioTriggerDeployment, listComposioTriggerTypes } from '@/app/actions/composio.actions';
+import { listComposioTriggerDeployments, deleteComposioTriggerDeployment, createComposioTriggerDeployment } from '@/app/actions/composio.actions';
 import { SelectComposioToolkit } from '../../tools/components/SelectComposioToolkit';
 import { ComposioTriggerTypesPanel } from '../../workflow/components/ComposioTriggerTypesPanel';
 import { TriggerConfigForm } from '../../workflow/components/TriggerConfigForm';
@@ -19,6 +19,8 @@ import { Project } from "@/src/entities/models/project";
 import { fetchProject } from '@/app/actions/project.actions';
 
 type TriggerDeployment = z.infer<typeof ComposioTriggerDeployment>;
+
+// Removed friendly name computation; backend now provides friendly trigger name
 
 export function TriggersTab({ projectId }: { projectId: string }) {
   const [triggers, setTriggers] = useState<TriggerDeployment[]>([]);
@@ -31,7 +33,6 @@ export function TriggersTab({ projectId }: { projectId: string }) {
   const [isSubmittingTrigger, setIsSubmittingTrigger] = useState(false);
   const [deletingTrigger, setDeletingTrigger] = useState<string | null>(null);
   const [projectConfig, setProjectConfig] = useState<z.infer<typeof Project> | null>(null);
-  const [triggerTypeNames, setTriggerTypeNames] = useState<Record<string, string>>({});
   const [expandedTrigger, setExpandedTrigger] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(false);
@@ -45,31 +46,6 @@ export function TriggersTab({ projectId }: { projectId: string }) {
       console.error('Error fetching project config:', err);
     }
   }, [projectId]);
-
-  const loadTriggerTypeNames = useCallback(async () => {
-    try {
-      const names: Record<string, string> = {};
-      
-      // Get unique toolkit slugs from existing triggers
-      const uniqueToolkits = [...new Set(triggers.map(t => t.toolkitSlug))];
-      
-      // Fetch trigger types for each toolkit
-      for (const toolkitSlug of uniqueToolkits) {
-        try {
-          const response = await listComposioTriggerTypes(toolkitSlug);
-          response.items.forEach(triggerType => {
-            names[triggerType.slug] = triggerType.name;
-          });
-        } catch (err) {
-          console.error(`Error fetching trigger types for ${toolkitSlug}:`, err);
-        }
-      }
-      
-      setTriggerTypeNames(names);
-    } catch (err: any) {
-      console.error('Error loading trigger type names:', err);
-    }
-  }, [triggers]);
 
   const sections = useMemo(() => {
     const groups: Record<string, TriggerDeployment[]> = {
@@ -225,10 +201,8 @@ export function TriggersTab({ projectId }: { projectId: string }) {
   }, [showCreateFlow, loadTriggers]);
 
   useEffect(() => {
-    if (triggers.length > 0) {
-      loadTriggerTypeNames();
-    }
-  }, [triggers, loadTriggerTypeNames]);
+    // No-op: trigger names are now derived from slug locally
+  }, [triggers]);
 
   const renderTriggerList = () => {
     if (loading) {
@@ -261,7 +235,7 @@ export function TriggersTab({ projectId }: { projectId: string }) {
             </div>
           }
           rightActions={
-            <Button variant="secondary" onClick={loadTriggers}>
+            <Button variant="secondary" onClick={loadTriggers} className="whitespace-nowrap">
               Try Again
             </Button>
           }
@@ -350,12 +324,25 @@ export function TriggersTab({ projectId }: { projectId: string }) {
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <a href={`/projects/${projectId}/job-rules/triggers/${trigger.id}`} className="block">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                                    Active
-                                  </span>
+                                <div className="flex items-center gap-3 mb-1">
+                                  {trigger.logo && (
+                                    <img
+                                      src={trigger.logo}
+                                      alt={`${trigger.toolkitSlug} logo`}
+                                      className="w-5 h-5 rounded"
+                                    />
+                                  )}
+                                  {trigger.toolkitSlug && (
+                                    <span className="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400">
+                                      {trigger.toolkitSlug}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="h-2" />
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-sm font-medium text-green-600 dark:text-green-400">Active</span>
                                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                    {triggerTypeNames[trigger.triggerTypeSlug] || trigger.triggerTypeSlug}
+                                    {trigger.triggerTypeName}
                                   </span>
                                 </div>
                                 <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -422,15 +409,10 @@ export function TriggersTab({ projectId }: { projectId: string }) {
                     disabled={loadingMore}
                     variant="secondary"
                     size="sm"
+                    isLoading={loadingMore}
+                    className="whitespace-nowrap"
                   >
-                    {loadingMore ? (
-                      <>
-                        <Spinner size="sm" />
-                        Loading...
-                      </>
-                    ) : (
-                      'Load More'
-                    )}
+                    {loadingMore ? 'Loading...' : 'Load More'}
                   </Button>
                 </div>
               )}
@@ -471,8 +453,10 @@ export function TriggersTab({ projectId }: { projectId: string }) {
             <Button
               variant="secondary"
               onClick={handleBackToList}
+              startContent={<ArrowLeftIcon className="w-4 h-4" />}
+              className="whitespace-nowrap"
             >
-              ← Back to Triggers
+              Back to Triggers
             </Button>
           </div>
 
