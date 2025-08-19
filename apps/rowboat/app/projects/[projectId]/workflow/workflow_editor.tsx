@@ -34,7 +34,7 @@ import { ModelsResponse } from "@/app/lib/types/billing_types";
 import { AgentGraphVisualizer } from "../entities/AgentGraphVisualizer";
 import { Panel } from "@/components/common/panel-common";
 import { Button as CustomButton } from "@/components/ui/button";
-import { ConfigApp } from "../config/app";
+
 import { InputField } from "@/app/lib/components/input-field";
 import { VoiceSection } from "../config/components/voice";
 import { TopBar } from "./components/TopBar";
@@ -376,7 +376,7 @@ function reducer(state: State, action: Action): State {
                                     properties: {},
                                     required: []
                                 },
-                                mockTool: true,
+                                mockTool: false,
                                 ...action.tool
                             });
                             draft.selection = {
@@ -872,9 +872,6 @@ export function WorkflowEditor({
     // Modal state for revert confirmation
     const { isOpen: isRevertModalOpen, onOpen: onRevertModalOpen, onClose: onRevertModalClose } = useDisclosure();
     
-    // Modal state for settings
-    const { isOpen: isSettingsModalOpen, onOpen: onSettingsModalOpen, onClose: onSettingsModalClose } = useDisclosure();
-    
     // Modal state for phone/Twilio configuration
     const { isOpen: isPhoneModalOpen, onOpen: onPhoneModalOpen, onClose: onPhoneModalClose } = useDisclosure();
     
@@ -1280,7 +1277,6 @@ export function WorkflowEditor({
                     onChangeMode={onChangeMode}
                     onRevertToLive={handleRevertToLive}
                     onToggleCopilot={() => setShowCopilot(!showCopilot)}
-                    onSettingsModalOpen={onSettingsModalOpen}
                 />
                 
                 {/* Content Area */}
@@ -1498,26 +1494,7 @@ export function WorkflowEditor({
                     </ModalContent>
                 </Modal>
                 
-                {/* Settings Modal */}
-                <Modal 
-                    isOpen={isSettingsModalOpen} 
-                    onClose={onSettingsModalClose}
-                    size="5xl"
-                    scrollBehavior="inside"
-                >
-                    <ModalContent className="h-[80vh]">
-                        <ModalHeader className="flex flex-col gap-1">
-                            API & SDK
-                        </ModalHeader>
-                        <ModalBody className="p-0">
-                            <ConfigApp
-                                projectId={projectId}
-                                useChatWidget={USE_CHAT_WIDGET}
-                                chatWidgetHost={chatWidgetHost}
-                            />
-                        </ModalBody>
-                    </ModalContent>
-                </Modal>
+
                 
                 {/* Phone/Twilio Modal */}
                 <Modal 

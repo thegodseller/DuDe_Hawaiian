@@ -319,6 +319,22 @@ export function AgentConfig({
                                 </div>
                             ) : (
                                 <div className="space-y-6">
+                                    {/* Description Section */}
+                                    <div className="space-y-2">
+                                        <label className={sectionHeaderStyles}>Description</label>
+                                        <InputField
+                                            type="text"
+                                            value={agent.description || ""}
+                                            onChange={(value: string) => {
+                                                handleUpdate({ ...agent, description: value });
+                                                showSavedMessage();
+                                            }}
+                                            multiline={true}
+                                            placeholder="Enter a description for this agent"
+                                            minHeight="40px"
+                                            className="w-full"
+                                        />
+                                    </div>
                                     {/* Instructions Section */}
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between">
@@ -493,22 +509,7 @@ export function AgentConfig({
                                             />
                                         </div>
                                     </div>
-                                    <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
-                                        <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Description</label>
-                                        <div className="flex-1">
-                                            <InputField
-                                                type="text"
-                                                value={agent.description || ""}
-                                                onChange={(value: string) => {
-                                                    handleUpdate({ ...agent, description: value });
-                                                    showSavedMessage();
-                                                }}
-                                                multiline={true}
-                                                placeholder="Enter a description for this agent"
-                                                className="w-full"
-                                            />
-                                        </div>
-                                    </div>
+
                                 </div>
                             </SectionCard>
                             {/* Behavior Section Card */}

@@ -2,24 +2,29 @@
 import { useUser } from '@auth0/nextjs-auth0';
 import { Avatar, Dropdown, DropdownItem, DropdownSection, DropdownTrigger, DropdownMenu } from "@heroui/react";
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
-export function UserButton({ useBilling }: { useBilling?: boolean }) {
+export function UserButton({ useBilling, collapsed }: { useBilling?: boolean, collapsed?: boolean }) {
     const router = useRouter();
     const { user } = useUser();
     if (!user) {
         return <></>;
     }
 
+    const title = user.email ?? user.name ?? 'Unknown user';
     const name = user.name ?? user.email ?? 'Unknown user';
 
     return <Dropdown>
         <DropdownTrigger>
-            <Avatar
-                name={name}
-                size="sm"
-                className="cursor-pointer"
-            />
+            <div className="flex items-center gap-2">
+                <Avatar
+                    name={name}
+                    size='md'
+                    isBordered
+                    radius='md'
+                    className='shrink-0'
+                />
+                {!collapsed && <span className="text-sm truncate">{name}</span>}
+            </div>
         </DropdownTrigger>
         <DropdownMenu
             onAction={(key) => {
@@ -31,7 +36,7 @@ export function UserButton({ useBilling }: { useBilling?: boolean }) {
                 }
             }}
         >
-            <DropdownSection title={name}>
+            <DropdownSection title={title}>
                 {useBilling ? (
                     <DropdownItem key="billing">
                         Billing

@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner, Tooltip, Input } from "@heroui/react";
-import { RadioIcon, RedoIcon, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, SettingsIcon, ChevronDownIcon, ZapIcon, Clock } from "lucide-react";
+import { RadioIcon, RedoIcon, UndoIcon, RocketIcon, PenLine, AlertTriangle, DownloadIcon, SettingsIcon, ChevronDownIcon, ZapIcon, Clock, Plug } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 
 interface TopBarProps {
@@ -22,7 +22,6 @@ interface TopBarProps {
     onChangeMode: (mode: 'draft' | 'live') => void;
     onRevertToLive: () => void;
     onToggleCopilot: () => void;
-    onSettingsModalOpen: () => void;
 }
 
 export function TopBar({
@@ -43,7 +42,6 @@ export function TopBar({
     onChangeMode,
     onRevertToLive,
     onToggleCopilot,
-    onSettingsModalOpen,
 }: TopBarProps) {
     const router = useRouter();
     const params = useParams();
@@ -107,7 +105,7 @@ export function TopBar({
                     <div className="text-green-500">Copied to clipboard</div>
                 </div>}
                 <div className="flex items-center gap-2">
-                    {isLive && <div className="flex items-center gap-2">
+                    {isLive && <div className="flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2">
                         <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
                             <AlertTriangle size={16} />
                             This version is locked. Changes applied will not be reflected.
@@ -135,43 +133,59 @@ export function TopBar({
                     
                     {/* Deploy CTA - always visible */}
                     <div className="flex">
-                        <Button
-                            variant="solid"
-                            size="md"
-                            onPress={onPublishWorkflow}
-                            className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-r-none"
-                            startContent={<RocketIcon size={16} />}
-                            data-tour-target="deploy"
-                        >
-                            Deploy
-                        </Button>
-                        <Dropdown>
-                            <DropdownTrigger>
+                        {isLive ? (
+                            <Dropdown>
+                                <DropdownTrigger>
+                                    <Button
+                                        variant="solid"
+                                        size="md"
+                                        className="gap-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm"
+                                        startContent={<Plug size={16} />}
+                                    >
+                                        Use Assistant
+                                        <ChevronDownIcon size={14} />
+                                    </Button>
+                                </DropdownTrigger>
+                                <DropdownMenu aria-label="Assistant access options">
+                                    <DropdownItem
+                                        key="api-sdk"
+                                        startContent={<SettingsIcon size={16} />}
+                                        onPress={() => { if (projectId) { router.push(`/projects/${projectId}/config`); } }}
+                                    >
+                                        API & SDK Settings
+                                    </DropdownItem>
+                                    <DropdownItem
+                                        key="manage-triggers"
+                                        startContent={<ZapIcon size={16} />}
+                                        onPress={() => { if (projectId) { router.push(`/projects/${projectId}/manage-triggers`); } }}
+                                        >
+                                        Manage Triggers
+                                    </DropdownItem>
+                                </DropdownMenu>
+                            </Dropdown>
+                        ) : (
+                            <>
                                 <Button
                                     variant="solid"
                                     size="md"
-                                    className="min-w-0 px-2 bg-green-600 hover:bg-green-700 border-l-1 border-green-500 text-white font-semibold text-sm rounded-l-none"
+                                    onPress={onPublishWorkflow}
+                                    className="gap-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-r-none"
+                                    startContent={<RocketIcon size={16} />}
+                                    data-tour-target="deploy"
                                 >
-                                    <ChevronDownIcon size={14} />
+                                    Publish
                                 </Button>
-                            </DropdownTrigger>
-                            <DropdownMenu aria-label="Deploy actions">
-                                <DropdownItem
-                                    key="settings"
-                                    startContent={<SettingsIcon size={16} />}
-                                    onPress={onSettingsModalOpen}
-                                >
-                                    API & SDK settings
-                                </DropdownItem>
-                                <DropdownItem
-                                    key="manage-triggers"
-                                    startContent={<ZapIcon size={16} />}
-                                    onPress={() => { if (projectId) { router.push(`/projects/${projectId}/job-rules`); } }}
-                                >
-                                    Manage triggers
-                                </DropdownItem>
-                                {!isLive ? (
-                                    <>
+                                <Dropdown>
+                                    <DropdownTrigger>
+                                        <Button
+                                            variant="solid"
+                                            size="md"
+                                            className="min-w-0 px-2 bg-green-600 hover:bg-green-700 border-l-1 border-green-500 text-white font-semibold text-sm rounded-l-none"
+                                        >
+                                            <ChevronDownIcon size={14} />
+                                        </Button>
+                                    </DropdownTrigger>
+                                    <DropdownMenu aria-label="Deploy actions">
                                         <DropdownItem
                                             key="view-live"
                                             startContent={<RadioIcon size={16} />}
@@ -187,10 +201,10 @@ export function TopBar({
                                         >
                                             Reset to live version
                                         </DropdownItem>
-                                    </>
-                                ) : null}
-                            </DropdownMenu>
-                        </Dropdown>
+                                    </DropdownMenu>
+                                </Dropdown>
+                            </>
+                        )}
                     </div>
                     
                     {isLive && <div className="flex items-center gap-2">
@@ -199,6 +213,7 @@ export function TopBar({
                             size="md"
                             onPress={() => onChangeMode('draft')}
                             className="gap-2 px-4 bg-gray-600 hover:bg-gray-700 text-white font-semibold text-sm"
+                            startContent={<PenLine size={16} />}
                         >
                             Switch to draft
                         </Button>

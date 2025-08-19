@@ -65,7 +65,7 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
                 ruleId: rule.id,
             });
             // Redirect back to job rules list
-            router.push(`/projects/${projectId}/job-rules`);
+            router.push(`/projects/${projectId}/manage-triggers?tab=recurring`);
         } catch (error) {
             console.error("Failed to delete rule:", error);
             alert("Failed to delete rule");
@@ -118,7 +118,7 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
             <Panel title="Rule Not Found">
                 <div className="text-center py-8">
                     <p className="text-gray-500 dark:text-gray-400">The requested rule could not be found.</p>
-                    <Link href={`/projects/${projectId}/job-rules`}>
+                    <Link href={`/projects/${projectId}/manage-triggers`}>
                         <Button variant="secondary" className="mt-4">
                             Back to Job Rules
                         </Button>
@@ -133,9 +133,8 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
             <Panel
                 title={
                     <div className="flex items-center gap-3">
-                        <Link href={`/projects/${projectId}/job-rules`}>
-                            <Button variant="secondary" size="sm">
-                                <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                        <Link href={`/projects/${projectId}/manage-triggers?tab=recurring`}>
+                            <Button variant="secondary" size="sm" startContent={<ArrowLeftIcon className="w-4 h-4" />} className="whitespace-nowrap">
                                 Back
                             </Button>
                         </Link>
@@ -149,31 +148,21 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
                         <Button
                             onClick={handleToggleStatus}
                             disabled={updating}
-                            variant={rule.disabled ? "secondary" : "primary"}
+                            variant={rule.disabled ? "primary" : "secondary"}
                             size="sm"
-                            className="flex items-center gap-2"
+                            isLoading={updating}
+                            startContent={rule.disabled ? <PlayIcon className="w-4 h-4" /> : <PauseIcon className="w-4 h-4" />}
+                            className="whitespace-nowrap"
                         >
-                            {updating ? (
-                                <Spinner size="sm" />
-                            ) : rule.disabled ? (
-                                <>
-                                    <PlayIcon className="w-4 h-4" />
-                                    Enable
-                                </>
-                            ) : (
-                                <>
-                                    <PauseIcon className="w-4 h-4" />
-                                    Disable
-                                </>
-                            )}
+                            {rule.disabled ? 'Activate' : 'Pause'}
                         </Button>
                         <Button
                             onClick={() => setShowDeleteConfirm(true)}
                             variant="secondary"
                             size="sm"
-                            className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800"
+                            startContent={<Trash2Icon className="w-4 h-4" />}
+                            className="bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800 whitespace-nowrap"
                         >
-                            <Trash2Icon className="w-4 h-4" />
                             Delete
                         </Button>
                     </div>
@@ -297,6 +286,7 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
                                 variant="secondary"
                                 onClick={() => setShowDeleteConfirm(false)}
                                 disabled={deleting}
+                                className="whitespace-nowrap"
                             >
                                 Cancel
                             </Button>
@@ -304,19 +294,11 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
                                 variant="secondary"
                                 onClick={handleDelete}
                                 disabled={deleting}
-                                className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800"
+                                isLoading={deleting}
+                                startContent={<Trash2Icon className="w-4 h-4" />}
+                                className="bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800 whitespace-nowrap"
                             >
-                                {deleting ? (
-                                    <>
-                                        <Spinner size="sm" />
-                                        Deleting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Trash2Icon className="w-4 h-4" />
-                                        Delete
-                                    </>
-                                )}
+                                {deleting ? 'Deleting...' : 'Delete'}
                             </Button>
                         </div>
                     </div>

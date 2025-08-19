@@ -89,7 +89,7 @@ export function CreateRecurringJobRuleForm({ projectId }: { projectId: string })
                 input: { messages: convertedMessages },
                 cron: cronExpression,
             });
-            router.push(`/projects/${projectId}/job-rules`);
+            router.push(`/projects/${projectId}/manage-triggers?tab=recurring`);
         } catch (error) {
             console.error("Failed to create recurring job rule:", error);
             alert("Failed to create recurring job rule");
@@ -102,9 +102,8 @@ export function CreateRecurringJobRuleForm({ projectId }: { projectId: string })
         <Panel
             title={
                 <div className="flex items-center gap-3">
-                    <Link href={`/projects/${projectId}/job-rules`}>
-                        <Button variant="secondary" size="sm">
-                            <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                    <Link href={`/projects/${projectId}/manage-triggers?tab=recurring`}>
+                        <Button variant="secondary" size="sm" startContent={<ArrowLeftIcon className="w-4 h-4" />} className="whitespace-nowrap">
                             Back
                         </Button>
                     </Link>
@@ -181,9 +180,9 @@ export function CreateRecurringJobRuleForm({ projectId }: { projectId: string })
                                     onClick={addMessage}
                                     variant="secondary"
                                     size="sm"
-                                    className="flex items-center gap-2"
+                                    startContent={<PlusIcon className="w-4 h-4" />}
+                                    className="whitespace-nowrap"
                                 >
-                                    <PlusIcon className="w-4 h-4" />
                                     Add Message
                                 </Button>
                             </div>
@@ -231,7 +230,8 @@ export function CreateRecurringJobRuleForm({ projectId }: { projectId: string })
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="px-6 py-2"
+                                isLoading={loading}
+                                className="px-6 py-2 whitespace-nowrap"
                             >
                                 {loading ? "Creating..." : "Create Rule"}
                             </Button>

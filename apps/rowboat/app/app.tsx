@@ -39,10 +39,6 @@ export function App() {
             {/* Footer */}
             <div className="flex flex-col items-center gap-2 text-xs text-white/70">
                 <div>&copy; 2025 RowBoat Labs</div>
-                <div className="flex gap-4">
-                    <a className="hover:text-white transition-colors" href="https://www.rowboatlabs.com/terms-of-service" target="_blank" rel="noopener noreferrer">Terms of Service</a>
-                    <a className="hover:text-white transition-colors" href="https://www.rowboatlabs.com/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
-                </div>
             </div>
         </div>
     );

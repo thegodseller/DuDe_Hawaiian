@@ -4,15 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Spinner } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/common/panel-common";
-import { listScheduledJobRules, deleteScheduledJobRule } from "@/app/actions/scheduled-job-rules.actions";
+import { listRecurringJobRules, deleteRecurringJobRule } from "@/app/actions/recurring-job-rules.actions";
 import { z } from "zod";
-import { ListedRuleItem } from "@/src/application/repositories/scheduled-job-rules.repository.interface";
+import { ListedRecurringRuleItem } from "@/src/application/repositories/recurring-job-rules.repository.interface";
 import { isToday, isThisWeek, isThisMonth } from "@/lib/utils/date";
 import { PlusIcon, Trash2 } from "lucide-react";
 
-type ListedItem = z.infer<typeof ListedRuleItem>;
+type ListedItem = z.infer<typeof ListedRecurringRuleItem>;
 
-export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
+export function RecurringJobRulesList({ projectId }: { projectId: string }) {
     const [items, setItems] = useState<ListedItem[]>([]);
     const [cursor, setCursor] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -21,7 +21,7 @@ export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
     const [deletingRule, setDeletingRule] = useState<string | null>(null);
 
     const fetchPage = useCallback(async (cursorArg?: string | null) => {
-        const res = await listScheduledJobRules({ projectId, cursor: cursorArg ?? undefined, limit: 20 });
+        const res = await listRecurringJobRules({ projectId, cursor: cursorArg ?? undefined, limit: 20 });
         return res;
     }, [projectId]);
 
@@ -50,18 +50,18 @@ export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
     }, [cursor, fetchPage]);
 
     const handleDeleteRule = async (ruleId: string) => {
-        if (!window.confirm('Are you sure you want to delete this one-time trigger?')) {
+        if (!window.confirm('Are you sure you want to delete this recurring trigger?')) {
             return;
         }
 
         try {
             setDeletingRule(ruleId);
-            await deleteScheduledJobRule({ projectId, ruleId });
+            await deleteRecurringJobRule({ projectId, ruleId });
             // Remove the deleted item from the list
             setItems(prev => prev.filter(item => item.id !== ruleId));
         } catch (err: any) {
-            console.error('Error deleting one-time trigger:', err);
-            alert('Failed to delete one-time trigger. Please try again.');
+            console.error('Error deleting recurring trigger:', err);
+            alert('Failed to delete recurring trigger. Please try again.');
         } finally {
             setDeletingRule(null);
         }
@@ -84,18 +84,16 @@ export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
         return groups;
     }, [items]);
 
-    const getStatusColor = (status: string, processedAt: string | null) => {
-        if (processedAt) return 'text-green-600 dark:text-green-400';
-        if (status === 'processing') return 'text-yellow-600 dark:text-yellow-400';
-        if (status === 'triggered') return 'text-blue-600 dark:text-blue-400';
-        return 'text-gray-600 dark:text-gray-400'; // pending
+    const getStatusColor = (disabled: boolean, lastError: string | null) => {
+        if (disabled) return 'text-red-600 dark:text-red-400';
+        if (lastError) return 'text-yellow-600 dark:text-yellow-400';
+        return 'text-green-600 dark:text-green-400';
     };
 
-    const getStatusText = (status: string, processedAt: string | null) => {
-        if (processedAt) return 'Completed';
-        if (status === 'processing') return 'Processing';
-        if (status === 'triggered') return 'Triggered';
-        return 'Pending';
+    const getStatusText = (disabled: boolean, lastError: string | null) => {
+        if (disabled) return 'Disabled';
+        if (lastError) return 'Error';
+        return 'Active';
     };
 
     const formatNextRunAt = (dateString: string) => {
@@ -103,18 +101,42 @@ export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
         return date.toLocaleString();
     };
 
+    const formatCronExpression = (cron: string) => {
+        // Simple cron formatting for display
+        const parts = cron.split(' ');
+        if (parts.length === 5) {
+            const [minute, hour, day, month, dayOfWeek] = parts;
+            if (minute === '*' && hour === '*' && day === '*' && month === '*' && dayOfWeek === '*') {
+                return 'Every minute';
+            }
+            if (minute === '0' && hour === '*' && day === '*' && month === '*' && dayOfWeek === '*') {
+                return 'Every hour';
+            }
+            if (minute === '0' && hour === '0' && day === '*' && month === '*' && dayOfWeek === '*') {
+                return 'Daily at midnight';
+            }
+            if (minute === '0' && hour === '0' && day === '1' && month === '*' && dayOfWeek === '*') {
+                return 'Monthly on the 1st';
+            }
+            if (minute === '0' && hour === '0' && day === '*' && month === '*' && dayOfWeek === '0') {
+                return 'Weekly on Sunday';
+            }
+        }
+        return cron;
+    };
+
     return (
         <Panel
             title={
                 <div className="text-base font-normal text-gray-900 dark:text-gray-100">
-                    Schedule a single job to run your assistant workflow at a specific date and time.
+                    Run your assistant workflow on an automated repeating schedule (cron jobs).
                 </div>
             }
             rightActions={
                 <div className="flex items-center gap-3">
-                    <Link href={`/projects/${projectId}/job-rules/scheduled/new`}>
+                    <Link href={`/projects/${projectId}/manage-triggers/recurring/new`}>
                         <Button size="sm" className="whitespace-nowrap" startContent={<PlusIcon className="w-4 h-4" />}>
-                            New One-time Trigger
+                            New Recurring Trigger
                         </Button>
                     </Link>
                 </div>
@@ -146,20 +168,28 @@ export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
                                                     <div className="flex items-start justify-between">
                                                         <div className="flex-1">
                                                             <Link
-                                                                href={`/projects/${projectId}/job-rules/scheduled/${item.id}`}
+                                                                href={`/projects/${projectId}/manage-triggers/recurring/${item.id}`}
                                                                 className="block"
                                                             >
                                                                 <div className="flex items-center gap-3 mb-2">
-                                                                    <span className={`text-sm font-medium ${getStatusColor(item.status, item.processedAt || null)}`}>
-                                                                        {getStatusText(item.status, item.processedAt || null)}
+                                                                    <span className={`text-sm font-medium ${getStatusColor(item.disabled, item.lastError || null)}`}>
+                                                                        {getStatusText(item.disabled, item.lastError || null)}
                                                                     </span>
                                                                     <span className="text-sm text-gray-500 dark:text-gray-400">
                                                                         Next run: {formatNextRunAt(item.nextRunAt)}
                                                                     </span>
                                                                 </div>
+                                                                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                                                    Schedule: {formatCronExpression(item.cron)}
+                                                                </div>
                                                                 <div className="text-sm text-gray-600 dark:text-gray-400">
                                                                     Created: {new Date(item.createdAt).toLocaleDateString()}
                                                                 </div>
+                                                                {item.lastError && (
+                                                                    <div className="text-sm text-red-600 dark:text-red-400 mt-1">
+                                                                        Last error: {item.lastError}
+                                                                    </div>
+                                                                )}
                                                             </Link>
                                                         </div>
                                                         <Button
@@ -180,7 +210,7 @@ export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
                             })}
                             {items.length === 0 && !loading && (
                                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                    No one-time triggers yet. Create your first one-time trigger to get started.
+                                    No recurring triggers yet. Create your first recurring trigger to get started.
                                 </div>
                             )}
                             {hasMore && (
@@ -190,15 +220,10 @@ export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
                                         disabled={loadingMore}
                                         variant="secondary"
                                         size="sm"
+                                        isLoading={loadingMore}
+                                        className="whitespace-nowrap"
                                     >
-                                        {loadingMore ? (
-                                            <>
-                                                <Spinner size="sm" />
-                                                Loading...
-                                            </>
-                                        ) : (
-                                            'Load More'
-                                        )}
+                                        {loadingMore ? 'Loading...' : 'Load More'}
                                     </Button>
                                 </div>
                             )}
@@ -209,4 +234,3 @@ export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
         </Panel>
     );
 }
-

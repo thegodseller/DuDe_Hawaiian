@@ -55,7 +55,7 @@ export function JobView({ projectId, jobId }: { projectId: string; jobId: string
                     'Deployment ID': reason.triggerDeploymentId,
                 },
                 payload: reason.payload,
-                link: reason.triggerDeploymentId ? `/projects/${projectId}/job-rules/triggers/${reason.triggerDeploymentId}` : null
+                link: reason.triggerDeploymentId ? `/projects/${projectId}/manage-triggers/triggers/${reason.triggerDeploymentId}` : null
             };
         }
         if (reason.type === 'scheduled_job_rule') {
@@ -65,7 +65,7 @@ export function JobView({ projectId, jobId }: { projectId: string; jobId: string
                     'Rule ID': reason.ruleId,
                 },
                 payload: null,
-                link: `/projects/${projectId}/job-rules/scheduled/${reason.ruleId}`
+                link: `/projects/${projectId}/manage-triggers/scheduled/${reason.ruleId}`
             };
         }
         if (reason.type === 'recurring_job_rule') {
@@ -75,7 +75,7 @@ export function JobView({ projectId, jobId }: { projectId: string; jobId: string
                     'Rule ID': reason.ruleId,
                 },
                 payload: null,
-                link: `/projects/${projectId}/job-rules/recurring/${reason.ruleId}`
+                link: `/projects/${projectId}/manage-triggers/recurring/${reason.ruleId}`
             };
         }
         return {

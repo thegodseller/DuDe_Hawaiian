@@ -99,21 +99,21 @@ export function JobsList({ projectId, filters, showTitle = true, customTitle }: 
             return {
                 type: 'Composio Trigger',
                 display: `Composio: ${reason.triggerTypeSlug}`,
-                link: reason.triggerDeploymentId ? `/projects/${projectId}/job-rules/triggers/${reason.triggerDeploymentId}` : null
+                link: reason.triggerDeploymentId ? `/projects/${projectId}/manage-triggers/triggers/${reason.triggerDeploymentId}` : null
             };
         }
         if (reason.type === 'scheduled_job_rule') {
             return {
                 type: 'Scheduled Job Rule',
                 display: `Scheduled Rule`,
-                link: `/projects/${projectId}/job-rules/scheduled/${reason.ruleId}`
+                link: `/projects/${projectId}/manage-triggers/scheduled/${reason.ruleId}`
             };
         }
         if (reason.type === 'recurring_job_rule') {
             return {
                 type: 'Recurring Job Rule',
                 display: `Recurring Rule`,
-                link: `/projects/${projectId}/job-rules/recurring/${reason.ruleId}`
+                link: `/projects/${projectId}/manage-triggers/recurring/${reason.ruleId}`
             };
         }
         return {

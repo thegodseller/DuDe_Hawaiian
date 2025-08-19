@@ -46,7 +46,7 @@ export function ScheduledJobRuleView({ projectId, ruleId }: { projectId: string;
                 ruleId: rule.id,
             });
             // Redirect back to job rules list
-            router.push(`/projects/${projectId}/job-rules`);
+            router.push(`/projects/${projectId}/manage-triggers?tab=scheduled`);
         } catch (error) {
             console.error("Failed to delete rule:", error);
             alert("Failed to delete rule");
@@ -80,9 +80,8 @@ export function ScheduledJobRuleView({ projectId, ruleId }: { projectId: string;
             <Panel
                 title={
                     <div className="flex items-center gap-3">
-                        <Link href={`/projects/${projectId}/job-rules`}>
-                            <Button variant="secondary" size="sm">
-                                <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                        <Link href={`/projects/${projectId}/manage-triggers?tab=scheduled`}>
+                            <Button variant="secondary" size="sm" startContent={<ArrowLeftIcon className="w-4 h-4" />} className="whitespace-nowrap">
                                 Back
                             </Button>
                         </Link>
@@ -97,9 +96,9 @@ export function ScheduledJobRuleView({ projectId, ruleId }: { projectId: string;
                             onClick={() => setShowDeleteConfirm(true)}
                             variant="secondary"
                             size="sm"
-                            className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800"
+                            startContent={<Trash2Icon className="w-4 h-4" />}
+                            className="bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800 whitespace-nowrap"
                         >
-                            <Trash2Icon className="w-4 h-4" />
                             Delete
                         </Button>
                     </div>
@@ -204,6 +203,7 @@ export function ScheduledJobRuleView({ projectId, ruleId }: { projectId: string;
                                 variant="secondary"
                                 onClick={() => setShowDeleteConfirm(false)}
                                 disabled={deleting}
+                                className="whitespace-nowrap"
                             >
                                 Cancel
                             </Button>
@@ -211,19 +211,11 @@ export function ScheduledJobRuleView({ projectId, ruleId }: { projectId: string;
                                 variant="secondary"
                                 onClick={handleDelete}
                                 disabled={deleting}
-                                className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800"
+                                isLoading={deleting}
+                                startContent={<Trash2Icon className="w-4 h-4" />}
+                                className="bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800 whitespace-nowrap"
                             >
-                                {deleting ? (
-                                    <>
-                                        <Spinner size="sm" />
-                                        Deleting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Trash2Icon className="w-4 h-4" />
-                                        Delete
-                                    </>
-                                )}
+                                {deleting ? 'Deleting...' : 'Delete'}
                             </Button>
                         </div>
                     </div>

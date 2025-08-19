@@ -41,6 +41,7 @@ interface TextInputFieldProps extends BaseInputFieldProps {
     showSaveButton?: boolean;
     showDiscardButton?: boolean;
     immediateSave?: boolean;
+    minHeight?: string;
 }
 
 // Select input specific props
@@ -109,6 +110,7 @@ function TextInputField({
     showSaveButton = false,
     showDiscardButton = false,
     immediateSave = false,
+    minHeight,
 }: TextInputFieldProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [localValue, setLocalValue] = useState(value);
@@ -248,10 +250,10 @@ function TextInputField({
 
                 {/* Input field */}
                 {mentions ? (
-                    <div className="w-full min-h-[300px]">
+                    <div className="w-full" style={minHeight ? { minHeight } : { minHeight: '300px' }}>
                         <MentionsEditor
                             atValues={mentionsAtValues}
-                            value={value}
+                            value={localValue}
                             placeholder={placeholder}
                             onValueChange={setLocalValue}
                             autoFocus
@@ -326,10 +328,11 @@ function TextInputField({
                         "cursor-pointer hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800": !locked && !disabled,
                         "cursor-not-allowed opacity-60": locked || disabled,
                         "border-0 bg-transparent p-0": inline,
-                        "min-h-[300px]": multiline,
-                        "min-h-[40px]": !multiline,
+                        "min-h-[300px]": multiline && !minHeight,
+                        "min-h-[40px]": !multiline && !minHeight,
                     }
                 )}
+                style={minHeight ? { minHeight } : undefined}
                 onClick={() => !locked && !disabled && setIsEditing(true)}
             >
                 {/* Content */}
@@ -337,14 +340,14 @@ function TextInputField({
                     "whitespace-pre-wrap": multiline,
                     "flex items-center": !multiline,
                 })}>
-                    {value ? (
+                    {(mentions ? localValue : value) ? (
                         <>
                             {markdown ? (
                                 <div className={clsx("prose prose-sm max-w-none", {
                                     "max-h-[420px] overflow-y-auto": multiline
                                 })}>
                                     <MarkdownContent 
-                                        content={value} 
+                                        content={mentions ? localValue : value} 
                                         atValues={mentionsAtValues} 
                                         onMentionNavigate={handleMentionNavigate} 
                                     />
@@ -355,7 +358,7 @@ function TextInputField({
                                     "max-h-[420px] overflow-y-auto": multiline
                                 })}>
                                     <MarkdownContent 
-                                        content={value} 
+                                        content={mentions ? localValue : value} 
                                         atValues={mentionsAtValues} 
                                         onMentionNavigate={handleMentionNavigate} 
                                     />

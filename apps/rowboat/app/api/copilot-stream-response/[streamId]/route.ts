@@ -4,6 +4,8 @@ import { redisClient } from "@/app/lib/redis";
 import { CopilotAPIRequest } from "@/src/application/lib/copilot/types";
 import { streamMultiAgentResponse } from "@/src/application/lib/copilot/copilot";
 
+export const maxDuration = 300;
+
 export async function GET(request: Request, props: { params: Promise<{ streamId: string }> }) {
   const params = await props.params;
   // get the payload from redis

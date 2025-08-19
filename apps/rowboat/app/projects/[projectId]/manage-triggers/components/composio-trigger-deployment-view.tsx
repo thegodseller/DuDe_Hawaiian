@@ -47,7 +47,7 @@ export function ComposioTriggerDeploymentView({ projectId, deploymentId }: { pro
         setDeleting(true);
         try {
             await deleteComposioTriggerDeployment({ projectId, deploymentId: deployment.id });
-            window.location.href = `/projects/${projectId}/job-rules`;
+            window.location.href = `/projects/${projectId}/manage-triggers?tab=triggers`;
         } catch (e) {
             console.error(e);
             alert('Failed to delete trigger');
@@ -62,9 +62,8 @@ export function ComposioTriggerDeploymentView({ projectId, deploymentId }: { pro
             <Panel
                 title={
                     <div className="flex items-center gap-3">
-                        <Link href={`/projects/${projectId}/job-rules`}>
-                            <Button variant="secondary" size="sm">
-                                <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                        <Link href={`/projects/${projectId}/manage-triggers?tab=triggers`}>
+                            <Button variant="secondary" size="sm" startContent={<ArrowLeftIcon className="w-4 h-4" />} className="whitespace-nowrap">
                                 Back
                             </Button>
                         </Link>
@@ -77,9 +76,9 @@ export function ComposioTriggerDeploymentView({ projectId, deploymentId }: { pro
                             onClick={() => setShowDeleteConfirm(true)}
                             variant="secondary"
                             size="sm"
-                            className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800"
+                            startContent={<Trash2Icon className="w-4 h-4" />}
+                            className="bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800 whitespace-nowrap"
                         >
-                            <Trash2Icon className="w-4 h-4" />
                             Delete
                         </Button>
                     </div>
@@ -151,14 +150,15 @@ export function ComposioTriggerDeploymentView({ projectId, deploymentId }: { pro
                         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Delete External Trigger</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Are you sure you want to delete this external trigger? This will remove the linked webhook in Composio and delete this deployment.</p>
                         <div className="flex gap-3 justify-end">
-                            <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>Cancel</Button>
+                            <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="whitespace-nowrap">Cancel</Button>
                             <Button
                                 variant="secondary"
                                 onClick={handleDelete}
-                                disabled={deleting}
-                                className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800"
+                                isLoading={deleting}
+                                startContent={<Trash2Icon className="w-4 h-4" />}
+                                className="bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 border border-red-200 dark:border-red-800 whitespace-nowrap"
                             >
-                                {deleting ? (<><Spinner size="sm" /> Deleting...</>) : (<><Trash2Icon className="w-4 h-4" /> Delete</>)}
+                                {deleting ? 'Deleting...' : 'Delete'}
                             </Button>
                         </div>
                     </div>
