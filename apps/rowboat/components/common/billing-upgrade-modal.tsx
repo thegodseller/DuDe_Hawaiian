@@ -84,7 +84,6 @@ export function BillingUpgradeModal({ isOpen, onClose, errorMessage }: BillingUp
             description: "Great for power users or teams",
             features: [
                 "20,000 credits",
-                "o3 and o3-pro",
                 "Priority support",
             ],
             recommended: true
