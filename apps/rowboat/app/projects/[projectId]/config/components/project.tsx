@@ -818,7 +818,9 @@ export function SimpleProjectSection({
     return (
         <div className="p-6 space-y-6">
             <ProjectNameSection projectId={projectId} onProjectConfigUpdated={onProjectConfigUpdated} />
+            <ProjectIdSection projectId={projectId} />
             <SecretSection projectId={projectId} />
+            <ApiKeysSection projectId={projectId} />
             <DisconnectToolkitsSection projectId={projectId} onProjectConfigUpdated={onProjectConfigUpdated} />
             <DeleteProjectSection projectId={projectId} />
         </div>

@@ -22,7 +22,6 @@ interface TopBarProps {
     onChangeMode: (mode: 'draft' | 'live') => void;
     onRevertToLive: () => void;
     onToggleCopilot: () => void;
-    onSettingsModalOpen: () => void;
 }
 
 export function TopBar({
@@ -43,7 +42,6 @@ export function TopBar({
     onChangeMode,
     onRevertToLive,
     onToggleCopilot,
-    onSettingsModalOpen,
 }: TopBarProps) {
     const router = useRouter();
     const params = useParams();
@@ -159,7 +157,7 @@ export function TopBar({
                                 <DropdownItem
                                     key="settings"
                                     startContent={<SettingsIcon size={16} />}
-                                    onPress={onSettingsModalOpen}
+                                    onPress={() => { if (projectId) { router.push(`/projects/${projectId}/config`); } }}
                                 >
                                     API & SDK settings
                                 </DropdownItem>
