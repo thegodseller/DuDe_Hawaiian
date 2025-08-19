@@ -65,7 +65,7 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
                 ruleId: rule.id,
             });
             // Redirect back to job rules list
-            router.push(`/projects/${projectId}/job-rules?tab=recurring`);
+            router.push(`/projects/${projectId}/manage-triggers?tab=recurring`);
         } catch (error) {
             console.error("Failed to delete rule:", error);
             alert("Failed to delete rule");
@@ -118,7 +118,7 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
             <Panel title="Rule Not Found">
                 <div className="text-center py-8">
                     <p className="text-gray-500 dark:text-gray-400">The requested rule could not be found.</p>
-                    <Link href={`/projects/${projectId}/job-rules`}>
+                    <Link href={`/projects/${projectId}/manage-triggers`}>
                         <Button variant="secondary" className="mt-4">
                             Back to Job Rules
                         </Button>
@@ -133,7 +133,7 @@ export function RecurringJobRuleView({ projectId, ruleId }: { projectId: string;
             <Panel
                 title={
                     <div className="flex items-center gap-3">
-                        <Link href={`/projects/${projectId}/job-rules?tab=recurring`}>
+                        <Link href={`/projects/${projectId}/manage-triggers?tab=recurring`}>
                             <Button variant="secondary" size="sm" startContent={<ArrowLeftIcon className="w-4 h-4" />} className="whitespace-nowrap">
                                 Back
                             </Button>

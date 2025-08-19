@@ -166,7 +166,7 @@ export function TopBar({
                                 <DropdownItem
                                     key="manage-triggers"
                                     startContent={<ZapIcon size={16} />}
-                                    onPress={() => { if (projectId) { router.push(`/projects/${projectId}/job-rules`); } }}
+                                    onPress={() => { if (projectId) { router.push(`/projects/${projectId}/manage-triggers`); } }}
                                 >
                                     Manage triggers
                                 </DropdownItem>

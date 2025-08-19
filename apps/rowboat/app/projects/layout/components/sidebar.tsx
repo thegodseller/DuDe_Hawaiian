@@ -104,7 +104,7 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
       icon: WorkflowIcon,
     },
     {
-      href: 'job-rules',
+      href: 'manage-triggers',
       label: 'Triggers',
       icon: ZapIcon,
     },

@@ -112,7 +112,7 @@ export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
             }
             rightActions={
                 <div className="flex items-center gap-3">
-                    <Link href={`/projects/${projectId}/job-rules/scheduled/new`}>
+                    <Link href={`/projects/${projectId}/manage-triggers/scheduled/new`}>
                         <Button size="sm" className="whitespace-nowrap" startContent={<PlusIcon className="w-4 h-4" />}>
                             New One-time Trigger
                         </Button>
@@ -146,7 +146,7 @@ export function ScheduledJobRulesList({ projectId }: { projectId: string }) {
                                                     <div className="flex items-start justify-between">
                                                         <div className="flex-1">
                                                             <Link
-                                                                href={`/projects/${projectId}/job-rules/scheduled/${item.id}`}
+                                                                href={`/projects/${projectId}/manage-triggers/scheduled/${item.id}`}
                                                                 className="block"
                                                             >
                                                                 <div className="flex items-center gap-3 mb-2">

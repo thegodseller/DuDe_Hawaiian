@@ -183,7 +183,7 @@ export function TriggersTab({ projectId }: { projectId: string }) {
 
       // Success! Go back to triggers list tab and reload
       if (typeof window !== 'undefined') {
-        window.location.href = `/projects/${projectId}/job-rules?tab=triggers`;
+        window.location.href = `/projects/${projectId}/manage-triggers?tab=triggers`;
         return;
       }
       handleBackToList();
@@ -328,7 +328,7 @@ export function TriggersTab({ projectId }: { projectId: string }) {
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <a href={`/projects/${projectId}/job-rules/triggers/${trigger.id}`} className="block">
+                              <a href={`/projects/${projectId}/manage-triggers/triggers/${trigger.id}`} className="block">
                                 <div className="flex items-center gap-3 mb-1">
                                   {trigger.logo && (
                                     <Image

@@ -134,7 +134,7 @@ export function RecurringJobRulesList({ projectId }: { projectId: string }) {
             }
             rightActions={
                 <div className="flex items-center gap-3">
-                    <Link href={`/projects/${projectId}/job-rules/recurring/new`}>
+                    <Link href={`/projects/${projectId}/manage-triggers/recurring/new`}>
                         <Button size="sm" className="whitespace-nowrap" startContent={<PlusIcon className="w-4 h-4" />}>
                             New Recurring Trigger
                         </Button>
@@ -168,7 +168,7 @@ export function RecurringJobRulesList({ projectId }: { projectId: string }) {
                                                     <div className="flex items-start justify-between">
                                                         <div className="flex-1">
                                                             <Link
-                                                                href={`/projects/${projectId}/job-rules/recurring/${item.id}`}
+                                                                href={`/projects/${projectId}/manage-triggers/recurring/${item.id}`}
                                                                 className="block"
                                                             >
                                                                 <div className="flex items-center gap-3 mb-2">
