@@ -113,7 +113,7 @@ export class CreateProjectUseCase implements ICreateProjectUseCase {
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(project.id);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(project.id);
 
         return project;
     }

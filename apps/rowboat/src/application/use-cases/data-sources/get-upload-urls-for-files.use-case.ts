@@ -60,7 +60,7 @@ export class GetUploadUrlsForFilesUseCase implements IGetUploadUrlsForFilesUseCa
             projectId: source.projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(source.projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(source.projectId);
 
         const urls: { fileId: string, uploadUrl: string, path: string }[] = [];
         for (const file of files) {

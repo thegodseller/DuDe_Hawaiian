@@ -55,7 +55,7 @@ export class ListDocsInDataSourceUseCase implements IListDocsInDataSourceUseCase
             projectId: source.projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(source.projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(source.projectId);
 
         // fetch all docs
         const docs = [];

@@ -45,7 +45,7 @@ export class DeleteRecurringJobRuleUseCase implements IDeleteRecurringJobRuleUse
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(request.projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(request.projectId);
 
         // ensure rule belongs to this project
         const rule = await this.recurringJobRulesRepository.fetch(request.ruleId);

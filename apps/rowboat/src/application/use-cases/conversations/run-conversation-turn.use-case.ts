@@ -62,7 +62,7 @@ export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
         }
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // Check billing auth
         let billingCustomerId: string | null = null;

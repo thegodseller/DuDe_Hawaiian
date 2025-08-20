@@ -37,7 +37,7 @@ export class RemoveCustomMcpServerUseCase implements IRemoveCustomMcpServerUseCa
     async execute(request: z.infer<typeof InputSchema>): Promise<void> {
         const { caller, userId, apiKey, projectId, name } = request;
         await this.projectActionAuthorizationPolicy.authorize({ caller, userId, apiKey, projectId });
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
         await this.projectsRepository.deleteCustomMcpServer(projectId, name);
     }
 }

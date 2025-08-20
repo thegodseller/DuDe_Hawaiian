@@ -53,7 +53,7 @@ export class FetchComposioTriggerDeploymentUseCase implements IFetchComposioTrig
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         return deployment;
     }

@@ -48,7 +48,7 @@ export class AddCustomMcpServerUseCase implements IAddCustomMcpServerUseCase {
         const { caller, userId, apiKey, projectId, name } = request;
 
         await this.projectActionAuthorizationPolicy.authorize({ caller, userId, apiKey, projectId });
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // Validate server URL
         const serverUrl = validateHttpHttpsUrl(request.server.serverUrl);

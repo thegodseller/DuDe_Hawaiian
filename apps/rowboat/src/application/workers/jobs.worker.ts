@@ -8,6 +8,8 @@ import { IPubSubService, Subscription } from "../services/pub-sub.service.interf
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { PrefixLogger } from "@/app/lib/utils";
+import { IUsageQuotaPolicy } from "../policies/usage-quota.policy.interface";
+import { QuotaExceededError } from "@/src/entities/errors/common";
 
 export interface IJobsWorker {
     run(): Promise<void>;
@@ -20,6 +22,7 @@ export class JobsWorker implements IJobsWorker {
     private readonly createConversationUseCase: ICreateConversationUseCase;
     private readonly runConversationTurnUseCase: IRunConversationTurnUseCase;
     private readonly pubSubService: IPubSubService;
+    private readonly usageQuotaPolicy: IUsageQuotaPolicy;
     private workerId: string;
     private subscription: Subscription | null = null;
     private isRunning: boolean = false;
@@ -33,18 +36,21 @@ export class JobsWorker implements IJobsWorker {
         createConversationUseCase,
         runConversationTurnUseCase,
         pubSubService,
+        usageQuotaPolicy,
     }: {
         jobsRepository: IJobsRepository;
         projectsRepository: IProjectsRepository;
         createConversationUseCase: ICreateConversationUseCase;
         runConversationTurnUseCase: IRunConversationTurnUseCase;
         pubSubService: IPubSubService;
+        usageQuotaPolicy: IUsageQuotaPolicy;
     }) {
         this.jobsRepository = jobsRepository;
         this.projectsRepository = projectsRepository;
         this.createConversationUseCase = createConversationUseCase;
         this.runConversationTurnUseCase = runConversationTurnUseCase;
         this.pubSubService = pubSubService;
+        this.usageQuotaPolicy = usageQuotaPolicy;
         this.workerId = nanoid();
         this.logger = new PrefixLogger(`jobs-worker-[${this.workerId}]`);
     }
@@ -52,7 +58,7 @@ export class JobsWorker implements IJobsWorker {
     async processJob(job: z.infer<typeof Job>): Promise<void> {
         const logger = this.logger.child(`job-${job.id}`);
         logger.log('Processing job');
-        
+
         try {
             // extract project id from job
             const { projectId } = job;
@@ -62,6 +68,9 @@ export class JobsWorker implements IJobsWorker {
             if (!project) {
                 throw new Error("Project not found");
             }
+
+            // check job-run quota usage
+            await this.usageQuotaPolicy.assertAndConsumeRunJobAction(projectId);
 
             // create conversation
             logger.log('Creating conversation');
@@ -114,6 +123,18 @@ export class JobsWorker implements IJobsWorker {
             });
             logger.log(`Completed successfully`);
         } catch (error) {
+            if (error instanceof QuotaExceededError) {
+                logger.log(`Failed due to quota exceeded`);
+
+                // update job
+                await this.jobsRepository.update(job.id, {
+                    status: "failed",
+                    output: {
+                        error: (error instanceof QuotaExceededError) ? error.message : "Usage quota exceeded.",
+                    },
+                });
+                return;
+            }
             logger.log(`Failed: ${error instanceof Error ? error.message : "Unknown error"}`);
             
             // update job
@@ -174,7 +195,7 @@ export class JobsWorker implements IJobsWorker {
             }
 
             logger.log(`Found job ${job.id} via polling`);
-            
+
             // process job
             await this.processJob(job);
         } catch (error) {
@@ -185,7 +206,7 @@ export class JobsWorker implements IJobsWorker {
     private async startPolling(): Promise<void> {
         const logger = this.logger.child(`start-polling`);
         logger.log("Starting polling mechanism");
-        
+
         const scheduleNextPoll = () => {
             this.pollTimeoutId = setTimeout(async () => {
                 await this.pollForJobs();

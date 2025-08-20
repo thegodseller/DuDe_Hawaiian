@@ -42,7 +42,7 @@ export class SyncConnectedAccountUseCase implements ISyncConnectedAccountUseCase
         const { caller, userId, apiKey, projectId, toolkitSlug, connectedAccountId } = request;
 
         await this.projectActionAuthorizationPolicy.authorize({ caller, userId, apiKey, projectId });
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // fetch project & account to verify
         const project = await this.projectsRepository.fetch(projectId);

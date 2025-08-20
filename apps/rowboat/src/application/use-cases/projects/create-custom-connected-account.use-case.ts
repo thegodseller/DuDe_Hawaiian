@@ -50,7 +50,7 @@ export class CreateCustomConnectedAccountUseCase implements ICreateCustomConnect
         const { caller, userId, apiKey, projectId, toolkitSlug, authConfig, callbackUrl } = request;
 
         await this.projectActionAuthorizationPolicy.authorize({ caller, userId, apiKey, projectId });
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // create custom auth config
         const created: z.infer<typeof ZCreateAuthConfigResponse> = await createAuthConfig({

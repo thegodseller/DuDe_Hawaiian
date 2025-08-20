@@ -59,7 +59,7 @@ export class CreateComposioTriggerDeploymentUseCase implements ICreateComposioTr
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // get trigger type info
         const triggerType = await getTriggersType(request.data.triggerTypeSlug);

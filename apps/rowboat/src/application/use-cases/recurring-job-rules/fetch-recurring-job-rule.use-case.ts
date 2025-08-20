@@ -54,7 +54,7 @@ export class FetchRecurringJobRuleUseCase implements IFetchRecurringJobRuleUseCa
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // return the rule
         return rule;

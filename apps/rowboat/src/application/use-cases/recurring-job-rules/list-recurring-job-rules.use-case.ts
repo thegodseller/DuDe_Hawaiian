@@ -49,7 +49,7 @@ export class ListRecurringJobRulesUseCase implements IListRecurringJobRulesUseCa
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // fetch recurring job rules for project
         return await this.recurringJobRulesRepository.list(projectId, request.cursor, limit);

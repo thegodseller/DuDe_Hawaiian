@@ -50,7 +50,7 @@ export class CreateScheduledJobRuleUseCase implements ICreateScheduledJobRuleUse
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(request.projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(request.projectId);
 
         // create the scheduled job rule with UTC time
         const rule = await this.scheduledJobRulesRepository.create({

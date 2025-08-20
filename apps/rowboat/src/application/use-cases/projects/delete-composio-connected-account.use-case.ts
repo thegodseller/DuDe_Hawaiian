@@ -56,7 +56,7 @@ export class DeleteComposioConnectedAccountUseCase implements IDeleteComposioCon
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // fetch project
         const project = await this.projectsRepository.fetch(projectId);

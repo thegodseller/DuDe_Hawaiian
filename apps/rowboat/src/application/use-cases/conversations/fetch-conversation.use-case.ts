@@ -54,7 +54,7 @@ export class FetchConversationUseCase implements IFetchConversationUseCase {
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // return the conversation
         return conversation;

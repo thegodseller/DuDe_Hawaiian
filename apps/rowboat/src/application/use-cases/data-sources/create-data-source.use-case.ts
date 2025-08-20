@@ -44,7 +44,7 @@ export class CreateDataSourceUseCase implements ICreateDataSourceUseCase {
             projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         let _status = "pending";
         // Only set status for non-file data sources

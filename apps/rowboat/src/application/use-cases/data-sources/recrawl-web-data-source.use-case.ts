@@ -58,7 +58,7 @@ export class RecrawlWebDataSourceUseCase implements IRecrawlWebDataSourceUseCase
             projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         await this.dataSourceDocsRepository.markSourceDocsPending(request.sourceId);
 

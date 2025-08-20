@@ -54,7 +54,7 @@ export class FetchJobUseCase implements IFetchJobUseCase {
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // return the job
         return job;
