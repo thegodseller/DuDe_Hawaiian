@@ -1,6 +1,7 @@
 import { IUsageQuotaPolicy } from "@/src/application/policies/usage-quota.policy.interface";
 import { redisClient } from "@/app/lib/redis";
 import { QuotaExceededError } from "@/src/entities/errors/common";
+import { secondsToNextMinute } from "@/src/application/lib/utils/time-to-next-minute";
 
 const MAX_QUERIES_PER_MINUTE = Number(process.env.MAX_QUERIES_PER_MINUTE) || 0;
 
@@ -15,7 +16,7 @@ export class RedisUsageQuotaPolicy implements IUsageQuotaPolicy {
 
         const count = await redisClient.incr(key);
         if (count === 1) {
-            await redisClient.expire(key, 70); // Set TTL to clean up automatically
+            await redisClient.expire(key, secondsToNextMinute()); // Set TTL to clean up automatically
         }
 
         if (count > MAX_QUERIES_PER_MINUTE) {
