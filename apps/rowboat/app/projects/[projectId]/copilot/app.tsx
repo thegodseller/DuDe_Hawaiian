@@ -216,7 +216,7 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
                             {/* Welcome/Intro Section */}
                             <div className="text-center max-w-md px-6 mb-3">
                                 <h3 className="text-xl font-semibold text-zinc-700 dark:text-zinc-300 mb-2 text-center">
-                                    👋 Welcome to Rowboat!
+                                    👋 Hi there!
                                 </h3>
                                 <p className="text-base text-zinc-600 dark:text-zinc-400 mb-4 text-center">
                                     I&apos;m your copilot for building agents and adding tools to them.
