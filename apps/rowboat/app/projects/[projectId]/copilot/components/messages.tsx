@@ -575,7 +575,7 @@ export function Messages({
     };
 
     return (
-        <div className="h-full">
+        <div className={displayMessages.length === 0 ? "" : "h-full"}>
             <div className="flex flex-col mb-4">
                 {displayMessages.map((message, index) => (
                     <div key={index} className="mb-4">
