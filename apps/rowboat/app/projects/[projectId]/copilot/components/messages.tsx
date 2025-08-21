@@ -70,8 +70,8 @@ function enrich(response: string): z.infer<typeof CopilotResponsePart> {
                 return {
                     type: 'action',
                     action: {
-                        action: metadata.action as 'create_new' | 'edit',
-                        config_type: metadata.config_type as 'tool' | 'agent' | 'prompt' | 'pipeline',
+                        action: metadata.action as 'create_new' | 'edit' | 'delete',
+                        config_type: metadata.config_type as 'tool' | 'agent' | 'prompt' | 'pipeline' | 'start_agent',
                         name: metadata.name,
                         change_description: jsonData.change_description || '',
                         config_changes: {},
@@ -83,8 +83,8 @@ function enrich(response: string): z.infer<typeof CopilotResponsePart> {
             return {
                 type: 'action',
                 action: {
-                    action: metadata.action as 'create_new' | 'edit',
-                    config_type: metadata.config_type as 'tool' | 'agent' | 'prompt' | 'pipeline',
+                    action: metadata.action as 'create_new' | 'edit' | 'delete',
+                    config_type: metadata.config_type as 'tool' | 'agent' | 'prompt' | 'pipeline' | 'start_agent',
                     name: metadata.name,
                     change_description: jsonData.change_description || '',
                     config_changes: result.changes
@@ -99,8 +99,8 @@ function enrich(response: string): z.infer<typeof CopilotResponsePart> {
     return {
         type: 'streaming_action',
         action: {
-            action: (metadata.action as 'create_new' | 'edit') || undefined,
-            config_type: (metadata.config_type as 'tool' | 'agent' | 'prompt' | 'pipeline') || undefined,
+            action: (metadata.action as 'create_new' | 'edit' | 'delete') || undefined,
+            config_type: (metadata.config_type as 'tool' | 'agent' | 'prompt' | 'pipeline' | 'start_agent') || undefined,
             name: metadata.name
         }
     };
@@ -287,6 +287,39 @@ function AssistantMessage({
                         type: 'update_pipeline',
                         name: action.name,
                         pipeline: action.config_changes
+                    });
+                    break;
+                case 'start_agent':
+                    dispatch({
+                        type: 'set_main_agent',
+                        name: action.name,
+                    })
+                    break;
+            }
+        } else if (action.action === 'delete') {
+            switch (action.config_type) {
+                case 'agent':
+                    dispatch({
+                        type: 'delete_agent',
+                        name: action.name
+                    });
+                    break;
+                case 'tool':
+                    dispatch({
+                        type: 'delete_tool',
+                        name: action.name
+                    });
+                    break;
+                case 'prompt':
+                    dispatch({
+                        type: 'delete_prompt',
+                        name: action.name
+                    });
+                    break;
+                case 'pipeline':
+                    dispatch({
+                        type: 'delete_pipeline',
+                        name: action.name
                     });
                     break;
             }
