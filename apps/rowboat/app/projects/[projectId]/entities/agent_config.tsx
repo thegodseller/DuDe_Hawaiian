@@ -158,6 +158,13 @@ export function AgentConfig({
         }
     }, [agent.controlType, agent.outputVisibility, agent, handleUpdate]);
 
+    // Add effect to ensure internal agents have maxCallsPerParentAgent set to 1 by default
+    useEffect(() => {
+        if (agent.outputVisibility === "internal" && !isPipelineAgent && agent.maxCallsPerParentAgent === undefined) {
+            handleUpdate({ ...agent, maxCallsPerParentAgent: 1 });
+        }
+    }, [agent.outputVisibility, agent.maxCallsPerParentAgent, agent, handleUpdate, isPipelineAgent]);
+
     // Add effect to handle escape key
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -239,13 +246,7 @@ export function AgentConfig({
         currentAgent: agent
     });
 
-    // Add local state for max calls input
-    const [maxCallsInput, setMaxCallsInput] = useState(String(agent.maxCallsPerParentAgent || 3));
-    const [maxCallsError, setMaxCallsError] = useState<string | null>(null);
-    // Sync local state with agent prop
-    useEffect(() => {
-      setMaxCallsInput(String(agent.maxCallsPerParentAgent || 3));
-    }, [agent.maxCallsPerParentAgent]);
+
 
     return (
         <Panel 
@@ -318,7 +319,7 @@ export function AgentConfig({
                                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                             )}
                         >
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            {tab === 'instructions' ? 'Instructions' : 'Model & RAG'}
                         </button>
                     ))}
                 </div>
@@ -644,43 +645,7 @@ export function AgentConfig({
                                             }
                                         </div>
                                     </div>
-                                    {agent.outputVisibility === "internal" && !isPipelineAgent && (
-                                        <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
-                                            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Max Calls From Parent</label>
-                                            <div className="flex-1">
-                                                <InputField
-                                                    type="number"
-                                                    value={maxCallsInput}
-                                                    onChange={(value: string) => {
-                                                        setMaxCallsInput(value);
-                                                        setMaxCallsError(null);
-                                                        const num = Number(value);
-                                                        if (value && !isNaN(num) && num >= 1 && Number.isInteger(num)) {
-                                                            if (num !== agent.maxCallsPerParentAgent) {
-                                                                handleUpdate({
-                                                                    ...agent,
-                                                                    maxCallsPerParentAgent: num
-                                                                });
-                                                            }
-                                                        }
-                                                    }}
-                                                    validate={(value: string) => {
-                                                        const num = Number(value);
-                                                        if (!value || isNaN(num) || num < 1 || !Number.isInteger(num)) {
-                                                            return { valid: false, errorMessage: "Must be an integer >= 1" };
-                                                        }
-                                                        return { valid: true };
-                                                    }}
-                                                    error={maxCallsError}
-                                                    min={1}
-                                                    className="w-full max-w-24"
-                                                />
-                                                {maxCallsError && (
-                                                    <p className="text-sm text-red-500 mt-1">{maxCallsError}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
+
                                     {USE_TRANSFER_CONTROL_OPTIONS && !isPipelineAgent && (
                                         <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
                                             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">After Turn</label>
