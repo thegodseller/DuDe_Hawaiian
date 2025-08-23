@@ -49,7 +49,7 @@ export class DeleteDataSourceUseCase implements IDeleteDataSourceUseCase {
             projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         await this.dataSourcesRepository.update(request.sourceId, {
             status: 'deleted',

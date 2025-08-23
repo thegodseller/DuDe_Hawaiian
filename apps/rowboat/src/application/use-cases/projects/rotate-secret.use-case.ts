@@ -37,7 +37,7 @@ export class RotateSecretUseCase implements IRotateSecretUseCase {
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         const secret = crypto.randomBytes(32).toString("hex");
         await this.projectsRepository.updateSecret(projectId, secret);

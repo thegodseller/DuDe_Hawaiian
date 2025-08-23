@@ -28,7 +28,7 @@ export async function getCopilotResponseStream(
     streamId: string;
 } | { billingError: string }> {
     await projectAuthCheck(projectId);
-    await usageQuotaPolicy.assertAndConsume(projectId);
+    await usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
     // Check billing authorization
     const authResponse = await authorizeUserAction({
@@ -38,7 +38,7 @@ export async function getCopilotResponseStream(
         return { billingError: authResponse.error || 'Billing error' };
     }
 
-    await usageQuotaPolicy.assertAndConsume(projectId);
+    await usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
     
     // prepare request
     const request: z.infer<typeof CopilotAPIRequest> = {
@@ -70,7 +70,7 @@ export async function getCopilotAgentInstructions(
     agentName: string,
 ): Promise<string | { billingError: string }> {
     await projectAuthCheck(projectId);
-    await usageQuotaPolicy.assertAndConsume(projectId);
+    await usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
     // Check billing authorization
     const authResponse = await authorizeUserAction({

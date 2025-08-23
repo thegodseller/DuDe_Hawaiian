@@ -8,7 +8,6 @@ import { z } from "zod";
 import { tokens } from "@/app/styles/design-tokens";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { HorizontalDivider } from "@/components/ui/horizontal-divider";
-import { WithStringId } from "@/app/lib/types/types";
 import clsx from 'clsx';
 import { getCustomerPortalUrl } from "../actions/billing.actions";
 import { useState } from "react";
@@ -31,7 +30,7 @@ const planDetails = {
 };
 
 interface BillingPageProps {
-    customer: WithStringId<z.infer<typeof Customer>>;
+    customer: z.infer<typeof Customer>;
     usage: z.infer<typeof UsageResponse>;
 }
 

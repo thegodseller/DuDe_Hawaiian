@@ -36,7 +36,7 @@ export class UpdateProjectNameUseCase implements IUpdateProjectNameUseCase {
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         await this.projectsRepository.updateName(projectId, name);
     }

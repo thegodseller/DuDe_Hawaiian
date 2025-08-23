@@ -49,7 +49,7 @@ export class ListScheduledJobRulesUseCase implements IListScheduledJobRulesUseCa
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // fetch scheduled job rules for project
         return await this.scheduledJobRulesRepository.list(projectId, request.cursor, limit);

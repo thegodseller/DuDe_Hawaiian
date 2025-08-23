@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
-import { usersCollection } from "./mongodb";
 import { auth0 } from "./auth0";
-import { User, WithStringId } from "./types/types";
+import { User } from "@/src/entities/models/user";
 import { USE_AUTH } from "./feature_flags";
 import { redirect } from "next/navigation";
+import { container } from "@/di/container";
+import { IUsersRepository } from "@/src/application/repositories/users.repository.interface";
 
 export const GUEST_SESSION = {
     email: "guest@rowboatlabs.com",
@@ -12,13 +12,12 @@ export const GUEST_SESSION = {
     sub: "guest_user",
 }
 
-export const GUEST_DB_USER: WithStringId<z.infer<typeof User>> = {
-    _id: "guest_user",
+export const GUEST_DB_USER: z.infer<typeof User> = {
+    id: "guest_user",
     auth0Id: "guest_user",
     name: "Guest",
     email: "guest@rowboatlabs.com",
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
 }
 
 /**
@@ -33,7 +32,7 @@ export const GUEST_DB_USER: WithStringId<z.infer<typeof User>> = {
  * const user = await requireAuth();
  * ```
  */
-export async function requireAuth(): Promise<WithStringId<z.infer<typeof User>>> {
+export async function requireAuth(): Promise<z.infer<typeof User>> {
     if (!USE_AUTH) {
         return GUEST_DB_USER;
     }
@@ -44,48 +43,26 @@ export async function requireAuth(): Promise<WithStringId<z.infer<typeof User>>>
     }
 
     // fetch db user
+    const usersRepository = container.resolve<IUsersRepository>("usersRepository");
     let dbUser = await getUserFromSessionId(user.sub);
 
     // if db user does not exist, create one
     if (!dbUser) {
-        // create user record
-        const doc = {
-            _id: new ObjectId(),
+        dbUser = await usersRepository.create({
             auth0Id: user.sub,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
             email: user.email,
-        };
-        console.log(`creating new user id ${doc._id.toString()} for session id ${user.sub}`);
-        await usersCollection.insertOne(doc);
-
-        dbUser = {
-            ...doc,
-            _id: doc._id.toString(),
-        };
+        });
+        console.log(`created new user id ${dbUser.id} for session id ${user.sub}`);
     }
 
-    const { _id, ...rest } = dbUser;
-    return {
-        ...rest,
-        _id: _id.toString(),
-    };
+    return dbUser;
 }
 
-export async function getUserFromSessionId(sessionUserId: string): Promise<WithStringId<z.infer<typeof User>> | null> {
+export async function getUserFromSessionId(sessionUserId: string): Promise<z.infer<typeof User> | null> {
     if (!USE_AUTH) {
         return GUEST_DB_USER;
     }
 
-    let dbUser = await usersCollection.findOne({
-        auth0Id: sessionUserId
-    });
-    if (!dbUser) {
-        return null;
-    }
-    const { _id, ...rest } = dbUser;
-    return {
-        ...rest,
-        _id: _id.toString(),
-    };
+    const usersRepository = container.resolve<IUsersRepository>("usersRepository");
+    return await usersRepository.fetchByAuth0Id(sessionUserId);
 }

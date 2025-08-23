@@ -55,7 +55,7 @@ export class CreateRecurringJobRuleUseCase implements ICreateRecurringJobRuleUse
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(request.projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(request.projectId);
 
         // create the recurring job rule
         const rule = await this.recurringJobRulesRepository.create({

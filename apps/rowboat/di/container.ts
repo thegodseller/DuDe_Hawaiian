@@ -145,6 +145,9 @@ import { UpdateLiveWorkflowController } from "@/src/interface-adapters/controlle
 import { RevertToLiveWorkflowUseCase } from "@/src/application/use-cases/projects/revert-to-live-workflow.use-case";
 import { RevertToLiveWorkflowController } from "@/src/interface-adapters/controllers/projects/revert-to-live-workflow.controller";
 
+// users
+import { MongoDBUsersRepository } from "@/src/infrastructure/repositories/mongodb.users.repository";
+
 export const container = createContainer({
     injectionMode: InjectionMode.PROXY,
     strict: true,
@@ -324,4 +327,8 @@ container.register({
     runTurnController: asClass(RunTurnController).singleton(),
     listConversationsController: asClass(ListConversationsController).singleton(),
     fetchConversationController: asClass(FetchConversationController).singleton(),
+
+    // users
+    // ---
+    usersRepository: asClass(MongoDBUsersRepository).singleton(),
 });

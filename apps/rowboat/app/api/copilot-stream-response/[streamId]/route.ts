@@ -53,7 +53,7 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
         }
       } catch (error) {
         console.error('Error processing copilot stream:', error);
-        controller.error(error);
+        controller.error(new Error("Something went wrong. Please try again."));
       } finally {
         // log copilot usage
         if (USE_BILLING && billingCustomerId) {

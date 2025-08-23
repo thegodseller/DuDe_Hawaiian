@@ -44,7 +44,7 @@ export class ListDataSourcesUseCase implements IListDataSourcesUseCase {
             projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // list all sources for now
         const sources = [];

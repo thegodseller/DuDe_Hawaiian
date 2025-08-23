@@ -45,7 +45,7 @@ export class DeleteScheduledJobRuleUseCase implements IDeleteScheduledJobRuleUse
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(request.projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(request.projectId);
 
         // ensure rule belongs to this project
         const rule = await this.scheduledJobRulesRepository.fetch(request.ruleId);

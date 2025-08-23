@@ -28,7 +28,7 @@ export class GetComposioToolkitUseCase implements IGetComposioToolkitUseCase {
     async execute(request: z.infer<typeof InputSchema>): Promise<z.infer<typeof ZGetToolkitResponse>> {
         const { caller, userId, apiKey, projectId, toolkitSlug } = request;
         await this.projectActionAuthorizationPolicy.authorize({ caller, userId, apiKey, projectId });
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
         return await getToolkit(toolkitSlug);
     }
 }

@@ -27,7 +27,7 @@ export async function createRecurringJobRule(request: {
 
     return await createRecurringJobRuleController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         input: request.input,
         cron: request.cron,
@@ -43,7 +43,7 @@ export async function listRecurringJobRules(request: {
 
     return await listRecurringJobRulesController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         cursor: request.cursor,
         limit: request.limit,
@@ -57,7 +57,7 @@ export async function fetchRecurringJobRule(request: {
 
     return await fetchRecurringJobRuleController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         ruleId: request.ruleId,
     });
 }
@@ -70,7 +70,7 @@ export async function toggleRecurringJobRule(request: {
 
     return await toggleRecurringJobRuleController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         ruleId: request.ruleId,
         disabled: request.disabled,
     });
@@ -84,7 +84,7 @@ export async function deleteRecurringJobRule(request: {
 
     return await deleteRecurringJobRuleController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         ruleId: request.ruleId,
     });

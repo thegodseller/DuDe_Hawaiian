@@ -35,7 +35,7 @@ export async function getDataSource(sourceId: string): Promise<z.infer<typeof Da
 
     return await fetchDataSourceController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         sourceId,
     });
 }
@@ -45,7 +45,7 @@ export async function listDataSources(projectId: string): Promise<z.infer<typeof
 
     return await listDataSourcesController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
     });
 }
@@ -66,7 +66,7 @@ export async function createDataSource({
     const user = await authCheck();
     return await createDataSourceController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         data: {
             projectId,
             name,
@@ -82,7 +82,7 @@ export async function recrawlWebDataSource(sourceId: string) {
 
     return await recrawlWebDataSourceController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         sourceId,
     });
 }
@@ -92,7 +92,7 @@ export async function deleteDataSource(sourceId: string) {
 
     return await deleteDataSourceController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         sourceId,
     });
 }
@@ -102,7 +102,7 @@ export async function toggleDataSource(sourceId: string, active: boolean) {
 
     return await toggleDataSourceController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         sourceId,
         active,
     });
@@ -122,7 +122,7 @@ export async function addDocsToDataSource({
 
     return await addDocsToDataSourceController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         sourceId,
         docs: docData,
     });
@@ -144,7 +144,7 @@ export async function listDocsInDataSource({
 
     const docs = await listDocsInDataSourceController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         sourceId,
     });
 
@@ -162,7 +162,7 @@ export async function deleteDocFromDataSource({
     const user = await authCheck();
     return await deleteDocFromDataSourceController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         docId,
     });
 }
@@ -174,7 +174,7 @@ export async function getDownloadUrlForFile(
 
     return await getDownloadUrlForFileController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         fileId,
     });
 }
@@ -191,7 +191,7 @@ export async function getUploadUrlsForFilesDataSource(
 
     return await getUploadUrlsForFilesController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         sourceId,
         files,
     });
@@ -208,7 +208,7 @@ export async function updateDataSource({
 
     return await updateDataSourceController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         sourceId,
         data: {
             description,

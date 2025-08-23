@@ -44,7 +44,7 @@ export class CreateComposioManagedConnectedAccountUseCase implements ICreateComp
         const { caller, userId, apiKey, projectId, toolkitSlug, callbackUrl } = request;
 
         await this.projectActionAuthorizationPolicy.authorize({ caller, userId, apiKey, projectId });
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // fetch managed auth configs
         const configs = await listAuthConfigs(toolkitSlug, null, true);

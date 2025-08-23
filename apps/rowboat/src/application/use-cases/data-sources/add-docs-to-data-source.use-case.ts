@@ -55,7 +55,7 @@ export class AddDocsToDataSourceUseCase implements IAddDocsToDataSourceUseCase {
             projectId: source.projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(source.projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(source.projectId);
 
         await this.dataSourceDocsRepository.bulkCreate(source.projectId, sourceId, docs);
 

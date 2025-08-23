@@ -256,24 +256,27 @@ export default function Sidebar({ projectId, useAuth, collapsed = false, onToggl
 
           {/* Theme and Auth Controls */}
           <div className="p-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-            {USE_PRODUCT_TOUR && !isProjectsRoute && (
-              <Tooltip content={collapsed ? "Help" : ""} showArrow placement="right">
-                <button
-                  onClick={showHelpModal}
-                  className={`
-                    w-full rounded-md flex items-center
-                    text-[15px] font-medium transition-all duration-200
-                    ${collapsed ? 'justify-center py-4' : 'px-4 py-4 gap-3'}
-                    hover:bg-zinc-100 dark:hover:bg-zinc-800/50
-                    text-zinc-600 dark:text-zinc-400
-                  `}
-                  data-tour-target="tour-button"
-                >
-                  <HelpCircle size={COLLAPSED_ICON_SIZE} />
-                  {!collapsed && <span>Help</span>}
-                </button>
-              </Tooltip>
-            )}
+            {/* Help button - always visible, but behavior depends on feature flag */}
+            <Tooltip content={collapsed ? "Help" : ""} showArrow placement="right">
+              <button
+                onClick={USE_PRODUCT_TOUR ? showHelpModal : () => {
+                  // Basic help behavior when tour is disabled
+                  // You can customize this to show a different help modal or redirect
+                  window.open('https://discord.com/invite/rxB8pzHxaS', '_blank');
+                }}
+                className={`
+                  w-full rounded-md flex items-center
+                  text-[15px] font-medium transition-all duration-200
+                  ${collapsed ? 'justify-center py-4' : 'px-4 py-4 gap-3'}
+                  hover:bg-zinc-100 dark:hover:bg-zinc-800/50
+                  text-zinc-600 dark:text-zinc-400
+                `}
+                data-tour-target="tour-button"
+              >
+                <HelpCircle size={COLLAPSED_ICON_SIZE} />
+                {!collapsed && <span>Help</span>}
+              </button>
+            </Tooltip>
 
             {SHOW_DARK_MODE_TOGGLE && (
               <Tooltip content={collapsed ? "Appearance" : ""} showArrow placement="right">

@@ -54,7 +54,7 @@ export class DeleteDocFromDataSourceUseCase implements IDeleteDocFromDataSourceU
             projectId: doc.projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(doc.projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(doc.projectId);
 
         await this.dataSourceDocsRepository.markAsDeleted(docId);
 

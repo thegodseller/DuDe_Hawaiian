@@ -55,7 +55,7 @@ export class ToggleRecurringJobRuleUseCase implements IToggleRecurringJobRuleUse
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // update the rule
         return await this.recurringJobRulesRepository.toggle(request.ruleId, request.disabled);

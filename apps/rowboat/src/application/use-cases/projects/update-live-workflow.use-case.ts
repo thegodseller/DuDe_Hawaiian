@@ -43,7 +43,7 @@ export class UpdateLiveWorkflowUseCase implements IUpdateLiveWorkflowUseCase {
             apiKey: request.apiKey,
             projectId,
         });
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         const workflow = { ...request.workflow, lastUpdatedAt: new Date().toISOString() } as z.infer<typeof Workflow>;
         await this.projectsRepository.updateLiveWorkflow(projectId, workflow);

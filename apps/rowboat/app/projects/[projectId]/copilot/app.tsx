@@ -14,6 +14,9 @@ import { Messages } from "./components/messages";
 import { CopyIcon, CheckIcon, PlusIcon, XIcon, InfoIcon, Sparkles } from "lucide-react";
 import { useCopilot } from "./use-copilot";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
+import { SHOW_COPILOT_MARQUEE } from "@/app/lib/feature_flags";
+import Image from "next/image";
+import mascot from "@/public/mascot.png";
 
 const CopilotContext = createContext<{
     workflow: z.infer<typeof Workflow> | null;
@@ -205,6 +208,56 @@ const App = forwardRef<{ handleCopyChat: () => void; handleUserMessage: (message
         <CopilotContext.Provider value={{ workflow: workflowRef.current, dispatch }}>
             <div className="h-full flex flex-col">
                 <div className="flex-1 overflow-auto">
+                    {messages.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-4 pointer-events-none">
+                            {/* Replace Sparkles icon with mascot image */}
+                            <Image src={mascot} alt="Rowboat Mascot" width={160} height={160} className="object-contain mb-3 animate-float" />
+                            
+                            {/* Welcome/Intro Section */}
+                            <div className="text-center max-w-md px-6 mb-3">
+                                <h3 className="text-xl font-semibold text-zinc-700 dark:text-zinc-300 mb-2 text-center">
+                                    👋 Hi there!
+                                </h3>
+                                <p className="text-base text-zinc-600 dark:text-zinc-400 mb-4 text-center">
+                                    I&apos;m your copilot for building agents and adding tools to them.
+                                </p>
+                                <p className="text-base text-zinc-600 dark:text-zinc-400 mb-3 text-center">
+                                    Here&apos;s what you can do in Rowboat:
+                                </p>
+                                <div className="space-y-2 max-w-2xl mx-auto text-left">
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-lg">⚡</span>
+                                        <span className="text-sm text-zinc-600 dark:text-zinc-400">Build AI agents instantly with natural language.</span>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-lg">🔌</span>
+                                        <span className="text-sm text-zinc-600 dark:text-zinc-400">Connect tools with one-click integrations.</span>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-lg">📂</span>
+                                        <span className="text-sm text-zinc-600 dark:text-zinc-400">Power with knowledge by adding documents for RAG.</span>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-lg">🔄</span>
+                                        <span className="text-sm text-zinc-600 dark:text-zinc-400">Automate workflows by setting up triggers and actions.</span>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-lg">🚀</span>
+                                        <span className="text-sm text-zinc-600 dark:text-zinc-400">Deploy anywhere via API or SDK.</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {SHOW_COPILOT_MARQUEE && (
+                                <div className="relative mt-2 max-w-full px-8">
+                                    <div className="font-mono text-sm whitespace-nowrap text-blue-400/60 dark:text-blue-500/40 font-small inline-flex">
+                                        <div className="overflow-hidden w-0 animate-typing">What can I help you build?</div>
+                                        <div className="border-r-2 border-blue-400 dark:border-blue-500 animate-cursor">&nbsp;</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     <Messages
                         messages={messages}
                         streamingResponse={streamingResponse}
@@ -320,7 +373,6 @@ export const Copilot = forwardRef<{ handleUserMessage: (message: string) => void
             <Panel 
                 variant="copilot"
                 tourTarget="copilot"
-                showWelcome={messages.length === 0}
                 icon={<Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />}
                 title="Skipper"
                 subtitle="Build your assistant"

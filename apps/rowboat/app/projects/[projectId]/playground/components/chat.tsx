@@ -160,6 +160,16 @@ export function Chat({
         setIsLastInteracted(true);
     }
 
+    // clean up event source on component unmount
+    useEffect(() => {
+        return () => {
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+                eventSourceRef.current = null;
+            }
+        }
+    }, []);
+
     useEffect(() => {
         const container = scrollContainerRef.current;
         if (!container) return;

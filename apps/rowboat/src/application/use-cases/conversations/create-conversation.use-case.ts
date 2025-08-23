@@ -61,7 +61,7 @@ export class CreateConversationUseCase implements ICreateConversationUseCase {
         }
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // if workflow is not provided, fetch workflow
         if (!workflow) {

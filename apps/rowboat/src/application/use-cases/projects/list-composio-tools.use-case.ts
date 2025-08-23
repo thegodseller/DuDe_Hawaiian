@@ -31,7 +31,7 @@ export class ListComposioToolsUseCase implements IListComposioToolsUseCase {
     async execute(request: z.infer<typeof InputSchema>): Promise<z.infer<ReturnType<typeof ZListResponse<typeof ZTool>>>> {
         const { caller, userId, apiKey, projectId, toolkitSlug, searchQuery, cursor } = request;
         await this.projectActionAuthorizationPolicy.authorize({ caller, userId, apiKey, projectId });
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
         return await listTools(toolkitSlug, searchQuery ?? null, cursor ?? null);
     }
 }

@@ -68,7 +68,7 @@ export class FetchCachedTurnUseCase implements IFetchCachedTurnUseCase {
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // delete from cache
         await this.cacheService.delete(`turn-${data.key}`);

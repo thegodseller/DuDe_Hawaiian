@@ -61,7 +61,7 @@ export class CreateCachedTurnUseCase implements ICreateCachedTurnUseCase {
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // create cache entry
         const key = nanoid();

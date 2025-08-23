@@ -58,7 +58,7 @@ export class GetDownloadUrlForFileUseCase implements IGetDownloadUrlForFileUseCa
             projectId: file.projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(file.projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(file.projectId);
 
         if (file.data.type === 'file_local') {
             // use the file id instead of path here

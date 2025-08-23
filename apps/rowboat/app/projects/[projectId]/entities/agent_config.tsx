@@ -2,10 +2,10 @@
 import { WorkflowPrompt, WorkflowAgent, Workflow, WorkflowTool } from "../../../lib/types/workflow_types";
 import { DataSource } from "@/src/entities/models/data-source";
 import { z } from "zod";
-import { PlusIcon, X as XIcon, ChevronDown, ChevronRight, Trash2, Maximize2, Minimize2, StarIcon, DatabaseIcon, UserIcon, Settings, Info } from "lucide-react";
+import { PlusIcon, X as XIcon, ChevronDown, ChevronRight, Trash2, Maximize2, Minimize2, StarIcon, DatabaseIcon, UserIcon, Settings, Info, Edit3 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { usePreviewModal } from "../workflow/preview-modal";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, SelectItem, Chip, SelectSection } from "@heroui/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select, SelectItem, Chip, SelectSection, Input } from "@heroui/react";
 import { PreviewModalProvider } from "../workflow/preview-modal";
 import { CopilotMessage } from "@/src/application/lib/copilot/types";
 import { getCopilotAgentInstructions } from "@/app/actions/copilot.actions";
@@ -17,7 +17,6 @@ import { Button as CustomButton } from "@/components/ui/button";
 import clsx from "clsx";
 import { InputField } from "@/app/lib/components/input-field";
 import { USE_TRANSFER_CONTROL_OPTIONS } from "@/app/lib/feature_flags";
-import { Input } from "@/components/ui/input";
 import { Info as InfoIcon } from "lucide-react";
 import { useCopilot } from "../copilot/use-copilot";
 import { BillingUpgradeModal } from "@/components/common/billing-upgrade-modal";
@@ -78,6 +77,8 @@ export function AgentConfig({
     const [previousRagSources, setPreviousRagSources] = useState<string[]>([]);
     const [billingError, setBillingError] = useState<string | null>(null);
     const [showSavedBanner, setShowSavedBanner] = useState(false);
+    const [isEditingName, setIsEditingName] = useState(false);
+    const nameInputRef = useRef<HTMLInputElement>(null);
 
     // Check if this agent is a pipeline agent
     const isPipelineAgent = agent.type === 'pipeline';
@@ -100,6 +101,14 @@ export function AgentConfig({
     useEffect(() => {
         setLocalName(agent.name);
     }, [agent.name]);
+
+    // Focus name input when entering edit mode
+    useEffect(() => {
+        if (isEditingName && nameInputRef.current) {
+            nameInputRef.current.focus();
+            nameInputRef.current.select();
+        }
+    }, [isEditingName]);
 
     // Track changes in RAG datasources
     useEffect(() => {
@@ -149,6 +158,13 @@ export function AgentConfig({
         }
     }, [agent.controlType, agent.outputVisibility, agent, handleUpdate]);
 
+    // Add effect to ensure internal agents have maxCallsPerParentAgent set to 1 by default
+    useEffect(() => {
+        if (agent.outputVisibility === "internal" && !isPipelineAgent && agent.maxCallsPerParentAgent === undefined) {
+            handleUpdate({ ...agent, maxCallsPerParentAgent: 1 });
+        }
+    }, [agent.outputVisibility, agent.maxCallsPerParentAgent, agent, handleUpdate, isPipelineAgent]);
+
     // Add effect to handle escape key
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -188,15 +204,36 @@ export function AgentConfig({
         return true;
     };
 
-    const handleNameChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newName = e.target.value;
         setLocalName(newName);
-        
-        if (validateName(newName)) {
+        setNameError(null);
+    };
+
+    const handleNameCommit = () => {
+        if (validateName(localName)) {
             handleUpdate({
                 ...agent,
-                name: newName
+                name: localName
             });
+            showSavedMessage();
+            setIsEditingName(false);
+        }
+    };
+
+    const handleNameCancel = () => {
+        setLocalName(agent.name);
+        setNameError(null);
+        setIsEditingName(false);
+    };
+
+    const handleNameKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleNameCommit();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            handleNameCancel();
         }
     };
 
@@ -209,20 +246,42 @@ export function AgentConfig({
         currentAgent: agent
     });
 
-    // Add local state for max calls input
-    const [maxCallsInput, setMaxCallsInput] = useState(String(agent.maxCallsPerParentAgent || 3));
-    const [maxCallsError, setMaxCallsError] = useState<string | null>(null);
-    // Sync local state with agent prop
-    useEffect(() => {
-      setMaxCallsInput(String(agent.maxCallsPerParentAgent || 3));
-    }, [agent.maxCallsPerParentAgent]);
+
 
     return (
         <Panel 
             title={
                 <div className="flex items-center justify-between w-full">
-                    <div className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                        {agent.name}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {isEditingName ? (
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <Input
+                                    ref={nameInputRef}
+                                    type="text"
+                                    value={localName}
+                                    onChange={handleNameChange}
+                                    onKeyDown={handleNameKeyDown}
+                                    onBlur={handleNameCommit}
+                                    isInvalid={!!nameError}
+                                    errorMessage={nameError}
+                                    variant="bordered"
+                                    size="sm"
+                                    classNames={{
+                                        base: "max-w-xs",
+                                        input: "text-base font-semibold px-2",
+                                        inputWrapper: "min-h-[28px] h-[28px] border-gray-200 dark:border-gray-700 px-0"
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setIsEditingName(true)}
+                                className="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-1 rounded-md transition-colors group"
+                            >
+                                <span className="truncate">{agent.name}</span>
+                                <Edit3 className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+                            </button>
+                        )}
                     </div>
                     <CustomButton
                         variant="secondary"
@@ -260,7 +319,7 @@ export function AgentConfig({
                                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                             )}
                         >
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            {tab === 'instructions' ? 'Instructions' : 'Model & RAG'}
                         </button>
                     ))}
                 </div>
@@ -480,38 +539,6 @@ export function AgentConfig({
 
                     {activeTab === 'configurations' && (
                         <div className="flex flex-col gap-4 pb-4 pt-0">
-                            {/* Identity Section Card */}
-                            <SectionCard
-                                icon={<UserIcon className="w-5 h-5 text-indigo-500" />}
-                                title="Identity"
-                                labelWidth="md:w-32"
-                                className="mb-1"
-                            >
-                                <div className="flex flex-col gap-6">
-                                    <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
-                                        <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Name</label>
-                                        <div className="flex-1">
-                                            <InputField
-                                                type="text"
-                                                value={localName}
-                                                onChange={(value) => {
-                                                    setLocalName(value);
-                                                    if (validateName(value)) {
-                                                        handleUpdate({
-                                                            ...agent,
-                                                            name: value
-                                                        });
-                                                    }
-                                                    showSavedMessage();
-                                                }}
-                                                error={nameError}
-                                                className="w-full"
-                                            />
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </SectionCard>
                             {/* Behavior Section Card */}
                             <SectionCard
                                 icon={<Settings className="w-5 h-5 text-indigo-500" />}
@@ -618,43 +645,7 @@ export function AgentConfig({
                                             }
                                         </div>
                                     </div>
-                                    {agent.outputVisibility === "internal" && !isPipelineAgent && (
-                                        <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
-                                            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">Max Calls From Parent</label>
-                                            <div className="flex-1">
-                                                <InputField
-                                                    type="number"
-                                                    value={maxCallsInput}
-                                                    onChange={(value: string) => {
-                                                        setMaxCallsInput(value);
-                                                        setMaxCallsError(null);
-                                                        const num = Number(value);
-                                                        if (value && !isNaN(num) && num >= 1 && Number.isInteger(num)) {
-                                                            if (num !== agent.maxCallsPerParentAgent) {
-                                                                handleUpdate({
-                                                                    ...agent,
-                                                                    maxCallsPerParentAgent: num
-                                                                });
-                                                            }
-                                                        }
-                                                    }}
-                                                    validate={(value: string) => {
-                                                        const num = Number(value);
-                                                        if (!value || isNaN(num) || num < 1 || !Number.isInteger(num)) {
-                                                            return { valid: false, errorMessage: "Must be an integer >= 1" };
-                                                        }
-                                                        return { valid: true };
-                                                    }}
-                                                    error={maxCallsError}
-                                                    min={1}
-                                                    className="w-full max-w-24"
-                                                />
-                                                {maxCallsError && (
-                                                    <p className="text-sm text-red-500 mt-1">{maxCallsError}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
+
                                     {USE_TRANSFER_CONTROL_OPTIONS && !isPipelineAgent && (
                                         <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-0">
                                             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 md:w-32 mb-1 md:mb-0 md:pr-4">After Turn</label>

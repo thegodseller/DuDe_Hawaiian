@@ -55,7 +55,7 @@ export class UpdateDataSourceUseCase implements IUpdateDataSourceUseCase {
             projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         return await this.dataSourcesRepository.update(request.sourceId, request.data, true);
     }

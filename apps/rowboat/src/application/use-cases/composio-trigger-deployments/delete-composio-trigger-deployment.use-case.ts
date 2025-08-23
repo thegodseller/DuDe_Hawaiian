@@ -54,7 +54,7 @@ export class DeleteComposioTriggerDeploymentUseCase implements IDeleteComposioTr
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // ensure deployment belongs to this project
         const deployment = await this.composioTriggerDeploymentsRepository.fetch(request.deploymentId);

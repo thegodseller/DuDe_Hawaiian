@@ -51,9 +51,12 @@ export function Action({
     const appliedFields = Object.keys(action.config_changes).filter(key => 
         appliedChanges[getAppliedChangeKey(msgIndex, actionIndex, key)]
     );
-    const allApplied = externallyApplied || Object.keys(action.config_changes).every(key => 
+    let allApplied = externallyApplied || Object.keys(action.config_changes).every(key =>
         appliedFields.includes(key)
     );
+    if (!externallyApplied && (action.action === "delete" || action.config_type === 'start_agent')) {
+        allApplied = false;
+    }
 
     // Handle applying a single field change
     const handleFieldChange = (field: string) => {
@@ -160,7 +163,8 @@ export function Action({
         'transition-shadow duration-150',
         {
             'border-l-2 border-l-blue-500': !stale && !allApplied && action.action == 'create_new',
-            'border-l-2 border-l-orange-500': !stale && !allApplied && action.action == 'edit',
+            'border-l-2 border-l-yellow-500': !stale && !allApplied && action.action == 'edit',
+            'border-l-2 border-l-red-500': !stale && !allApplied && action.action == 'delete',
             'border-l-2 border-l-gray-400': stale || allApplied || action.error,
         }
     )}>
@@ -171,14 +175,15 @@ export function Action({
                     'inline-flex items-center justify-center rounded-full h-5 w-5 text-xs',
                     {
                         'bg-blue-100 text-blue-600': action.action == 'create_new',
-                        'bg-orange-100 text-orange-600': action.action == 'edit',
+                        'bg-yellow-100 text-yellow-600': action.action == 'edit',
+                        'bg-red-100 text-red-600': action.action == 'delete',
                         'bg-gray-200 text-gray-600': stale || allApplied || action.error,
                     }
                 )}>
-                    {action.config_type === 'agent' ? '🧑‍💼' : action.config_type === 'tool' ? '🛠️' : action.config_type === 'pipeline' ? '⚙️' : '💬'}
+                    {action.config_type === 'agent' ? '🧑‍💼' : action.config_type === 'tool' ? '🛠️' : action.config_type === 'pipeline' ? '⚙️' : action.config_type === 'start_agent' ? '🏁' : action.config_type === 'prompt' ? '💬' : '💬'}
                 </span>
                 <span className="font-semibold text-sm text-zinc-800 dark:text-zinc-100 truncate flex-1">
-                    {action.action === 'create_new' ? 'Add' : 'Edit'} {action.config_type}: {action.name}
+                    {action.action === 'create_new' ? 'Add' : action.action === 'edit' ? 'Edit' : 'Delete'} {action.config_type}: {action.name}
                 </span>
                 {/* Action buttons - compact, icon only, show text on hover */}
                 <div className="flex items-center gap-1">
@@ -195,13 +200,13 @@ export function Action({
                         <CheckIcon size={13} className={allApplied ? 'text-zinc-400' : 'text-green-600 group-hover:text-green-700'} />
                         <span>{allApplied ? 'Applied' : 'Apply'}</span>
                     </button>
-                    <button
+                    {action.action !== 'delete' && <button
                         className="flex items-center gap-1 rounded-full px-2 h-7 text-xs font-medium bg-transparent text-indigo-600 hover:text-indigo-700 transition-colors"
                         onClick={handleViewDiff}
                     >
                         <EyeIcon size={13} className="text-indigo-600 group-hover:text-indigo-700" />
                         <span>View Diff</span>
-                    </button>
+                    </button>}
                 </div>
             </div>
             {/* Description of what happened */}
@@ -341,8 +346,8 @@ export function StreamingAction({
     loading,
 }: {
     action: {
-        action?: 'create_new' | 'edit';
-        config_type?: 'tool' | 'agent' | 'prompt' | 'pipeline';
+        action?: 'create_new' | 'edit' | 'delete';
+        config_type?: 'tool' | 'agent' | 'prompt' | 'pipeline' | 'start_agent';
         name?: string;
     };
     loading: boolean;
@@ -354,7 +359,8 @@ export function StreamingAction({
             'transition-shadow duration-150',
             {
                 'border-l-2 border-l-blue-500': action.action == 'create_new',
-                'border-l-2 border-l-orange-500': action.action == 'edit',
+                'border-l-2 border-l-yellow-500': action.action == 'edit',
+                'border-l-2 border-l-red-500': action.action == 'delete',
                 'border-l-2 border-l-gray-400': !action.action,
             }
         )}>
@@ -364,14 +370,15 @@ export function StreamingAction({
                     'inline-flex items-center justify-center rounded-full h-5 w-5 text-xs',
                     {
                         'bg-blue-100 text-blue-600': action.action == 'create_new',
-                        'bg-orange-100 text-orange-600': action.action == 'edit',
+                        'bg-yellow-100 text-yellow-600': action.action == 'edit',
+                        'bg-red-100 text-red-600': action.action == 'delete',
                         'bg-gray-200 text-gray-600': !action.action,
                     }
                 )}>
-                    {action.config_type === 'agent' ? '🧑‍💼' : action.config_type === 'tool' ? '🛠️' : action.config_type === 'pipeline' ? '⚙️' : '💬'}
+                    {action.config_type === 'agent' ? '🧑‍💼' : action.config_type === 'tool' ? '🛠️' : action.config_type === 'pipeline' ? '⚙️' : action.config_type === 'start_agent' ? '🏁' : '💬'}
                 </span>
                 <span className="font-semibold text-sm text-zinc-800 dark:text-zinc-100 truncate flex-1">
-                    {action.action === 'create_new' ? 'Add' : 'Edit'} {action.config_type}: {action.name}
+                    {action.action === 'create_new' ? 'Add' : action.action === 'edit' ? 'Edit' : 'Delete'} {action.config_type}: {action.name}
                 </span>
             </div>
             {/* Loading state body */}

@@ -990,4 +990,92 @@ This workflow is now ready. Once you apply the changes, it will automatically ha
 
 ---
 
+### Example 7: Setting the start agent
+
+**User Request**
+Can you set the start agent to the Meeting Prep Hub?
+
+**Copilot Response**
+
+Yes, I can set the start agent to the Meeting Prep Hub.
+
+\`\`\`copilot_change
+
+// action: edit
+// config_type: start_agent
+// name: Meeting Prep Hub
+{
+  "change_description": "Set the start agent to the Meeting Prep Hub.",
+  "config_changes": {},
+}
+\`\`\`
+
+
+---
+
+### Example 8: Delete an agent
+
+**User Request:**
+Can you delete the Slack Send Agent?
+
+**Copilot Response:**
+
+Yes, I can delete the Slack Send Agent.
+
+\`\`\`copilot_change
+// action: delete
+// config_type: agent
+// name: Slack Send Agent
+{
+  "change_description": "Delete the Slack Send Agent.",
+  "config_changes": {},
+  }
+}
+\`\`\`
+
+---
+
+### Example 9: Delete a tool
+
+**User Request:**
+Can you delete the Search tool?
+
+**Copilot Response:**
+
+Yes, I can delete the Search tool.
+
+
+\`\`\`copilot_change
+// action: delete
+// config_type: tool
+// name: Search
+{
+  "change_description": "Delete the Search tool.",
+  "config_changes": {},
+}
+\`\`\`
+
+---
+
+### Example 10: Delete a pipeline
+
+**User Request:**
+Can you delete the Meeting Prep Pipeline?
+
+**Copilot Response:**
+
+Yes, I can delete the Meeting Prep Pipeline.
+
+\`\`\`copilot_change
+// action: delete
+// config_type: pipeline
+// name: Meeting Prep Pipeline
+{
+  "change_description": "Delete the Meeting Prep Pipeline.",
+  "config_changes": {},
+}
+\`\`\`
+
+---
+
 `;

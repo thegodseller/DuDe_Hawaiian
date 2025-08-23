@@ -63,6 +63,9 @@ interface EntityListProps {
     onAddAgent: (agent: Partial<z.infer<typeof WorkflowAgent>>) => void;
     onAddTool: (tool: Partial<z.infer<typeof WorkflowTool>>) => void;
     onAddPrompt: (prompt: Partial<z.infer<typeof WorkflowPrompt>>) => void;
+    onUpdatePrompt: (name: string, prompt: Partial<z.infer<typeof WorkflowPrompt>>) => void;
+    onAddPromptFromModal: (prompt: Partial<z.infer<typeof WorkflowPrompt>>) => void;
+    onUpdatePromptFromModal: (name: string, prompt: Partial<z.infer<typeof WorkflowPrompt>>) => void;
     onAddPipeline: (pipeline: Partial<z.infer<typeof WorkflowPipeline>>) => void;
     onAddAgentToPipeline: (pipelineName: string) => void;
     onToggleAgent: (name: string) => void;
@@ -97,6 +100,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ entity, hasFilteredItems }) => 
 
 const ListItemWithMenu = ({ 
     name, 
+    value,
     isSelected, 
     onClick, 
     disabled, 
@@ -110,6 +114,7 @@ const ListItemWithMenu = ({
     isMocked,
 }: {
     name: string;
+    value?: string;
     isSelected?: boolean;
     onClick?: () => void;
     disabled?: boolean;
@@ -157,9 +162,34 @@ const ListItemWithMenu = ({
                         />
                     ) : icon}
                 </div>
-                <span className="text-xs">{name}</span>
+                {value ? (
+                    <div className="flex-1 min-w-0 grid grid-cols-2 gap-2">
+                        <Tooltip 
+                            content={name} 
+                            size="sm" 
+                            delay={500}
+                            isDisabled={name.length <= 20}
+                        >
+                            <span className="text-xs font-medium truncate">
+                                {name}
+                            </span>
+                        </Tooltip>
+                        <Tooltip 
+                            content={value} 
+                            size="sm" 
+                            delay={500}
+                            isDisabled={value.length <= 30}
+                        >
+                            <span className="text-xs text-zinc-600 dark:text-zinc-400 truncate">
+                                {value}
+                            </span>
+                        </Tooltip>
+                    </div>
+                ) : (
+                    <span className="text-xs">{name}</span>
+                )}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
                 {statusLabel}
                 {isMocked && (
                     <Tooltip content="Mocked" size="sm" delay={500}>
@@ -168,7 +198,9 @@ const ListItemWithMenu = ({
                         </div>
                     </Tooltip>
                 )}
-                {menuContent}
+                <div className="opacity-100">
+                    {menuContent}
+                </div>
             </div>
         </div>
     );
@@ -464,6 +496,9 @@ export const EntityList = forwardRef<
     onAddAgent,
     onAddTool,
     onAddPrompt,
+    onUpdatePrompt,
+    onAddPromptFromModal,
+    onUpdatePromptFromModal,
     onAddPipeline,
     onAddAgentToPipeline,
     onToggleAgent,
@@ -490,6 +525,8 @@ export const EntityList = forwardRef<
     const [showAgentTypeModal, setShowAgentTypeModal] = useState(false);
     const [showToolsModal, setShowToolsModal] = useState(false);
     const [showDataSourcesModal, setShowDataSourcesModal] = useState(false);
+    const [showAddVariableModal, setShowAddVariableModal] = useState(false);
+    const [editingVariable, setEditingVariable] = useState<{name: string; value: string} | null>(null);
     // State to track which toolkit's tools panel to open
     const [selectedToolkitSlug, setSelectedToolkitSlug] = useState<string | null>(null);
 
@@ -497,6 +534,11 @@ export const EntityList = forwardRef<
         onAddAgent({
             outputVisibility: agentType
         });
+    };
+
+    const handleVariableClick = (prompt: z.infer<typeof WorkflowPrompt>) => {
+        setEditingVariable({ name: prompt.name, value: prompt.prompt });
+        setShowAddVariableModal(true);
     };
     const selectedRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -1146,7 +1188,7 @@ export const EntityList = forwardRef<
                                             )}
                                         </button>
                                         <PenLine className="w-4 h-4" />
-                                        <span>Prompts</span>
+                                        <span>Variables</span>
                                     </div>
                                     <Button
                                         variant="secondary"
@@ -1154,11 +1196,11 @@ export const EntityList = forwardRef<
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setExpandedPanels(prev => ({ ...prev, prompts: true }));
-                                            onAddPrompt({});
+                                            setShowAddVariableModal(true);
                                         }}
                                         className={`group ${buttonClasses}`}
                                         showHoverContent={true}
-                                        hoverContent="Add Prompt"
+                                        hoverContent="Add Variable"
                                     >
                                         <PlusIcon className="w-4 h-4" />
                                     </Button>
@@ -1174,8 +1216,9 @@ export const EntityList = forwardRef<
                                                     <ListItemWithMenu
                                                         key={`prompt-${index}`}
                                                         name={prompt.name}
+                                                        value={prompt.prompt}
                                                         isSelected={selectedEntity?.type === "prompt" && selectedEntity.name === prompt.name}
-                                                        onClick={() => onSelectPrompt(prompt.name)}
+                                                        onClick={() => handleVariableClick(prompt)}
                                                         selectedRef={selectedEntity?.type === "prompt" && selectedEntity.name === prompt.name ? selectedRef : undefined}
                                                         icon={<ScrollText className="w-4 h-4 text-blue-600/70 dark:text-blue-500/70" />}
                                                         menuContent={
@@ -1188,7 +1231,7 @@ export const EntityList = forwardRef<
                                                 ))}
                                             </div>
                                         ) : (
-                                            <EmptyState entity="prompts" hasFilteredItems={false} />
+                                            <EmptyState entity="variables" hasFilteredItems={false} />
                                         )}
                                     </div>
                                 </div>
@@ -1226,6 +1269,27 @@ export const EntityList = forwardRef<
                 useRagUploads={useRagUploads}
                 useRagS3Uploads={useRagS3Uploads}
                 useRagScraping={useRagScraping}
+            />
+            <AddVariableModal
+                isOpen={showAddVariableModal}
+                onClose={() => {
+                    setShowAddVariableModal(false);
+                    setEditingVariable(null);
+                }}
+                onConfirm={(name, value) => {
+                    if (editingVariable) {
+                        // Update existing variable using modal-specific handler
+                        onUpdatePromptFromModal(editingVariable.name, { name, prompt: value });
+                    } else {
+                        // Add new variable using modal-specific handler
+                        onAddPromptFromModal({ name, prompt: value });
+                    }
+                    setShowAddVariableModal(false);
+                    setEditingVariable(null);
+                }}
+                initialName={editingVariable?.name}
+                initialValue={editingVariable?.value}
+                isEditing={!!editingVariable}
             />
         </div>
     );
@@ -1917,6 +1981,136 @@ function AgentTypeModal({ isOpen, onClose, onConfirm, onCreatePipeline }: AgentT
                         onClick={handleConfirm}
                     >
                         {selectedType === 'pipeline' ? 'Create Pipeline' : 'Create Agent'}
+                    </Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+    );
+}
+
+interface AddVariableModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: (name: string, value: string) => void;
+    initialName?: string;
+    initialValue?: string;
+    isEditing?: boolean;
+}
+
+function AddVariableModal({ isOpen, onClose, onConfirm, initialName, initialValue, isEditing = false }: AddVariableModalProps) {
+    const [name, setName] = useState('');
+    const [value, setValue] = useState('');
+    const [errors, setErrors] = useState<{ name?: string; value?: string }>({});
+
+    // Initialize form with values when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setName(initialName || '');
+            setValue(initialValue || '');
+            setErrors({});
+        }
+    }, [isOpen, initialName, initialValue]);
+
+    const resetForm = () => {
+        setName('');
+        setValue('');
+        setErrors({});
+    };
+
+    const handleClose = () => {
+        resetForm();
+        onClose();
+    };
+
+    const handleConfirm = () => {
+        const newErrors: { name?: string; value?: string } = {};
+        
+        if (!name.trim()) {
+            newErrors.name = 'Variable name is required';
+        }
+        
+        if (!value.trim()) {
+            newErrors.value = 'Variable value is required';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        onConfirm(name.trim(), value.trim());
+        resetForm();
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={handleClose} size="md">
+            <ModalContent>
+                <ModalHeader>
+                    <div className="flex items-center gap-2">
+                        <PenLine className="w-5 h-5 text-indigo-600" />
+                        <span>{isEditing ? 'Edit Variable' : 'Add Variable'}</span>
+                    </div>
+                </ModalHeader>
+                <ModalBody className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Variable Name
+                        </label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => {
+                                setName(e.target.value);
+                                if (errors.name) setErrors(prev => ({ ...prev, name: undefined }));
+                            }}
+                            placeholder="Enter variable name (e.g., greeting_message)"
+                            className={clsx(
+                                "w-full px-3 py-2 border rounded-md text-sm",
+                                "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500",
+                                "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
+                                errors.name ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                            )}
+                        />
+                        {errors.name && (
+                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Variable Value
+                        </label>
+                        <textarea
+                            value={value}
+                            onChange={(e) => {
+                                setValue(e.target.value);
+                                if (errors.value) setErrors(prev => ({ ...prev, value: undefined }));
+                            }}
+                            placeholder="Enter the variable value..."
+                            rows={4}
+                            className={clsx(
+                                "w-full px-3 py-2 border rounded-md text-sm resize-none",
+                                "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500",
+                                "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
+                                errors.value ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                            )}
+                        />
+                        {errors.value && (
+                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.value}</p>
+                        )}
+                    </div>
+                </ModalBody>
+                <ModalFooter>
+                    <Button
+                        variant="secondary"
+                        onClick={handleClose}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={handleConfirm}
+                    >
+                        {isEditing ? 'Update Variable' : 'Add Variable'}
                     </Button>
                 </ModalFooter>
             </ModalContent>

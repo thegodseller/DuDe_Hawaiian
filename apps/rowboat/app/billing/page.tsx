@@ -12,6 +12,6 @@ export default async function Page() {
     }
 
     const customer = await requireBillingCustomer();
-    const usage = await getUsage(customer._id);
+    const usage = await getUsage(customer.id);
     return <BillingPage customer={customer} usage={usage} />;
 }

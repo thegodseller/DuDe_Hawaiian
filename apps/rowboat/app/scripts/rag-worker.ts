@@ -433,7 +433,7 @@ async function runDeletionPipeline(_logger: PrefixLogger, job: z.infer<typeof Da
                     logger.log("Error processing doc:", e);
                     await dataSourceDocsRepository.updateByVersion(doc.id, doc.version, {
                         status: "error",
-                        error: e.message,
+                        error: "Error processing doc",
                     });
                 } finally {
                     // log usage in billing
@@ -466,7 +466,7 @@ async function runDeletionPipeline(_logger: PrefixLogger, job: z.infer<typeof Da
                     logger.log("Error deleting doc:", e);
                     await dataSourceDocsRepository.updateByVersion(doc.id, doc.version, {
                         status: "error",
-                        error: e.message,
+                        error: "Error deleting doc",
                     });
                 }
             }

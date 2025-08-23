@@ -51,7 +51,7 @@ export class ListConversationsUseCase implements IListConversationsUseCase {
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // fetch conversations for project
         return await this.conversationsRepository.list(projectId, request.cursor, limit);

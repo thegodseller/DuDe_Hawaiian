@@ -51,7 +51,7 @@ export class ListComposioTriggerDeploymentsUseCase implements IListComposioTrigg
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // fetch deployments for project
         return await this.composioTriggerDeploymentsRepository.listByProjectId(projectId, request.cursor, limit);

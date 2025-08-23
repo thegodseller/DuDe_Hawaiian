@@ -1,9 +1,11 @@
 import { WorkflowTool, WorkflowAgent, WorkflowPrompt, WorkflowPipeline } from "./types/workflow_types";
 import { z } from "zod";
 
+const ZFallbackSchema = z.object({}).passthrough();
+
 export function validateConfigChanges(configType: string, configChanges: Record<string, unknown>, name: string) {
     let testObject: any;
-    let schema: z.ZodType<any>;
+    let schema: z.ZodType<any> = ZFallbackSchema;
 
     switch (configType) {
         case 'tool': {
@@ -54,6 +56,10 @@ export function validateConfigChanges(configType: string, configChanges: Record<
                 agents: [],
             } as z.infer<typeof WorkflowPipeline>;
             schema = WorkflowPipeline;
+            break;
+        }
+        case 'start_agent': {
+            testObject = {};
             break;
         }
         default:

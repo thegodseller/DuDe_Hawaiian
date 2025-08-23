@@ -21,9 +21,8 @@ import {
     ModelsResponse
 } from "../lib/types/billing_types";
 import { z } from "zod";
-import { WithStringId } from "../lib/types/types";
 
-export async function getCustomer(): Promise<WithStringId<z.infer<typeof Customer>>> {
+export async function getCustomer(): Promise<z.infer<typeof Customer>> {
     const user = await authCheck();
     if (!user.billingCustomerId) {
         throw new Error("Customer not found");
@@ -41,7 +40,7 @@ export async function authorizeUserAction(request: z.infer<typeof AuthorizeReque
     }
 
     const customer = await getCustomer();
-    const response = await authorize(customer._id, request);
+    const response = await authorize(customer.id, request);
     return response;
 }
 
@@ -51,7 +50,7 @@ export async function logUsage(request: z.infer<typeof LogUsageRequest>) {
     }
 
     const customer = await getCustomer();
-    await libLogUsage(customer._id, request);
+    await libLogUsage(customer.id, request);
     return;
 }
 
@@ -61,7 +60,7 @@ export async function getCustomerPortalUrl(returnUrl: string): Promise<string> {
     }
 
     const customer = await getCustomer();
-    return await createCustomerPortalSession(customer._id, returnUrl);
+    return await createCustomerPortalSession(customer.id, returnUrl);
 }
 
 export async function getPrices(): Promise<z.infer<typeof PricesResponse>> {
@@ -80,7 +79,7 @@ export async function updateSubscriptionPlan(plan: z.infer<typeof SubscriptionPl
 
     const customer = await getCustomer();
     const request: z.infer<typeof UpdateSubscriptionPlanRequest> = { plan, returnUrl };
-    const url = await libUpdateSubscriptionPlan(customer._id, request);
+    const url = await libUpdateSubscriptionPlan(customer.id, request);
     return url;
 }
 
@@ -90,6 +89,6 @@ export async function getEligibleModels(): Promise<z.infer<typeof ModelsResponse
     }
 
     const customer = await getCustomer();
-    const response = await libGetEligibleModels(customer._id);
+    const response = await libGetEligibleModels(customer.id);
     return response;
 }

@@ -42,7 +42,7 @@ export class RevertToLiveWorkflowUseCase implements IRevertToLiveWorkflowUseCase
             apiKey: request.apiKey,
             projectId,
         });
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         const project = await this.projectsRepository.fetch(projectId);
         if (!project) {

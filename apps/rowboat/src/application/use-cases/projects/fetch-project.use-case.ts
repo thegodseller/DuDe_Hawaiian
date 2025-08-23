@@ -52,7 +52,7 @@ export class FetchProjectUseCase implements IFetchProjectUseCase {
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         return await this.projectsRepository.fetch(projectId);
     }

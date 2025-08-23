@@ -50,7 +50,7 @@ export class FetchDataSourceUseCase implements IFetchDataSourceUseCase {
             projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         return source;
     }

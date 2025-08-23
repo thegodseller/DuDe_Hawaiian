@@ -52,7 +52,7 @@ export class ListJobsUseCase implements IListJobsUseCase {
         });
 
         // assert and consume quota
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         // fetch jobs for project
         return await this.jobsRepository.list(projectId, request.filters, request.cursor, limit);

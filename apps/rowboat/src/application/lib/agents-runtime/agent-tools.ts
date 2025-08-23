@@ -412,7 +412,7 @@ export function createMockTool(
             } catch (error) {
                 logger.log(`Error executing mock tool ${config.name}:`, error);
                 return JSON.stringify({
-                    error: `Mock tool execution failed: ${error}`,
+                    error: "Tool execution failed!",
                 });
             }
         }
@@ -447,7 +447,7 @@ export function createWebhookTool(
             } catch (error) {
                 logger.log(`Error executing webhook tool ${config.name}:`, error);
                 return JSON.stringify({
-                    error: `Tool execution failed: ${error}`,
+                    error: "Tool execution failed!",
                 });
             }
         }
@@ -482,7 +482,7 @@ export function createMcpTool(
             } catch (error) {
                 logger.log(`Error executing mcp tool ${name}:`, error);
                 return JSON.stringify({
-                    error: `Tool execution failed: ${error}`,
+                    error: "Tool execution failed!",
                 });
             }
         }
@@ -521,7 +521,7 @@ export function createComposioTool(
             } catch (error) {
                 logger.log(`Error executing composio tool ${name}:`, error);
                 return JSON.stringify({
-                    error: `Tool execution failed: ${error}`,
+                    error: "Tool execution failed!",
                 });
             }
         }

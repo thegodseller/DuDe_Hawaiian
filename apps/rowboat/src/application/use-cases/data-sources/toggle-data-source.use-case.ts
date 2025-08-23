@@ -51,7 +51,7 @@ export class ToggleDataSourceUseCase implements IToggleDataSourceUseCase {
             projectId,
         });
 
-        await this.usageQuotaPolicy.assertAndConsume(projectId);
+        await this.usageQuotaPolicy.assertAndConsumeProjectAction(projectId);
 
         return await this.dataSourcesRepository.update(request.sourceId, { active: request.active });
     }
