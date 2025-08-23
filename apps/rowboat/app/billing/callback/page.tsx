@@ -13,7 +13,7 @@ export default async function Page(
 ) {
     const searchParams = await props.searchParams;
     const customer = await requireBillingCustomer();
-    await syncWithStripe(customer._id);
+    await syncWithStripe(customer.id);
     const redirectUrl = searchParams.redirect as string;
     redirect(redirectUrl || '/projects');
 }

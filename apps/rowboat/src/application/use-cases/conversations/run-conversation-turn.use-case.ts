@@ -165,6 +165,7 @@ export class RunConversationTurnUseCase implements IRunConversationTurnUseCase {
             }
         } finally {
             // Log billing usage
+            console.log('finally logging billing usage');
             if (USE_BILLING && billingCustomerId) {
                 await logUsage(billingCustomerId, {
                     items: usageTracker.flush(),

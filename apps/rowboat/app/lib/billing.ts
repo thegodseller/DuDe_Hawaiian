@@ -1,4 +1,3 @@
-import { WithStringId } from './types/types';
 import { z } from 'zod';
 import { Customer, AuthorizeRequest, AuthorizeResponse, LogUsageRequest, UsageResponse, CustomerPortalSessionResponse, PricesResponse, UpdateSubscriptionPlanRequest, UpdateSubscriptionPlanResponse, ModelsResponse, UsageItem } from './types/billing_types';
 import { redirect } from 'next/navigation';
@@ -14,7 +13,7 @@ const BILLING_API_KEY = process.env.BILLING_API_KEY || 'test';
 let logCounter = 1;
 
 const GUEST_BILLING_CUSTOMER = {
-    _id: "guest-user",
+    id: "guest-user",
     userId: "guest-user",
     name: "Guest",
     email: "guest@rowboatlabs.com",
@@ -23,7 +22,6 @@ const GUEST_BILLING_CUSTOMER = {
     subscriptionPlan: "free" as const,
     subscriptionStatus: "active" as const,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
 };
 
 
@@ -41,7 +39,7 @@ export class UsageTracker{
     }
 }
 
-export async function getCustomerForUserId(userId: string): Promise<WithStringId<z.infer<typeof Customer>> | null> {
+export async function getCustomerForUserId(userId: string): Promise<z.infer<typeof Customer> | null> {
     const usersRepository = container.resolve<IUsersRepository>("usersRepository");
 
     const user = await usersRepository.fetch(userId);
@@ -64,10 +62,10 @@ export async function getCustomerIdForProject(projectId: string): Promise<string
     if (!customer) {
         throw new Error("User has no billing customer id");
     }
-    return customer._id;
+    return customer.id;
 }
 
-export async function getBillingCustomer(id: string): Promise<WithStringId<z.infer<typeof Customer>> | null> {
+export async function getBillingCustomer(id: string): Promise<z.infer<typeof Customer> | null> {
     const response = await fetch(`${BILLING_API_URL}/api/customers/${id}`, {
         method: 'GET',
         headers: {
@@ -86,7 +84,7 @@ export async function getBillingCustomer(id: string): Promise<WithStringId<z.inf
     return parseResult.data;
 }
 
-async function createBillingCustomer(userId: string, email: string): Promise<WithStringId<z.infer<typeof Customer>>> {
+async function createBillingCustomer(userId: string, email: string): Promise<z.infer<typeof Customer>> {
     const response = await fetch(`${BILLING_API_URL}/api/customers`, {
         method: 'POST',
         headers: {
@@ -266,7 +264,7 @@ export async function getEligibleModels(customerId: string): Promise<z.infer<typ
  * const billingCustomer = await requireBillingCustomer();
  * ```
  */
-export async function requireBillingCustomer(): Promise<WithStringId<z.infer<typeof Customer>>> {
+export async function requireBillingCustomer(): Promise<z.infer<typeof Customer>> {
     const user = await requireAuth();
     const usersRepository = container.resolve<IUsersRepository>("usersRepository");
 
@@ -283,7 +281,7 @@ export async function requireBillingCustomer(): Promise<WithStringId<z.infer<typ
     }
 
     // fetch or create customer
-    let customer: WithStringId<z.infer<typeof Customer>> | null;
+    let customer: z.infer<typeof Customer> | null;
     if (user.billingCustomerId) {
         customer = await getBillingCustomer(user.billingCustomerId);
     } else {
@@ -291,7 +289,7 @@ export async function requireBillingCustomer(): Promise<WithStringId<z.infer<typ
         console.log("created billing customer", JSON.stringify({ userId: user.id, customer }));
 
         // update customer id in db
-        await usersRepository.updateBillingCustomerId(user.id, customer._id);
+        await usersRepository.updateBillingCustomerId(user.id, customer.id);
     }
     if (!customer) {
         throw new Error("Failed to fetch or create billing customer");
@@ -312,7 +310,7 @@ export async function requireBillingCustomer(): Promise<WithStringId<z.infer<typ
  * const billingCustomer = await requireActiveBillingSubscription();
  * ```
  */
-export async function requireActiveBillingSubscription(): Promise<WithStringId<z.infer<typeof Customer>>> {
+export async function requireActiveBillingSubscription(): Promise<z.infer<typeof Customer>> {
     const billingCustomer = await requireBillingCustomer();
 
     if (USE_BILLING && billingCustomer.subscriptionStatus !== "active" && billingCustomer.subscriptionStatus !== "past_due") {

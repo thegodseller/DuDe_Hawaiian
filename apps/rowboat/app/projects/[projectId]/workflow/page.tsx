@@ -47,7 +47,7 @@ export default async function Page(
 
     let eligibleModels: z.infer<typeof ModelsResponse> | "*" = '*';
     if (USE_BILLING) {
-        eligibleModels = await getEligibleModels(customer._id);
+        eligibleModels = await getEligibleModels(customer.id);
     }
 
     console.log('/workflow page.tsx serve');

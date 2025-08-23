@@ -1,3 +1,17 @@
+/**
+ * 🚨 ATTENTION: DO NOT MODIFY THIS FILE! 🚨
+ * 
+ * This file contains billing types that are manually copied
+ * from the billing service repository. Any manual changes will be
+ * overwritten during the next sync.
+ * 
+ * If you need to modify billing types:
+ * 1. Make changes in the billing service repo
+ * 2. Copy the updated file from there
+ * 3. Never edit this file directly
+ * 
+ * This file is a manual copy - keep it in sync with the source!
+ */
 import { z } from "zod";
 
 export const SubscriptionPlan = z.enum(["free", "starter", "pro"]);
@@ -57,7 +71,7 @@ export const LogUsageRequest = z.object({
 export const CustomerUsageData = z.record(z.string(), z.number());
 
 export const Customer = z.object({
-    _id: z.string(),
+    id: z.string(),
     userId: z.string(),
     email: z.string(),
     stripeCustomerId: z.string(),
@@ -65,7 +79,7 @@ export const Customer = z.object({
     subscriptionPlan: SubscriptionPlan.optional(),
     subscriptionStatus: z.enum([ 'active', 'past_due' ]).optional(),
     createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
+    updatedAt: z.string().datetime().optional(),
     subscriptionPlanUpdatedAt: z.string().datetime().optional(),
     usage: CustomerUsageData.optional(),
     usageUpdatedAt: z.string().datetime().optional(),

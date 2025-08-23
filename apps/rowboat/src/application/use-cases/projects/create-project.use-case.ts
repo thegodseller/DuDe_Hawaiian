@@ -65,7 +65,7 @@ export class CreateProjectUseCase implements ICreateProjectUseCase {
             }
 
             // validate enough credits
-            const result = await authorize(customer._id, {
+            const result = await authorize(customer.id, {
                 type: "create_project",
                 data: {
                     existingProjectCount: count,
