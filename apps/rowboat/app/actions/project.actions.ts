@@ -57,7 +57,7 @@ export async function projectAuthCheck(projectId: string) {
     const user = await authCheck();
     await projectActionAuthorizationPolicy.authorize({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
     });
 }
@@ -69,7 +69,7 @@ export async function createProject(formData: FormData): Promise<{ id: string } 
 
     try {
         const project = await createProjectController.execute({
-            userId: user._id,
+            userId: user.id,
             data: {
                 name: name || '',
                 mode: {
@@ -94,7 +94,7 @@ export async function createProjectFromWorkflowJson(formData: FormData): Promise
 
     try {
         const project = await createProjectController.execute({
-            userId: user._id,
+            userId: user.id,
             data: {
                 name: name || '',
                 mode: {
@@ -116,7 +116,7 @@ export async function fetchProject(projectId: string): Promise<z.infer<typeof Pr
     const user = await authCheck();
     const project = await fetchProjectController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
     });
 
@@ -134,7 +134,7 @@ export async function listProjects(): Promise<z.infer<typeof Project>[]> {
     let cursor = undefined;
     do {
         const result = await listProjectsController.execute({
-            userId: user._id,
+            userId: user.id,
             cursor,
         });
         projects.push(...result.items);
@@ -148,7 +148,7 @@ export async function rotateSecret(projectId: string): Promise<string> {
     const user = await authCheck();
     return await rotateSecretController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
     });
 }
@@ -157,7 +157,7 @@ export async function updateWebhookUrl(projectId: string, url: string) {
     const user = await authCheck();
     await updateWebhookUrlController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         url,
     });
@@ -167,7 +167,7 @@ export async function createApiKey(projectId: string): Promise<z.infer<typeof Ap
     const user = await authCheck();
     return await createApiKeyController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
     });
 }
@@ -176,7 +176,7 @@ export async function deleteApiKey(projectId: string, id: string) {
     const user = await authCheck();
     return await deleteApiKeyController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         id,
     });
@@ -186,7 +186,7 @@ export async function listApiKeys(projectId: string): Promise<z.infer<typeof Api
     const user = await authCheck();
     return await listApiKeysController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
     });
 }
@@ -195,7 +195,7 @@ export async function updateProjectName(projectId: string, name: string) {
     const user = await authCheck();
     await updateProjectNameController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         name,
     });
@@ -205,7 +205,7 @@ export async function deleteProject(projectId: string) {
     const user = await authCheck();
     await deleteProjectController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
     });
 
@@ -216,7 +216,7 @@ export async function saveWorkflow(projectId: string, workflow: z.infer<typeof W
     const user = await authCheck();
     await updateDraftWorkflowController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         workflow,
     });
@@ -226,7 +226,7 @@ export async function publishWorkflow(projectId: string, workflow: z.infer<typeo
     const user = await authCheck();
     await updateLiveWorkflowController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         workflow,
     });
@@ -236,7 +236,7 @@ export async function revertToLiveWorkflow(projectId: string) {
     const user = await authCheck();
     await revertToLiveWorkflowController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
     });
 }

@@ -9,6 +9,7 @@ import { PROJECT_MEMBERS_COLLECTION, PROJECT_MEMBERS_INDEXES } from "../reposito
 import { RECURRING_JOB_RULES_COLLECTION, RECURRING_JOB_RULES_INDEXES } from "../repositories/mongodb.recurring-job-rules.indexes";
 import { SCHEDULED_JOB_RULES_COLLECTION, SCHEDULED_JOB_RULES_INDEXES } from "../repositories/mongodb.scheduled-job-rules.indexes";
 import { COMPOSIO_TRIGGER_DEPLOYMENTS_COLLECTION, COMPOSIO_TRIGGER_DEPLOYMENTS_INDEXES } from "../repositories/mongodb.composio-trigger-deployments.indexes";
+import { USERS_COLLECTION, USERS_INDEXES } from "../repositories/mongodb.users.indexes";
 
 export async function ensureAllIndexes(database: Db): Promise<void> {
     await database.collection(API_KEYS_COLLECTION).createIndexes(API_KEYS_INDEXES);
@@ -21,4 +22,5 @@ export async function ensureAllIndexes(database: Db): Promise<void> {
     await database.collection(RECURRING_JOB_RULES_COLLECTION).createIndexes(RECURRING_JOB_RULES_INDEXES);
     await database.collection(SCHEDULED_JOB_RULES_COLLECTION).createIndexes(SCHEDULED_JOB_RULES_INDEXES);
     await database.collection(COMPOSIO_TRIGGER_DEPLOYMENTS_COLLECTION).createIndexes(COMPOSIO_TRIGGER_DEPLOYMENTS_INDEXES);
+    await database.collection(USERS_COLLECTION).createIndexes(USERS_INDEXES);
 }

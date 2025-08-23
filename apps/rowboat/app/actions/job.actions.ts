@@ -20,7 +20,7 @@ export async function listJobs(request: {
 
     return await listJobsController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         filters: request.filters,
         cursor: request.cursor,
@@ -35,7 +35,7 @@ export async function fetchJob(request: {
 
     return await fetchJobController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         jobId: request.jobId,
     });
 }

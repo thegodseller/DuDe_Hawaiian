@@ -1,5 +1,4 @@
 import { MongoClient } from "mongodb";
-import { User } from "./types/types";
 import { TwilioConfig, TwilioInboundCall } from "./types/voice_types";
 import { z } from 'zod';
 import { apiV1 } from "rowboat-shared";
@@ -10,7 +9,6 @@ export const db = client.db("rowboat");
 export const chatsCollection = db.collection<z.infer<typeof apiV1.Chat>>("chats");
 export const chatMessagesCollection = db.collection<z.infer<typeof apiV1.ChatMessage>>("chat_messages");
 export const twilioConfigsCollection = db.collection<z.infer<typeof TwilioConfig>>("twilio_configs");
-export const usersCollection = db.collection<z.infer<typeof User>>("users");
 export const twilioInboundCallsCollection = db.collection<z.infer<typeof TwilioInboundCall>>("twilio_inbound_calls");
 
 // Create indexes

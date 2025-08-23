@@ -49,7 +49,7 @@ export async function listToolkits(projectId: string, cursor: string | null = nu
     const user = await authCheck();
     return await listComposioToolkitsController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         cursor,
     });
@@ -59,7 +59,7 @@ export async function getToolkit(projectId: string, toolkitSlug: string): Promis
     const user = await authCheck();
     return await getComposioToolkitController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         toolkitSlug,
     });
@@ -69,7 +69,7 @@ export async function listTools(projectId: string, toolkitSlug: string, searchQu
     const user = await authCheck();
     return await listComposioToolsController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         toolkitSlug,
         searchQuery,
@@ -81,7 +81,7 @@ export async function createComposioManagedOauth2ConnectedAccount(projectId: str
     const user = await authCheck();
     return await createComposioManagedConnectedAccountController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         toolkitSlug,
         callbackUrl,
@@ -92,7 +92,7 @@ export async function createCustomConnectedAccount(projectId: string, request: z
     const user = await authCheck();
     return await createCustomConnectedAccountController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         toolkitSlug: request.toolkitSlug,
         authConfig: request.authConfig,
@@ -104,7 +104,7 @@ export async function syncConnectedAccount(projectId: string, toolkitSlug: strin
     const user = await authCheck();
     return await syncConnectedAccountController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         toolkitSlug,
         connectedAccountId,
@@ -116,7 +116,7 @@ export async function deleteConnectedAccount(projectId: string, toolkitSlug: str
 
     await deleteComposioConnectedAccountController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId,
         toolkitSlug,
     });
@@ -144,7 +144,7 @@ export async function createComposioTriggerDeployment(request: {
     // create trigger deployment
     return await createComposioTriggerDeploymentController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         data: {
             triggerTypeSlug: request.triggerTypeSlug,
@@ -163,7 +163,7 @@ export async function listComposioTriggerDeployments(request: {
     // list trigger deployments
     return await listComposioTriggerDeploymentsController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         cursor: request.cursor,
     });
@@ -178,7 +178,7 @@ export async function deleteComposioTriggerDeployment(request: {
     // delete trigger deployment
     return await deleteComposioTriggerDeploymentController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         deploymentId: request.deploymentId,
     });
@@ -188,7 +188,7 @@ export async function fetchComposioTriggerDeployment(request: { deploymentId: st
     const user = await authCheck();
     return await fetchComposioTriggerDeploymentController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         deploymentId: request.deploymentId,
     });
 }

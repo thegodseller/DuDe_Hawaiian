@@ -32,7 +32,7 @@ export async function addServer(projectId: string, name: string, server: McpServ
   validateUrl(server.serverUrl);
   await addCustomMcpServerController.execute({
     caller: 'user',
-    userId: user._id,
+    userId: user.id,
     projectId,
     name,
     server,
@@ -43,7 +43,7 @@ export async function removeServer(projectId: string, name: string): Promise<voi
   const user = await authCheck();
   await removeCustomMcpServerController.execute({
     caller: 'user',
-    userId: user._id,
+    userId: user.id,
     projectId,
     name,
   });

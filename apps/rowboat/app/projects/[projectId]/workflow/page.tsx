@@ -32,7 +32,7 @@ export default async function Page(
 
     const project = await fetchProjectController.execute({
         caller: "user",
-        userId: user._id,
+        userId: user.id,
         projectId: params.projectId,
     });
     if (!project) {
@@ -41,7 +41,7 @@ export default async function Page(
 
     const sources = await listDataSourcesController.execute({
         caller: "user",
-        userId: user._id,
+        userId: user.id,
         projectId: params.projectId,
     });
 

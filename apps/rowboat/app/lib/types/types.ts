@@ -124,15 +124,6 @@ export const McpServerResponse = z.object({
     error: z.string().nullable(),
 });
 
-export const User = z.object({
-    auth0Id: z.string(),
-    billingCustomerId: z.string().optional(),
-    name: z.string().optional(),
-    email: z.string().optional(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
-});
-
 export const Webpage = z.object({
     _id: z.string(),
     title: z.string(),

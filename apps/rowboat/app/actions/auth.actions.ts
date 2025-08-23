@@ -1,13 +1,15 @@
 "use server";
 import { auth0 } from "../lib/auth0";
 import { USE_AUTH } from "../lib/feature_flags";
-import { WithStringId, User } from "../lib/types/types";
+import { User } from "@/src/entities/models/user";
 import { getUserFromSessionId, GUEST_DB_USER } from "../lib/auth";
 import { z } from "zod";
-import { ObjectId } from "mongodb";
-import { usersCollection } from "../lib/mongodb";
+import { container } from "@/di/container";
+import { IUsersRepository } from "@/src/application/repositories/users.repository.interface";
 
-export async function authCheck(): Promise<WithStringId<z.infer<typeof User>>> {
+const usersRepository = container.resolve<IUsersRepository>("usersRepository");
+
+export async function authCheck(): Promise<z.infer<typeof User>> {
     if (!USE_AUTH) {
         return GUEST_DB_USER;
     }
@@ -42,12 +44,5 @@ export async function updateUserEmail(email: string) {
     }
 
     // update customer email in db
-    await usersCollection.updateOne({
-        _id: new ObjectId(user._id),
-    }, {
-        $set: {
-            email,
-            updatedAt: new Date().toISOString(),
-        }
-    });
+    await usersRepository.updateEmail(user.id, email);
 }

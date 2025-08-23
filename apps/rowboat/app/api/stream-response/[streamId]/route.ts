@@ -22,7 +22,7 @@ export async function GET(request: Request, props: { params: Promise<{ streamId:
                 // Iterate over the generator
                 for await (const event of runCachedTurnController.execute({
                     caller: "user",
-                    userId: user._id,
+                    userId: user.id,
                     cachedTurnKey: params.streamId,
                 })) {
                     controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(event)}\n\n`));

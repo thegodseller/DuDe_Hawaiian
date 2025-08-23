@@ -22,7 +22,7 @@ export async function createConversation({
     const controller = container.resolve<ICreatePlaygroundConversationController>("createPlaygroundConversationController");
 
     return await controller.execute({
-        userId: user._id,
+        userId: user.id,
         projectId,
         workflow,
         isLiveWorkflow,
@@ -41,7 +41,7 @@ export async function createCachedTurn({
 
     const { key } = await createCachedTurnController.execute({
         caller: "user",
-        userId: user._id,
+        userId: user.id,
         conversationId,
         input: {
             messages,

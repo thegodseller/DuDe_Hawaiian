@@ -17,7 +17,7 @@ export async function listConversations(request: {
 
     return await listConversationsController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         cursor: request.cursor,
         limit: request.limit,
@@ -31,7 +31,7 @@ export async function fetchConversation(request: {
 
     return await fetchConversationController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         conversationId: request.conversationId,
     });
 }

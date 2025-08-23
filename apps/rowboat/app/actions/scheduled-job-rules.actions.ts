@@ -25,7 +25,7 @@ export async function createScheduledJobRule(request: {
 
     return await createScheduledJobRuleController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         input: request.input,
         scheduledTime: request.scheduledTime,
@@ -41,7 +41,7 @@ export async function listScheduledJobRules(request: {
 
     return await listScheduledJobRulesController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         cursor: request.cursor,
         limit: request.limit,
@@ -55,7 +55,7 @@ export async function fetchScheduledJobRule(request: {
 
     return await fetchScheduledJobRuleController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         ruleId: request.ruleId,
     });
 }
@@ -68,7 +68,7 @@ export async function deleteScheduledJobRule(request: {
 
     return await deleteScheduledJobRuleController.execute({
         caller: 'user',
-        userId: user._id,
+        userId: user.id,
         projectId: request.projectId,
         ruleId: request.ruleId,
     });
