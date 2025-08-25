@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+protected_branch="${PROTECTED_BRANCH:-main}"
+while read _ _ ref _; do
+  [[ "$ref" == "refs/heads/${protected_branch}" ]] && { echo "Blocked: push to ${protected_branch}"; exit 1; }
+done; exit 0

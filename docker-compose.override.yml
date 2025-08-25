@@ -1,0 +1,41 @@
+# ลบ version: "3.9" ออก (obsolete)
+
+services:
+  rowboat:
+    environment:
+      - PROVIDER=OPENAI
+      - PROVIDER_BASE_URL=http://172.17.0.1:11434/v1
+      - PROVIDER_API_KEY=ollama
+      - PROVIDER_DEFAULT_MODEL=qwen2.5:1.5b
+      - PROVIDER_COPILOT_MODEL=llama3.2:3b
+      - EMBEDDING_PROVIDER_BASE_URL=http://172.17.0.1:11434/v1
+      - EMBEDDING_PROVIDER_API_KEY=ollama
+      - EMBEDDING_MODEL=nomic-embed-text
+      # เพิ่ม healthcheck
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  jobs-worker:
+    environment:
+      - PROVIDER=OPENAI
+      - PROVIDER_BASE_URL=http://172.17.0.1:11434/v1
+      - PROVIDER_API_KEY=ollama
+      - PROVIDER_DEFAULT_MODEL=qwen2.5:1.5b
+      - PROVIDER_COPILOT_MODEL=llama3.2:3b
+      - EMBEDDING_PROVIDER_BASE_URL=http://172.17.0.1:11434/v1
+      - EMBEDDING_PROVIDER_API_KEY=ollama
+      - EMBEDDING_MODEL=nomic-embed-text
+
+  rag-worker:
+    environment:
+      - PROVIDER=OPENAI
+      - PROVIDER_BASE_URL=http://172.17.0.1:11434/v1
+      - PROVIDER_API_KEY=ollama
+      - PROVIDER_DEFAULT_MODEL=qwen2.5:1.5b
+      - EMBEDDING_PROVIDER_BASE_URL=http://172.17.0.1:11434/v1
+      - EMBEDDING_PROVIDER_API_KEY=ollama
+      - EMBEDDING_MODEL=nomic-embed-text
