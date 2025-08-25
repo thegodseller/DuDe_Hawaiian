@@ -3,3 +3,10 @@
 .vscode/
 data/
 .venv/
+/claude-desktop-debian/
+.env
+.env.*
+*.pem
+*.key
+dumps/
+
