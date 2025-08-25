@@ -10,3 +10,9 @@ data/
 *.key
 dumps/
 
+.env
+.env.*
+*.pem
+*.key
+dumps/
+
