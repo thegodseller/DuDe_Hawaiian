@@ -1,6 +1,5 @@
-version: '3.8'
-
 volumes:
+  mongo_data:
   uploads:
     driver: local
     driver_opts:
@@ -221,7 +220,7 @@ services:
     restart: unless-stopped
     attach: false
     volumes:
-      - ./data/mongo:/data/db
+      - mongo_data:/data/db
 
   redis:
     image: redis:latest
