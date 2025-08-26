@@ -1,0 +1,21 @@
+{
+  "rules": [
+    {
+      "when": [
+        "ใช้ BGE-M3",
+        "ฐานความรู้ใหญ่",
+        "ละเอียดมาก"
+      ],
+      "route_to": "docs-agent",
+      "tool": "bge_query"
+    },
+    {
+      "when": [
+        "เอกสาร",
+        "สรุปไฟล์",
+        "RAG"
+      ],
+      "route_to": "docs-agent"
+    }
+  ]
+}

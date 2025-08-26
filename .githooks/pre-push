@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 protected_branch="${PROTECTED_BRANCH:-main}"
-while read _ _ ref _; do
-  [[ "$ref" == "refs/heads/${protected_branch}" ]] && { echo "Blocked: push to ${protected_branch}"; exit 1; }
-done; exit 0
+protected_tag="${PROTECTED_TAG:-agent_local}"
+while read _ _ remote_ref _; do
+  [[ "$remote_ref" == "refs/heads/${protected_branch}" ]] && { echo "Blocked: push to ${protected_branch}"; exit 1; }
+  [[ "$remote_ref" == "refs/tags/${protected_tag}" ]] && { echo "Blocked: tag ${protected_tag} is immutable"; exit 1; }
+done
+exit 0

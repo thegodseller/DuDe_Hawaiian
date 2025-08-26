@@ -1,0 +1,68 @@
+# ===============================================================
+# Rowboat Agents Blueprint (อ้างอิงเพื่อคอนฟิกใน UI)
+# ใช้เป็นแนวทางตั้งค่าเอเจ้นในเมนู Agents/Tools/Data/Variables
+# ===============================================================
+
+conversation_agent:
+  name: frontdesk-agent
+  type: conversation
+  purpose: >
+    เป็นด่านหน้าโต้ตอบผู้ใช้ ภาษาไทยเป็นหลัก มีความจำบริบท
+    และเรียกใช้ Task Agents ตาม routing-rules.json
+  models:
+    primary: ${PRIMARY_MODEL}
+    secondary: ${SECONDARY_MODEL}
+  memory:
+    long_term_store: ${VECTOR_DB_PATH}
+    embed_model: ${EMBED_MODEL}
+  tools_allowed:
+    - http            # ถ้าเปิด ALLOW_HTTP_TOOL
+    - web_search      # ถ้าเปิด ALLOW_WEB_SEARCH
+  calls:
+    can_call_agents: true
+    routing_rules_path: ./agents/routing-rules.json
+
+task_agents:
+
+  - name: docs-agent
+    type: task
+    role: "อ่าน/สรุป/ตอบคำถามจากเอกสาร (RAG)"
+    models:
+      primary: ${PRIMARY_MODEL}
+    rag:
+      embed_model: ${EMBED_MODEL}
+      rerank_model: ${RERANK_MODEL}
+      vector_store_path: ${VECTOR_DB_PATH}
+    permissions:
+      file_read: true
+      file_write: false
+
+  - name: web-api-agent
+    type: task
+    role: "ค้นหาเว็บ ดึงข้อมูล API ภายนอก และสรุปผลให้สั้น กระชับ พร้อมแหล่งที่มา"
+    models:
+      primary: ${SECONDARY_MODEL}
+    tools:
+      - http
+      - web_search
+    safety:
+      allow_external_hosts:
+        - api.github.com
+        - newsapi.org
+        - open-meteo.com
+        # เพิ่มโดเมนตามกรณีใช้งาน
+
+  - name: planner-agent
+    type: task
+    role: "ผู้ช่วยวางแผน ชีวิต งาน การเรียน และการเงิน พร้อม Roadmap/Checklist"
+    models:
+      primary: ${SECONDARY_MODEL}
+
+  - name: health-agent
+    type: task
+    role: "ให้คำแนะนำด้านสุขภาพพื้นฐานและติดตามเป้าหมายส่วนตัว (ไม่ใช่คำวินิจฉัยแพทย์)"
+    models:
+      primary: ${PRIMARY_MODEL}
+    data:
+      store: ./data/health-tracker.json
+    disclaimer: "ไม่ใช่คำแนะนำทางการแพทย์ หากมีอาการผิดปกติให้พบแพทย์"
