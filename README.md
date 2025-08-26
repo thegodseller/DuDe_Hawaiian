@@ -1,130 +1,243 @@
-![ui](/assets/banner.png)
+# 🌸 Dude by Rowboat 🤖
 
-<h2 align="center">Let AI build multi-agent workflows for you in minutes</h2>
-<h5 align="center">
+> *"อาริกาโต๊ะ ก่อซาอิมาสุ! สวัสดีครับ ผม Dude เป็น AI ผู้ช่วยภาษาไทยแบบ Local-first นะครับ!"* 
 
-<p align="center" style="display: flex; justify-content: center; gap: 20px; align-items: center;">
-  <a href="https://trendshift.io/repositories/13609" target="blank">
-    <img src="https://trendshift.io/api/badge/repositories/13609" alt="rowboatlabs%2Frowboat | Trendshift" width="250" height="55"/>
-  </a>
-</p>
+<div align="center">
 
-<p align="center">
-  <a href="https://docs.rowboatlabs.com/" target="_blank" rel="noopener">
-    <img alt="Docs" src="https://img.shields.io/badge/Docs-8b5cf6?labelColor=8b5cf6&logo=readthedocs&logoColor=white">
-  </a>
-  <a href="https://discord.gg/rxB8pzHxaS" target="_blank" rel="noopener">
-    <img alt="Discord" src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white&labelColor=5865F2">
-  </a>
-  <a href="https://www.rowboatlabs.com/" target="_blank" rel="noopener">
-    <img alt="Website" src="https://img.shields.io/badge/Website-10b981?labelColor=10b981&logo=window&logoColor=white">
-  </a>
-  <a href="https://www.youtube.com/@RowBoatLabs" target="_blank" rel="noopener">
-    <img alt="YouTube" src="https://img.shields.io/badge/YouTube-FF0000?labelColor=FF0000&logo=youtube&logoColor=white">
-  </a>
-  <a href="https://www.linkedin.com/company/rowboat-labs" target="_blank" rel="noopener">
-    <img alt="LinkedIn" src="https://custom-icon-badges.demolab.com/badge/LinkedIn-0A66C2?logo=linkedin-white&logoColor=fff">
-  </a>
-  <a href="https://x.com/intent/user?screen_name=rowboatlabshq" target="_blank" rel="noopener">
-    <img alt="Twitter" src="https://img.shields.io/twitter/follow/rowboatlabshq?style=social">
-  </a>
-  <a href="https://www.ycombinator.com" target="_blank" rel="noopener">
-    <img alt="Y Combinator" src="https://img.shields.io/badge/Y%20Combinator-S24-orange">
-  </a>
-</p>
+[![License: MIT](https://img.shields.io/badge/License-MIT-pink.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Made with ❤️](https://img.shields.io/badge/Made%20with-❤️-red.svg?style=for-the-badge)](https://github.com/thegodseller/Dude-by-Rowboat)
+[![Thai Language](https://img.shields.io/badge/Language-ภาษาไทย-blue.svg?style=for-the-badge)](https://th.wikipedia.org/wiki/ภาษาไทย)
+[![Powered by Rowboat](https://img.shields.io/badge/Powered%20by-Rowboat-purple.svg?style=for-the-badge)](https://github.com/rowboatlabs/rowboat)
 
+```
+    🌸 さくら + 🇹🇭 ไทย = 🤖 Dude
+    
+         ∩───∩
+        ( ◕   ◕ )   < สวัสดีครับ!
+         \  ♡  /
+          \_⌒_/
+    ～～～～～～～～～～～
+```
 
-</h5>
+</div>
 
-- ✨ **Start from an idea -> copilot builds your multi-agent workflows**
-   - E.g. "Build me an assistant for a food delivery company to handle delivery status and missing items. Include the necessary tools."
-- 🌐 **Connect MCP servers**
-   - Add the MCP servers in settings -> import the tools into Rowboat.     
-- 📞 **Integrate into your app using the HTTP API or Python SDK**
-   - Grab the project ID and generated API key from settings and use the API.
+## ✨ Dude คืออะไรนะ? | What is Dude?
 
-Powered by OpenAI's Agents SDK, Rowboat is the fastest way to build multi-agents!
+**Dude** เป็น AI ผู้ช่วยสุดน่ารักที่พูดภาษาไทยได้อย่างเก่ง! สร้างด้วยหัวใจของ **Rowboat Labs** และความรักของคนไทย 🥰
 
-## Quick start
-1. Set your OpenAI key
-      ```bash
-   export OPENAI_API_KEY=your-openai-api-key
-   ```
-      
-2. Clone the repository and start Rowboat
-   ```bash
-   git clone git@github.com:rowboatlabs/rowboat.git
-   cd rowboat
-   ./start.sh
-   ```
+พัฒนาขึ้นเพื่อเป็นผู้ช่วยแบบ **Local-first** ที่ทำงานได้โดยไม่ต้องพึ่งพาอินเทอร์เน็ตตลอดเวลา - เหมาะสำหรับใครที่อยากมี AI ส่วนตัวที่ปลอดภัยและเป็นมิตร!
 
-3. Access the app at [http://localhost:3000](http://localhost:3000).
+### 🎋 แนวคิด | Philosophy
 
-Note: We have added native RAG support including file-uploads and URL scraping. See the [RAG](https://docs.rowboatlabs.com/using_rag) section of our docs for this.
+```
+🌸 Local-first → ข้อมูลคุณอยู่ที่คุณ
+🎌 Privacy-focused → ความเป็นส่วนตัวสำคัญ  
+🇹🇭 Thai-centric → เข้าใจวัฒนธรรมไทย
+💝 Open Source → แบ่งปันด้วยหัวใจ
+```
 
-Note: See the [Using custom LLM providers](https://docs.rowboatlabs.com/setup/#using-custom-llm-providers) section of our docs for using custom providers like OpenRouter and LiteLLM.
+## 🚀 ความสามารถของ Dude | Features
 
-## Demo
+### 🏮 **ผู้ช่วยหลัก** - **Frontdesk Agent**
+- 🗣️ **คุยเป็นภาษาไทย** - เข้าใจบริบทไทย 100%
+- 🧠 **ตอบคำถามได้เอง** - คำถามง่าย ๆ ไม่ต้องรอ
+- 📚 **ค้นหาจากข้อมูล** - ใช้ RAG หาความรู้ภายใน
+- 🌐 **ส่งต่อผู้เชี่ยวชาญ** - มีเอเจ้นต์พิเศษช่วย
 
-#### Create a multi-agent assistant with MCP tools by chatting with Rowboat
-[![Screenshot 2025-04-23 at 00 25 31](https://github.com/user-attachments/assets/c8a41622-8e0e-459f-becb-767503489866)](https://youtu.be/YRTCw9UHRbU)
+### 🎎 **ทีมผู้เชี่ยวชาญ** - **Specialist Agents**
 
-## Integrate with Rowboat agents
+| เอเจ้นต์ | ความเชี่ยวชาญ | อีโมจิ |
+|---------|-------------|--------|
+| 📖 **docs-agent** | สรุปเอกสาร, ตอบคำถามจากไฟล์ | 📚 |
+| 🌐 **web-api-agent** | ข้อมูลล่าสุดจากเว็บ | 🔍 |
+| 📋 **planner-agent** | วางแผน, เป้าหมาย, Roadmap | 🗓️ |
+| 💪 **health-agent** | สุขภาพ, ออกกำลังกาย | 🏃 |
+| 💰 **finance-agent** | การเงิน, ลงทุน (แต่ไม่แนะนำซื้อ-ขาย) | 📊 |
 
-There are 2 ways to integrate with the agents you create in Rowboat
+### 🏺 **ความสามารถพิเศษ** - **Special Features**
 
-1. HTTP API
-   - You can use the API directly at [http://localhost:3000/api/v1/](http://localhost:3000/api/v1/)
-   - See [API Docs](https://docs.rowboatlabs.com/using_the_api/) for details
-   ```bash
-   curl --location 'http://localhost:3000/api/v1/<PROJECT_ID>/chat' \
-   --header 'Content-Type: application/json' \
-   --header 'Authorization: Bearer <API_KEY>' \
-   --data '{
-       "messages": [
-           {
-               "role": "user",
-               "content": "tell me the weather in london in metric units"
-           }
-       ],
-       "state": null
-   }'
-   ```
-   
+```markdown
+🎌 ภาษาไทยเท่านั้น    | Thai Only Policy
+🏠 Local-first AI      | ทำงานในเครื่องคุณ
+🔒 Privacy Protected   | ข้อมูลไม่หลุด
+🌸 Kawaii Interface    | UI น่ารักแบบญี่ปุ่น
+🤝 Multi-Agent        | หลายเอเจ้นต์ทำงานร่วมกัน
+```
 
-2. Python SDK
-   You can use the included Python SDK to interact with the Agents
-   ```
-   pip install rowboat
-   ```
+## 🛠️ ติดตั้งแบบง่าย ๆ | Easy Installation
 
-   See [SDK Docs](https://docs.rowboatlabs.com/using_the_sdk/) for details. Here is a quick example:
-   ```python
-   from rowboat import Client, StatefulChat
-   from rowboat.schema import UserMessage, SystemMessage
+### 📋 **สิ่งที่ต้องมี** | Requirements
 
-   # Initialize the client
-   client = Client(
-       host="http://localhost:3000",
-       project_id="<PROJECT_ID>",
-       api_key="<API_KEY>"
-   )
+```bash
+🖥️  Ubuntu 24.04.3 LTS (แนะนำ)
+🧠  RAM 12GB+ 
+💾  Storage 128GB+ SSD
+🔧  Docker + Docker Compose
+🤖  Ollama (สำหรับ Local LLM)
+```
 
-   # Create a stateful chat session (recommended)
-   chat = StatefulChat(client)
-   response = chat.run("What's the weather in London?")
-   print(response)
+### 🎯 **ติดตั้งแบบ One-Shot** | Quick Install
 
-   # Or use the low-level client API
-   messages = [
-       SystemMessage(role='system', content="You are a helpful assistant"),
-       UserMessage(role='user', content="Hello, how are you?")
-   ]
-   
-   # Get response
-   response = client.chat(messages=messages)
-   print(response.messages[-1].content)
-   ```
+```bash
+# 1. Clone โปรเจ็กต์
+git clone https://github.com/thegodseller/Dude-by-Rowboat.git
+cd Dude-by-Rowboat
 
+# 2. Setup ครั้งแรก
+./scripts/setup.sh
 
-Refer to [Docs](https://docs.rowboatlabs.com/) to learn how to start building agents with Rowboat.
+# 3. เริ่มใช้งาน
+./scripts/start.sh
+
+# 🎉 เสร็จแล้ว! เปิดบราวเซอร์ไปที่ http://localhost:3000
+```
+
+### 🔧 **ติดตั้งแบบละเอียด** | Detailed Setup
+
+<details>
+<summary>📖 คลิกเพื่ดูขั้นตอนละเอียด</summary>
+
+```bash
+# ติดตั้ง Dependencies
+sudo apt update && sudo apt install -y docker.io docker-compose-plugin
+
+# ดาวน์โหลด Ollama Models
+ollama pull llama3.2:3b
+ollama pull qwen2.5:7b
+ollama pull nomic-embed-text
+
+# Config Environment
+cp .env.example .env
+# แก้ไข .env ตามต้องการ
+
+# เริ่ม Services
+docker compose up -d
+
+# ตรวจสอบสถานะ
+docker compose ps
+```
+
+</details>
+
+## 🎨 การใช้งาน | Usage
+
+### 💬 **คุยกับ Dude แบบง่าย ๆ**
+
+```
+👤 คุณ: สวัสดี Dude!
+🤖 Dude: สวัสดีครับ! ผม Dude ยินดีช่วยเหลือครับ 🌸
+
+👤 คุณ: ช่วยวางแผนการทำงานให้หน่อย
+🤖 Dude: ได้เลยครับ! ให้ส่งไปหา planner-agent ช่วยนะครับ...
+
+👤 คุณ: หาข้อมูลเรื่อง AI ล่าสุด
+🤖 Dude: เดี๋ยวหาให้นะครับ ผ่าน web-api-agent... 🔍
+```
+
+### 🎌 **LINE LIFF Integration**
+
+Dude สามารถใช้งานผ่าน LINE LIFF ได้! ดูไฟล์ `line-liff-chat.html` สำหรับการตั้งค่า
+
+## 🏗️ Architecture | สถาปัตยกรรม
+
+```
+🌸 User Interface (UI)
+         ↓
+🎋 Frontdesk Agent (ด่านหน้า)
+         ↓
+🎎 Specialist Agents
+    ├── 📚 docs-agent
+    ├── 🌐 web-api-agent  
+    ├── 📋 planner-agent
+    ├── 💪 health-agent
+    └── 💰 finance-agent
+         ↓
+🏮 Local LLMs (Ollama)
+    ├── llama3.2:3b
+    ├── qwen2.5:7b
+    └── nomic-embed-text
+```
+
+## 📁 โครงสร้างโฟลเดอร์ | Project Structure
+
+```
+Dude-by-Rowboat/
+├── 🌸 README.md                 # คู่มือนี้แหละ!
+├── 🎋 docker-compose.yml        # Docker services
+├── 🎌 .env.example              # ตัวอย่าง config
+├── 📂 scripts/                  # สคริปต์ setup
+│   ├── setup.sh
+│   ├── start.sh
+│   └── stop.sh  
+├── 📂 agents/                   # คอนฟิก agents
+│   ├── frontdesk-agent.md
+│   ├── docs-agent.md
+│   └── ...
+├── 📂 data/                     # ข้อมูล RAG
+├── 📂 line-liff/               # LINE LIFF app
+└── 📂 docs/                    # เอกสารต่าง ๆ
+```
+
+## 🤝 Contributing | มาร่วมพัฒนากัน!
+
+เรายินดีรับการมีส่วนร่วมจากทุกคนนะครับ! 🥰
+
+### 🎋 **วิธีช่วยเหลือ**
+
+1. 🍴 **Fork** โปรเจ็กต์
+2. 🌿 สร้าง **branch** ใหม่: `git checkout -b feature/amazing-feature`  
+3. 💝 **Commit** การเปลี่ยนแปลง: `git commit -m 'Add amazing feature'`
+4. 🚀 **Push** ไปยัง branch: `git push origin feature/amazing-feature`
+5. 🌸 เปิด **Pull Request**
+
+### 🏮 **Code of Conduct**
+
+- 😊 **เป็นมิตร** - ใจเย็น ๆ นะครับ
+- 🤗 **เคารพกัน** - ทุกคนมีความเห็นต่างกันได้
+- 🌸 **สร้างสรรค์** - ช่วยกันทำให้ Dude ดีขึ้น
+- 🎌 **โอเพ่นซอร์ส** - แบ่งปันด้วยหัวใจ
+
+## 📜 License | ลิขสิทธิ์
+
+โปรเจ็กต์นี้ใช้ **MIT License** - ดูไฟล์ [LICENSE](LICENSE) สำหรับรายละเอียด
+
+```
+🌸 ใช้ได้ฟรี | Free to use
+🎋 แก้ไขได้ | Modifiable  
+🏮 แจกจ่ายได้ | Redistributable
+💝 ต้องระบุที่มา | Attribution required
+```
+
+## 🙏 Acknowledgments | กิตติกรรมประกาศ
+
+- 🤖 **[Rowboat Labs](https://github.com/rowboatlabs/rowboat)** - แพลตฟอร์มหลักที่สุดยอด
+- 🦙 **[Ollama](https://ollama.ai/)** - Local LLM ที่ใช้งานง่าย  
+- 🌐 **[n8n](https://n8n.io/)** - Automation ที่เจ๋ง
+- 🇹🇭 **ชุมชนนักพัฒนาไทย** - ที่ให้กำลังใจ
+- 🌸 **ชุมชน Open Source** - ที่แบ่งปันความรู้
+
+## 📞 ติดต่อ | Contact
+
+- 📧 Email: akejdk@gmail.com
+- 🐙 GitHub: [@thegodseller](https://github.com/thegodseller)
+- 💬 Issues: [GitHub Issues](https://github.com/thegodseller/Dude-by-Rowboat/issues)
+
+---
+
+<div align="center">
+
+### 🌸 ทำด้วยความรัก ในประเทศไทย 🇹🇭
+
+**"AI สำหรับคนไทย โดยคนไทย"**
+
+```
+    🌸 ありがとうございます 🌸
+         ขอบคุณครับ
+    
+    Made with ❤️ in Thailand
+       Powered by Rowboat
+```
+
+⭐ **อย่าลืมกด Star ถ้าชอบนะครับ!** ⭐
+
+</div>
