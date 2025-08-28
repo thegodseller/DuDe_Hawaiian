@@ -13,7 +13,7 @@
     🌸 さくら + 🇹🇭 ไทย = 🤖 Dude
     
          ∩───∩
-        ( ◕   ◕ )   < สวัสดีครับ!
+          ( ◕   ◕ )   < สวัสดีครับ!
          \  ♡  /
           \_⌒_/
     ～～～～～～～～～～～
@@ -218,7 +218,7 @@ Dude-by-Rowboat/
 
 ## 📞 ติดต่อ | Contact
 
-- 📧 Email: akejdk@gmail.com
+- 📧 Email: chanukrit.kwa@thaimooc.ac.th
 - 🐙 GitHub: [@thegodseller](https://github.com/thegodseller)
 - 💬 Issues: [GitHub Issues](https://github.com/thegodseller/Dude-by-Rowboat/issues)
 
