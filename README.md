@@ -227,12 +227,13 @@ Dude-by-Rowboat/
 ```
 
 ## 🙏 Acknowledgments | กิตติกรรมประกาศ
-
-- 🤖 **[Rowboat Labs](https://github.com/rowboatlabs/rowboat)** - แพลตฟอร์มหลักที่สุดยอด
-- 🦙 **[Ollama](https://ollama.ai/)** - Local LLM ที่ใช้งานง่าย  
-- 🌐 **[n8n](https://n8n.io/)** - Automation ที่เจ๋ง
-- 🇹🇭 **ชุมชนนักพัฒนาไทย** - ที่ให้กำลังใจ
-- 🌸 **ชุมชน Open Source** - ที่แบ่งปันความรู้
+- 🤖 Rowboat Labs — แพลตฟอร์มหลักที่สุดยอด  
+- 🦙 Ollama — Local LLM ที่ใช้งานง่าย  
+- 🌐 n8n — Automation ที่เจ๋ง  
+- 🇹🇭 ชุมชนนักพัฒนาไทย — ที่ให้กำลังใจ  
+- 🌸 ชุมชน Open Source — ที่แบ่งปันความรู้  
+- 🕊️ **Nakarin Kwampian** — แรงบันดาลใจแรกที่ทำให้ dude ถือกำเนิดขึ้น
+,เพราะ dude ก็คือนายนั่นแหละ
 
 ## 📞 ติดต่อ | Contact
 
