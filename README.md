@@ -12,29 +12,10 @@
 ```
     🌸 さくら + 🇹🇭 ไทย = 🤖 Dude
   
-import svgwrite
-
-# สร้างไฟล์ SVG แบบน่ารัก (หน้ากลม ตา หัวใจ)
-dwg = svgwrite.Drawing("/mnt/data/dude_logo.svg", profile='tiny', size=("200px", "200px"))
-
-# วงกลมเป็นหน้า
-dwg.add(dwg.circle(center=("100", "100"), r="80", fill="#ffe6f0", stroke="black", stroke_width=2))
-
-# ตาซ้าย
-dwg.add(dwg.circle(center=("65", "90"), r="10", fill="black"))
-# ตาขวา
-dwg.add(dwg.circle(center=("135", "90"), r="10", fill="black"))
-
-# ปากเป็นหัวใจ
-dwg.add(dwg.path(d="M100 120 C 90 110, 70 130, 100 150 C 130 130, 110 110, 100 120 Z",
-                 fill="red"))
-
-# blush แก้มซ้าย
-dwg.add(dwg.circle(center=("55", "115"), r="8", fill="#ff9999", opacity=0.6))
-# blush แก้มขวา
-dwg.add(dwg.circle(center=("145", "115"), r="8", fill="#ff9999", opacity=0.6))
-
-dwg.save()
+∩───∩
+  ( ◕   ◕ ) 
+   (   ♡   )
+    \__⌒__/
 ```
 
 </div>
