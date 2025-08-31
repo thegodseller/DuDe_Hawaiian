@@ -62,7 +62,7 @@ services:
       - COMPOSIO_TRIGGERS_WEBHOOK_SECRET=${COMPOSIO_TRIGGERS_WEBHOOK_SECRET}
     restart: unless-stopped
     volumes:
-      - uploads:/app/uploads
+      - /home/thegodseller/Data/rowboat-config/config:/app/config:ro
 
   # rowboat_agents:
   #   build:

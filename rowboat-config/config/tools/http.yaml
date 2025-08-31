@@ -1,0 +1,13 @@
+- name: griptape_prompt
+  type: http
+  method: POST
+  url: http://griptape-agents:8089/griptape/prompt
+  headers:
+    Content-Type: application/json
+
+- name: agents_multiply
+  type: http
+  method: POST
+  url: http://griptape-agents:8089/agents/multiply
+  headers:
+    Content-Type: application/json
