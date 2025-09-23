@@ -1,0 +1,77 @@
+version: "3.9"
+services:
+  front_dude:
+    build: ./services/front_dude
+    ports:
+      - "8090:8080"
+    environment:
+      - DOC_DUDE_URL=http://doc_dude:8080
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - CHROMA_COLLECTION=doc_dude_knowledge
+      - CORS_ALLOWLIST=http://localhost:3000
+      - RATE_LIMIT_PER_MIN=120
+      - RATE_LIMIT_BURST=40
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - doc_dude
+      - chroma
+
+  doc_dude:
+    build:
+      context: ./services/doc_dude
+      dockerfile: Dockerfile.ocr_igpu
+    ports:
+      - "8081:8080"
+    environment:
+      - OV_DEVICE=GPU
+      - OV_NUM_STREAMS=1
+      - OCR_DET_THRESHOLD=0.3
+      - OCR_MIN_BOX=12
+      - OCR_MAX_CANDIDATES=300
+      - OV_CACHE_DIR=/opt/ov_cache
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - CHROMA_COLLECTION=doc_dude_knowledge
+      - EMBED_MODEL=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+      - UPLOAD_DIR=/data/ocr_uploads
+      - LOG_DIR=/var/log/ocr
+      # - SUPER_MEMORY_WEBHOOK=https://api.supermemory.ai/webhook
+      # - SUPER_MEMORY_TOKEN=changeme
+    devices:
+      - /dev/dri:/dev/dri
+    volumes:
+      - ./data/ocr_uploads:/data/ocr_uploads
+      - ./data/ocr_logs:/var/log/ocr
+    depends_on:
+      - chroma
+
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    ports:
+      - "8005:8000"
+    volumes:
+      - ./data/chroma:/chroma/chroma
+
+  messenger_dude:
+    build: ./services/messenger_dude
+    ports:
+      - "8083:8080"
+
+  medic_dude:
+    build: ./services/medic_dude
+    ports:
+      - "8084:8080"
+
+  vision_dude:
+    build: ./services/vision_dude
+    ports:
+      - "8082:8080"
+
+  webui:
+    build: ./webui
+    ports:
+      - "3000:80"
+    depends_on:
+      - front_dude

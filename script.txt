@@ -1,0 +1,570 @@
+thegodseller@thegodseller-OptiPlex-3060:~$ cd /home/thegodseller/Data/DuDe_Hawaiian
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ docker compose build webui
+docker compose up -d webui
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Building 11.8s (14/17)                                                      
+ => [internal] load local bake definitions                                 0.0s
+ => => reading from stdin 1.46kB                                           0.0s
+ => [internal] load build definition from Dockerfile                       0.0s
+ => => transferring dockerfile: 323B                                       0.0s
+ => [internal] load metadata for docker.io/library/nginx:alpine            2.0s
+ => [internal] load metadata for docker.io/library/node:20-alpine          2.0s
+ => [auth] library/node:pull token for registry-1.docker.io                0.0s
+ => [auth] library/nginx:pull token for registry-1.docker.io               0.0s
+ => [internal] load .dockerignore                                          0.0s
+ => => transferring context: 2B                                            0.0s
+ => [build 1/6] FROM docker.io/library/node:20-alpine@sha256:eabac870db94  0.0s
+ => [stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:42a516af16b8  0.0s
+ => [internal] load build context                                          0.0s
+ => => transferring context: 346B                                          0.0s
+ => CACHED [stage-1 2/3] COPY nginx/nginx.conf /etc/nginx/conf.d/default.  0.0s
+ => CACHED [build 2/6] WORKDIR /app                                        0.0s
+ => CACHED [build 3/6] COPY package.json package-lock.json ./              0.0s
+ => ERROR [build 4/6] RUN npm ci                                           9.7s
+------                                                                          
+ > [build 4/6] RUN npm ci:
+9.611 npm error code EUSAGE
+9.611 npm error
+9.611 npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+9.611 npm error
+9.611 npm error Missing: @vitejs/plugin-react@4.7.0 from lock file
+9.611 npm error Missing: vite@5.4.20 from lock file
+9.611 npm error Missing: react@18.3.1 from lock file
+9.611 npm error Missing: react-dom@18.3.1 from lock file
+9.611 npm error Missing: @babel/core@7.28.4 from lock file
+9.611 npm error Missing: @babel/plugin-transform-react-jsx-self@7.27.1 from lock file
+9.611 npm error Missing: @babel/plugin-transform-react-jsx-source@7.27.1 from lock file
+9.611 npm error Missing: @rolldown/pluginutils@1.0.0-beta.27 from lock file
+9.611 npm error Missing: @types/babel__core@7.20.5 from lock file
+9.611 npm error Missing: react-refresh@0.17.0 from lock file
+9.611 npm error Missing: @babel/code-frame@7.27.1 from lock file
+9.611 npm error Missing: @babel/generator@7.28.3 from lock file
+9.611 npm error Missing: @babel/helper-compilation-targets@7.27.2 from lock file
+9.611 npm error Missing: @babel/helper-module-transforms@7.28.3 from lock file
+9.611 npm error Missing: @babel/helpers@7.28.4 from lock file
+9.611 npm error Missing: @babel/parser@7.28.4 from lock file
+9.611 npm error Missing: @babel/template@7.27.2 from lock file
+9.611 npm error Missing: @babel/traverse@7.28.4 from lock file
+9.611 npm error Missing: @babel/types@7.28.4 from lock file
+9.611 npm error Missing: @jridgewell/remapping@2.3.5 from lock file
+9.611 npm error Missing: convert-source-map@2.0.0 from lock file
+9.611 npm error Missing: debug@4.4.3 from lock file
+9.611 npm error Missing: gensync@1.0.0-beta.2 from lock file
+9.611 npm error Missing: json5@2.2.3 from lock file
+9.611 npm error Missing: semver@6.3.1 from lock file
+9.611 npm error Missing: @babel/helper-validator-identifier@7.27.1 from lock file
+9.611 npm error Missing: js-tokens@4.0.0 from lock file
+9.611 npm error Missing: picocolors@1.1.1 from lock file
+9.611 npm error Missing: @jridgewell/gen-mapping@0.3.13 from lock file
+9.611 npm error Missing: @jridgewell/trace-mapping@0.3.31 from lock file
+9.611 npm error Missing: jsesc@3.1.0 from lock file
+9.611 npm error Missing: @babel/compat-data@7.28.4 from lock file
+9.611 npm error Missing: @babel/helper-validator-option@7.27.1 from lock file
+9.611 npm error Missing: browserslist@4.26.2 from lock file
+9.611 npm error Missing: lru-cache@5.1.1 from lock file
+9.611 npm error Missing: @babel/helper-module-imports@7.27.1 from lock file
+9.611 npm error Missing: @babel/helper-plugin-utils@7.27.1 from lock file
+9.611 npm error Missing: @babel/helper-globals@7.28.0 from lock file
+9.611 npm error Missing: @babel/helper-string-parser@7.27.1 from lock file
+9.611 npm error Missing: @jridgewell/sourcemap-codec@1.5.5 from lock file
+9.611 npm error Missing: @jridgewell/resolve-uri@3.1.2 from lock file
+9.611 npm error Missing: @types/babel__generator@7.27.0 from lock file
+9.611 npm error Missing: @types/babel__template@7.4.4 from lock file
+9.611 npm error Missing: @types/babel__traverse@7.28.0 from lock file
+9.611 npm error Missing: baseline-browser-mapping@2.8.6 from lock file
+9.611 npm error Missing: caniuse-lite@1.0.30001743 from lock file
+9.611 npm error Missing: electron-to-chromium@1.5.222 from lock file
+9.611 npm error Missing: node-releases@2.0.21 from lock file
+9.611 npm error Missing: update-browserslist-db@1.1.3 from lock file
+9.611 npm error Missing: ms@2.1.3 from lock file
+9.611 npm error Missing: yallist@3.1.1 from lock file
+9.611 npm error Missing: loose-envify@1.4.0 from lock file
+9.611 npm error Missing: scheduler@0.23.2 from lock file
+9.611 npm error Missing: escalade@3.2.0 from lock file
+9.611 npm error Missing: esbuild@0.21.5 from lock file
+9.611 npm error Missing: fsevents@2.3.3 from lock file
+9.611 npm error Missing: postcss@8.5.6 from lock file
+9.611 npm error Missing: rollup@4.52.2 from lock file
+9.611 npm error Missing: @esbuild/aix-ppc64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/android-arm@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/android-arm64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/android-x64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/darwin-arm64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/darwin-x64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/freebsd-arm64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/freebsd-x64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/linux-arm@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/linux-arm64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/linux-ia32@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/linux-loong64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/linux-mips64el@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/linux-ppc64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/linux-riscv64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/linux-s390x@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/linux-x64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/netbsd-x64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/openbsd-x64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/sunos-x64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/win32-arm64@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/win32-ia32@0.21.5 from lock file
+9.611 npm error Missing: @esbuild/win32-x64@0.21.5 from lock file
+9.611 npm error Missing: nanoid@3.3.11 from lock file
+9.611 npm error Missing: source-map-js@1.2.1 from lock file
+9.611 npm error Missing: @rollup/rollup-android-arm-eabi@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-android-arm64@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-darwin-arm64@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-darwin-x64@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-freebsd-arm64@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-freebsd-x64@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-arm-gnueabihf@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-arm-musleabihf@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-arm64-gnu@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-arm64-musl@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-loong64-gnu@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-ppc64-gnu@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-riscv64-gnu@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-riscv64-musl@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-s390x-gnu@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-x64-gnu@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-linux-x64-musl@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-openharmony-arm64@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-win32-arm64-msvc@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-win32-ia32-msvc@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-win32-x64-gnu@4.52.2 from lock file
+9.611 npm error Missing: @rollup/rollup-win32-x64-msvc@4.52.2 from lock file
+9.611 npm error Missing: @types/estree@1.0.8 from lock file
+9.611 npm error
+9.611 npm error Clean install a project
+9.611 npm error
+9.611 npm error Usage:
+9.611 npm error npm ci
+9.611 npm error
+9.611 npm error Options:
+9.611 npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+9.611 npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+9.611 npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+9.611 npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+9.611 npm error [--no-bin-links] [--no-fund] [--dry-run]
+9.611 npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+9.611 npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+9.611 npm error
+9.611 npm error aliases: clean-install, ic, install-clean, isntall-clean
+9.611 npm error
+9.611 npm error Run "npm help ci" for more info
+9.614 npm notice
+9.614 npm notice New major version of npm available! 10.8.2 -> 11.6.0
+9.614 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.0
+9.614 npm notice To update run: npm install -g npm@11.6.0
+9.614 npm notice
+9.614 npm error A complete log of this run can be found in: /root/.npm/_logs/2025-09-23T17_45_51_286Z-debug-0.log
+------
+Dockerfile:4
+
+--------------------
+
+   2 |     WORKDIR /app
+
+   3 |     COPY package.json package-lock.json ./
+
+   4 | >>> RUN npm ci
+
+   5 |     COPY . .
+
+   6 |     RUN npm run build
+
+--------------------
+
+failed to solve: process "/bin/sh -c npm ci" did not complete successfully: exit code: 1
+
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Building 5.9s (12/15)                                                       
+ => [internal] load local bake definitions                                 0.0s
+ => => reading from stdin 1.46kB                                           0.0s
+ => [internal] load build definition from Dockerfile                       0.0s
+ => => transferring dockerfile: 323B                                       0.0s
+ => [internal] load metadata for docker.io/library/node:20-alpine          0.3s
+ => [internal] load metadata for docker.io/library/nginx:alpine            0.3s
+ => [internal] load .dockerignore                                          0.0s
+ => => transferring context: 2B                                            0.0s
+ => [build 1/6] FROM docker.io/library/node:20-alpine@sha256:eabac870db94  0.0s
+ => [internal] load build context                                          0.0s
+ => => transferring context: 346B                                          0.0s
+ => [stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:42a516af16b8  0.0s
+ => CACHED [stage-1 2/3] COPY nginx/nginx.conf /etc/nginx/conf.d/default.  0.0s
+ => CACHED [build 2/6] WORKDIR /app                                        0.0s
+ => CACHED [build 3/6] COPY package.json package-lock.json ./              0.0s
+ => ERROR [build 4/6] RUN npm ci                                           5.4s
+------                                                                          
+ > [build 4/6] RUN npm ci:
+5.351 npm error code EUSAGE
+5.352 npm error
+5.352 npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+5.352 npm error
+5.352 npm error Missing: @vitejs/plugin-react@4.7.0 from lock file
+5.352 npm error Missing: vite@5.4.20 from lock file
+5.352 npm error Missing: react@18.3.1 from lock file
+5.352 npm error Missing: react-dom@18.3.1 from lock file
+5.352 npm error Missing: @babel/core@7.28.4 from lock file
+5.352 npm error Missing: @babel/plugin-transform-react-jsx-self@7.27.1 from lock file
+5.352 npm error Missing: @babel/plugin-transform-react-jsx-source@7.27.1 from lock file
+5.352 npm error Missing: @rolldown/pluginutils@1.0.0-beta.27 from lock file
+5.352 npm error Missing: @types/babel__core@7.20.5 from lock file
+5.352 npm error Missing: react-refresh@0.17.0 from lock file
+5.352 npm error Missing: @babel/code-frame@7.27.1 from lock file
+5.352 npm error Missing: @babel/generator@7.28.3 from lock file
+5.352 npm error Missing: @babel/helper-compilation-targets@7.27.2 from lock file
+5.352 npm error Missing: @babel/helper-module-transforms@7.28.3 from lock file
+5.352 npm error Missing: @babel/helpers@7.28.4 from lock file
+5.352 npm error Missing: @babel/parser@7.28.4 from lock file
+5.352 npm error Missing: @babel/template@7.27.2 from lock file
+5.352 npm error Missing: @babel/traverse@7.28.4 from lock file
+5.352 npm error Missing: @babel/types@7.28.4 from lock file
+5.352 npm error Missing: @jridgewell/remapping@2.3.5 from lock file
+5.352 npm error Missing: convert-source-map@2.0.0 from lock file
+5.352 npm error Missing: debug@4.4.3 from lock file
+5.352 npm error Missing: gensync@1.0.0-beta.2 from lock file
+5.352 npm error Missing: json5@2.2.3 from lock file
+5.352 npm error Missing: semver@6.3.1 from lock file
+5.352 npm error Missing: @babel/helper-validator-identifier@7.27.1 from lock file
+5.352 npm error Missing: js-tokens@4.0.0 from lock file
+5.352 npm error Missing: picocolors@1.1.1 from lock file
+5.352 npm error Missing: @jridgewell/gen-mapping@0.3.13 from lock file
+5.352 npm error Missing: @jridgewell/trace-mapping@0.3.31 from lock file
+5.352 npm error Missing: jsesc@3.1.0 from lock file
+5.352 npm error Missing: @babel/compat-data@7.28.4 from lock file
+5.352 npm error Missing: @babel/helper-validator-option@7.27.1 from lock file
+5.352 npm error Missing: browserslist@4.26.2 from lock file
+5.352 npm error Missing: lru-cache@5.1.1 from lock file
+5.352 npm error Missing: @babel/helper-module-imports@7.27.1 from lock file
+5.352 npm error Missing: @babel/helper-plugin-utils@7.27.1 from lock file
+5.352 npm error Missing: @babel/helper-globals@7.28.0 from lock file
+5.352 npm error Missing: @babel/helper-string-parser@7.27.1 from lock file
+5.352 npm error Missing: @jridgewell/sourcemap-codec@1.5.5 from lock file
+5.352 npm error Missing: @jridgewell/resolve-uri@3.1.2 from lock file
+5.352 npm error Missing: @types/babel__generator@7.27.0 from lock file
+5.352 npm error Missing: @types/babel__template@7.4.4 from lock file
+5.352 npm error Missing: @types/babel__traverse@7.28.0 from lock file
+5.352 npm error Missing: baseline-browser-mapping@2.8.6 from lock file
+5.352 npm error Missing: caniuse-lite@1.0.30001743 from lock file
+5.352 npm error Missing: electron-to-chromium@1.5.222 from lock file
+5.352 npm error Missing: node-releases@2.0.21 from lock file
+5.352 npm error Missing: update-browserslist-db@1.1.3 from lock file
+5.352 npm error Missing: ms@2.1.3 from lock file
+5.352 npm error Missing: yallist@3.1.1 from lock file
+5.352 npm error Missing: loose-envify@1.4.0 from lock file
+5.352 npm error Missing: scheduler@0.23.2 from lock file
+5.352 npm error Missing: escalade@3.2.0 from lock file
+5.352 npm error Missing: esbuild@0.21.5 from lock file
+5.352 npm error Missing: fsevents@2.3.3 from lock file
+5.352 npm error Missing: postcss@8.5.6 from lock file
+5.352 npm error Missing: rollup@4.52.2 from lock file
+5.352 npm error Missing: @esbuild/aix-ppc64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/android-arm@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/android-arm64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/android-x64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/darwin-arm64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/darwin-x64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/freebsd-arm64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/freebsd-x64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/linux-arm@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/linux-arm64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/linux-ia32@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/linux-loong64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/linux-mips64el@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/linux-ppc64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/linux-riscv64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/linux-s390x@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/linux-x64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/netbsd-x64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/openbsd-x64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/sunos-x64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/win32-arm64@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/win32-ia32@0.21.5 from lock file
+5.352 npm error Missing: @esbuild/win32-x64@0.21.5 from lock file
+5.352 npm error Missing: nanoid@3.3.11 from lock file
+5.352 npm error Missing: source-map-js@1.2.1 from lock file
+5.352 npm error Missing: @rollup/rollup-android-arm-eabi@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-android-arm64@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-darwin-arm64@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-darwin-x64@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-freebsd-arm64@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-freebsd-x64@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-arm-gnueabihf@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-arm-musleabihf@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-arm64-gnu@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-arm64-musl@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-loong64-gnu@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-ppc64-gnu@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-riscv64-gnu@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-riscv64-musl@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-s390x-gnu@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-x64-gnu@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-linux-x64-musl@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-openharmony-arm64@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-win32-arm64-msvc@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-win32-ia32-msvc@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-win32-x64-gnu@4.52.2 from lock file
+5.352 npm error Missing: @rollup/rollup-win32-x64-msvc@4.52.2 from lock file
+5.352 npm error Missing: @types/estree@1.0.8 from lock file
+5.352 npm error
+5.352 npm error Clean install a project
+5.352 npm error
+5.352 npm error Usage:
+5.352 npm error npm ci
+5.352 npm error
+5.352 npm error Options:
+5.352 npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+5.352 npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+5.352 npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+5.352 npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+5.352 npm error [--no-bin-links] [--no-fund] [--dry-run]
+5.352 npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+5.352 npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+5.352 npm error
+5.352 npm error aliases: clean-install, ic, install-clean, isntall-clean
+5.352 npm error
+5.352 npm error Run "npm help ci" for more info
+5.355 npm notice
+5.355 npm notice New major version of npm available! 10.8.2 -> 11.6.0
+5.355 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.0
+5.355 npm notice To update run: npm install -g npm@11.6.0
+5.355 npm notice
+5.356 npm error A complete log of this run can be found in: /root/.npm/_logs/2025-09-23T17_46_01_625Z-debug-0.log
+------
+Dockerfile:4
+
+--------------------
+
+   2 |     WORKDIR /app
+
+   3 |     COPY package.json package-lock.json ./
+
+   4 | >>> RUN npm ci
+
+   5 |     COPY . .
+
+   6 |     RUN npm run build
+
+--------------------
+
+failed to solve: process "/bin/sh -c npm ci" did not complete successfully: exit code: 1
+
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ docker compose logs -n 100 webui
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ /home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 1: FROM: command not found
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 2: WORKDIR: command not found
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 3: COPY: command not found
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 4: RUN: command not found
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 5: COPY: command not found
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 6: RUN: command not found
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 8: FROM: command not found
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 9: COPY: command not found
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 10: COPY: command not found
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 11: EXPOSE: command not found
+/home/thegodseller/Data/DuDe_Hawaiian/webui/Dockerfile: line 12: CMD: command not found
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ docker compose build webui
+docker compose up -d webui
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Building 14.0s (17/17) FINISHED                                             
+ => [internal] load local bake definitions                                 0.0s
+ => => reading from stdin 1.46kB                                           0.0s
+ => [internal] load build definition from Dockerfile                       0.0s
+ => => transferring dockerfile: 924B                                       0.0s
+ => [internal] load metadata for docker.io/library/nginx:alpine            0.8s
+ => [internal] load metadata for docker.io/library/node:20-alpine          0.8s
+ => [internal] load .dockerignore                                          0.0s
+ => => transferring context: 2B                                            0.0s
+ => [build 1/6] FROM docker.io/library/node:20-alpine@sha256:eabac870db94  0.0s
+ => [stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:42a516af16b8  0.0s
+ => [internal] load build context                                          0.0s
+ => => transferring context: 1.24kB                                        0.0s
+ => CACHED [stage-1 2/3] COPY nginx/nginx.conf /etc/nginx/conf.d/default.  0.0s
+ => CACHED [build 2/6] WORKDIR /app                                        0.0s
+ => CACHED [build 3/6] COPY package.json package-lock.json ./              0.0s
+ => [build 4/6] RUN npm install                                           10.8s
+ => [build 5/6] COPY . .                                                   0.1s 
+ => [build 6/6] RUN npm run build                                          1.7s
+ => [stage-1 3/3] COPY --from=build /app/dist /usr/share/nginx/html        0.1s
+ => exporting to image                                                     0.1s 
+ => => exporting layers                                                    0.0s 
+ => => writing image sha256:38448cf354de241bd6c090c6ae33aa6b4c261a7ea4354  0.0s 
+ => => naming to docker.io/library/dude_hawaiian-webui                     0.0s
+ => resolving provenance for metadata file                                 0.0s
+[+] Building 1/1
+ ✔ dude_hawaiian-webui  Built                                              0.0s 
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Running 2/3
+ ⠴ Container dude_hawaiian-doc_dude-1    Starting                          0.6s 
+ ✔ Container dude_hawaiian-front_dude-1  Recreated                         0.0s 
+ ✔ Container dude_hawaiian-webui-1       Created                           0.0s 
+Error response from daemon: Unable to find group render: no matching entries in group file
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ unzip Dockerfile_webui_fixed.zip -d /home/thegodseller/Data/DuDe_Hawaiian/webui
+unzip:  cannot find or open Dockerfile_webui_fixed.zip, Dockerfile_webui_fixed.zip.zip or Dockerfile_webui_fixed.zip.ZIP.
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ cd /home/thegodseller/Data/DuDe_Hawaiian
+docker compose build webui
+docker compose up -d webui
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Building 3.6s (19/19) FINISHED                                              
+ => [internal] load local bake definitions                                 0.0s
+ => => reading from stdin 1.46kB                                           0.0s
+ => [internal] load build definition from Dockerfile                       0.0s
+ => => transferring dockerfile: 923B                                       0.0s
+ => [internal] load metadata for docker.io/library/nginx:alpine            1.7s
+ => [internal] load metadata for docker.io/library/node:20-alpine          1.7s
+ => [auth] library/nginx:pull token for registry-1.docker.io               0.0s
+ => [auth] library/node:pull token for registry-1.docker.io                0.0s
+ => [internal] load .dockerignore                                          0.0s
+ => => transferring context: 2B                                            0.0s
+ => [build 1/6] FROM docker.io/library/node:20-alpine@sha256:eabac870db94  0.0s
+ => [stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:42a516af16b8  0.0s
+ => [internal] load build context                                          0.0s
+ => => transferring context: 1.24kB                                        0.0s
+ => CACHED [build 2/6] WORKDIR /app                                        0.0s
+ => CACHED [build 3/6] COPY package.json package-lock.json ./              0.0s
+ => CACHED [build 4/6] RUN npm install                                     0.0s
+ => [build 5/6] COPY . .                                                   0.0s
+ => [build 6/6] RUN npm run build                                          1.6s
+ => CACHED [stage-1 2/3] COPY nginx/nginx.conf /etc/nginx/conf.d/default.  0.0s
+ => CACHED [stage-1 3/3] COPY --from=build /app/dist /usr/share/nginx/htm  0.0s
+ => exporting to image                                                     0.0s 
+ => => exporting layers                                                    0.0s
+ => => writing image sha256:4a5abb728be86ccb31970be401df280b5a961176a85f8  0.0s
+ => => naming to docker.io/library/dude_hawaiian-webui                     0.0s
+ => resolving provenance for metadata file                                 0.0s
+[+] Building 1/1
+ ✔ dude_hawaiian-webui  Built                                              0.0s 
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Running 1/2
+ ✔ Container dude_hawaiian-webui-1     Recreated                           0.0s 
+ ⠋ Container dude_hawaiian-doc_dude-1  Starting                            0.0s 
+Error response from daemon: Unable to find group render: no matching entries in group file
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ getent group render
+render:x:992:
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ getent group render
+render:x:992:
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ docker compose up -d --build doc_dude   # หรือบริการที่เกี่ยว
+docker compose logs -n 50 doc_dude
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Building 14.4s (8/14)                                                       
+ => [internal] load local bake definitions                                 0.0s
+ => => reading from stdin 574B                                             0.0s
+ => [internal] load build definition from Dockerfile.ocr_igpu              0.0s
+ => => transferring dockerfile: 1.44kB                                     0.0s
+ => [internal] load metadata for docker.io/openvino/ubuntu22_runtime:2024  2.9s
+ => [auth] openvino/ubuntu22_runtime:pull token for registry-1.docker.io   0.0s
+ => [internal] load .dockerignore                                          0.0s
+ => => transferring context: 2B                                            0.0s
+ => [1/8] FROM docker.io/openvino/ubuntu22_runtime:2024.2.0@sha256:9c1bd  11.0s
+ => => resolve docker.io/openvino/ubuntu22_runtime:2024.2.0@sha256:9c1bd7  0.0s
+ => => sha256:9c1bd7d752f0544447dadad790d632178e93a54ee43 3.88kB / 3.88kB  0.0s
+ => => sha256:78de6b4960a057b4757ddca3ff270d171e5181ab6 16.27kB / 16.27kB  0.0s
+ => => sha256:7646c8da332499ae416b15479ce832db32e39a501 29.53MB / 29.53MB  1.2s
+ => => sha256:d805a814537d5d75479e54ec137b6e41d278de7ce65 9.06kB / 9.06kB  0.6s
+ => => sha256:db344c43dba31f7cd3fd3cc36e39ccf10ddc980ee3934b6 113B / 113B  0.3s
+ => => sha256:a08171d7ba46afccf379900781bf8dd28ad43b489 54.05MB / 54.05MB  1.8s
+ => => sha256:c4674a20a6bbdfcf6cd74da545a8925b98852f07652773120 99B / 99B  0.9s
+ => => sha256:c6fb24f41a5539ad54228b9ffafc68b91442f18ee8f 2.74MB / 2.74MB  1.4s
+ => => extracting sha256:7646c8da332499ae416b15479ce832db32e39a501c662e24  0.9s
+ => => sha256:34b42af92aa8b55ad4a2cfc16306448933b5a8d4397 1.19MB / 1.19MB  1.9s
+ => => sha256:c4ad2ca3578357511ab66948504f7de18d350262a 20.76MB / 20.76MB  2.0s
+ => => sha256:3f71cf0e2ef776945fdcc6f1518dab2b54a8bc6a2d6f2fc 181B / 181B  2.2s
+ => => sha256:e78eeb997af9f95d7c7085fae5dfd0581ff6d58da05 2.46MB / 2.46MB  2.3s
+ => => sha256:2b39c28befea689fc7529a140656cfeeecfded10931c24e 370B / 370B  2.4s
+ => => extracting sha256:d805a814537d5d75479e54ec137b6e41d278de7ce650a68c  0.0s
+ => => sha256:3162e601b78dcc6feccc40a4b8e677d52c4dfe40dc4 5.85MB / 5.85MB  3.0s
+ => => extracting sha256:db344c43dba31f7cd3fd3cc36e39ccf10ddc980ee3934b67  0.0s
+ => => extracting sha256:a08171d7ba46afccf379900781bf8dd28ad43b489edd59bb  1.0s
+ => => sha256:1bb6bd02df4570f94f9f727f3cd2e6e73e02e6304 19.89MB / 19.89MB  3.2s
+ => => sha256:11dc34fdf05639ad4067156f4fadea2fae52ac9cd 19.23kB / 19.23kB  2.8s
+ => => sha256:044e903fb1947bc11239f54ecc183c5358395af 337.21kB / 337.21kB  3.1s
+ => => sha256:fb1731848edb4e777b725e64b3d428e829cadac89 91.85MB / 91.85MB  9.4s
+ => => sha256:ebaa4a70debdc9f047f4a8d638c46783dfe4bb9521e98dc 349B / 349B  4.7s
+ => => extracting sha256:c4674a20a6bbdfcf6cd74da545a8925b98852f0765277312  0.0s
+ => => extracting sha256:c6fb24f41a5539ad54228b9ffafc68b91442f18ee8f24102  0.3s
+ => => extracting sha256:34b42af92aa8b55ad4a2cfc16306448933b5a8d43976e5bb  0.1s
+ => => extracting sha256:c4ad2ca3578357511ab66948504f7de18d350262a185f73b  0.8s
+ => => extracting sha256:e78eeb997af9f95d7c7085fae5dfd0581ff6d58da0524900  0.0s
+ => => extracting sha256:3f71cf0e2ef776945fdcc6f1518dab2b54a8bc6a2d6f2fc2  0.0s
+ => => extracting sha256:2b39c28befea689fc7529a140656cfeeecfded10931c24e8  0.0s
+ => => extracting sha256:3162e601b78dcc6feccc40a4b8e677d52c4dfe40dc463dd5  0.2s
+ => => extracting sha256:1bb6bd02df4570f94f9f727f3cd2e6e73e02e6304d91c547  0.6s
+ => => extracting sha256:11dc34fdf05639ad4067156f4fadea2fae52ac9cda37bc10  0.0s
+ => => extracting sha256:044e903fb1947bc11239f54ecc183c5358395afda2dfe50e  0.0s
+ => => extracting sha256:fb1731848edb4e777b725e64b3d428e829cadac89579d616  1.2s
+ => => extracting sha256:ebaa4a70debdc9f047f4a8d638c46783dfe4bb9521e98dcd  0.0s
+ => [internal] load build context                                          0.0s
+ => => transferring context: 65B                                           0.0s
+ => ERROR [2/8] RUN apt-get update && apt-get install -y --no-install-rec  0.3s
+------
+ > [2/8] RUN apt-get update && apt-get install -y --no-install-recommends     python3-pip ca-certificates curl wget unzip git ocl-icd-libopencl1 intel-opencl-icd clinfo     libze-loader1 level-zero libglib2.0-0 libsm6 libxrender1 libxext6     && rm -rf /var/lib/apt/lists/*:
+0.161 + apt-get update
+0.169 Reading package lists...
+0.183 E: List directory /var/lib/apt/lists/partial is missing. - Acquire (13: Permission denied)
+------
+Dockerfile.ocr_igpu:4
+
+--------------------
+
+   3 |     ENV DEBIAN_FRONTEND=noninteractive
+
+   4 | >>> RUN apt-get update && apt-get install -y --no-install-recommends \
+
+   5 | >>>     python3-pip ca-certificates curl wget unzip git ocl-icd-libopencl1 intel-opencl-icd clinfo \
+
+   6 | >>>     libze-loader1 level-zero libglib2.0-0 libsm6 libxrender1 libxext6 \
+
+   7 | >>>     && rm -rf /var/lib/apt/lists/*
+
+   8 |     WORKDIR /app
+
+--------------------
+
+failed to solve: process "/bin/bash -xo pipefail -c apt-get update && apt-get install -y --no-install-recommends     python3-pip ca-certificates curl wget unzip git ocl-icd-libopencl1 intel-opencl-icd clinfo     libze-loader1 level-zero libglib2.0-0 libsm6 libxrender1 libxext6     && rm -rf /var/lib/apt/lists/*" did not complete successfully: exit code: 100
+
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ docker exec -it doc_dude bash -lc "ls -l /dev/dri && id && getent group 992 || true"
+Error response from daemon: No such container: doc_dude
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ docker compose up -d --build doc_dude   # หรือบริการที่เกี่ยว
+docker compose logs -n 50 doc_dude
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Building 1.2s (7/14)                                                        
+ => [internal] load local bake definitions                                 0.0s
+ => => reading from stdin 574B                                             0.0s
+ => [internal] load build definition from Dockerfile.ocr_igpu              0.0s
+ => => transferring dockerfile: 1.65kB                                     0.0s
+ => [internal] load metadata for docker.io/openvino/ubuntu22_runtime:2024  0.8s
+ => [internal] load .dockerignore                                          0.0s
+ => => transferring context: 2B                                            0.0s
+ => CACHED [1/9] FROM docker.io/openvino/ubuntu22_runtime:2024.2.0@sha256  0.0s
+ => [internal] load build context                                          0.0s
+ => => transferring context: 65B                                           0.0s
+ => ERROR [2/9] RUN apt-get update && apt-get install -y --no-install-rec  0.2s
+------                                                                          
+ > [2/9] RUN apt-get update && apt-get install -y --no-install-recommends     python3-pip ca-certificates curl wget unzip git ocl-icd-libopencl1 intel-opencl-icd clinfo     libze-loader1 level-zero libglib2.0-0 libsm6 libxrender1 libxext6     && rm -rf /var/lib/apt/lists/*:
+0.175 + apt-get update
+0.183 Reading package lists...
+0.196 E: List directory /var/lib/apt/lists/partial is missing. - Acquire (13: Permission denied)
+------
+Dockerfile.ocr_igpu:4
+
+--------------------
+
+   3 |     ENV DEBIAN_FRONTEND=noninteractive
+
+   4 | >>> RUN apt-get update && apt-get install -y --no-install-recommends \
+
+   5 | >>>     python3-pip ca-certificates curl wget unzip git ocl-icd-libopencl1 intel-opencl-icd clinfo \
+
+   6 | >>>     libze-loader1 level-zero libglib2.0-0 libsm6 libxrender1 libxext6 \
+
+   7 | >>>     && rm -rf /var/lib/apt/lists/*
+
+   8 |     WORKDIR /app
+
+--------------------
+
+failed to solve: process "/bin/bash -xo pipefail -c apt-get update && apt-get install -y --no-install-recommends     python3-pip ca-certificates curl wget unzip git ocl-icd-libopencl1 intel-opencl-icd clinfo     libze-loader1 level-zero libglib2.0-0 libsm6 libxrender1 libxext6     && rm -rf /var/lib/apt/lists/*" did not complete successfully: exit code: 100
+
+WARN[0000] /home/thegodseller/Data/DuDe_Hawaiian/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+thegodseller@thegodseller-OptiPlex-3060:~/Data/DuDe_Hawaiian$ 
