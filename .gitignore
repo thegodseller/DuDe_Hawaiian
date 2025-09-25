@@ -5,6 +5,6 @@ __pycache__/
 *.pyc
 node_modules/
 webui/node_modules/
-data/chroma/
-data/ocr_uploads/
-data/ocr_logs/
+webui/dist/
+.vscode/
+data/

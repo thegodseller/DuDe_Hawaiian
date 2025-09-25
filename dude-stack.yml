@@ -1,0 +1,102 @@
+version: "3.9"
+
+services:
+  chroma:
+    image: ghcr.io/chroma-core/chroma:0.4.24
+    container_name: dude_chroma
+    restart: unless-stopped
+    environment:
+      - IS_PERSISTENT=TRUE
+    volumes:
+      - ./data/chroma:/chroma/.chroma
+    ports:
+      - "8000:8000"
+
+  medic_dude:
+    build: ./services/medic_dude
+    container_name: medic_dude
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "58080:8080"
+
+  doc_dude:
+    build:
+      context: ./services/doc_dude
+      dockerfile: Dockerfile.ocr_igpu
+    container_name: doc_dude
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - UPLOAD_DIR=/data/ocr_uploads
+      - LOG_DIR=/var/log/ocr
+    volumes:
+      - ./data/ocr_uploads:/data/ocr_uploads
+      - ./data/ocr_logs:/var/log/ocr
+      - ./data/models/openvino:/models:ro
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "992"
+    depends_on:
+      chroma:
+        condition: service_started
+    ports:
+      - "28080:8080"
+
+  messenger_dude:
+    build: ./services/messenger_dude
+    container_name: messenger_dude
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - FRONT_CHAT_URL=http://front_dude:8080/chat
+    ports:
+      - "38080:8080"
+
+  vision_dude:
+    build: ./services/vision_dude
+    container_name: vision_dude
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "48080:8080"
+
+  front_dude:
+    build: ./services/front_dude
+    container_name: front_dude
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DOC_DUDE_URL=http://doc_dude:8080
+      - MESSENGER_DUDE_URL=http://messenger_dude:8080
+      - MEDIC_DUDE_URL=http://medic_dude:8080
+      - VISION_DUDE_URL=http://vision_dude:8080
+      - FRONT_TRACE_DB_PATH=/data/telemetry/front_traces.db
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    volumes:
+      - ./data/front_traces:/data/telemetry
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      medic_dude:
+        condition: service_started
+      doc_dude:
+        condition: service_started
+      messenger_dude:
+        condition: service_started
+      vision_dude:
+        condition: service_started
+    ports:
+      - "18080:8080"
+
+networks:
+  default:
+    name: dude_hawaiian
